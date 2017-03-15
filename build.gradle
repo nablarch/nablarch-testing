@@ -101,6 +101,8 @@ dependencies {
   // JPA
   testCompile (group: 'org.eclipse.persistence', name: 'eclipselink', version: '2.5.1')
 
+  // test support
+  testCompile 'com.nablarch.dev:nablarch-test-support:0.0.5'
   // HereIs
   testCompile 'com.nablarch.dev:nablarch-test-support-hereis:1.0.0'
   testCompile (group: 'com.nablarch.tool', name: 'nablarch-toolbox', version: '1.0.2')

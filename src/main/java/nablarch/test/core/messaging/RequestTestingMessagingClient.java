@@ -80,7 +80,10 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
 
     /** SystemRepositoryに設定するデータレコードとしてアサートを行うファイルタイプを管理するためのキー */
     private static final String ASSERT_AS_MAP_KEY = "messaging.assertAsMapFileType";
-    
+
+    /** 文字セット */
+    private Charset charset;
+
     /**
      * リクエスト単体テスト時の初期化処理を行う。
      * <p>
@@ -141,8 +144,8 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
             if (reply == null) {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.logInfo("response timeout: could not receive a reply to the message."
-                            + MessagingLogUtil.getSentMessageLog(getSendingMessage(requestMessage))
-                            );
+                            + MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(requestMessage), charset)
+                    );
                 }
                 throw new HttpMessagingTimeoutException(String.format(
                     "caused by timeout, failed to send message. requestId = [%s]", requestId));
@@ -519,8 +522,8 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
      */
     private void emitLog(InterSystemMessage<?> message) {
         String log = (message instanceof ReceivedMessage)
-                   ? MessagingLogUtil.getReceivedMessageLog((ReceivedMessage) message)
-                   : MessagingLogUtil.getSentMessageLog((SendingMessage) message);
+                   ? MessagingLogUtil.getHttpReceivedMessageLog((ReceivedMessage) message, charset)
+                   : MessagingLogUtil.getHttpSentMessageLog((SendingMessage) message, charset);
         LOGGER.logInfo(log);
     }
     
@@ -558,4 +561,20 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
             return false;
         }
     }
+
+    /**
+     * 文字セットを設定する。
+     * @param charset 文字セット
+     */
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
+
+    /**
+     * 文字セット名を設定する。
+     * @param charsetName 文字セット名
+     */
+    public void setCharsetName(String charsetName) {
+        setCharset(Charset.forName(charsetName));
+    }    
 }

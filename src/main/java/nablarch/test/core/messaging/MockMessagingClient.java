@@ -42,6 +42,9 @@ public class MockMessagingClient implements MessageSenderClient {
     /** 応答電文のデータフォーマット定義ファイル名パターン  */
     private String responseMessageFormatFileNamePattern = "%s" + "_RECEIVE";
 
+    /** 文字セット */
+    private Charset charset;
+
     @Override
     public SyncMessage sendSync(MessageSenderSettings settings,
             SyncMessage requestMessage) {
@@ -55,7 +58,7 @@ public class MockMessagingClient implements MessageSenderClient {
         if (bodyBytes == null) {
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.logInfo("response timeout: could not receive a reply to the message."
-                        + MessagingLogUtil.getSentMessageLog(getSendingMessage(requestMessage))
+                        + MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(requestMessage),charset)
                         );
             }
             throw new HttpMessagingTimeoutException(String.format(
@@ -145,8 +148,8 @@ public class MockMessagingClient implements MessageSenderClient {
      */
     private void emitLog(InterSystemMessage<?> message) {
         String log = (message instanceof ReceivedMessage)
-                ? MessagingLogUtil.getReceivedMessageLog((ReceivedMessage) message)
-                : MessagingLogUtil.getSentMessageLog((SendingMessage) message);
+                ? MessagingLogUtil.getHttpReceivedMessageLog((ReceivedMessage) message, charset)
+                : MessagingLogUtil.getHttpSentMessageLog((SendingMessage) message, charset);
         LOGGER.logInfo(log);
     }
 
@@ -204,15 +207,32 @@ public class MockMessagingClient implements MessageSenderClient {
 
     /**
      * フォーマッタに定義されている文字セットを取得する。
-     * 取得できない場合はプラットフォームのデフォルト文字セットを取得する。
+     * 取得できない場合は、本インスタンスに設定されている文字セットを返す。
+     * 設定されていない場合はプラットフォームのデフォルト文字セットを取得する。
      * @param formatter フォーマッタ
      * @return 文字セット
      */
     private Charset getCharset(DataRecordFormatter formatter) {
-        Charset charset = Charset.defaultCharset();
+        Charset charset = (this.charset != null) ? this.charset : Charset.defaultCharset();
         if (formatter instanceof DataRecordFormatterSupport) {
             charset = ((DataRecordFormatterSupport) formatter).getDefaultEncoding();
         }
         return charset;
+    }
+
+    /**
+     * 文字セットを設定する。
+     * @param charset 文字セット
+     */
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
+
+    /**
+     * 文字セット名を設定する。
+     * @param charsetName 文字セット名
+     */
+    public void setCharsetName(String charsetName) {
+        setCharset(Charset.forName(charsetName));
     }
 }

@@ -40,6 +40,9 @@ import org.junit.Test;
  */
 public class RequestTestingMessagingClientTest {
 
+    /** UTF-8 文字セット */
+    private Charset utf8Charset = Charset.forName("UTF-8");
+
     /** 初期化を行う */
     @BeforeClass
     public static void loadRepository() {
@@ -110,14 +113,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", "case1", "RM11AD0201");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
         
@@ -145,14 +150,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
         
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testAsFixedData", "1", "case1", "RM11AD0202");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         LogVerifier.verify("Failed!");
         
         Map<String, Object> resrec = reply.getDataRecord();
@@ -176,14 +183,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testLessStatusCode", "1", "case1", "RM11AD0201");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         //明示的にEXせｌにステータスコードが設定されていない場合は、200が設定されている。
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -212,14 +221,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
         
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testWithTestDataConverter", "1", "case1", "RM11AD0202");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         LogVerifier.verify("Failed!");
         
         Map<String, Object> resrec = reply.getDataRecord();
@@ -358,14 +369,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testAssertFailNoMatchHeader", "1", "case1", "RM11AD0201");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
         
@@ -396,14 +409,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testAssertFailNoMatchBody", "1", "case1", "RM11AD0201");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
         
@@ -434,14 +449,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testAssertFailNoMatchCount", "1", "case1", "RM11AD0201");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
         
@@ -475,7 +492,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -483,6 +500,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -518,7 +536,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -526,6 +544,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -558,7 +577,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -591,7 +610,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -599,6 +618,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -630,7 +650,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -638,6 +658,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -667,7 +688,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -675,6 +696,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -706,7 +728,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -714,6 +736,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -746,7 +769,7 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -754,6 +777,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -785,14 +809,16 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInvalidRequest", "1", "case1", "RM11AD0201");
         
         LogVerifier.setExpectedLogMessages(expectedLog);
-        SyncMessage reply = new RequestTestingMessagingClient().sendSync(settings, request);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
+        final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
         
@@ -827,14 +853,15 @@ public class RequestTestingMessagingClientTest {
         
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        logInfo.put("message1", MessagingLogUtil.getSentMessageLog(getSendingMessage(request1)));
-        logInfo.put("message2", MessagingLogUtil.getSentMessageLog(getSendingMessage(request2)));
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request1), utf8Charset));
+        logInfo.put("message2", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request2), utf8Charset));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
         
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendDifferentRequestIds", "1", "case1", "RM11AD0201");
         
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.setCharset(utf8Charset);
         LogVerifier.setExpectedLogMessages(expectedLog);
         SyncMessage reply1 = client.sendSync(settings1, request1);
         assertEquals("200", reply1.getHeaderRecord().get("STATUS_CODE"));

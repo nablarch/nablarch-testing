@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration  ./component-configuration.xsd">
+
+    <!-- メッセージングテスト -->
+    <import file="nablarch/test/core/messaging/web/web-component-configuration.xml" />
+
+      <!-- HTTP通信用クライアント (この設定だけShift-JISで上書きする)-->
+      <component name="defaultRealTimeMessagingClient"
+                 class="nablarch.test.core.messaging.MockMessagingClient">
+        <property name="charsetName" value="Shift-JIS" />
+      </component>
+
+</component-configuration>
