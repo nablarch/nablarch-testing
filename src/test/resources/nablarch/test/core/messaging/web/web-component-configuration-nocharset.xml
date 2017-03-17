@@ -5,10 +5,9 @@
     <!-- メッセージングテスト -->
     <import file="nablarch/test/core/messaging/web/web-component-configuration.xml" />
 
-      <!-- HTTP通信用クライアント (この設定だけShift-JISで上書きする)-->
+      <!-- HTTP通信用クライアント (この設定だけCharset指定なしで上書きする)-->
       <component name="defaultRealTimeMessagingClient"
                  class="nablarch.test.core.messaging.MockMessagingClient">
-        <property name="charset" value="Shift-JIS" />
       </component>
 
 </component-configuration>

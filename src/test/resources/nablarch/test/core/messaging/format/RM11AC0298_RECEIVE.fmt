@@ -1,0 +1,18 @@
+#
+# 共通定義部
+#
+file-type:      "XML"    # ファイルタイプ
+text-encoding:  "UTF-8"  # 文字エンコーディング
+
+#
+# 登録データ
+#
+[response]                            #レスポンス
+1            failureCode[0..1]  X     #障害事由コード
+2            userInfoId[0..1]   X     #問い合わせID
+3            dataKbn            X     #データ区分
+4            _nbctlhdr[0..1]    OB    #フレームワーク制御項目(自動追加)
+[_nbctlhdr]                           #フレームワーク制御項目(自動追加)
+1            statusCode         X9    #ステータスコード
+
+

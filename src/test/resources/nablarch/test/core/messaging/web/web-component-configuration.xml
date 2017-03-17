@@ -28,7 +28,7 @@
       <!-- HTTP通信用クライアント -->
       <component name="defaultRealTimeMessagingClient"
                  class="nablarch.test.core.messaging.MockMessagingClient">
-        <property name="charsetName" value="UTF-8" />
+        <property name="charset" value="UTF-8" />
       </component>
 
     <component name="initializer" class="nablarch.core.repository.initialization.BasicApplicationInitializer">

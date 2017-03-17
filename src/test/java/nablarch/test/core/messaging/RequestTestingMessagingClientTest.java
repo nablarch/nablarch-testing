@@ -40,6 +40,9 @@ import org.junit.Test;
  */
 public class RequestTestingMessagingClientTest {
 
+    /** UTF-8 文字セット名 */
+    private String utf8CharsetName = "UTF-8";
+
     /** UTF-8 文字セット */
     private Charset utf8Charset = Charset.forName("UTF-8");
 
@@ -118,10 +121,10 @@ public class RequestTestingMessagingClientTest {
 
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", "case1", "RM11AD0201");
-        
+
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -158,7 +161,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         LogVerifier.verify("Failed!");
         
@@ -168,8 +171,76 @@ public class RequestTestingMessagingClientTest {
         
         RequestTestingMessagingClient.assertSendingMessage(getClass(), "testAsFixedData", "1", "case1");
     }
-    
-    
+
+    /**
+     * 構造化データ同期送信の正常系テストを行う。（Charset指定なし）
+     */
+    @Test
+    public void testSendSyncNormalNoCharset() throws Exception {
+        Map<String, Object> reqrec = createTestRecord();
+
+        SyncMessage request = new SyncMessage("RM11AD0201");
+        request.addDataRecord(reqrec);
+        MessageSenderSettings settings = new MessageSenderSettings("RM11AD0201");
+
+        Map<String, String> logInfo = new HashMap<String, String>();
+        logInfo.put("logLevel", "INFO");
+        // iso-8859-1のログメッセージを生成する。
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), Charset.forName("iso-8859-1")));
+        List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
+
+        RequestTestingMessagingClient.clearSendingMessageCache();
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSyncNoCharset", "1", "case1", "RM11AD0201");
+
+        LogVerifier.setExpectedLogMessages(expectedLog);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        final SyncMessage reply = client.sendSync(settings, request);
+        assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
+        LogVerifier.verify("Failed!");
+
+        Map<String, Object> resrec = reply.getDataRecord();
+        assertEquals("00000000000000000112", resrec.get("userInfoId"));
+        assertEquals("0", resrec.get("dataKbn"));
+        assertEquals("200", resrec.get("_nbctlhdr.statusCode"));
+
+        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testSendSyncNoCharset", "1", "case1");
+    }
+
+    /**
+     * 固定長データ同期送信の正常系テストを行う。（Charset指定なし）
+     */
+    @Test
+    public void testAsFixedDataNoCharset() throws Exception {
+        Map<String, Object> reqrec = new HashMap<String, Object>();
+        reqrec.put("title", "title001");
+        reqrec.put("publisher", "publisher002");
+        reqrec.put("authors", "authors003");
+
+        SyncMessage request = new SyncMessage("RM11AD0202");
+        request.addDataRecord(reqrec);
+        MessageSenderSettings settings = new MessageSenderSettings("RM11AD0202");
+
+        Map<String, String> logInfo = new HashMap<String, String>();
+        logInfo.put("logLevel", "INFO");
+        // iso-8859-1のログメッセージを生成する。
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), Charset.forName("iso-8859-1")));
+        List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
+
+        RequestTestingMessagingClient.clearSendingMessageCache();
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testAsFixedDataNoCharset", "1", "case1", "RM11AD0202");
+
+        LogVerifier.setExpectedLogMessages(expectedLog);
+        final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        final SyncMessage reply = client.sendSync(settings, request);
+        LogVerifier.verify("Failed!");
+
+        Map<String, Object> resrec = reply.getDataRecord();
+        assertEquals("test1", resrec.get("failureCode"));
+        assertEquals("user1", resrec.get("userInfoId"));
+
+        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testAsFixedDataNoCharset", "1", "case1");
+    }
+
     /**
      * Excelにステータスコードが記載されていない場合の、構造化データ同期送信の正常系テストを行う。
      */
@@ -191,7 +262,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         //明示的にEXせｌにステータスコードが設定されていない場合は、200が設定されている。
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
@@ -229,7 +300,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         LogVerifier.verify("Failed!");
         
@@ -377,7 +448,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -417,7 +488,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -457,7 +528,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -500,7 +571,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -544,7 +615,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -618,7 +689,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -658,7 +729,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -696,7 +767,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -736,7 +807,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -777,7 +848,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -817,7 +888,7 @@ public class RequestTestingMessagingClientTest {
         
         LogVerifier.setExpectedLogMessages(expectedLog);
         final RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         final SyncMessage reply = client.sendSync(settings, request);
         assertEquals("200", reply.getHeaderRecord().get("STATUS_CODE"));
         LogVerifier.verify("Failed!");
@@ -861,7 +932,7 @@ public class RequestTestingMessagingClientTest {
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendDifferentRequestIds", "1", "case1", "RM11AD0201");
         
         RequestTestingMessagingClient client = new RequestTestingMessagingClient();
-        client.setCharset(utf8Charset);
+        client.setCharset(utf8CharsetName);
         LogVerifier.setExpectedLogMessages(expectedLog);
         SyncMessage reply1 = client.sendSync(settings1, request1);
         assertEquals("200", reply1.getHeaderRecord().get("STATUS_CODE"));

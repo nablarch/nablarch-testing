@@ -541,7 +541,7 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
             try {
                 sendingMessage.addRecord(rec);
             } catch (InvalidDataFormatException e) {
-                LOGGER.logInfo(String.format("Sending message convert error occured. RequestId:%s [%s]", message.getRequestId(), e.getMessage()));
+                LOGGER.logInfo(String.format("Sending message convert error occurred. RequestId:%s [%s]", message.getRequestId(), e.getMessage()));
             }
         }
         sendingMessage.setHeaderMap(message.getHeaderRecord());
@@ -563,18 +563,10 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
     }
 
     /**
-     * 文字セットを設定する。
-     * @param charset 文字セット
+     * 文字セット名から文字セットを設定する。
+     * @param charset 文字セット名
      */
-    public void setCharset(Charset charset) {
-        this.charset = charset;
+    public void setCharset(String charset) {
+        this.charset = Charset.forName(charset);
     }
-
-    /**
-     * 文字セット名を設定する。
-     * @param charsetName 文字セット名
-     */
-    public void setCharsetName(String charsetName) {
-        setCharset(Charset.forName(charsetName));
-    }    
 }

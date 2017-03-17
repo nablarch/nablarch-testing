@@ -1,0 +1,26 @@
+#
+# 共通定義部
+#
+file-type:      "XML"    # ファイルタイプ
+text-encoding:  "UTF-8"  # 文字エンコーディング
+
+#
+# 登録データ
+#
+[request]                                              #リクエスト
+1            dataKbn                           X       #データ区分
+2            loginId                           X       #ログインID
+3            kanjiName                         XN      #漢字氏名
+4            kanaName                          N       #カナ氏名
+5            mailAddress                       X       #メールアドレス
+6            extensionNumberBuilding           X       #内線番号(ビル番号)
+7            extensionNumberPersonal           X       #内線番号(個人番号)
+8            mobilePhoneNumberAreaCode[0..1]   X       #携帯電話番号(市外)
+9            mobilePhoneNumberCityCode[0..1]   X       #携帯電話番号(市内)
+10           mobilePhoneNumberSbscrCode[0..1]  X       #携帯電話番号(加入)
+11           _nbctlhdr[0..1]                   OB      #フレームワーク制御項目(自動追加)
+[_nbctlhdr]                                            #フレームワーク制御項目(自動追加)
+1            userId[0..1]                      X       #ユーザID
+2            resendFlag[0..1]                  X9  0   #再送要求フラグ
+
+

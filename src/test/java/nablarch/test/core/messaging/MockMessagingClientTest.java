@@ -44,6 +44,7 @@ public class MockMessagingClientTest {
     @Before
     public void setUp() throws Exception {
         OnMemoryLogWriter.clear();
+        SystemRepository.clear();
         XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader("nablarch/test/core/messaging/web/web" +
                 "-component-configuration.xml");
         DiContainer container = new DiContainer(loader);
@@ -238,6 +239,7 @@ public class MockMessagingClientTest {
     public void testNormalSJIS() {
 
         //Shift-JISで設定を読み込む。
+        SystemRepository.clear();
         XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader("nablarch/test/core/messaging/web/web" +
                 "-component-configuration-sjis.xml");
         DiContainer container = new DiContainer(loader);
@@ -266,6 +268,45 @@ public class MockMessagingClientTest {
                         + "<loginId>user01</loginId><kanjiName>ナブラ太郎</kanjiName><kanaName>ナブラタロウ</kanaName>"
                         + "<mailAddress>a@a.com</mailAddress><extensionNumberBuilding>2</extensionNumberBuilding>"
                         + "<extensionNumberPersonal>3</extensionNumberPersonal></request>");
+   }
+
+    /**
+     * 正常系のテスト(Charset指定なし)。
+     */
+    @Test
+    public void testNormalNoCharset() throws Exception {
+
+        //Charset指定なしで設定を読み込む。
+        SystemRepository.clear();
+        XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader("nablarch/test/core/messaging/web/web" +
+                "-component-configuration-nocharset.xml");
+        DiContainer container = new DiContainer(loader);
+        SystemRepository.load(container);
+
+
+        Map<String, Object> dataRecord = new HashMap<String, Object>();
+        SyncMessage responseMessage = null;
+
+        dataRecord.put("dataKbn", "1");
+        dataRecord.put("loginId", "user01");
+        dataRecord.put("kanjiName", "ナブラ太郎");
+        dataRecord.put("kanaName", "ナブラタロウ");
+        dataRecord.put("mailAddress", "a@a.com");
+        dataRecord.put("extensionNumberBuilding", "2");
+        dataRecord.put("extensionNumberPersonal", "3");
+
+        responseMessage = MessageSender.sendSync(new SyncMessage("RM11AC0298").addDataRecord(dataRecord));
+        Map<String, Object> responseDataRecord = responseMessage.getDataRecord();
+        //文字化けせずに取得できていることを確認
+        assertThat((String)responseDataRecord.get("userInfoId"), is("あ"));
+        assertTrue(responseMessage.getRequestId().contains("RM11AC0298"));
+        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><dataKbn>1</dataKbn>"
+                + "<loginId>user01</loginId><kanjiName>ナブラ太郎</kanjiName><kanaName>ナブラタロウ</kanaName>"
+                + "<mailAddress>a@a.com</mailAddress><extensionNumberBuilding>2</extensionNumberBuilding>"
+                + "<extensionNumberPersonal>3</extensionNumberPersonal></request>";
+        //Charset指定なしのログがデフォルトでエンコードされることを確認
+        String body =  new String(expected.getBytes(Charset.defaultCharset()));
+        assertLogWithCount(createMessagePattern(body), 1);
     }
 
     /**

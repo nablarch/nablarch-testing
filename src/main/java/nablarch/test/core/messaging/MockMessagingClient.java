@@ -207,13 +207,12 @@ public class MockMessagingClient implements MessageSenderClient {
 
     /**
      * フォーマッタに定義されている文字セットを取得する。
-     * 取得できない場合は、本インスタンスに設定されている文字セットを返す。
-     * 設定されていない場合はプラットフォームのデフォルト文字セットを取得する。
+     * 取得できない場合はプラットフォームのデフォルト文字セットを取得する。
      * @param formatter フォーマッタ
      * @return 文字セット
      */
     private Charset getCharset(DataRecordFormatter formatter) {
-        Charset charset = (this.charset != null) ? this.charset : Charset.defaultCharset();
+        Charset charset = Charset.defaultCharset();
         if (formatter instanceof DataRecordFormatterSupport) {
             charset = ((DataRecordFormatterSupport) formatter).getDefaultEncoding();
         }
@@ -221,18 +220,10 @@ public class MockMessagingClient implements MessageSenderClient {
     }
 
     /**
-     * 文字セットを設定する。
-     * @param charset 文字セット
+     * 文字セット名から文字セットを設定する。
+     * @param charset 文字セット名
      */
-    public void setCharset(Charset charset) {
-        this.charset = charset;
-    }
-
-    /**
-     * 文字セット名を設定する。
-     * @param charsetName 文字セット名
-     */
-    public void setCharsetName(String charsetName) {
-        setCharset(Charset.forName(charsetName));
+    public void setCharset(String charset) {
+        this.charset = Charset.forName(charset);
     }
 }

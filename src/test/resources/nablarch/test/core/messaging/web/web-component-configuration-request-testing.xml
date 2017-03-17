@@ -35,7 +35,7 @@
     
       <!-- HTTP通信用クライアント -->
   <component name="defaultMessageSenderClient" class="nablarch.test.core.messaging.RequestTestingMessagingClient">
-    <property name="charsetName" value="UTF-8"/>
+    <property name="charset" value="UTF-8"/>
   </component>
 
   <!-- データを一律HOGEに置き換えるテスト用コンバータ -->
