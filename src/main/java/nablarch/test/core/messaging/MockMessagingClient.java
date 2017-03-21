@@ -43,7 +43,7 @@ public class MockMessagingClient implements MessageSenderClient {
     private String responseMessageFormatFileNamePattern = "%s" + "_RECEIVE";
 
     /** 文字セット */
-    private Charset charset;
+    private Charset charset = Charset.defaultCharset();
 
     @Override
     public SyncMessage sendSync(MessageSenderSettings settings,

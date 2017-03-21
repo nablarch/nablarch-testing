@@ -82,7 +82,7 @@ public class RequestTestingMessagingClient implements MessageSenderClient {
     private static final String ASSERT_AS_MAP_KEY = "messaging.assertAsMapFileType";
 
     /** 文字セット */
-    private Charset charset;
+    private Charset charset = Charset.defaultCharset();
 
     /**
      * リクエスト単体テスト時の初期化処理を行う。

@@ -15,6 +15,8 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import test.support.SystemRepositoryResource;
+
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.FieldDefinition;
 import nablarch.core.dataformat.LayoutDefinition;
@@ -30,7 +32,9 @@ import nablarch.fw.messaging.realtime.http.exception.HttpMessagingTimeoutExcepti
 import nablarch.test.core.file.TestDataConverter;
 import nablarch.test.support.log.app.OnMemoryLogWriter;
 
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 
@@ -40,15 +44,21 @@ import org.junit.Test;
  */
 public class MockMessagingClientTest {
 
+    @Rule
+    public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
+            "nablarch/test/core/messaging/web/web-component-configuration.xml");
+
     /** 初期化を行う */
     @Before
     public void setUp() throws Exception {
         OnMemoryLogWriter.clear();
+    }
+
+    /** 終了処理を行う。*/
+    @After
+    public void tearDown() throws Exception {
+        OnMemoryLogWriter.clear();
         SystemRepository.clear();
-        XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader("nablarch/test/core/messaging/web/web" +
-                "-component-configuration.xml");
-        DiContainer container = new DiContainer(loader);
-        SystemRepository.load(container);
     }
 
     /**
