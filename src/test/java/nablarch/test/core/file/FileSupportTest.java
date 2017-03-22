@@ -1,5 +1,25 @@
 package nablarch.test.core.file;
 
+import static nablarch.core.util.Builder.concat;
+import static nablarch.core.util.Builder.join;
+import static nablarch.core.util.Builder.lines;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.InvalidDataFormatException;
 import nablarch.core.dataformat.convertor.VariableLengthConvertorSetting;
@@ -14,6 +34,8 @@ import nablarch.test.TestSupport;
 import nablarch.test.Trap;
 import nablarch.test.core.file.SimpleWriter.LS;
 import nablarch.test.core.util.FileUtils;
+import nablarch.test.support.SystemRepositoryResource;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -21,27 +43,6 @@ import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import test.support.SystemRepositoryResource;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static junit.framework.Assert.assertTrue;
-import static nablarch.core.util.Builder.concat;
-import static nablarch.core.util.Builder.join;
-import static nablarch.core.util.Builder.lines;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.containsString;
 
 /**
  * @author T.Kawasaki

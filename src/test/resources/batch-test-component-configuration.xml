@@ -49,7 +49,7 @@
     
     <!-- ループ・トランザクション制御ハンドラ -->
     <component class="nablarch.fw.handler.LoopHandler">
-      <property name="transactionFactory" ref="transactionFactory" />
+      <property name="transactionFactory" ref="jdbcTransactionFactory" />
     </component>
 
     <!-- データリードハンドラ -->

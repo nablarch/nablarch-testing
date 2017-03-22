@@ -1,5 +1,9 @@
 package nablarch.test.tool.sanitizingcheck;
 
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -9,16 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import nablarch.test.support.tool.Hereis;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import nablarch.test.support.tool.Hereis;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.containsString;
 
 /**
  * サニタイジングチェックツールテスト
@@ -352,7 +352,7 @@ public class SanitizingCheckerTest {
      * 除外対象のディレクトリ配下のJSPはチェックされないこと。
      */
     @Test
-    public void testExcludePattern() {
+    public void testExcludePattern() throws Exception {
         // 設定ファイルを追加
         Hereis.file(configFile.getAbsolutePath());
         /*

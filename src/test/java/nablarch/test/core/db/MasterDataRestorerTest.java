@@ -16,12 +16,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.test.event.TestEventDispatcher;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.BeforeClass;
 import org.junit.ClassRule;

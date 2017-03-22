@@ -1,8 +1,8 @@
 package nablarch.test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.hasItems;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,10 +11,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
 
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
@@ -28,6 +24,9 @@ import nablarch.fw.Result;
 import nablarch.fw.handler.DataReadHandler;
 import nablarch.fw.reader.DatabaseRecordReader;
 import nablarch.fw.reader.DatabaseTableQueueReader;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.After;
 import org.junit.Before;
@@ -239,7 +238,7 @@ public class OneShotLoopHandlerTest {
         for (int i = 0; i < count; i++) {
             entity[i] = new InputTable(Long.valueOf(i + 1), "0");
         }
-        VariousDbTestHelper.insert(entity);
+        VariousDbTestHelper.insert((Object[]) entity);
     }
 
     @Entity

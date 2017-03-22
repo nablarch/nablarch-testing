@@ -4,10 +4,11 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import test.support.SystemRepositoryResource;
 
 import nablarch.core.dataformat.DataRecord;
 import nablarch.test.core.reader.DataType;
+import nablarch.test.support.SystemRepositoryResource;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 

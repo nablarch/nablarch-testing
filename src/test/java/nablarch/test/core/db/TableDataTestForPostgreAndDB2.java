@@ -17,14 +17,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.TargetDb;
-import test.support.db.helper.TargetDb.Db;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.core.util.BinaryUtil;
 import nablarch.test.RepositoryInitializer;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -38,9 +35,8 @@ import org.junit.runner.RunWith;
  * @author Hisaaki Sioiri
  */
 @RunWith(DatabaseTestRunner.class)
-@TargetDb(include = {Db.POSTGRE_SQL, Db.DB2})
 public class TableDataTestForPostgreAndDB2 {
-	
+
     @ClassRule
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
@@ -48,7 +44,7 @@ public class TableDataTestForPostgreAndDB2 {
     public static void beforeClass() {
         VariousDbTestHelper.createTable(TestTable.class);
     }
-    
+
     @Before
     public void before() {
         VariousDbTestHelper.delete(TestTable.class);
@@ -69,9 +65,11 @@ public class TableDataTestForPostgreAndDB2 {
 
         // INSERT文実行
         SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMdd HHmmss");
-        long longDate = formatDate.parse("20100830 012345").getTime();
+        long longDate = formatDate.parse("20100830 012345")
+                                  .getTime();
         VariousDbTestHelper.setUpTable(
-        		new TestTable("00001", 1L, "あいうえお", 1234567890L, new BigDecimal("1234567.123"), new Date(longDate), new Timestamp(longDateTime), null, "CLOBです0".toCharArray(), new byte[100], true));
+                new TestTable("00001", 1L, "あいうえお", 1234567890L, new BigDecimal("1234567.123"), new Date(longDate),
+                        new Timestamp(longDateTime), null, "CLOBです0".toCharArray(), new byte[100], true));
 
         // ターゲット実行
         TableData table = new TableData();
@@ -87,18 +85,22 @@ public class TableDataTestForPostgreAndDB2 {
         assertThat("NUMBER_COL", (Long) table.getValue(0, "number_col"), is(1234567890L));
         assertThat("NUMBER_COL2", (BigDecimal) table.getValue(0, "number_col2"), is(new BigDecimal("1234567.123")));
         assertThat("DATE_COL", (java.sql.Date) table.getValue(0, "date_col"), is(Date.valueOf("2010-08-30")));
-        assertThat("TIMESTAMP_COL", (java.sql.Timestamp) table.getValue(0, "timestamp_col"), is(Timestamp.valueOf("2010-08-30 01:23:45.678")));
+        assertThat("TIMESTAMP_COL", (java.sql.Timestamp) table.getValue(0, "timestamp_col"),
+                is(Timestamp.valueOf("2010-08-30 01:23:45.678")));
         assertThat("NULL_COL", table.getValue(0, "null_col"), nullValue());
         assertThat("CLOB_COL", (String) table.getValue(0, "clob_col"), is("CLOBです0"));
-        assertThat("BLOB_COL", (String) table.getValue(0, "blob_col"), is(BinaryUtil.convertToHexString(new byte[100])));
+        assertThat("BLOB_COL", (String) table.getValue(0, "blob_col"),
+                is(BinaryUtil.convertToHexString(new byte[100])));
         assertThat("BOOL_COL", (Boolean) table.getValue(0, "bool_col"), is(true));
     }
 
     @Test
     public void testLoadDataManyData() throws ParseException {
         VariousDbTestHelper.setUpTable(
-        		new TestTable("00002", 3L, "さしすせそ", 1L, new BigDecimal(10), new Date(0L), new Timestamp(0L), null, "CLOBです1".toCharArray(), "BLOBです1".getBytes(), true),
-        		new TestTable("00002", 1L, "かきくけこ", 2L, new BigDecimal(20), new Date(0L), new Timestamp(0L), "12345", "CLOBです2".toCharArray(), "BLOBです2".getBytes(), true));
+                new TestTable("00002", 3L, "さしすせそ", 1L, new BigDecimal(10), new Date(0L), new Timestamp(0L), null,
+                        "CLOBです1".toCharArray(), "BLOBです1".getBytes(), true),
+                new TestTable("00002", 1L, "かきくけこ", 2L, new BigDecimal(20), new Date(0L), new Timestamp(0L), "12345",
+                        "CLOBです2".toCharArray(), "BLOBです2".getBytes(), true));
 
         // ターゲット実行
         TableData table = new TableData();
@@ -112,15 +114,17 @@ public class TableDataTestForPostgreAndDB2 {
         assertThat("1件目:PK_COL1", (String) table.getValue(0, "pk_col1"), is("00002"));
         assertThat("1件目:PK_COL2", (Long) table.getValue(0, "pk_col2"), is(1L));
         assertThat("1件目:VARCHAR2_COL", (String) table.getValue(0, "varchar2_col"), is("かきくけこ"));
-        assertThat("1件目:CLOB_COL", (String)table.getValue(0, "clob_col"), is("CLOBです2"));
-        assertThat("1件目:BLOB_COL", (String)table.getValue(0, "blob_col"), is(BinaryUtil.convertToHexString("BLOBです2".getBytes())));
+        assertThat("1件目:CLOB_COL", (String) table.getValue(0, "clob_col"), is("CLOBです2"));
+        assertThat("1件目:BLOB_COL", (String) table.getValue(0, "blob_col"),
+                is(BinaryUtil.convertToHexString("BLOBです2".getBytes())));
         assertThat("1件目:BOOL_COL", (Boolean) table.getValue(0, "bool_col"), is(true));
 
         assertThat("2件目:PK_COL1", (String) table.getValue(1, "pk_col1"), is("00002"));
         assertThat("2件目:PK_COL2", (Long) table.getValue(1, "pk_col2"), is(3L));
         assertThat("2件目:VARCHAR2_COL", (String) table.getValue(1, "varchar2_col"), is("さしすせそ"));
-        assertThat("2件目:CLOB_COL", (String)table.getValue(1, "clob_col"), is("CLOBです1"));
-        assertThat("2件目:BLOB_COL", (String)table.getValue(1, "blob_col"), is(BinaryUtil.convertToHexString("BLOBです1".getBytes())));
+        assertThat("2件目:CLOB_COL", (String) table.getValue(1, "clob_col"), is("CLOBです1"));
+        assertThat("2件目:BLOB_COL", (String) table.getValue(1, "blob_col"),
+                is(BinaryUtil.convertToHexString("BLOBです1".getBytes())));
         assertThat("2件目:BOOL_COL", (Boolean) table.getValue(1, "bool_col"), is(true));
 
     }
@@ -136,7 +140,7 @@ public class TableDataTestForPostgreAndDB2 {
     public void testReplaceData() {
         TableData table = new TableData();
         table.setTableName("test_table");
-        table.setColumnNames(new String[]{"PK_COL1", "PK_COL2"});
+        table.setColumnNames(new String[] {"PK_COL1", "PK_COL2"});
         table.setDefaultValues(new MockDefaultValues());
         table.setDbInfo(repositoryResource.getComponentByType(DbInfo.class));
 
@@ -159,13 +163,14 @@ public class TableDataTestForPostgreAndDB2 {
         assertThat("Clob型項目の初期値は、ブランク", new String(result.get(0).clobCol), is(" "));
         assertThat("Blob型項目の初期値は、byte[10]", result.get(0).blobCol.length, is(10));
         assertThat("Boolean型項目の初期値は、false", result.get(0).boolCol, is(false));
-        
+
         // 複数件登録を実行
         table = new TableData();
         table.setTableName("test_table");
         table.setDbInfo(repositoryResource.getComponentByType(DbInfo.class));
-        table.setColumnNames(new String[]{
-                "PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL", "NUMBER_COL2", "DATE_COL", "TIMESTAMP_COL", "CLOB_COL", "BLOB_COL", "BOOL_COL"
+        table.setColumnNames(new String[] {
+                "PK_COL1", "PK_COL2", "VARCHAR2_COL", "NUMBER_COL", "NUMBER_COL2", "DATE_COL", "TIMESTAMP_COL",
+                "CLOB_COL", "BLOB_COL", "BOOL_COL"
         });
         ArrayList<String> row2 = new ArrayList<String>();
         row2.add("00001");
@@ -208,7 +213,7 @@ public class TableDataTestForPostgreAndDB2 {
         // DBデータの確認
         result = VariousDbTestHelper.findAll(TestTable.class, "pkCol1", "pkCol2");
         assertThat("3件登録されていること", result.size(), is(3));
-        
+
         assertThat(result.get(0).pkCol1, is("00001"));
         assertThat(result.get(0).pkCol2, is(1L));
         assertThat(result.get(0).varchar2Col, is("あ"));
@@ -219,7 +224,7 @@ public class TableDataTestForPostgreAndDB2 {
         assertThat(new String(result.get(0).clobCol), is("CLOBです1"));
         assertThat(result.get(0).blobCol.length, is("BLOBです1".getBytes().length));
         assertThat(result.get(0).boolCol, is(true));
-        
+
         assertThat(result.get(1).pkCol1, is("00001"));
         assertThat(result.get(1).pkCol2, is(2L));
         assertThat(result.get(1).varchar2Col, is("い"));
@@ -230,7 +235,7 @@ public class TableDataTestForPostgreAndDB2 {
         assertThat(new String(result.get(1).clobCol), is("CLOBです2"));
         assertThat(result.get(1).blobCol, is(nullValue()));
         assertThat(result.get(1).boolCol, is(true));
-        
+
         assertThat(result.get(2).pkCol1, is("00001"));
         assertThat(result.get(2).pkCol2, is(3L));
         assertThat(result.get(2).varchar2Col, is("う"));
@@ -273,7 +278,7 @@ public class TableDataTestForPostgreAndDB2 {
         assertNotNull(dbInfo);
         target.setDbInfo(dbInfo);
         target.setTableName("test_table");
-        target.setColumnNames(new String[]{"pk_col1", "pk_col2"});
+        target.setColumnNames(new String[] {"pk_col1", "pk_col2"});
         target.setDefaultValues(new MockDefaultValues());
         target.addRow(Arrays.asList("00001", "01"));
         // 省略されたカラムはnullである
@@ -300,7 +305,7 @@ public class TableDataTestForPostgreAndDB2 {
         assertNotNull(dbInfo);
         target.setDbInfo(dbInfo);
         target.setTableName("test_table");
-        target.setColumnNames(new String[]{"PK_COL1", "PK_COL2", "NULL_COL"});
+        target.setColumnNames(new String[] {"PK_COL1", "PK_COL2", "NULL_COL"});
         target.setDefaultValues(new BasicDefaultValues());
         target.addRow(Arrays.asList("00001", "01", null));
         target.replaceData();
@@ -317,7 +322,7 @@ public class TableDataTestForPostgreAndDB2 {
     @Test
     public void testInsertJdbcTimestampEscape() {
         TableData target = new TableData(repositoryResource.getComponentByType(DbInfo.class), "test_table",
-                                         new String[]{"pk_col1", "pk_col2", "timestamp_col"});
+                new String[] {"pk_col1", "pk_col2", "timestamp_col"});
         target.setDefaultValues(new MockDefaultValues());
         target.addRow(Arrays.asList("00001", "1", "2000-01-01 12:34:56.0"));
         target.replaceData();
@@ -332,7 +337,7 @@ public class TableDataTestForPostgreAndDB2 {
     @Test
     public void testInsertyyyyMMddhhmmssS() {
         TableData target = new TableData(repositoryResource.getComponentByType(DbInfo.class), "test_table",
-                                         new String[]{"pk_col1", "pk_col2", "timestamp_col"});
+                new String[] {"pk_col1", "pk_col2", "timestamp_col"});
         target.setDefaultValues(new MockDefaultValues());
         target.setDefaultValues(new MockDefaultValues());
         target.addRow(Arrays.asList("00001", "1", "200001011234560"));

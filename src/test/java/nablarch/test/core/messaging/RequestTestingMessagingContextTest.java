@@ -3,11 +3,11 @@ package nablarch.test.core.messaging;
 import org.junit.Rule;
 import org.junit.Test;
 
-import test.support.SystemRepositoryResource;
-
 import nablarch.test.Trap;
 import nablarch.test.core.batch.BatchRequestTestSupport;
 import nablarch.test.core.messaging.RequestTestingMessagingProvider.RequestTestingMessagingContext;
+import nablarch.test.support.SystemRepositoryResource;
+
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.internal.matchers.StringContains.containsString;
@@ -18,9 +18,9 @@ import static org.junit.internal.matchers.StringContains.containsString;
  * @author T.Kawasaki
  */
 public class RequestTestingMessagingContextTest extends BatchRequestTestSupport {
-	
-	@Rule
-	public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
+
+    @Rule
+    public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
     /**
      * EXPECTED_REQUEST_HEADER_MESSAGESがテストデータに存在しない場合、

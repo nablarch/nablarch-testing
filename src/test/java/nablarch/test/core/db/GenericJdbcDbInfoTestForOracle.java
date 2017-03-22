@@ -7,33 +7,29 @@ import java.sql.Types;
 
 import org.junit.Test;
 
-import test.support.db.helper.TargetDb;
-import test.support.db.helper.TargetDb.Db;
-
 /**
  * {@link nablarch.test.core.db.GenericJdbcDbInfo}のテスト。
  *
  * @author T.Kawasaki
  */
-@TargetDb(include = Db.ORACLE)
 public class GenericJdbcDbInfoTestForOracle extends GenericJdbcDbInfoTestBase {
 
     /** テーブルを準備する。 */
     @Override
     protected void prepareTable() {
-    	
-    	try {
-	        executeQuietly("drop table non_pk");
-	        executeQuietly("drop table one_pk");
-	        executeQuietly("drop table multi_pk");
-	        executeQuietly("drop table unique_index");
-	        executeQuietly("drop index idx_unq_1");
-	        executeQuietly("drop index idx_unq_2");
-    	} catch (Exception e) {
-    		// NOP
-    	}
-    	
-    	executeQuietly(
+
+        try {
+            executeQuietly("drop table non_pk");
+            executeQuietly("drop table one_pk");
+            executeQuietly("drop table multi_pk");
+            executeQuietly("drop table unique_index");
+            executeQuietly("drop index idx_unq_1");
+            executeQuietly("drop index idx_unq_2");
+        } catch (Exception e) {
+            // NOP
+        }
+
+        executeQuietly(
                 "create table non_pk ("
                         + " char_col char(10) not null,"
                         + " varchar_col varchar2(2000) not null,"
@@ -42,27 +38,27 @@ public class GenericJdbcDbInfoTestForOracle extends GenericJdbcDbInfoTestBase {
                         + " blob_col blob not null,"
                         + " date_col date not null,"
                         + " timestamp_col timestamp not null)");
-    	executeQuietly(
+        executeQuietly(
                 "create table one_pk ("
                         + " pk_col char(10) not null,"
                         + " not_pk1 char(1) not null,"
                         + " not_pk2 number(1) not null,"
                         + " primary key(pk_col))");
-    	executeQuietly(
+        executeQuietly(
                 "create table multi_pk ("
                         + " pk_col1 char(10) not null,"
                         + " pk_col2 char(5) not null,"
                         + " pk_col3 char(1) not null,"
                         + " primary key(pk_col1, pk_col2, pk_col3))");
-    	executeQuietly(
+        executeQuietly(
                 "create table unique_index ("
                         + " pk_col char(1) not null,"
                         + " unq_1 char(10) not null,"
                         + " unq_2_1 char(5) not null,"
                         + " unq_2_2 char(1) not null,"
                         + " primary key(pk_col))");
-    	executeQuietly("create unique index idx_unq_1 on unique_index (unq_1)");
-    	executeQuietly("create unique index idx_unq_2 on unique_index (unq_2_1, unq_2_2)");
+        executeQuietly("create unique index idx_unq_1 on unique_index (unq_1)");
+        executeQuietly("create unique index idx_unq_2 on unique_index (unq_2_1, unq_2_2)");
     }
 
     /**
@@ -83,7 +79,7 @@ public class GenericJdbcDbInfoTestForOracle extends GenericJdbcDbInfoTestBase {
         assertThat(dbInfo.getColumnType("non_pk", "blob_col"), is(java.sql.Types.BLOB));
         // date
         // oracle5　からDATE型はjava.sql.Timestampにマッピングされる。
-        assertThat(dbInfo.getColumnType("non_pk", "date_col"), is(Types.TIMESTAMP));
+        assertThat(dbInfo.getColumnType("non_pk", "date_col"), is(Types.DATE));
         // timestamp
         assertThat(dbInfo.getColumnType("non_pk", "timestamp_col"), is(java.sql.Types.TIMESTAMP));
     }

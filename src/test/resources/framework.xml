@@ -4,6 +4,18 @@
                          xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./component-configuration.xsd">
 
   <import file="db-default.xml"/>
+  
+  <component class="nablarch.core.db.transaction.SimpleDbTransactionManager" name="testTran">
+    <property name="dbTransactionName" value="test" />
+    <property name="connectionFactory" ref="connectionFactory" />
+    <property name="transactionFactory" ref="jdbcTransactionFactory" />
+  </component>
+  
+  <component name="testFwTran" class="nablarch.core.db.transaction.SimpleDbTransactionManager">
+    <property name="dbTransactionName" value="test-fw"/>
+    <property name="connectionFactory" ref="connectionFactory" />
+    <property name="transactionFactory" ref="jdbcTransactionFactory" />
+  </component>
 
   <!-- dbInfo -->
   <component name="dbInfo" class="nablarch.test.core.db.GenericJdbcDbInfo">
@@ -20,7 +32,6 @@
   <component name="initializer" class="nablarch.core.repository.initialization.BasicApplicationInitializer">
     <property name="initializeList">
       <list>
-        <component-ref name="fieldAnnotationCache"/>
         <component-ref name="validationManager"/>
         <component-ref name="formDefinitionCache"/>
         <component-ref name="japaneseCharacterChecker"/>

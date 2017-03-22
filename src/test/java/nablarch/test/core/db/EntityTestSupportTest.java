@@ -8,12 +8,11 @@ import java.util.Map;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.validation.validator.Required;
 import nablarch.test.Trap;
+import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-
-import test.support.SystemRepositoryResource;
 
 /**
  * {@link EntityTestSupport}のテストクラス。
@@ -21,14 +20,14 @@ import test.support.SystemRepositoryResource;
  * @author hisaaki sioiri
  */
 public class EntityTestSupportTest {
-	
+
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
-    
+
     /** テスト対象 */
     private EntityTestSupport support = new EntityTestSupport(getClass());
 
-    private static final String[][] MESSAGES = {{ "MSG00010", "ja", "message", "en", "message" }};
+    private static final String[][] MESSAGES = {{"MSG00010", "ja", "message", "en", "message"}};
 
     /** {@link EntityTestSupport#testSetterAndGetter(java.lang.Class, java.lang.String, java.lang.String)}のテスト。 */
     @Test
@@ -52,8 +51,9 @@ public class EntityTestSupportTest {
      */
     @Test
     public void testTestValidateAndConvert() {
-    	repositoryResource.getComponentByType(MockStringResourceHolder.class).setMessages(MESSAGES);
-        
+        repositoryResource.getComponentByType(MockStringResourceHolder.class)
+                          .setMessages(MESSAGES);
+
         support.testValidateAndConvert(FugaEntity.class, "testValidateAndConvert", null);
     }
 
@@ -75,7 +75,7 @@ public class EntityTestSupportTest {
             @Override
             protected void shouldFail() throws Exception {
                 support.testValidateAndConvert(FugaEntity.class,
-                                               "testValidateAndConvertFail", null);
+                        "testValidateAndConvertFail", null);
             }
         }.capture(IllegalArgumentException.class)
          .whichMessageContains("'testCases' has 4 line(s). but 'params' has 3.");
@@ -137,21 +137,24 @@ public class EntityTestSupportTest {
         new Trap("引数なしコンストラクタがプライベートの場合") {
             @Override
             protected void shouldFail() throws Exception {
-                support.testConstructorAndGetter(PrivateConstructorEntity.class, "testPrivateConstructorEntity", "entity");
+                support.testConstructorAndGetter(PrivateConstructorEntity.class, "testPrivateConstructorEntity",
+                        "entity");
             }
         }.capture(RuntimeException.class)
-        .whichMessageContains("failed to instantiate the class.");
+         .whichMessageContains("failed to instantiate the class.");
         new Trap("Map引数のコンストラクタがプライベートの場合") {
             @Override
             protected void shouldFail() throws Exception {
-                support.testConstructorAndGetter(PrivateMapConstructorEntity.class, "testPrivateConstructorEntity", "entity");
+                support.testConstructorAndGetter(PrivateMapConstructorEntity.class, "testPrivateConstructorEntity",
+                        "entity");
             }
         }.capture(RuntimeException.class)
-                .whichMessageContains("failed to instantiate the class.");
+         .whichMessageContains("failed to instantiate the class.");
         new Trap("Map引数のコンストラクタで例外が発生する場合") {
             @Override
             protected void shouldFail() throws Exception {
-                support.testConstructorAndGetter(ExceptionMapConstructorEntity.class, "testPrivateConstructorEntity", "entity");
+                support.testConstructorAndGetter(ExceptionMapConstructorEntity.class, "testPrivateConstructorEntity",
+                        "entity");
             }
         }.capture(RuntimeException.class)
          .whichMessageContains("failed to instantiate the class.");
@@ -184,11 +187,11 @@ public class EntityTestSupportTest {
             }
         }.capture(RuntimeException.class)
          .whichMessageContains("getter is not found. getter name=[].",
-                               "please make sure \"name\" column is valid.",
-                               "sheet=[testInvalidInput] id=[entity] row=[2]."
+                 "please make sure \"name\" column is valid.",
+                 "sheet=[testInvalidInput] id=[entity] row=[2]."
          );
     }
-    
+
     /**
      * Excelシートで記載されている値が、エラーになった場合のログ確認。
      */
@@ -203,37 +206,51 @@ public class EntityTestSupportTest {
          .whichMessageContains("getter is not found. getter name=[] sheet=[testInvalidInput] id=[entity] row=[2].");
     }
 
-    
+
     public static class PrivateConstructorEntity {
+
         private String userName;
+
         private PrivateConstructorEntity() {
         }
+
         public String getUserName() {
             return userName;
         }
+
         public void setUserName(String userName) {
             this.userName = userName;
         }
     }
+
     public static class PrivateMapConstructorEntity {
+
         private String userName;
+
         private PrivateMapConstructorEntity(Map<String, Object> map) {
         }
+
         public String getUserName() {
             return userName;
         }
+
         public void setUserName(String userName) {
             this.userName = userName;
         }
     }
+
     public static class ExceptionMapConstructorEntity {
+
         private String userName;
+
         public ExceptionMapConstructorEntity(Map<String, Object> map) {
             throw new RuntimeException("exception occurred.");
         }
+
         public String getUserName() {
             return userName;
         }
+
         public void setUserName(String userName) {
             this.userName = userName;
         }
@@ -258,20 +275,35 @@ public class EntityTestSupportTest {
     }
 
     public static class HogeEntity {
+
         private String userName;
+
         private String[] userNames;
+
         private Integer updateCount;
+
         private Integer[] updateCounts;
+
         private BigDecimal rate;
+
         private BigDecimal[] rates;
+
         private Long amt;
+
         private Long[] amts;
+
         private String hoge2;
+
         private java.sql.Date newDate;
+
         private java.sql.Date[] newDates;
+
         private Timestamp newTimestamp;
+
         private Timestamp[] newTimestamps;
+
         private String postNoOya;
+
         private String postNoKo;
 
         public HogeEntity() {
@@ -430,6 +462,7 @@ public class EntityTestSupportTest {
     }
 
     public static class HogeChild2 extends HogeEntity {
+
         public HogeChild2() {
         }
     }

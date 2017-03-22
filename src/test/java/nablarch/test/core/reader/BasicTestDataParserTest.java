@@ -1,6 +1,7 @@
 package nablarch.test.core.reader;
 
 import static nablarch.test.TestUtil.assertMatches;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.arrayContaining;
@@ -21,14 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.core.util.BinaryUtil;
 import nablarch.core.util.FileUtil;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -689,7 +689,7 @@ public class BasicTestDataParserTest {
                 .toString(), is(" "));
         assertThat(actual1.getValue(0, "BLOB_COL")
                 .toString(), is(BinaryUtil.convertToHexString(new byte[10])));
-        assertThat(actual1.getValue(0, "BOOL_COL").toString(), is("0"));
+        assertThat(actual1.getValue(0, "BOOL_COL").toString(), anyOf(is("0"), is("false")));
 
         TableData actual2 = actualList.get(1);
         assertThat(actual2.getTableName(), is("TEST_TABLE"));
@@ -725,7 +725,7 @@ public class BasicTestDataParserTest {
                 .toString(), is(" "));
         assertThat(actual2.getValue(0, "BLOB_COL")
                 .toString(), is(BinaryUtil.convertToHexString(new byte[10])));
-        assertThat(actual2.getValue(0, "BOOL_COL").toString(), is("0"));
+        assertThat(actual2.getValue(0, "BOOL_COL").toString(), anyOf(is("0"), is("false")));
 
     }
 

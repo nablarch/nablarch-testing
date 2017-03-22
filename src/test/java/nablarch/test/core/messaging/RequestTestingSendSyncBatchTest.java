@@ -4,11 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import nablarch.test.core.batch.BatchRequestTestSupport;
+import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.Test;
-import test.support.SystemRepositoryResource;
 
 /**
  * バッチ処理でメッセージ同期送信を行うテスト。

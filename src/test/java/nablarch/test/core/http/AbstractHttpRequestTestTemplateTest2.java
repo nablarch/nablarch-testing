@@ -1,20 +1,18 @@
 package nablarch.test.core.http;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
-import test.support.SystemRepositoryResource;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
 
 import nablarch.fw.ExecutionContext;
 import nablarch.fw.web.HttpRequest;
 import nablarch.fw.web.HttpRequestHandler;
 import nablarch.fw.web.HttpResponse;
-import nablarch.test.RepositoryInitializer;
+import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.tool.Hereis;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 /**
  * {@link AbstractHttpRequestTestTemplate}のテストクラス。
@@ -22,14 +20,14 @@ import static org.junit.Assert.assertThat;
  * @author T.Kawasaki
  */
 public class AbstractHttpRequestTestTemplateTest2 {
-	
-	@Rule
-	public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
-			"nablarch/test/core/http/http-test-configuration.xml");
-	
+
+    @Rule
+    public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
+            "nablarch/test/core/http/http-test-configuration.xml");
+
     @Before
     public void setUp() {
-    	HttpRequestTestSupport.resetHttpServer();
+        HttpRequestTestSupport.resetHttpServer();
     }
 
     /**
@@ -52,8 +50,10 @@ public class AbstractHttpRequestTestTemplateTest2 {
                 req.setParam("foo", "modified");
 
                 // Cookieをリクエストスコープに移送
-                ctx.setRequestScopedVar("requestScopeLang", req.getCookie().get("lang"));
-                ctx.setRequestScopedVar("requestScopeHoge", req.getCookie().get("cookieHoge"));
+                ctx.setRequestScopedVar("requestScopeLang", req.getCookie()
+                                                               .get("lang"));
+                ctx.setRequestScopedVar("requestScopeHoge", req.getCookie()
+                                                               .get("cookieHoge"));
 
                 // ボディを設定する。
                 String body = Hereis.string();
@@ -65,7 +65,8 @@ public class AbstractHttpRequestTestTemplateTest2 {
                 HttpResponse res = new HttpResponse().write(body); // 200 OK
 
                 // ステータスコードを移送
-                HttpRequestTestSupport.getTestSupportHandler().setStatusCode(res.getStatusCode());
+                HttpRequestTestSupport.getTestSupportHandler()
+                                      .setStatusCode(res.getStatusCode());
 
                 return res;
             }
@@ -80,8 +81,10 @@ public class AbstractHttpRequestTestTemplateTest2 {
                 // リクエストパラメータに新たな値は設定されていないこと
                 HttpRequest request = testCaseInfo.getHttpRequest();
                 assertThat(request.getParam("foo")[0], is("original"));
-                assertThat(request.getCookie().get("lang"), is("en"));
-                assertThat(request.getCookie().get("cookieHoge"), is("hoge-value"));
+                assertThat(request.getCookie()
+                                  .get("lang"), is("en"));
+                assertThat(request.getCookie()
+                                  .get("cookieHoge"), is("hoge-value"));
             }
 
             /** 実行後のコールバック */

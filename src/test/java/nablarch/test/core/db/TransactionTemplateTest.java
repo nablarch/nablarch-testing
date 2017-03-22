@@ -3,14 +3,13 @@ package nablarch.test.core.db;
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.exception.SqlStatementException;
 import nablarch.core.db.transaction.SimpleDbTransactionManager;
+import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Rule;
 import org.junit.Test;
 
-import test.support.SystemRepositoryResource;
-
 public class TransactionTemplateTest {
-	
+
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
     

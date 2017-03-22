@@ -15,8 +15,8 @@ import nablarch.fw.web.MockHttpRequest;
 import nablarch.fw.web.handler.HttpErrorHandler;
 import nablarch.test.support.tool.Hereis;
 
+import org.junit.Assert;
 import org.junit.Test;
-import junit.framework.Assert;
 
 /**
  * @author T.Kawasaki
@@ -87,7 +87,7 @@ public class ServletForwardVerifierTest {
         })).handleNext(new MockHttpRequest());
         try {
             target.verifyForward("/path/to/forward.do");
-            Assert.fail();
+            fail();
         } catch (Throwable e) {
             assertEquals(AssertionError.class, e.getClass());
         } 

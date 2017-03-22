@@ -1,10 +1,10 @@
 package nablarch.test.core.db;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.containsString;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -13,12 +13,12 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.core.db.transaction.SimpleDbTransactionManager;
 import nablarch.test.Trap;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -267,7 +267,8 @@ public class DbAccessTestSupportTest {
      * FK違反エラーが発生すること。
      */
     @Test
-    public void testSetUpDbOnInvalidExcel() {
+    @TargetDb(include = TargetDb.Db.ORACLE)
+    public void testSetUpDbOnInvalidExcel_Oracle() {
 
         repositoryResource.addComponent("nablarch.suppress-table-sort", "true");
         TableDataSorterTest.createFKTables();
@@ -281,5 +282,37 @@ public class DbAccessTestSupportTest {
             assertThat(cause.getErrorCode(), is(2291));
         }
     }
+    
+    @Test
+    @TargetDb(include = TargetDb.Db.H2)
+    public void testSetUpDbOnInvalidExcel_H2() {
 
+        repositoryResource.addComponent("nablarch.suppress-table-sort", "true");
+        TableDataSorterTest.createFKTables();
+
+        // CREATE TABLE直後
+        try {
+            target.setUpDb("testSetUpDbOnInvalidExcel");
+            fail("FK違反エラーが発生する");
+        } catch (RuntimeException e) {
+            SQLException cause = (SQLException) e.getCause();
+            assertThat(cause.getErrorCode(), is(23506));
+        }
+    }
+    
+    @Test
+    public void testSetUpDbOnInvalidExcel_Postgres() {
+
+        repositoryResource.addComponent("nablarch.suppress-table-sort", "true");
+        TableDataSorterTest.createFKTables();
+
+        // CREATE TABLE直後
+        try {
+            target.setUpDb("testSetUpDbOnInvalidExcel");
+            fail("FK違反エラーが発生する");
+        } catch (RuntimeException e) {
+            SQLException cause = (SQLException) e.getCause();
+            assertThat(cause.getSQLState(), is("23503"));
+        }
+    }
 }
