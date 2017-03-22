@@ -173,9 +173,7 @@
     <property name="initializeList">
       <list>
         <component-ref name="processStopHandler" />
-        <component-ref name="fieldAnnotationCache" />
         <component-ref name="idGenerator" />
-        <component-ref name="statementValueObjectCache" />
       </list>
     </property>
   </component>

@@ -7,11 +7,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.test.core.db.MasterDataRestorer.SqlLogWatchingFormatter;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

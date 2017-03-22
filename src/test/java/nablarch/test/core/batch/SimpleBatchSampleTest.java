@@ -1,14 +1,14 @@
 package nablarch.test.core.batch;
 
 
+import nablarch.test.support.SystemRepositoryResource;
+
 import org.junit.Rule;
 import org.junit.Test;
 
-import test.support.SystemRepositoryResource;
-
 /** {@link SimpleBatchSample}のテストクラス。 */
 public class SimpleBatchSampleTest extends BatchRequestTestSupport {
-	
+
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 

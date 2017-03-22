@@ -5,33 +5,29 @@ import static org.junit.Assert.assertThat;
 
 import org.junit.Test;
 
-import test.support.db.helper.TargetDb;
-import test.support.db.helper.TargetDb.Db;
-
 
 /**
  * {@link nablarch.test.core.db.GenericJdbcDbInfo}のテスト。
  *
  * @author Hisaaki Sioiri
  */
-@TargetDb(include = Db.DB2)
 public class GenericJdbcDbInfoTestForDb2 extends GenericJdbcDbInfoTestBase {
-	
+
     /** テーブルを準備する。 */
     @Override
     protected void prepareTable() {
-    	
-    	try {
-	    	executeQuietly("drop table non_pk");
-	        executeQuietly("drop table one_pk");
-	        executeQuietly("drop table multi_pk");
-	        executeQuietly("drop table unique_index");
-	        executeQuietly("drop index idx_unq_1");
-	        executeQuietly("drop index idx_unq_2");
-    	} catch (Exception e) {
-    		// NOP
-    	}
-        
+
+        try {
+            executeQuietly("drop table non_pk");
+            executeQuietly("drop table one_pk");
+            executeQuietly("drop table multi_pk");
+            executeQuietly("drop table unique_index");
+            executeQuietly("drop index idx_unq_1");
+            executeQuietly("drop index idx_unq_2");
+        } catch (Exception e) {
+            // NOP
+        }
+
         executeQuietly(
                 "create table non_pk ("
                         + " char_col char(10) not null,"

@@ -2,19 +2,26 @@ package nablarch.test.core.db;
 
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-import static org.junit.matchers.JUnitMatchers.containsString;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
-import mockit.Expectations;
-import mockit.Mocked;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.repository.SystemRepository;
 import nablarch.test.RepositoryInitializer;
 import nablarch.test.SystemPropertyResource;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.After;
 import org.junit.Before;
@@ -23,9 +30,8 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
+import mockit.Expectations;
+import mockit.Mocked;
 
 /**
  * {@link TableDataSorter}のテストクラス。

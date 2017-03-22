@@ -1,10 +1,15 @@
 package nablarch.test.core.http;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.*;
-import static org.junit.matchers.JUnitMatchers.containsString;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,22 +19,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Lob;
+import javax.persistence.Table;
 
-import mockit.Mocked;
 import nablarch.common.web.session.SessionStoreHandler;
 import nablarch.common.web.session.SessionUtil;
 import nablarch.common.web.session.store.DbStore;
-import nablarch.core.date.SystemTimeProvider;
-import nablarch.fw.web.*;
-import org.junit.*;
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.common.web.token.TokenUtil;
+import nablarch.core.date.SystemTimeProvider;
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.SqlPStatement;
 import nablarch.core.db.statement.SqlResultSet;
@@ -41,6 +46,11 @@ import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.fw.ExecutionContext;
 import nablarch.fw.Handler;
+import nablarch.fw.web.HttpRequest;
+import nablarch.fw.web.HttpResponse;
+import nablarch.fw.web.HttpServer;
+import nablarch.fw.web.MockHttpRequest;
+import nablarch.fw.web.ResourceLocator;
 import nablarch.fw.web.handler.SessionConcurrentAccessHandler;
 import nablarch.fw.web.handler.SessionConcurrentAccessHandler.ConcurrentAccessPolicy;
 import nablarch.fw.web.upload.PartInfo;
@@ -50,12 +60,24 @@ import nablarch.test.RepositoryInitializer;
 import nablarch.test.TestUtil;
 import nablarch.test.Trap;
 import nablarch.test.core.db.DbAccessTestSupport;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+import nablarch.test.support.tool.Hereis;
 import nablarch.test.tool.htmlcheck.HtmlChecker;
 import nablarch.test.tool.htmlcheck.InvalidHtmlException;
-import nablarch.test.support.tool.Hereis;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ComparisonFailure;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+
+import mockit.Mocked;
 
 /**
  * {@link HttpRequestTestSupport}のテストクラス
@@ -1266,7 +1288,7 @@ public class HttpRequestTestSupportTest {
         // HTTPパラメータの元ネタを作成（テストデータで書いたもの）
         Map<String, String[]> params = new HashMap<String, String[]>();
         // 添付ファイル
-        params.put("upload_file", new String[] {"${attach:src/test/java/MASTER_DATA.xls}", "${attach:src/test/resources/db.config}"});
+        params.put("upload_file", new String[] {"${attach:src/test/java/MASTER_DATA.xls}", "${attach:src/test/resources/unit-test.config}"});
         // 添付ファイル以外のパラメータ
         params.put("hoge", new String[] {"fuga1", "fuga2"});
 
@@ -1287,7 +1309,7 @@ public class HttpRequestTestSupportTest {
 
         {
             PartInfo partInfo = uploadFiles.get(1);
-            assertThat(partInfo.getFileName(), is("db.config"));       // ファイル名が抽出されていること
+            assertThat(partInfo.getFileName(), is("unit-test.config"));       // ファイル名が抽出されていること
             assertThat(partInfo.size(), is(not(0)));                     // ファイルサイズが設定されていること
         }
 
@@ -1295,7 +1317,7 @@ public class HttpRequestTestSupportTest {
         String[] uploadFileParams = params.get("upload_file");
         assertThat(uploadFileParams.length, is(2));
         assertThat(uploadFileParams[0], is("MASTER_DATA.xls"));
-        assertThat(uploadFileParams[1], is("db.config"));
+        assertThat(uploadFileParams[1], is("unit-test.config"));
 
         // アップロード以外のパラメータが設定されていること
         String[] hoge = params.get("hoge");

@@ -1,7 +1,8 @@
 package nablarch.test.core.http;
 
-import org.junit.After;
-import org.junit.Test;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import nablarch.fw.ExecutionContext;
 import nablarch.fw.web.HttpRequest;
@@ -9,9 +10,8 @@ import nablarch.fw.web.HttpResponse;
 import nablarch.fw.web.HttpServer;
 import nablarch.test.RepositoryInitializer;
 
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.containsString;
+import org.junit.After;
+import org.junit.Test;
 
 /**
  * {@link BasicHttpRequestTestTemplate}のテストクラス。

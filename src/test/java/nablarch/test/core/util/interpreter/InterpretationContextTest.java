@@ -1,15 +1,14 @@
 package nablarch.test.core.util.interpreter;
 
-import org.junit.Test;
-
-import nablarch.test.core.util.interpreter.InterpretationContext.InterpretationFailedException;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.containsString;
+
+import nablarch.test.core.util.interpreter.InterpretationContext.InterpretationFailedException;
+
+import org.junit.Test;
 
 /**
  * {@link InterpretationContextTest}のテストクラス。

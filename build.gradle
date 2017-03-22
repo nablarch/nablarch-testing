@@ -59,9 +59,11 @@ dependencies {
   // ※コンポーネント定義ファイルに定義した場合は、プロジェクトのpom(build.gradle)に依存ライブラリとして追加されているはずなので、
   // nablarch-testingの依存ライブラリとする必要はない
   compile "com.nablarch.framework:nablarch-common-dao:${nablarchCommonDaoVersion}"
-  compile "com.nablarch.framework:nablarch-fw-web-extension:${nablarchFwWebExtensionVersion}"
+  compile("com.nablarch.framework:nablarch-fw-web-extension:${nablarchFwWebExtensionVersion}") {
+    exclude module: 'nablarch-core-dataformat'
+  }
 
-  mock('org.jmockit:jmockit:1.13')
+  mock('org.jmockit:jmockit:1.30')
   provided "com.nablarch.framework:nablarch-fw-standalone:${nablarchFwStandaloneVersion}"
   provided "com.nablarch.framework:nablarch-fw-messaging-mom:${nablarchFwMessagingMomVersion}"
   provided "com.nablarch.framework:nablarch-fw-messaging-http:${nablarchFwMessagingHttpVersion}"
@@ -91,18 +93,10 @@ dependencies {
 
   testCompile 'org.hamcrest:hamcrest-all:1.3'
 
-  // JDBC Drivers
-  testCompile (group: 'com.oracle', name: 'ojdbc6', version: '11.2.0.4.0')
-  testCompile (group: 'com.oracle', name: 'ucp', version: '11.2.0.3.0')
-  testRuntime (group: 'com.ibm', name: 'db2jcc4', version: '9.7.200.358')
-  testRuntime (group: 'org.postgresql', name: 'postgresql', version: '9.4-1201-jdbc4')
-  testRuntime (group: 'com.microsoft', name: 'sqljdbc4', version: '4.0')
-
   // JPA
   testCompile (group: 'org.eclipse.persistence', name: 'eclipselink', version: '2.5.1')
 
   // HereIs
-  testCompile 'com.nablarch.dev:nablarch-test-support-hereis:1.0.0'
   testCompile (group: 'com.nablarch.tool', name: 'nablarch-toolbox', version: '1.0.2')
   testRuntime files("${projectDir}/src/test/java/")
   

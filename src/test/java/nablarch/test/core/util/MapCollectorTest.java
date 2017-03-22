@@ -7,10 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 
 /**

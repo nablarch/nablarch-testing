@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
