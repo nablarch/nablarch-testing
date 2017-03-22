@@ -315,7 +315,7 @@ public class MockMessagingClientTest {
                 + "<mailAddress>a@a.com</mailAddress><extensionNumberBuilding>2</extensionNumberBuilding>"
                 + "<extensionNumberPersonal>3</extensionNumberPersonal></request>";
         //Charset指定なしのログがデフォルトでエンコードされることを確認
-        String body =  new String(expected.getBytes(Charset.defaultCharset()));
+        String body =  new String(expected.getBytes(Charset.forName("UTF-8")));
         assertLogWithCount(createMessagePattern(body), 1);
     }
 

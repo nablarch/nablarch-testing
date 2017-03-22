@@ -185,8 +185,8 @@ public class RequestTestingMessagingClientTest {
 
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        // iso-8859-1のログメッセージを生成する。
-        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), Charset.forName("iso-8859-1")));
+        // UTF-8のログメッセージを生成する。
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), Charset.forName("UTF-8")));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -222,8 +222,8 @@ public class RequestTestingMessagingClientTest {
 
         Map<String, String> logInfo = new HashMap<String, String>();
         logInfo.put("logLevel", "INFO");
-        // iso-8859-1のログメッセージを生成する。
-        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), Charset.forName("iso-8859-1")));
+        // UTF-8のログメッセージを生成する。
+        logInfo.put("message1", MessagingLogUtil.getHttpSentMessageLog(getSendingMessage(request), Charset.forName("UTF-8")));
         List<Map<String,String>> expectedLog = Arrays.asList(logInfo);
 
         RequestTestingMessagingClient.clearSendingMessageCache();
