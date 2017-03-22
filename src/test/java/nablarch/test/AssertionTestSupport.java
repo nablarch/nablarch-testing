@@ -1,13 +1,13 @@
 package nablarch.test;
 
 
-import static junit.framework.Assert.assertEquals;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalToIgnoringCase;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.containsString;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import nablarch.test.core.db.BigDecimalTable;
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.SqlPStatement;
@@ -32,11 +27,15 @@ import nablarch.core.db.statement.SqlResultSet;
 import nablarch.core.db.statement.SqlRow;
 import nablarch.core.util.BinaryUtil;
 import nablarch.test.Assertion.AsString;
+import nablarch.test.core.db.BigDecimalTable;
 import nablarch.test.core.db.DbAccessTestSupport;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.core.db.TransactionTemplate;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Before;
 import org.junit.BeforeClass;

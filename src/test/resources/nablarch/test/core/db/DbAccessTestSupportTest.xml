@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
-                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../fw/trunk/main/resources/component-configuration.xsd">
-    <import file="unit-test.xml"/>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../fw/trunk/main/resources/component-configuration.xsd">
+  <import file="unit-test.xml" />
 
-    <config-file file="nablarch/test/core/db/DbAccessTestSupportTest.config"/>
+  <config-file file="nablarch/test/core/db/DbAccessTestSupportTest.config" />
 
-    <!-- DbManagerの設定 -->
-    <component name="tranA" class="nablarch.core.db.transaction.SimpleDbTransactionManager">
-        <property name="dbTransactionName" value="tran-a"/>
-    </component>
+  <!-- DbManagerの設定 -->
+  <component name="tranA" class="nablarch.core.db.transaction.SimpleDbTransactionManager">
+    <property name="dbTransactionName" value="tran-a" />
+    <property name="connectionFactory" ref="connectionFactory" />
+    <property name="transactionFactory" ref="jdbcTransactionFactory" />
+  </component>
 
-    <component name="tranB" class="nablarch.core.db.transaction.SimpleDbTransactionManager">
-        <property name="dbTransactionName" value="tran-b"/>
-    </component>
+  <component name="tranB" class="nablarch.core.db.transaction.SimpleDbTransactionManager">
+    <property name="dbTransactionName" value="tran-b" />
+    <property name="connectionFactory" ref="connectionFactory" />
+    <property name="transactionFactory" ref="jdbcTransactionFactory" />
+  </component>
+  
+  <component class="nablarch.core.db.transaction.JdbcTransactionFactory" name="transactionFactory">
+    <property name="isolationLevel" value="READ_COMMITTED" />
+  </component>
 </component-configuration>

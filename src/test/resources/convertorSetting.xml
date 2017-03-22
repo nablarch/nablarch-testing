@@ -5,6 +5,9 @@
     xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration">
 
   <!-- FormatterFactoryの設定 -->
+  <component class="nablarch.core.dataformat.FormatterFactory" name="formatterFactory">
+    <property name="cacheLayoutFileDefinition" value="false" />
+  </component>
   <component name="fixedLengthConvertorSetting"
       class="nablarch.core.dataformat.convertor.FixedLengthConvertorSetting">
       <property name="convertorTable">

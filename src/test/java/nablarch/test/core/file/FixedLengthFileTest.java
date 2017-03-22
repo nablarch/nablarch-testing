@@ -10,14 +10,13 @@ import nablarch.test.RepositoryInitializer;
 import nablarch.test.Trap;
 import nablarch.test.support.tool.Hereis;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Map;
-
-import junit.framework.Assert;
 
 import static org.junit.Assert.assertEquals;
 

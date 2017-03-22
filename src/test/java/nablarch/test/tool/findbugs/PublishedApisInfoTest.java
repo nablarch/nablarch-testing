@@ -1,11 +1,12 @@
 package nablarch.test.tool.findbugs;
 
 import static nablarch.test.Assertion.fail;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
-import static org.junit.internal.matchers.StringContains.containsString;
 
 import nablarch.test.tool.findbugs.PublishedApisInfoTest.AbnormalSuite;
 import nablarch.test.tool.findbugs.PublishedApisInfoTest.NormalSuite;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

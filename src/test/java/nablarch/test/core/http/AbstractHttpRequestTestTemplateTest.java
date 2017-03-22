@@ -1,12 +1,10 @@
 package nablarch.test.core.http;
 
 import static nablarch.test.Assertion.fail;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.containsString;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -25,10 +23,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.SqlResultSet;
 import nablarch.core.db.transaction.SimpleDbTransactionExecutor;
@@ -46,8 +40,11 @@ import nablarch.fw.web.upload.util.UploadHelper;
 import nablarch.test.RepositoryInitializer;
 import nablarch.test.Trap;
 import nablarch.test.core.db.DbAccessTestSupport;
-import nablarch.test.tool.sanitizingcheck.util.FileUtil;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 import nablarch.test.support.tool.Hereis;
+import nablarch.test.tool.sanitizingcheck.util.FileUtil;
 
 import org.junit.After;
 import org.junit.AfterClass;

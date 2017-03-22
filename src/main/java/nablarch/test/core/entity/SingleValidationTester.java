@@ -143,7 +143,7 @@ public class SingleValidationTester<ENTITY> {
                                           List<Message> actualMessages, String... additionalMsg) {
 
         // 追加の文言
-        String additional = concat(additionalMsg);
+        String additional = concat((Object[]) additionalMsg);
         // 期待値
         String expected = isNullOrEmpty(expectedMessageId)
                 ? "no message"

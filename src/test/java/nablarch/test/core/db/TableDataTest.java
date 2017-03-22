@@ -1,22 +1,14 @@
 package nablarch.test.core.db;
 
-import nablarch.core.util.BinaryUtil;
-import nablarch.test.RepositoryInitializer;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import test.support.SystemRepositoryResource;
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.TargetDb;
-import test.support.db.helper.TargetDb.Db;
-import test.support.db.helper.VariousDbTestHelper;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.comparesEqualTo;
+import static org.hamcrest.Matchers.equalToIgnoringWhiteSpace;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -26,15 +18,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.comparesEqualTo;
-import static org.hamcrest.Matchers.equalToIgnoringWhiteSpace;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hamcrest.CoreMatchers;
+
+import nablarch.core.util.BinaryUtil;
+import nablarch.test.RepositoryInitializer;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * {@link nablarch.test.core.db.TableData}のテストクラス。
@@ -42,7 +44,6 @@ import static org.junit.Assert.fail;
  * @author Hisaaki Sioiri
  */
 @RunWith(DatabaseTestRunner.class)
-@TargetDb(exclude = {Db.POSTGRE_SQL, Db.DB2})
 public class TableDataTest {
 
     @Rule
@@ -94,14 +95,15 @@ public class TableDataTest {
         assertThat("VARCHAR2_COL", (String) table.getValue(0, "varchar2_col"), is("あいうえお"));
         assertThat("NUMBER_COL", ((Number) table.getValue(0, "number_col")).longValue(), is(1234567890L));
         assertThat("NUMBER_COL2", (BigDecimal) table.getValue(0, "number_col2"), is(new BigDecimal("1234567.123")));
-        assertThat("DATE_COL", (java.sql.Timestamp) table.getValue(0, "date_col"), is(Timestamp.valueOf(
-                "2010-08-30 00:00:00.0")));
+        
+        assertThat("DATE_COL", (java.sql.Date) table.getValue(0, "date_col"), is(java.sql.Date.valueOf("2010-08-30")));
         assertThat("TIMESTAMP_COL", (java.sql.Timestamp) table.getValue(0, "timestamp_col"), is(Timestamp.valueOf(
                 "2010-08-30 01:23:45")));
         assertThat("NULL_COL", table.getValue(0, "null_col"), nullValue());
         assertThat("CLOB_COL", (String) table.getValue(0, "clob_col"), is("CLOBです0"));
         assertThat("BLOB_COL", (String) table.getValue(0, "blob_col"), is(BinaryUtil.convertToHexString(new byte[100])));
-        assertThat("BOOL_COL", (BigDecimal) table.getValue(0, "bool_col"), is(new BigDecimal(1)));
+        assertThat("BOOL_COL", table.getValue(0, "bool_col"), anyOf(
+                CoreMatchers.<Object>is(new BigDecimal(1)), CoreMatchers.<Object>is(true)));
     }
 
     @Test
@@ -126,14 +128,16 @@ public class TableDataTest {
         assertThat("1件目:VARCHAR2_COL", (String) table.getValue(0, "varchar2_col"), is("かきくけこ"));
         assertThat("1件目:CLOB_COL", (String) table.getValue(0, "clob_col"), is("CLOBです2"));
         assertThat("1件目:BLOB_COL", (String) table.getValue(0, "blob_col"), is(BinaryUtil.convertToHexString("BLOBです2".getBytes())));
-        assertThat("1件目:BOOL_COL", (BigDecimal) table.getValue(0, "bool_col"), is(new BigDecimal(1)));
+        assertThat("1件目:BOOL_COL", table.getValue(0, "bool_col"), anyOf(
+                CoreMatchers.<Object>is(new BigDecimal(1)), CoreMatchers.<Object>is(true)));
 
         assertThat("2件目:PK_COL1", (String) table.getValue(1, "pk_col1"), is("00002"));
         assertThat("2件目:PK_COL2", ((Number) table.getValue(1, "pk_col2")).intValue(), is(3));
         assertThat("2件目:VARCHAR2_COL", (String) table.getValue(1, "varchar2_col"), is("さしすせそ"));
         assertThat("2件目:CLOB_COL", (String) table.getValue(1, "clob_col"), is("CLOBです1"));
         assertThat("2件目:BLOB_COL", (String) table.getValue(1, "blob_col"), is(BinaryUtil.convertToHexString("BLOBです1".getBytes())));
-        assertThat("2件目:BOOL_COL", (BigDecimal) table.getValue(1, "bool_col"), is(new BigDecimal(1)));
+        assertThat("2件目:BOOL_COL", table.getValue(1, "bool_col"), anyOf(
+                CoreMatchers.<Object>is(new BigDecimal(1)), CoreMatchers.<Object>is(true)));
     }
 
     /**
@@ -301,7 +305,8 @@ public class TableDataTest {
         assertEquals("1970-01-01 09:00:00.0", String.valueOf(target.getValue(0, "timestamp_col")));
         assertThat(String.valueOf(target.getValue(0, "clob_col")), equalToIgnoringWhiteSpace(""));
         assertEquals(BinaryUtil.convertToHexString(new byte[10]), target.getValue(0, "blob_col"));
-        assertEquals("0", target.getValue(0, "bool_col"));
+        Assert.assertThat(target.getValue(0, "bool_col"), anyOf(
+                CoreMatchers.<Object>is("0"), CoreMatchers.<Object>is(false)));
     }
 
     //@Test
@@ -403,7 +408,7 @@ public class TableDataTest {
             assertThat("1件登録されていること", result.size(), is(1));
             InsNullTestTable table = result.get(0);
             assertThat(table.pkCol, is("00001"));
-            assertThat("指数表記のデータでも正しく登録されること", table.nullableNumber, is(new BigDecimal("0.1")));
+            assertThat("指数表記のデータでも正しく登録されること", table.nullableNumber, comparesEqualTo(new BigDecimal("0.1")));
         } finally {
             VariousDbTestHelper.delete(InsNullTestTable.class);
         }

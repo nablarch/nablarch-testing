@@ -1,14 +1,10 @@
 package nablarch.test.core.reader;
 
-import nablarch.test.Trap;
-import nablarch.test.core.db.BasicDefaultValues;
-import nablarch.test.core.db.GenericJdbcDbInfo;
-import nablarch.test.core.db.TableData;
-import nablarch.test.core.util.interpreter.InterpretationContext;
-import nablarch.test.core.util.interpreter.NullInterpreter;
-import nablarch.test.core.util.interpreter.TestDataInterpreter;
-import org.junit.Before;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,9 +13,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-import static org.junit.matchers.JUnitMatchers.*;
+import nablarch.test.Trap;
+import nablarch.test.core.db.BasicDefaultValues;
+import nablarch.test.core.db.GenericJdbcDbInfo;
+import nablarch.test.core.db.TableData;
+import nablarch.test.core.util.interpreter.InterpretationContext;
+import nablarch.test.core.util.interpreter.NullInterpreter;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
+
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * {@link TestDataParsingTemplate}のテストクラス。

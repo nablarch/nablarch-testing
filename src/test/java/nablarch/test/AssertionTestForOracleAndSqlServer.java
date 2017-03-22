@@ -1,7 +1,6 @@
 package nablarch.test;
 
-
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -10,11 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import test.support.db.helper.DatabaseTestRunner;
-import test.support.db.helper.TargetDb;
-import test.support.db.helper.TargetDb.Db;
-import test.support.db.helper.VariousDbTestHelper;
 
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.SqlPStatement;
@@ -25,6 +19,10 @@ import nablarch.test.core.db.DbAccessTestSupport;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.core.db.TransactionTemplate;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+import nablarch.test.support.db.helper.TargetDb.Db;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

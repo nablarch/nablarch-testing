@@ -1,14 +1,15 @@
 package nablarch.test.core.log;
 
-import nablarch.core.log.basic.LogContext;
-import nablarch.core.log.basic.LogLevel;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.containsString;
+import nablarch.core.log.basic.LogContext;
+import nablarch.core.log.basic.LogLevel;
+
+import org.junit.Test;
 
 /** {@link ExpectedLogMessage}のテストクラス。 */
 public class ExpectedLogMessageTest {

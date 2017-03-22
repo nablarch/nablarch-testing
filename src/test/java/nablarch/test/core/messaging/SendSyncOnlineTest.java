@@ -1,7 +1,8 @@
 package nablarch.test.core.messaging;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.repository.di.DiContainer;
@@ -34,8 +35,7 @@ public class SendSyncOnlineTest extends BasicHttpRequestTestTemplate {
     /** 初期化を行う */
     @BeforeClass
     public static void loadRepository() {
-        XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader("nablarch/test/core/messaging/web/web" +
-                                                                                       "-component-configuration.xml");
+        XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader("nablarch/test/core/messaging/web/web-component-configuration.xml");
         DiContainer container = new DiContainer(loader);
         SystemRepository.load(container);
     }
