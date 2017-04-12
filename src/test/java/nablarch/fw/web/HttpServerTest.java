@@ -3,6 +3,7 @@ package nablarch.fw.web;
 import static nablarch.test.StringMatcher.startsWith;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalToIgnoringWhiteSpace;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -87,7 +88,7 @@ public class HttpServerTest {
         
         assertEquals(201, res.getStatusCode());
         assertEquals(201, InternalMonitor.response.getStatusCode());
-        assertThat(res.getBodyString(), is(Builder.lines(
+        assertThat(res.getBodyString(), equalToIgnoringWhiteSpace(Builder.lines(
         "<html>",
         "  <head>",
         "    <title>Greeting Service</title>",
@@ -103,7 +104,7 @@ public class HttpServerTest {
 
         assertEquals(201, res.getStatusCode());
         assertEquals(201, InternalMonitor.response.getStatusCode());
-        assertThat(res.getBodyString(), is(Builder.lines(
+        assertThat(res.getBodyString(), equalToIgnoringWhiteSpace(Builder.lines(
         "",
         "<html>",
         "  <head>",

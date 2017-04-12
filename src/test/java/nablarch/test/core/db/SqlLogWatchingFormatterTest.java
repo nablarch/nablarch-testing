@@ -18,13 +18,13 @@ public class SqlLogWatchingFormatterTest {
 
     @Before
     public void clearStatement() {
-        SqlLogWatchingFormatter.getExecutedAndClear();
+        SqlLogWatchingFormatter.begin();
     }
 
     /** 終了処理 */
     @AfterClass
     public static void terminate() {
-        SqlLogWatchingFormatter.getExecutedAndClear();
+        SqlLogWatchingFormatter.begin();
     }
 
 
@@ -37,7 +37,7 @@ public class SqlLogWatchingFormatterTest {
         // 発行したSQL文が取得できること。
         target.startExecuteUpdate("testStartExecuteUpdate", "UPDATE hoge", "");
         target.startExecuteUpdate("testStartExecuteUpdate", "UPDATE fuga", "");
-        assertThat(SqlLogWatchingFormatter.getExecutedAndClear(),
+        assertThat(SqlLogWatchingFormatter.getExecuted(),
                 is(Arrays.asList("UPDATE hoge", "UPDATE fuga")));
     }
 
@@ -50,7 +50,7 @@ public class SqlLogWatchingFormatterTest {
         // 発行したSQL文が取得できること。
         target.startExecute("testStartExecuteUpdate", "UPDATE hoge", "");
         target.startExecute("testStartExecuteUpdate", "UPDATE fuga", "");
-        assertThat(SqlLogWatchingFormatter.getExecutedAndClear(),
+        assertThat(SqlLogWatchingFormatter.getExecuted(),
                 is(Arrays.asList("UPDATE hoge", "UPDATE fuga")));
     }
 
@@ -62,7 +62,7 @@ public class SqlLogWatchingFormatterTest {
         // 発行したSQL文が取得できること。
         target.startExecuteBatch("testStartExecuteUpdate", "UPDATE hoge", "");
         target.startExecuteBatch("testStartExecuteUpdate", "UPDATE fuga", "");
-        assertThat(SqlLogWatchingFormatter.getExecutedAndClear(),
+        assertThat(SqlLogWatchingFormatter.getExecuted(),
                 is(Arrays.asList("UPDATE hoge", "UPDATE fuga")));
 
     }

@@ -123,13 +123,14 @@ public class MasterDataRestorer extends TestEventListener.Template {
      */
     @Override
     public void afterTestMethod() {
-        List<String> executedSql = SqlLogWatchingFormatter.getExecutedAndClear();
+        List<String> executedSql = SqlLogWatchingFormatter.getExecuted();
         if (executedSql.isEmpty()) {
             return;
         }
         Set<String> updatedTables = getUpdatedTables(executedSql);
         TableDuplicator duplicator = new TableDuplicator(updatedTables, backupSchema);
         duplicator.restoreAll();
+        SqlLogWatchingFormatter.begin();
     }
 
 
@@ -256,14 +257,19 @@ public class MasterDataRestorer extends TestEventListener.Template {
         }
         
         /**
-         * 発行されたSQL文を取得する。取得済みのSQL文は本クラスからはクリアされる。
+         * 発行されたSQL文を取得する。
          * @return 発行されたSQL文
          */
-        static List<String> getExecutedAndClear() {
-            List<String> executed = executedSql;
-            executedSql = new ArrayList<String>();
-            return executed;
+        static List<String> getExecuted() {
+            return executedSql;
 
+        }
+
+        /**
+         * SQL文の監視を開始する。
+         */
+        static void begin() {
+            executedSql = new ArrayList<String>();
         }
 
     }

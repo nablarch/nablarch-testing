@@ -22,6 +22,7 @@ import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
+import nablarch.test.support.log.app.OnMemoryLogWriter;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -111,16 +112,11 @@ public class MasterDataRestorerTest extends TestEventDispatcher {
         assertEquals(2, VariousDbTestHelper.findAll(HogeTable.class)
                 .size());
 
-        // システムリポジトリを初期化する。
-        repositoryResource.addComponent(MasterDataRestorer.MASTER_DATA_RESTORER_KEY, null);
-
-        assertThat(getFromRepository(), is(nullValue()));
-
         // 全件削除する。
         new TransactionTemplate(DbAccessTestSupport.DB_TRANSACTION_FOR_TEST) {
             @Override
             protected void doInTransaction(AppDbConnection conn) {
-                conn.prepareStatement("DELETE FROM HOGE_TABLE")
+                conn.prepareStatement("DELETE /* テスト */ FROM HOGE_TABLE")
                         .execute();
             }
         }.execute();
@@ -129,13 +125,13 @@ public class MasterDataRestorerTest extends TestEventDispatcher {
         assertEquals(0, VariousDbTestHelper.findAll(HogeTable.class)
                 .size());
 
-        // システムリポジトリを再初期化する。
-        repositoryResource.addComponent(MasterDataRestorer.MASTER_DATA_RESTORER_KEY, target);
-
         // テスト対象実行
-        target = getFromRepository();
-        assertThat(target, is(notNullValue()));
         target.afterTestMethod();
+
+        OnMemoryLogWriter.clear();
+        target.afterTestMethod();
+
+        assertThat(OnMemoryLogWriter.getMessages("writer.memlog").size(), is(0));
 
         // データが復旧していること
         assertEquals(2, VariousDbTestHelper.findAll(HogeTable.class)

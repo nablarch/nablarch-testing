@@ -52,7 +52,7 @@ public class TableRestorerTest {
     @AfterClass
     public static void terminate() {
         // 他のテストが落ちないようにごみ掃除しておきます。
-        SqlLogWatchingFormatter.getExecutedAndClear();
+        SqlLogWatchingFormatter.begin();
     }
 
     /** {@link nablarch.test.core.db.MasterDataRestorer.TableDuplicator#restoreAll()}のテスト */
