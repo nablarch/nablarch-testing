@@ -136,7 +136,7 @@ public class DbAccessTestSupport extends TestEventDispatcher {
     }
 
     /** トランザクションをロールバックする。 */
-    private void rollbackTransactions() {
+    public void rollbackTransactions() {
         for (SimpleDbTransactionManager transactionManager : transactionManagers) {
             transactionManager.rollbackTransaction();
         }
