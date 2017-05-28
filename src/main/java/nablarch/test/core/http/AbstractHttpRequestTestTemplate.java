@@ -112,6 +112,14 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
         super(testClass);
         fileSupport = new FileSupport(testClass);
     }
+    
+    /**
+     * テストを実行する。<br/>
+     * 実行前後に特別な処理が不要な場合は、このメソッドを使用する。
+     */
+    public void execute() {
+        execute(testName.getMethodName(), nopAdvice);
+    }
 
     /**
      * テストを実行する。<br/>
@@ -123,6 +131,15 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
         execute(sheetName, nopAdvice);
     }
 
+    /**
+     * テストを実行する。
+     * データベースのセットアップ要否を指定できる。
+     *
+     * @param shouldSetUpDb データベースのセットアップ要否
+     */
+    public void execute(boolean shouldSetUpDb) {
+        execute(testName.getMethodName(), nopAdvice, shouldSetUpDb);
+    }
 
     /**
      * テストを実行する。
@@ -135,6 +152,15 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
         execute(sheetName, nopAdvice, shouldSetUpDb);
     }
 
+    /**
+     * テストを実行する。
+     * テスト前後に特別な準備処理や結果確認処理が必要な場合はこのメソッドを使用する。
+     *
+     * @param advice    実行前後の処理を実装した{@link Advice}
+     */
+    public void execute(final Advice<INF> advice) {
+        execute(testName.getMethodName(), advice, true);
+    }
 
     /**
      * テストを実行する。
@@ -147,6 +173,15 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
         execute(sheetName, advice, true);
     }
 
+    /**
+     * テストを実行する。
+     *
+     * @param advice        コールバック
+     * @param shouldSetUpDb データベースのセットアップ要否
+     */
+    public void execute(Advice<INF> advice, boolean shouldSetUpDb) {
+    this.execute(testName.getMethodName(), advice, shouldSetUpDb);
+    }
 
     /**
      * テストを実行する。
