@@ -43,10 +43,18 @@ public class BasicHttpRequestTestTemplateTest {
         };
 
         // 正しく終わるはず
-        target.execute("redirect302302");
-        target.execute("redirect303302");
-        target.execute("redirect302303");
-        target.execute("redirect303303");
+        target.execute("redirect301");
+        target.execute("redirect302");
+        target.execute("redirect303");
+        target.execute("redirect307");
+        
+        // 失敗するはず
+        try {
+            target.execute("redirect302303");
+            fail("例外が発生するはず");
+        } catch (AssertionError e) {
+            assertThat(e.getMessage(), containsString("expected:<30[3]> but was:<30[2]>"));
+        }
 
         // 失敗するはず
         try {

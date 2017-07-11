@@ -2,7 +2,7 @@
 
 
 group = 'com.nablarch.framework'
-version = '1.1.0'
+version = '1.1.1'
 description = 'テスティングフレームワーク'
 
 
@@ -70,6 +70,7 @@ dependencies {
   }
 
   mock('org.jmockit:jmockit:1.30')
+  provided "com.nablarch.framework:nablarch-fw-web:${nablarchFwWebVersion}"
   provided "com.nablarch.framework:nablarch-fw-standalone:${nablarchFwStandaloneVersion}"
   provided "com.nablarch.framework:nablarch-fw-messaging-mom:${nablarchFwMessagingMomVersion}"
   provided "com.nablarch.framework:nablarch-fw-messaging-http:${nablarchFwMessagingHttpVersion}"

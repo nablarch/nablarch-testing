@@ -14,6 +14,18 @@ import nablarch.fw.web.HttpResponse;
 public class RedirectAction extends DbAccessSupport {
 
     /**
+     * 301を返す。
+     *
+     * @param request リクエストコンテキスト
+     * @param context HTTPリクエストの処理に関連するサーバ側の情報
+     * @return HTTPレスポンス
+     */
+    public HttpResponse doRedirect301(HttpRequest request,
+            ExecutionContext context) {
+        return new HttpResponse(301);
+    }
+    
+    /**
      * 303を返す。
      *
      * @param request リクエストコンテキスト
@@ -35,6 +47,18 @@ public class RedirectAction extends DbAccessSupport {
     public HttpResponse doRedirect302(HttpRequest request,
             ExecutionContext context) {
         return new HttpResponse(302);
+    }
+    
+    /**
+     * 307を返す。
+     *
+     * @param request リクエストコンテキスト
+     * @param context HTTPリクエストの処理に関連するサーバ側の情報
+     * @return HTTPレスポンス
+     */
+    public HttpResponse doRedirect307(HttpRequest request,
+            ExecutionContext context) {
+        return new HttpResponse(307);
     }
 
     /**

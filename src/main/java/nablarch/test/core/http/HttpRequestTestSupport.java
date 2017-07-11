@@ -718,15 +718,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         int responseStatusCode = response.getStatusCode();
         int actual = is3XXStatusCode(responseStatusCode) ? responseStatusCode : handlerStatusCode;
         
-        if (isRedirected(expected)) {
-            // リダイレクトの場合、 handler の時点でステータスコードが変わっていないので、レスポンスから取得。
-            if (!isRedirected(actual)) {
-                // ここに来たら必ず落ちる。
-                Assertion.assertEquals(message, expected, actual);
-            }
-        } else {
-            Assertion.assertEquals(message, expected, actual);
-        }
+        Assertion.assertEquals(message, expected, actual);
     }
 
     /**
