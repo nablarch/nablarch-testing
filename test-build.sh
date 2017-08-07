@@ -3,7 +3,7 @@ set -euo pipefail
 
 
 ### Import nablarch env.
-#source $HOME/build-script/travis-ci/nablarch_env
+source $HOME/build-script/travis-ci/nablarch_env
 
 cd ${TRAVIS_BUILD_DIR}
 
