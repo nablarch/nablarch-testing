@@ -8,7 +8,7 @@ description = 'テスティングフレームワーク'
 
 repositories {
   mavenLocal()
-  maven { url nablarchRepoUrl }
+  maven { url developLibUrl }
   jcenter()
   
   // サードパーティ製ライブラリの格納リポジトリ
@@ -21,7 +21,7 @@ repositories {
 buildscript {
   repositories {
     mavenLocal()
-    maven { url nablarchRepoUrl }
+    maven { url developLibUrl }
     jcenter()
   
     // サードパーティ製ライブラリの格納リポジトリ
