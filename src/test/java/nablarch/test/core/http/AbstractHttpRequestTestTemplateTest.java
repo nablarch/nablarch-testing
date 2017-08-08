@@ -48,6 +48,7 @@ import nablarch.test.tool.sanitizingcheck.util.FileUtil;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -75,20 +76,20 @@ public class AbstractHttpRequestTestTemplateTest {
         workDir.mkdir();
     }
 
-    /** アップロード先ディレクトリの削除 */
+    /** 
+     * アップロード先ディレクトリの削除 
+     * HttpRequestTestSupportをデフォルトに復元する
+     */
     @AfterClass
     public static void deleteUploadDir() {
         workDir.delete();
-    }
-
-    /**
-     * システムリポジトリとHttpRequestTestSupportをデフォルトに復元する。
-     */
-    @After
-    public void initializeSystemRepository() {
         HttpRequestTestSupport.resetHttpServer();
     }
 
+    @Before
+    public void setUp() {
+        HttpRequestTestSupport.resetHttpServer();
+    }
 
     /** テスト対象 */
     private AbstractHttpRequestTestTemplate<TestCaseInfo> target;
