@@ -18,8 +18,17 @@ final class JapaneseCharacterSet {
     /** 半角英大文字 */
     public static final String UPPER_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    /** ASCII記号 */
-    public static final String ASCII_SYMBOL = "!\"#$%&'()*+,-./" + ":;<=>?@" + "[\\]^_`" + "{|}~";
+    /**
+     *  ASCII記号.
+     *  ただし、他の特殊記法で使用する以下の記号は除外する。
+     *  <ul>
+     *      <li>ダブルクォーテーション</li>
+     *      <li>シャープ</li>
+     *      <li>カンマ</li>
+     *  </ul>
+     *  また、バックスラッシュはStringで特殊な意味を持つためこれも除外する。
+     */
+    public static final String ASCII_SYMBOL = "!$%&'()*+-./" + ":;<=>?@" + "[]^_`" + "{|}~";
 
     /** 半角スペース */
     public static final String SPACE = " ";
