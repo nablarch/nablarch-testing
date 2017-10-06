@@ -634,6 +634,23 @@ public class TestSupportTest {
         target.getResourceName("");
     }
 
+    @Test
+    public void testHankakuKigou() {
+        Map<String, String[]> parameterMap = target.getParameterMap("testHankakuKigou", "parameters");
+
+        String[] value1 = parameterMap.get("eiji");
+        assertThat(value1.length, is(1));
+        String eiji = value1[0];
+        assertThat(eiji, eiji.matches("[A-Za-z]"), is(true));
+
+        String[] value2 = parameterMap.get("kigou");
+        // 半角記号にカンマが混じってしまい、その結果カンマ区切りと見做され配列にsplitされないこと
+        assertThat(value2.length, is(1));
+        String kigou = value2[0];
+        assertThat(kigou.length(), is(4096));
+
+    }
+
     @Entity
     @Table(name = "TEST_SUPPORT_TEST_TABLE")
     public static class TestSupportTestTable {
