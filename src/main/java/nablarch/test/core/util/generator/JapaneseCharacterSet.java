@@ -13,10 +13,10 @@ final class JapaneseCharacterSet {
     static final String NUMERIC = "0123456789";
 
     /** 半角英小文字 */
-    public static final String LOWER_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+    static final String LOWER_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 
     /** 半角英大文字 */
-    public static final String UPPER_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static final String UPPER_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     /**
      *  ASCII記号.
@@ -28,52 +28,52 @@ final class JapaneseCharacterSet {
      *  </ul>
      *  また、バックスラッシュはStringで特殊な意味を持つためこれも除外する。
      */
-    public static final String ASCII_SYMBOL = "!$%&'()*+-./" + ":;<=>?@" + "[]^_`" + "{|}~";
+    static final String ASCII_SYMBOL = "!$%&'()*+-./" + ":;<=>?@" + "[]^_`" + "{|}~";
 
     /** 半角スペース */
-    public static final String SPACE = " ";
+    static final String SPACE = " ";
 
     /** 半角カナ */
-    public static final String HANKAKU_KANA_CHARS = "｡｢｣､･ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ";
+    static final String HANKAKU_KANA_CHARS = "｡｢｣､･ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ";
 
 
     /* --- 半角組み合わせ --- */
     /** 半角英字 */
-    public static final String ALPHABET = LOWER_ALPHABET + UPPER_ALPHABET;
+    static final String ALPHABET = LOWER_ALPHABET + UPPER_ALPHABET;
 
     /** 半角英数字 */
-    public static final String ALPHA_NUMERIC = ALPHABET + NUMERIC;
+    static final String ALPHA_NUMERIC = ALPHABET + NUMERIC;
 
     /** ASCII文字 */
-    public static final String ASCII_CHARS = ALPHA_NUMERIC + SPACE + ASCII_SYMBOL;
+    static final String ASCII_CHARS = ALPHA_NUMERIC + SPACE + ASCII_SYMBOL;
 
     /** 半角文字 */
-    public static final String HANKAKU_CHARS = ASCII_CHARS + HANKAKU_KANA_CHARS;
+    static final String HANKAKU_CHARS = ASCII_CHARS + HANKAKU_KANA_CHARS;
 
     /* ========================= 全角 ============================*/
 
     /** 全角数字 */
-    public static final String ZENKAKU_NUM_CHARS = "０１２３４５６７８９";
+    static final String ZENKAKU_NUM_CHARS = "０１２３４５６７８９";
 
     /** 全角英字 */
-    public static final String ZENKAKU_ALPHA_CHARS =
+    static final String ZENKAKU_ALPHA_CHARS =
             "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
                     + "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ";
 
     /** 全角ひらがな */
-    public static final String ZENKAKU_HIRAGANA_CHARS =
+    static final String ZENKAKU_HIRAGANA_CHARS =
             "ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひ"
                     + "びぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをん"
                     + "ー";
 
     /** 全角カタカナ */
-    public static final String ZENKAKU_KATAKANA_CHARS =
+    static final String ZENKAKU_KATAKANA_CHARS =
             "ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒ"
                     + "ビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ"
                     + "ー";
 
     /** JIS第1水準 */
-    public static final String LEVEL1_KANJI =
+    static final String LEVEL1_KANJI =
             "亜唖娃阿哀愛挨姶逢葵茜穐悪握渥旭葦芦鯵梓圧斡扱宛姐虻飴絢綾鮎或粟袷安庵按暗案闇鞍杏以伊位依偉囲夷委威"
                     + "尉惟意慰易椅為畏異移維緯胃萎衣謂違遺医井亥域育郁磯一壱溢逸稲茨芋鰯允印咽員因姻引飲淫胤蔭院陰隠韻吋右"
                     + "宇烏羽迂雨卯鵜窺丑碓臼渦嘘唄欝蔚鰻姥厩浦瓜閏噂云運雲荏餌叡営嬰影映曳栄永泳洩瑛盈穎頴英衛詠鋭液疫益駅"
@@ -135,7 +135,7 @@ final class JapaneseCharacterSet {
                     + "暦歴列劣烈裂廉恋憐漣煉簾練聯蓮連錬呂魯櫓炉賂路露労婁廊弄朗楼榔浪漏牢狼篭老聾蝋郎六麓禄肋録論倭和話歪"
                     + "賄脇惑枠鷲亙亘鰐詫藁蕨椀湾碗腕";
     /** JIS第2水準 */
-    public static final String LEVEL2_KANJI =
+    static final String LEVEL2_KANJI =
             "弌丐丕个丱丶丼丿乂乖乘亂亅豫亊舒弍于亞亟亠亢亰亳亶从仍仄仆仂仗仞仭仟价伉佚估佛佝佗佇佶侈侏侘佻佩佰侑"
                     + "佯來侖儘俔俟俎俘俛俑俚俐俤俥倚倨倔倪倥倅伜俶倡倩倬俾俯們倆偃假會偕偐偈做偖偬偸傀傚傅傴傲僉僊傳僂僖僞"
                     + "僥僭僣僮價僵儉儁儂儖儕儔儚儡儺儷儼儻儿兀兒兌兔兢竸兩兪兮冀冂囘册冉冏冑冓冕冖冤冦冢冩冪冫决冱冲冰况冽"
@@ -207,26 +207,26 @@ final class JapaneseCharacterSet {
 
 
     /** JIS第1～2区の記号文字 */
-    public static final String JIS_SYMBOL_CHARS =
+    static final String JIS_SYMBOL_CHARS =
             "　、。，．・：；？！゛゜´｀¨＾￣＿ヽヾゝゞ〃仝々〆〇ー―‐／＼～∥｜…‥‘’“”（）〔〕［］｛｝〈"
                     + "〉《》「」『』【】＋－±×÷＝≠＜＞≦≧∞∴♂♀°′″℃￥＄￠￡％＃＆＊＠§☆★○●◎◇◆□■△▲▽"
                     + "▼※〒→←↑↓〓∈∋⊆⊇⊂⊃∪∩∧∨￢⇒⇔∀∃∠⊥⌒∂∇≡≒≪≫√∽∝∵∫∬Å‰♯♭♪†‡¶◯";
 
     /** 全角ギリシャ文字 */
-    public static final String ZENKAKU_GREEK_CHARS = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω";
+    static final String ZENKAKU_GREEK_CHARS = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω";
 
 
     /** 罫線 */
-    public static final String ZENKAKU_KEISEN_CHARS = "─│┌┐┘└├┬┤┴┼━┃┏┓┛┗┣┳┫┻╋┠┯┨┷┿┝┰┥┸╂";
+    static final String ZENKAKU_KEISEN_CHARS = "─│┌┐┘└├┬┤┴┼━┃┏┓┛┗┣┳┫┻╋┠┯┨┷┿┝┰┥┸╂";
 
 
     /** 全角ロシア文字 */
-    public static final String ZENKAKU_RUSSIAN_CHARS =
+    static final String ZENKAKU_RUSSIAN_CHARS =
             "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя";
 
 
     /** NEC選定IBM拡張 */
-    public static final String NEC_EXTENDED_CHARS =
+    static final String NEC_EXTENDED_CHARS =
             "纊褜鍈銈蓜俉炻昱棈鋹曻彅丨仡仼伀伃伹佖侒侊侚侔俍偀倢俿倞偆偰偂傔僴僘兊兤冝冾凬刕劜劦勀勛匀匇匤卲厓厲"
                     + "叝﨎咜咊咩哿喆坙坥垬埈埇﨏塚增墲夋奓奛奝奣妤妺孖寀甯寘寬尞岦岺峵崧嵓﨑嵂嵭嶸嶹巐弡弴彧德忞恝悅悊惞惕"
                     + "愠惲愑愷愰憘戓抦揵摠撝擎敎昀昕昻昉昮昞昤晥晗晙晴晳暙暠暲暿曺朎朗杦枻桒柀栁桄棏﨓楨﨔榘槢樰橫橆橳橾櫢"
@@ -237,12 +237,12 @@ final class JapaneseCharacterSet {
                     + "魲鮏鮱鮻鰀鵰鵫鶴鸙黑ⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ￢￤＇＂";
 
     /** NEC特殊文字 */
-    public static final String NEC_SYMBOL_CHARS =
+    static final String NEC_SYMBOL_CHARS =
             "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ㍉㌔㌢㍍㌘㌧㌃㌶㍑㍗㌍㌦㌣㌫㍊㌻㎜㎝㎞㎎"
                     + "㎏㏄㎡㍻〝〟№㏍℡㊤㊥㊦㊧㊨㈱㈲㈹㍾㍽㍼≒≡∫∮∑√⊥∠∟⊿∵∩∪";
 
     /** IBM拡張文字 */
-    public static final String IBM_EXTENDED_CHARS =
+    static final String IBM_EXTENDED_CHARS =
             "ⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ￢￤＇＂㈱№℡∵纊褜鍈銈蓜俉炻昱棈鋹曻彅丨仡仼伀伃伹佖侒侊侚"
                     + "侔俍偀倢俿倞偆偰偂傔僴僘兊兤冝冾凬刕劜劦勀勛匀匇匤卲厓厲叝﨎咜咊咩哿喆坙坥垬埈埇﨏塚增墲夋奓奛奝奣妤"
                     + "妺孖寀甯寘寬尞岦岺峵崧嵓﨑嵂嵭嶸嶹巐弡弴彧德忞恝悅悊惞惕愠惲愑愷愰憘戓抦揵摠撝擎敎昀昕昻昉昮昞昤晥晗"
@@ -253,16 +253,16 @@ final class JapaneseCharacterSet {
                     + "鏞鏸鐱鑅鑈閒隆﨩隝隯霳霻靃靍靏靑靕顗顥飯飼餧館馞驎髙髜魵魲鮏鮱鮻鰀鵰鵫鶴鸙黑";
 
     /** 全角漢字 */
-    public static final String ZENKAKU_KANJI = LEVEL1_KANJI + LEVEL2_KANJI;
+    static final String ZENKAKU_KANJI = LEVEL1_KANJI + LEVEL2_KANJI;
 
     /** 全角記号 */
-    public static final String ZENKAKU_SYMBOL = JIS_SYMBOL_CHARS + ZENKAKU_KEISEN_CHARS;
+    static final String ZENKAKU_SYMBOL = JIS_SYMBOL_CHARS + ZENKAKU_KEISEN_CHARS;
 
     /** 全角記号その他 */
-    public static final String ZENKAKU_ETC = ZENKAKU_SYMBOL + ZENKAKU_GREEK_CHARS + ZENKAKU_RUSSIAN_CHARS;
+    static final String ZENKAKU_ETC = ZENKAKU_SYMBOL + ZENKAKU_GREEK_CHARS + ZENKAKU_RUSSIAN_CHARS;
 
     /** 外字 */
-    public static final String GAIJI_CHARS = IBM_EXTENDED_CHARS + NEC_EXTENDED_CHARS + NEC_SYMBOL_CHARS;
+    static final String GAIJI_CHARS = IBM_EXTENDED_CHARS + NEC_EXTENDED_CHARS + NEC_SYMBOL_CHARS;
 
     /** プライベートコンストラクタ */
     private JapaneseCharacterSet() {
