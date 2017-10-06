@@ -634,6 +634,30 @@ public class TestSupportTest {
         target.getResourceName("");
     }
 
+    /**
+     * ${半角記号}を使用した場合に、意図しない結果とならないこと
+     *
+     * - カンマが混じって、カンマ区切り（配列）と見做されないこと
+     * - 指定した文字数だけ文字が生成されること
+     *    （生成した文字列がエスケープシーケンスと見做されないこと）
+     */
+    @Test
+    public void testHankakuKigou() {
+        Map<String, String[]> parameterMap = target.getParameterMap("testHankakuKigou", "parameters");
+
+        String[] value1 = parameterMap.get("eiji");
+        assertThat(value1.length, is(1));
+        String eiji = value1[0];
+        assertThat(eiji, eiji.matches("[A-Za-z]"), is(true));
+
+        String[] value2 = parameterMap.get("kigou");
+        // 半角記号にカンマが混じってしまい、その結果カンマ区切りと見做され配列にsplitされないこと
+        assertThat(value2.length, is(1));
+        String kigou = value2[0];
+        assertThat(kigou.length(), is(4096));
+
+    }
+
     @Entity
     @Table(name = "TEST_SUPPORT_TEST_TABLE")
     public static class TestSupportTestTable {
