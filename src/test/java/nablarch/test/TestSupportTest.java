@@ -634,6 +634,13 @@ public class TestSupportTest {
         target.getResourceName("");
     }
 
+    /**
+     * ${半角記号}を使用した場合に、意図しない結果とならないこと
+     *
+     * - カンマが混じって、カンマ区切り（配列）と見做されないこと
+     * - 指定した文字数だけ文字が生成されること
+     *    （生成した文字列がエスケープシーケンスと見做されないこと）
+     */
     @Test
     public void testHankakuKigou() {
         Map<String, String[]> parameterMap = target.getParameterMap("testHankakuKigou", "parameters");
