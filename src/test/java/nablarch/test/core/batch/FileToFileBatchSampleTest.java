@@ -1,17 +1,23 @@
 package nablarch.test.core.batch;
 
+import nablarch.test.core.db.HogeTable;
+import nablarch.test.core.db.HogeTableSsdMaster;
 import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
 import nablarch.test.support.tool.Hereis;
 
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 
 /**
  * @author T.Kawasaki
  */
+@RunWith(DatabaseTestRunner.class)
 public class FileToFileBatchSampleTest extends BatchRequestTestSupport {
 
     @Rule
@@ -19,6 +25,9 @@ public class FileToFileBatchSampleTest extends BatchRequestTestSupport {
 
     @BeforeClass
     public static void setUp() {
+        VariousDbTestHelper.createTable(HogeTable.class);
+        VariousDbTestHelper.createTable(HogeTableSsdMaster.class);
+        
         // データフォーマット定義ファイル
         File formatFile = Hereis.file("./work/layout.txt");
         /**********************************************
