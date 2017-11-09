@@ -7,13 +7,19 @@ import static org.junit.Assert.assertThat;
 
 import java.sql.Types;
 
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * {@link nablarch.test.core.db.GenericJdbcDbInfo}のテスト。
  *
  * @author Naoki Yamamoto
  */
+@RunWith(DatabaseTestRunner.class)
+@TargetDb(include = TargetDb.Db.POSTGRE_SQL)
 public class GenericJdbcDbInfoTestForPostgre extends GenericJdbcDbInfoTestBase {
 
     /** テーブルを準備する。 */
@@ -75,7 +81,7 @@ public class GenericJdbcDbInfoTestForPostgre extends GenericJdbcDbInfoTestBase {
         // varchar
         assertThat(dbInfo.getColumnType("non_pk", "varchar_col"), is(Types.VARCHAR));
         // number
-        assertThat(dbInfo.getColumnType("non_pk", "number_col"), is(Types.DECIMAL));
+        assertThat(dbInfo.getColumnType("non_pk", "number_col"), is(Types.NUMERIC));
         // blob
         assertThat(dbInfo.getColumnType("non_pk", "blob_col"), anyOf(is(Types.BINARY), is(Types.VARBINARY)));
         // date

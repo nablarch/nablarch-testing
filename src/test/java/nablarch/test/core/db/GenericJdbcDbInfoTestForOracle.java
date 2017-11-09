@@ -1,17 +1,23 @@
 package nablarch.test.core.db;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
 import java.sql.Types;
 
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * {@link nablarch.test.core.db.GenericJdbcDbInfo}のテスト。
  *
  * @author T.Kawasaki
  */
+@RunWith(DatabaseTestRunner.class)
+@TargetDb(include = TargetDb.Db.ORACLE)
 public class GenericJdbcDbInfoTestForOracle extends GenericJdbcDbInfoTestBase {
 
     /** テーブルを準備する。 */

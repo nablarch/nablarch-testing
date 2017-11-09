@@ -3,7 +3,11 @@ package nablarch.test.core.db;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 
 /**
@@ -11,6 +15,8 @@ import org.junit.Test;
  *
  * @author Hisaaki Sioiri
  */
+@RunWith(DatabaseTestRunner.class)
+@TargetDb(include = TargetDb.Db.DB2)
 public class GenericJdbcDbInfoTestForDb2 extends GenericJdbcDbInfoTestBase {
 
     /** テーブルを準備する。 */

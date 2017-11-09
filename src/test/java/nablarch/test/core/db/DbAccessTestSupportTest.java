@@ -284,6 +284,7 @@ public class DbAccessTestSupportTest {
     }
     
     @Test
+    @TargetDb(include = TargetDb.Db.H2)
     public void testSetUpDbOnInvalidExcel_H2() {
 
         repositoryResource.addComponent("nablarch.suppress-table-sort", "true");
