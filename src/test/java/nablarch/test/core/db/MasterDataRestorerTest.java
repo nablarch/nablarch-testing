@@ -60,6 +60,9 @@ public class MasterDataRestorerTest extends TestEventDispatcher {
                 new HogeTableSsdMaster("00002", 2L, "い", 2L, new BigDecimal("22.123"), new Date(0L), new Timestamp(0L),
                         "12345", null, null));
 
+        VariousDbTestHelper.dropTable(Daughter.class);
+        VariousDbTestHelper.dropTable(Father.class);
+        VariousDbTestHelper.dropTable(Granpa.class);
         VariousDbTestHelper.createTable(Granpa.class);
         VariousDbTestHelper.createTable(GranpaSsdMaster.class);
         VariousDbTestHelper.createTable(Father.class);

@@ -54,7 +54,7 @@ public class TestTable {
     @Column(name = "NUMBER_COL2", precision = 10, scale = 3, nullable = false)
     public BigDecimal numberCol2;
     
-    @Column(name = "DATE_COL", nullable = false)
+    @Column(name = "DATE_COL", nullable = false, columnDefinition = "date")
     public Date dateCol;
     
     @Column(name = "TIMESTAMP_COL", nullable = false)
