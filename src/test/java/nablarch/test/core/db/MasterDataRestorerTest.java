@@ -21,7 +21,6 @@ import nablarch.test.event.TestEventDispatcher;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
-
 import nablarch.test.support.log.app.OnMemoryLogWriter;
 
 import org.junit.Before;
@@ -60,6 +59,8 @@ public class MasterDataRestorerTest extends TestEventDispatcher {
                 new HogeTableSsdMaster("00002", 2L, "い", 2L, new BigDecimal("22.123"), new Date(0L), new Timestamp(0L),
                         "12345", null, null));
 
+        VariousDbTestHelper.dropTable(Son.class);
+        VariousDbTestHelper.dropTable(Family.class);
         VariousDbTestHelper.dropTable(Daughter.class);
         VariousDbTestHelper.dropTable(Father.class);
         VariousDbTestHelper.dropTable(Granpa.class);
