@@ -28,6 +28,7 @@ import nablarch.core.util.BinaryUtil;
 import nablarch.test.RepositoryInitializer;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Assert;
@@ -43,6 +44,7 @@ import org.junit.runner.RunWith;
  * @author Hisaaki Sioiri
  */
 @RunWith(DatabaseTestRunner.class)
+@TargetDb(exclude = {TargetDb.Db.POSTGRE_SQL, TargetDb.Db.DB2})
 public class TableDataTest {
 
     @Rule

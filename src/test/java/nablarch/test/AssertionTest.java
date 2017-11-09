@@ -21,12 +21,14 @@ import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.core.db.TransactionTemplate;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DatabaseTestRunner.class)
+@TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.SQL_SERVER, TargetDb.Db.DB2})
 public class AssertionTest extends AssertionTestSupport {
 
     @Test

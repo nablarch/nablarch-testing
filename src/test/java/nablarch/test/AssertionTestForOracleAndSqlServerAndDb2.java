@@ -28,8 +28,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DatabaseTestRunner.class)
-@TargetDb(include = {Db.ORACLE, Db.SQL_SERVER})
-public class AssertionTestForOracleAndSqlServer extends AssertionTestSupport {
+@TargetDb(include = {Db.ORACLE, Db.SQL_SERVER, Db.DB2})
+public class AssertionTestForOracleAndSqlServerAndDb2 extends AssertionTestSupport {
 
     @Test
     public void testAssertTableEqualsStringListOfTableData() {

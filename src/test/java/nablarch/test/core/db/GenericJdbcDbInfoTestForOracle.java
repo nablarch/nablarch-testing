@@ -85,7 +85,7 @@ public class GenericJdbcDbInfoTestForOracle extends GenericJdbcDbInfoTestBase {
         assertThat(dbInfo.getColumnType("non_pk", "blob_col"), is(java.sql.Types.BLOB));
         // date
         // oracle5　からDATE型はjava.sql.Timestampにマッピングされる。
-        assertThat(dbInfo.getColumnType("non_pk", "date_col"), is(Types.DATE));
+        assertThat(dbInfo.getColumnType("non_pk", "date_col"), is(Types.TIMESTAMP));
         // timestamp
         assertThat(dbInfo.getColumnType("non_pk", "timestamp_col"), is(java.sql.Types.TIMESTAMP));
     }
