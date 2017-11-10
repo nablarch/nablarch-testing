@@ -25,6 +25,20 @@
       <properties>
         <ecj.version>4.6.1</ecj.version>
       </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>nablarch.test.tool.findbugs.UsageOfUnpublishedMethodDetectorTest</exclude>
+                <exclude>nablarch.test.tool.findbugs.PublishedApisInfoTest</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
   
