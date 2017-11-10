@@ -64,15 +64,23 @@ public class MasterDataRestorerTest extends TestEventDispatcher {
         VariousDbTestHelper.dropTable(Daughter.class);
         VariousDbTestHelper.dropTable(Father.class);
         VariousDbTestHelper.dropTable(Granpa.class);
+        
         VariousDbTestHelper.createTable(Granpa.class);
-        VariousDbTestHelper.createTable(GranpaSsdMaster.class);
         VariousDbTestHelper.createTable(Father.class);
-        VariousDbTestHelper.createTable(FatherSsdMaster.class);
         VariousDbTestHelper.createTable(Daughter.class);
-        VariousDbTestHelper.createTable(DaughterSsdMaster.class);
         VariousDbTestHelper.createTable(Family.class);
-        VariousDbTestHelper.createTable(FamilySsdMaster.class);
         VariousDbTestHelper.createTable(Son.class);
+
+        VariousDbTestHelper.dropTable(SonSsdMaster.class);
+        VariousDbTestHelper.dropTable(FamilySsdMaster.class);
+        VariousDbTestHelper.dropTable(DaughterSsdMaster.class);
+        VariousDbTestHelper.dropTable(FatherSsdMaster.class);
+        VariousDbTestHelper.dropTable(GranpaSsdMaster.class);
+        
+        VariousDbTestHelper.createTable(GranpaSsdMaster.class);
+        VariousDbTestHelper.createTable(FatherSsdMaster.class);
+        VariousDbTestHelper.createTable(DaughterSsdMaster.class);
+        VariousDbTestHelper.createTable(FamilySsdMaster.class);
         VariousDbTestHelper.createTable(SonSsdMaster.class);
 
         Granpa granpa1 = new Granpa("1");
