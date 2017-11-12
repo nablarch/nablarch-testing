@@ -1,5 +1,6 @@
 package nablarch.test.core.messaging;
 
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -10,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.core.AnyOf;
 
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.FieldDefinition;
@@ -30,6 +34,8 @@ import nablarch.test.core.file.TestDataConverter;
 import nablarch.test.core.log.LogVerifier;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -432,6 +438,7 @@ public class RequestTestingMessagingClientTest {
      */
     @Test
     public void testAssertFailNoMatchHeader() throws Exception {
+        Assume.assumeThat(System.getProperty("java.specification.version"), anyOf(is("1.6"), is("1.7")));
         Map<String, Object> reqrec = createTestRecord();
         
         SyncMessage request = new SyncMessage("RM11AD0201");
@@ -472,6 +479,7 @@ public class RequestTestingMessagingClientTest {
      */
     @Test
     public void testAssertFailNoMatchBody() throws Exception {
+        Assume.assumeThat(System.getProperty("java.specification.version"), anyOf(is("1.6"), is("1.7")));
         Map<String, Object> reqrec = createTestRecord();
         
         SyncMessage request = new SyncMessage("RM11AD0201");
