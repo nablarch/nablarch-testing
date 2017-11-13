@@ -54,6 +54,7 @@ public class TableDataSorterTest {
     public static void createFKTables() {
         VariousDbTestHelper.dropTable(Stranger.class);
         VariousDbTestHelper.dropTable(Son.class);
+        VariousDbTestHelper.dropTable(Family.class);
         VariousDbTestHelper.dropTable(Daughter.class);
         VariousDbTestHelper.dropTable(Father.class);
         VariousDbTestHelper.dropTable(Granpa.class);

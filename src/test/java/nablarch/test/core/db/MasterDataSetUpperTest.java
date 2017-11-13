@@ -41,15 +41,17 @@ public class MasterDataSetUpperTest {
     public void setUp() throws Exception {
         VariousDbTestHelper.dropTable(Stranger.class);
         VariousDbTestHelper.dropTable(Son.class);
+        VariousDbTestHelper.dropTable(Family.class);
         VariousDbTestHelper.dropTable(Daughter.class);
         VariousDbTestHelper.dropTable(Father.class);
         VariousDbTestHelper.dropTable(Granpa.class);
 
-        VariousDbTestHelper.dropTable(GranpaSsdMaster.class);
-        VariousDbTestHelper.dropTable(FatherSsdMaster.class);
-        VariousDbTestHelper.dropTable(DaughterSsdMaster.class);
-        VariousDbTestHelper.dropTable(SonSsdMaster.class);
         VariousDbTestHelper.dropTable(StrangerSsdMaster.class);
+        VariousDbTestHelper.dropTable(FamilySsdMaster.class);
+        VariousDbTestHelper.dropTable(SonSsdMaster.class);
+        VariousDbTestHelper.dropTable(DaughterSsdMaster.class);
+        VariousDbTestHelper.dropTable(FatherSsdMaster.class);
+        VariousDbTestHelper.dropTable(GranpaSsdMaster.class);
     }
 
     /** {@link nablarch.test.core.db.MasterDataSetUpper#setUpMasterData()} のテスト */
