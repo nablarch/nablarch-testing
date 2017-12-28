@@ -65,10 +65,9 @@ public class TableDataTest {
     /**
      * {@link TableData#loadData()} のテスト。<br>
      *
-     * @throws ParseException
      */
     @Test
-    public void testLoadDataOneData() throws ParseException {
+    public void testLoadDataOneData() throws Exception {
 
         // テスト用日付
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -76,9 +75,8 @@ public class TableDataTest {
         long longDateTime = testDate.getTime();
 
         // INSERT文実行
-        SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMdd HHmmss");
-        long longDate = formatDate.parse("20100830 012345")
-                .getTime();
+        SimpleDateFormat formatDate = new SimpleDateFormat("yyyyMMdd");
+        long longDate = formatDate.parse("20100830").getTime();
         VariousDbTestHelper.setUpTable(
                 new TestTable("00001", 1L, "あいうえお", 1234567890L, new BigDecimal("1234567.123"), new Date(longDate),
                         new Timestamp(longDateTime), null, "CLOBです0".toCharArray(), new byte[100], true));
@@ -96,8 +94,12 @@ public class TableDataTest {
         assertThat("VARCHAR2_COL", (String) table.getValue(0, "varchar2_col"), is("あいうえお"));
         assertThat("NUMBER_COL", ((Number) table.getValue(0, "number_col")).longValue(), is(1234567890L));
         assertThat("NUMBER_COL2", (BigDecimal) table.getValue(0, "number_col2"), is(new BigDecimal("1234567.123")));
-        
-        assertThat("DATE_COL", (java.sql.Date) table.getValue(0, "date_col"), is(java.sql.Date.valueOf("2010-08-30")));
+
+        if (VariousDbTestHelper.getTargetDatabase() == TargetDb.Db.ORACLE) {
+            assertThat("DATE_COL", (java.sql.Timestamp) table.getValue(0, "date_col"), is(java.sql.Timestamp.valueOf("2010-08-30 00:00:00.000")));
+        } else {
+            assertThat("DATE_COL", (java.sql.Date) table.getValue(0, "date_col"), is(java.sql.Date.valueOf("2010-08-30")));
+        }
         assertThat("TIMESTAMP_COL", (java.sql.Timestamp) table.getValue(0, "timestamp_col"), is(Timestamp.valueOf(
                 "2010-08-30 01:23:45")));
         assertThat("NULL_COL", table.getValue(0, "null_col"), nullValue());
@@ -190,7 +192,7 @@ public class TableDataTest {
         row2.add("あ");
         row2.add("12345");
         row2.add("1234.123");
-        row2.add("20100831101900");
+        row2.add("20100831");
         row2.add("20100831123456");
         row2.add("CLOBです1");
         row2.add(BinaryUtil.convertToHexString("BLOBです1".getBytes()));
@@ -202,7 +204,7 @@ public class TableDataTest {
         row2.add("い");
         row2.add("111");
         row2.add("222.123");
-        row2.add("20110831101900");
+        row2.add("20110831");
         row2.add("20120831123456");
         row2.add("CLOBです2");
         row2.add(null);
@@ -214,7 +216,7 @@ public class TableDataTest {
         row2.add("う");
         row2.add("1111");
         row2.add("333.123");
-        row2.add("20110831101900");
+        row2.add("20110831");
         row2.add("20120831123456");
         row2.add("CLOBです2");
         row2.add("");

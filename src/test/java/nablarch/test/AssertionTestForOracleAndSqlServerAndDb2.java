@@ -35,9 +35,9 @@ public class AssertionTestForOracleAndSqlServerAndDb2 extends AssertionTestSuppo
     public void testAssertTableEqualsStringListOfTableData() {
         // INSERT文実行
         VariousDbTestHelper.setUpTable(
-                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), new Date(0L), new Timestamp(0L),
+                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), Date.valueOf("1970-01-01"), new Timestamp(0L),
                         null, "CLOBです1".toCharArray(), "BLOBです1".getBytes(), true),
-                new TestTable("00002", 2L, "い", 2L, new BigDecimal("22.123"), new Date(0L), new Timestamp(0L), "12345",
+                new TestTable("00002", 2L, "い", 2L, new BigDecimal("22.123"), Date.valueOf("1970-01-01"), new Timestamp(0L), "12345",
                         "CLOBです2".toCharArray(), "BLOBです2".getBytes(), true));
 
         TableData e = new TableData();
@@ -112,9 +112,9 @@ public class AssertionTestForOracleAndSqlServerAndDb2 extends AssertionTestSuppo
 
         // INSERT文実行
         VariousDbTestHelper.setUpTable(
-                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), new Date(0L), new Timestamp(0L),
+                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), Date.valueOf("1970-01-01"), new Timestamp(0L),
                         null, null, null, true),
-                new TestTable("00002", 2L, "い", 2L, new BigDecimal("22.123"), new Date(0L), new Timestamp(0L), "00001",
+                new TestTable("00002", 2L, "い", 2L, new BigDecimal("22.123"), Date.valueOf("1970-01-01"), new Timestamp(0L), "00001",
                         null, null, true));
 
         new TransactionTemplate(DbAccessTestSupport.DB_TRANSACTION_FOR_TEST) {
@@ -132,7 +132,7 @@ public class AssertionTestForOracleAndSqlServerAndDb2 extends AssertionTestSuppo
 
         // INSERT文実行
         VariousDbTestHelper.setUpTable(
-                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), new Date(0L), new Timestamp(0L),
+                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), Date.valueOf("1970-01-01"), new Timestamp(0L),
                         null, null, null, true));
 
         // expected
@@ -176,9 +176,9 @@ public class AssertionTestForOracleAndSqlServerAndDb2 extends AssertionTestSuppo
     public void testAssertSqlResultSetEquals() {
         // INSERT文実行
         VariousDbTestHelper.setUpTable(
-                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), new Date(0L), new Timestamp(0L),
+                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), Date.valueOf("1970-01-01"), new Timestamp(0L),
                         null, null, null, true),
-                new TestTable("00002", 2L, "い", 2L, new BigDecimal("22.123"), new Date(0L), new Timestamp(0L), "00001",
+                new TestTable("00002", 2L, "い", 2L, new BigDecimal("22.123"), Date.valueOf("1970-01-01"), new Timestamp(0L), "00001",
                         null, null, true));
 
         // expected
