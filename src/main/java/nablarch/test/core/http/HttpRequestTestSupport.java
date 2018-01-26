@@ -22,6 +22,8 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import nablarch.common.web.WebConfig;
+import nablarch.common.web.WebConfigFinder;
 import nablarch.common.web.token.TokenUtil;
 import nablarch.core.db.statement.SqlResultSet;
 import nablarch.core.db.statement.SqlRow;
@@ -890,12 +892,13 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param valid   有効なトークンを設定するかどうか
      */
     public void setToken(HttpRequest request, ExecutionContext context, boolean valid) {
+        WebConfig webConfig = WebConfigFinder.getWebConfig();
         if (valid) {
             String token = TokenUtil.getTokenGenerator().generate();
-            request.getParamMap().put(TokenUtil.KEY_HIDDEN_TOKEN, new String[]{token});
-            context.getSessionScopeMap().put(TokenUtil.KEY_SESSION_TOKEN, token);
+            request.getParamMap().put(webConfig.getDoubleSubmissionTokenParameterName(), new String[]{token});
+            context.getSessionScopeMap().put(webConfig.getDoubleSubmissionTokenSessionAttributeName(), token);
         } else {
-            context.getSessionScopeMap().put(TokenUtil.KEY_SESSION_TOKEN, null);
+            context.getSessionScopeMap().put(webConfig.getDoubleSubmissionTokenSessionAttributeName(), null);
         }
     }
 

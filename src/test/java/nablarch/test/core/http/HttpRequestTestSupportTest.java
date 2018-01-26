@@ -30,10 +30,11 @@ import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.Table;
 
+import nablarch.common.web.WebConfig;
+import nablarch.common.web.WebConfigFinder;
 import nablarch.common.web.session.SessionStoreHandler;
 import nablarch.common.web.session.SessionUtil;
 import nablarch.common.web.session.store.DbStore;
-import nablarch.common.web.token.TokenUtil;
 import nablarch.core.date.SystemTimeProvider;
 import nablarch.core.db.connection.AppDbConnection;
 import nablarch.core.db.statement.SqlPStatement;
@@ -868,10 +869,12 @@ public class HttpRequestTestSupportTest {
 
         target.setValidToken(request, context);
 
-        String[] paramToken = request.getParam(TokenUtil.KEY_HIDDEN_TOKEN);
+        WebConfig webConfig = WebConfigFinder.getWebConfig();
+
+        String[] paramToken = request.getParam(webConfig.getDoubleSubmissionTokenParameterName());
         assertThat(paramToken.length, is(1));
 
-        Object sessionToken = context.getSessionScopedVar(TokenUtil.KEY_SESSION_TOKEN);
+        Object sessionToken = context.getSessionScopedVar(webConfig.getDoubleSubmissionTokenSessionAttributeName());
         assertTrue(sessionToken != null);
 
         assertTrue(paramToken[0].equals(sessionToken));
@@ -891,10 +894,12 @@ public class HttpRequestTestSupportTest {
 
         target.setToken(request, context, false);
 
-        String[] paramToken = request.getParam(TokenUtil.KEY_HIDDEN_TOKEN);
+        WebConfig webConfig = WebConfigFinder.getWebConfig();
+
+        String[] paramToken = request.getParam(webConfig.getDoubleSubmissionTokenParameterName());
         assertThat("リクエストパラメータにTokenが含まれないこと。", paramToken, is(nullValue()));
 
-        Object sessionToken = context.getSessionScopedVar(TokenUtil.KEY_SESSION_TOKEN);
+        Object sessionToken = context.getSessionScopedVar(webConfig.getDoubleSubmissionTokenSessionAttributeName());
         assertThat("セッションにTokenが含まれないこと。", sessionToken, is(nullValue()));
     }
 
