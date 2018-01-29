@@ -687,7 +687,7 @@ public class HttpServerTest {
                 add(new HashMap<String, String>() {
                     {
                         put("logLevel", "WARN");
-                        put("message1", "an error occurred while the http dump was being written. make sure dump file path is valid (especially file name). path = [\\tmp\\test\n1234.html]");
+                        put("message1", "an error occurred while the http dump was being written. make sure dump file path is valid (especially file name). path = [http_dump\\test\n1234.html]");
                     }
                 });
             }
@@ -703,7 +703,7 @@ public class HttpServerTest {
                 }
             })
             .setWarBasePath("classpath://nablarch/fw/web/sample/")
-            .setHttpDumpFilePath("/tmp/test\n1234.html")
+            .setHttpDumpFilePath("http_dump/test\n1234.html")
             .startLocal();
             
             HttpRequest httpRequest = new MockHttpRequest(Hereis.string());
@@ -715,7 +715,7 @@ public class HttpServerTest {
             fail();
         } catch (RuntimeException e) {
             assertEquals(IOException.class, e.getCause().getClass());
-            assertTrue(e.getMessage().endsWith("path = [\\tmp\\test\n1234.html]"));
+            assertTrue(e.getMessage().endsWith("path = [http_dump\\test\n1234.html]"));
             
             // ----- assert log -----
             LogVerifier.verify("assert log");
