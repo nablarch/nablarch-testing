@@ -371,6 +371,11 @@ public class HttpServerTest {
 
     @Test
     public void testDumpHttpMessageGeneratedByJspEngine() throws Exception {
+        File httpDumpFile = new File("http_dump/test.html");
+        if (httpDumpFile.exists()) {
+            assertTrue("HTTPダンプのクリーンアップ", httpDumpFile.delete());
+        }
+
         HttpServer server = new HttpServer()
         .addHandler("/app/hasLink.do", new HttpRequestHandler() {
             public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
@@ -393,7 +398,7 @@ public class HttpServerTest {
         assertEquals(200, res.getStatusCode());
         StringBuilder buffer = new StringBuilder();
         BufferedReader reader = new BufferedReader(
-            new FileReader(new File("http_dump/test.html"))
+            new FileReader(httpDumpFile)
         );
         while (true) {
             String line = reader.readLine();
