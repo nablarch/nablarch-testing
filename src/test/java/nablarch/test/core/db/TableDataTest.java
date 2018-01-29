@@ -312,7 +312,7 @@ public class TableDataTest {
                 CoreMatchers.<Object>is("0"), CoreMatchers.<Object>is(false)));
     }
 
-    //@Test
+    @Test
     public void testReplaceNullValue() {
         RepositoryInitializer.initializeDefaultRepository();
         TableData target = new TableData();

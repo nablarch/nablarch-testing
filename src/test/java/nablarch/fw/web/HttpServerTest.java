@@ -369,6 +369,7 @@ public class HttpServerTest {
 
     }
 
+    @Test
     public void testDumpHttpMessageGeneratedByJspEngine() throws Exception {
         HttpServer server = new HttpServer()
         .addHandler("/app/hasLink.do", new HttpRequestHandler() {

@@ -518,7 +518,7 @@ public class RequestTestingMessagingClientTest {
      * 要求電文のアサートに失敗する場合のテストです。
      *　・期待ヘッダと期待ボディの数が違う場合
      */
-//    @Test
+    @Test
     public void testAssertFailNoMatchCount() throws Exception {
         Map<String, Object> reqrec = createTestRecord();
         
