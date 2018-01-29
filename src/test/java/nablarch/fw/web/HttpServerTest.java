@@ -380,7 +380,7 @@ public class HttpServerTest {
             }
         })
         .setWarBasePath("classpath://nablarch/fw/web/sample/")
-        .setHttpDumpFilePath("/tmp/test.html")
+        .setHttpDumpFilePath("http_dump/test.html")
         .startLocal();
         
         HttpRequest httpRequest = new MockHttpRequest(Hereis.string());
@@ -393,7 +393,7 @@ public class HttpServerTest {
         assertEquals(200, res.getStatusCode());
         StringBuilder buffer = new StringBuilder();
         BufferedReader reader = new BufferedReader(
-            new FileReader(new File("/tmp/test.html"))
+            new FileReader(new File("http_dump/test.html"))
         );
         while (true) {
             String line = reader.readLine();
