@@ -549,7 +549,7 @@ public class RequestTestingMessagingClientTest {
         try {
             RequestTestingMessagingClient.assertSendingMessage(getClass(), "testAssertFailNoMatchCount", "1", "case1");
             fail("例外が発生する");
-        } catch (AssertionError e) {
+        } catch (IllegalStateException e) {
             assertTrue(e.getMessage().contains("number of lines of header and body does not match.　"
                     + "number of lines of header=[1]"
                     + ", but number of lines of body=[2]."
