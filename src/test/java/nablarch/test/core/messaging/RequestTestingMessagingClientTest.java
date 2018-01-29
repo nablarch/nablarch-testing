@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.AnyOf;
-
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.FieldDefinition;
 import nablarch.core.dataformat.FormatterFactory;
@@ -34,7 +31,6 @@ import nablarch.test.core.file.TestDataConverter;
 import nablarch.test.core.log.LogVerifier;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
