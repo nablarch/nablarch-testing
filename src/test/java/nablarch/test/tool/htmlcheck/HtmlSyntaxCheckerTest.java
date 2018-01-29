@@ -42,9 +42,10 @@ public class HtmlSyntaxCheckerTest {
      * 
      * @see HtmlSyntaxChecker#check(File)
      */
+    @Test
     public void testCheckTokenMgrError() {
 
-        String htmlPath = "java/nablarch/test/tool/htmlcheck/html/testCheckTokenMgrError.html";
+        String htmlPath = "src/test/java/nablarch/test/tool/htmlcheck/html/testCheckTokenMgrError.html";
         try {
 
             HtmlSyntaxChecker syntaxChecker = new HtmlSyntaxChecker();

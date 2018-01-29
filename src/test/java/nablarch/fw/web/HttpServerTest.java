@@ -369,7 +369,13 @@ public class HttpServerTest {
 
     }
 
+    @Test
     public void testDumpHttpMessageGeneratedByJspEngine() throws Exception {
+        File httpDumpFile = new File("http_dump/test.html");
+        if (httpDumpFile.exists()) {
+            assertTrue("HTTPダンプのクリーンアップ", httpDumpFile.delete());
+        }
+
         HttpServer server = new HttpServer()
         .addHandler("/app/hasLink.do", new HttpRequestHandler() {
             public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
@@ -379,7 +385,7 @@ public class HttpServerTest {
             }
         })
         .setWarBasePath("classpath://nablarch/fw/web/sample/")
-        .setHttpDumpFilePath("/tmp/test.html")
+        .setHttpDumpFilePath("http_dump/test.html")
         .startLocal();
         
         HttpRequest httpRequest = new MockHttpRequest(Hereis.string());
@@ -392,7 +398,7 @@ public class HttpServerTest {
         assertEquals(200, res.getStatusCode());
         StringBuilder buffer = new StringBuilder();
         BufferedReader reader = new BufferedReader(
-            new FileReader(new File("/tmp/test.html"))
+            new FileReader(httpDumpFile)
         );
         while (true) {
             String line = reader.readLine();
@@ -681,7 +687,7 @@ public class HttpServerTest {
                 add(new HashMap<String, String>() {
                     {
                         put("logLevel", "WARN");
-                        put("message1", "an error occurred while the http dump was being written. make sure dump file path is valid (especially file name). path = [\\tmp\\test\n1234.html]");
+                        put("message1", "an error occurred while the http dump was being written. make sure dump file path is valid (especially file name). path = [http_dump\\test\n1234.html]");
                     }
                 });
             }
@@ -697,7 +703,7 @@ public class HttpServerTest {
                 }
             })
             .setWarBasePath("classpath://nablarch/fw/web/sample/")
-            .setHttpDumpFilePath("/tmp/test\n1234.html")
+            .setHttpDumpFilePath("http_dump/test\n1234.html")
             .startLocal();
             
             HttpRequest httpRequest = new MockHttpRequest(Hereis.string());
@@ -709,7 +715,7 @@ public class HttpServerTest {
             fail();
         } catch (RuntimeException e) {
             assertEquals(IOException.class, e.getCause().getClass());
-            assertTrue(e.getMessage().endsWith("path = [\\tmp\\test\n1234.html]"));
+            assertTrue(e.getMessage().endsWith("path = [http_dump\\test\n1234.html]"));
             
             // ----- assert log -----
             LogVerifier.verify("assert log");

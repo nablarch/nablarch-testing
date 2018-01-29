@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.AnyOf;
-
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.FieldDefinition;
 import nablarch.core.dataformat.FormatterFactory;
@@ -34,7 +31,6 @@ import nablarch.test.core.file.TestDataConverter;
 import nablarch.test.core.log.LogVerifier;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -518,7 +514,7 @@ public class RequestTestingMessagingClientTest {
      * 要求電文のアサートに失敗する場合のテストです。
      *　・期待ヘッダと期待ボディの数が違う場合
      */
-//    @Test
+    @Test
     public void testAssertFailNoMatchCount() throws Exception {
         Map<String, Object> reqrec = createTestRecord();
         
@@ -549,8 +545,8 @@ public class RequestTestingMessagingClientTest {
         try {
             RequestTestingMessagingClient.assertSendingMessage(getClass(), "testAssertFailNoMatchCount", "1", "case1");
             fail("例外が発生する");
-        } catch (AssertionError e) {
-            assertTrue(e.getMessage().contains("number of lines of header and body does not match.　"
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage().contains("number of lines of header and body does not match. "
                     + "number of lines of header=[1]"
                     + ", but number of lines of body=[2]."
                     ));
