@@ -176,6 +176,21 @@ public class EntityTestSupportTest {
     }
 
     /**
+     * Excelシートに記載されているDate型の値が、指定されたパターンではない場合。
+     */
+    @Test
+    public void testParseFailure() throws Exception {
+        new Trap() {
+            @Override
+            protected void shouldFail() throws Exception {
+                support.testSetterAndGetter(HogeEntity.class, "testParseFailure", "entity");
+            }
+        }.capture(RuntimeException.class)
+         .whichMessageContains("data cast error")
+         .whichMessageContains("property name = [utilDate]");
+    }
+
+    /**
      * Excelシートで記載されている値が、エラーになった場合のログ確認。
      */
     @Test
@@ -306,6 +321,10 @@ public class EntityTestSupportTest {
 
         private String postNoKo;
 
+        private java.util.Date utilDate;
+
+        private java.util.Date[] utilDates;
+
         public HogeEntity() {
         }
 
@@ -325,6 +344,8 @@ public class EntityTestSupportTest {
             newTimestamps = (Timestamp[]) params.get("newTimestamps");
             postNoOya = (String) params.get("postNoOya");
             postNoKo = (String) params.get("postNoKo");
+            utilDate = (java.util.Date) params.get("utilDate");
+            utilDates = (java.util.Date[]) params.get("utilDates");
 
         }
 
@@ -451,6 +472,14 @@ public class EntityTestSupportTest {
         public String getPostNo() {
             return postNoOya + postNoKo;
         }
+
+        public java.util.Date getUtilDate() { return utilDate; }
+
+        public void setUtilDate(java.util.Date utilDate) { this.utilDate = utilDate; }
+
+        public java.util.Date[] getUtilDates() { return utilDates; }
+
+        public void setUtilDates(java.util.Date[] utilDates) { this.utilDates = utilDates; }
     }
 
     /** サブクラスでもテストできることを確認する為のクラス */

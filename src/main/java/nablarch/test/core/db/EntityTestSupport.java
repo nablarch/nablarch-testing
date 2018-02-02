@@ -4,9 +4,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -80,6 +82,8 @@ public class EntityTestSupport extends TestEventDispatcher {
     /** setter(コンストラクタ)に指定する値のキー値 */
     private static final String SET_KEY = "set";
 
+    /** java.util.Dateへ変換する際の文字列パターン */
+    private static final String DATE_PATTERN = "yyyyMMdd";
 
     /**
      * データベースアクセス自動テスト用基底クラス。<br/>
@@ -563,7 +567,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * <p/>
      * 型変換には、変換対象クラスのvalueOf(String)メソッドの呼び出しによって実現する。
      * このため、valueOf(String)を持たないクラスへの変換は行えない。
-     * ただし、BigDecimalとStringはvalueOf(String)メソッドを定義していないが、
+     * ただし、BigDecimalとStringとjava.util.DateはvalueOf(String)メソッドを定義していないが、
      * 変換対象とする。
      * <br/>
      * 変換対象のクラスが配列の場合は、文字列配列の全ての要素を変換し配列として返却する。
@@ -593,6 +597,16 @@ public class EntityTestSupport extends TestEventDispatcher {
                 decimal[i] = new BigDecimal(strings[i]);
             }
             return decimal;
+        } else if (clazz.isAssignableFrom(Date.class)) {
+            //java.util.Dateの場合は、先頭要素をDATE_PATTERNで指定したパターンで変換
+            return new SimpleDateFormat(DATE_PATTERN).parse(strings[0]);
+        } else if (clazz.isAssignableFrom(Date[].class)) {
+            //java.util.Dateの場合は、全要素をDATE_PATTERNで指定したパターンで変換
+            Date[] dates = new Date[strings.length];
+            for (int i = 0; i < dates.length; i++) {
+                dates[i] = new SimpleDateFormat(DATE_PATTERN).parse(strings[0]);
+            }
+            return dates;
         }
         // 上記以外の場合は、valueOf(String)メソッドを使用して、変換
         if (clazz.isArray()) {
