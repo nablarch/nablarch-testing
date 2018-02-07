@@ -4,7 +4,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,9 +81,6 @@ public class EntityTestSupport extends TestEventDispatcher {
 
     /** setter(コンストラクタ)に指定する値のキー値 */
     private static final String SET_KEY = "set";
-
-    /** java.util.Dateへ変換する際の文字列パターン */
-    private static final String DATE_PATTERN = "yyyyMMdd";
 
     /**
      * データベースアクセス自動テスト用基底クラス。<br/>
@@ -569,6 +566,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * このため、valueOf(String)を持たないクラスへの変換は行えない。
      * ただし、BigDecimalとStringとjava.util.DateはvalueOf(String)メソッドを定義していないが、
      * 変換対象とする。
+     * java.util.Date型は、yyyy-MM-dd、yyyy-MM-dd hh:mm:ssの2種類の形式のみ変換を行う。
      * <br/>
      * 変換対象のクラスが配列の場合は、文字列配列の全ての要素を変換し配列として返却する。
      * <br/>
@@ -579,7 +577,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @return 変換後のオブジェクト
      * @throws Exception 予期しない例外
      */
-    private static Object cast(Class<?> clazz, String[] strings) throws Exception {
+    static Object cast(Class<?> clazz, String[] strings) throws Exception {
 
         if (clazz.isAssignableFrom(String.class)) {
             // Stringの場合は、先頭の要素を返却
@@ -598,13 +596,29 @@ public class EntityTestSupport extends TestEventDispatcher {
             }
             return decimal;
         } else if (clazz.isAssignableFrom(Date.class)) {
-            //java.util.Dateの場合は、先頭要素をDATE_PATTERNで指定したパターンで変換
-            return new SimpleDateFormat(DATE_PATTERN).parse(strings[0]);
+            // java.util.Dateの場合は、先頭要素をjava.util.Dateに変換
+            if (strings[0].length() == 10) {
+                // yyyy-MM-dd形式であればjava.sql.DateのvalueOfを使用して変換
+                return (Date) java.sql.Date.valueOf(strings[0]);
+            } else if (strings[0].length() == 19) {
+                // yyyy－MM-dd hh:mm:ss形式であればTimestampのvalueOfを使用して変換
+                return (Date) Timestamp.valueOf(strings[0]);
+            } else {
+                throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd hh:mm:ss\" .");
+            }
         } else if (clazz.isAssignableFrom(Date[].class)) {
-            //java.util.Dateの場合は、全要素をDATE_PATTERNで指定したパターンで変換
+            // java.util.Date[]の場合は、全要素を変換
             Date[] dates = new Date[strings.length];
             for (int i = 0; i < dates.length; i++) {
-                dates[i] = new SimpleDateFormat(DATE_PATTERN).parse(strings[0]);
+                if (strings[i].length() == 10) {
+                    // yyyy-MM-dd形式であればjava.sql.DateのvalueOfを使用して変換
+                    dates[i] = (Date) java.sql.Date.valueOf(strings[i]);
+                } else if (strings[i].length() == 19) {
+                    // yyyy－MM-dd hh:mm:ss形式であればTimestampのvalueOfを使用して変換
+                    dates[i] = (Date) Timestamp.valueOf(strings[i]);
+                } else {
+                    throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd hh:mm:ss\" .");
+                }
             }
             return dates;
         }
