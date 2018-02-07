@@ -597,28 +597,12 @@ public class EntityTestSupport extends TestEventDispatcher {
             return decimal;
         } else if (clazz.isAssignableFrom(Date.class)) {
             // java.util.Dateの場合は、先頭要素をjava.util.Dateに変換
-            if (strings[0].length() == 10) {
-                // yyyy-MM-dd形式であればjava.sql.DateのvalueOfを使用して変換
-                return (Date) java.sql.Date.valueOf(strings[0]);
-            } else if (strings[0].length() == 19) {
-                // yyyy－MM-dd hh:mm:ss形式であればTimestampのvalueOfを使用して変換
-                return (Date) Timestamp.valueOf(strings[0]);
-            } else {
-                throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd hh:mm:ss\" .");
-            }
+            return parseDateString(strings[0]);
         } else if (clazz.isAssignableFrom(Date[].class)) {
             // java.util.Date[]の場合は、全要素を変換
             Date[] dates = new Date[strings.length];
             for (int i = 0; i < dates.length; i++) {
-                if (strings[i].length() == 10) {
-                    // yyyy-MM-dd形式であればjava.sql.DateのvalueOfを使用して変換
-                    dates[i] = (Date) java.sql.Date.valueOf(strings[i]);
-                } else if (strings[i].length() == 19) {
-                    // yyyy－MM-dd hh:mm:ss形式であればTimestampのvalueOfを使用して変換
-                    dates[i] = (Date) Timestamp.valueOf(strings[i]);
-                } else {
-                    throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd hh:mm:ss\" .");
-                }
+                dates[i] = parseDateString(strings[i]);
             }
             return dates;
         }
@@ -635,6 +619,25 @@ public class EntityTestSupport extends TestEventDispatcher {
         } else {
             Method method = clazz.getMethod("valueOf", String.class);
             return method.invoke(null, strings[0]);
+        }
+    }
+
+    /**
+     * 日付文字列をjava.util.Date型に変換する。
+     * 変換できる形式はyyyy-MM-ddとyyyy-MM-dd hh:mm:ssの2種類である。
+     * @param dateStr 日付文字列
+     * @return 変換後のDate型オブジェクト
+     * @throws IllegalArgumentException 日付文字列の形式が不正な場合。
+     */
+    private static Date parseDateString(String dateStr) throws IllegalArgumentException {
+        if (dateStr.length() == 10) {
+            // yyyy-MM-dd形式であればjava.sql.DateのvalueOfを使用して変換
+            return (Date) java.sql.Date.valueOf(dateStr);
+        } else if (dateStr.length() == 19) {
+            // yyyy－MM-dd hh:mm:ss形式であればTimestampのvalueOfを使用して変換
+            return (Date) Timestamp.valueOf(dateStr);
+        } else {
+            throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd hh:mm:ss\" .");
         }
     }
 
