@@ -4,9 +4,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -79,7 +81,6 @@ public class EntityTestSupport extends TestEventDispatcher {
 
     /** setter(コンストラクタ)に指定する値のキー値 */
     private static final String SET_KEY = "set";
-
 
     /**
      * データベースアクセス自動テスト用基底クラス。<br/>
@@ -563,8 +564,9 @@ public class EntityTestSupport extends TestEventDispatcher {
      * <p/>
      * 型変換には、変換対象クラスのvalueOf(String)メソッドの呼び出しによって実現する。
      * このため、valueOf(String)を持たないクラスへの変換は行えない。
-     * ただし、BigDecimalとStringはvalueOf(String)メソッドを定義していないが、
+     * ただし、BigDecimalとStringとjava.util.DateはvalueOf(String)メソッドを定義していないが、
      * 変換対象とする。
+     * java.util.Date型は、yyyy-MM-dd、yyyy-MM-dd hh:mm:ssの2種類の形式のみ変換を行う。
      * <br/>
      * 変換対象のクラスが配列の場合は、文字列配列の全ての要素を変換し配列として返却する。
      * <br/>
@@ -575,7 +577,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @return 変換後のオブジェクト
      * @throws Exception 予期しない例外
      */
-    private static Object cast(Class<?> clazz, String[] strings) throws Exception {
+    static Object cast(Class<?> clazz, String[] strings) throws Exception {
 
         if (clazz.isAssignableFrom(String.class)) {
             // Stringの場合は、先頭の要素を返却
@@ -593,6 +595,16 @@ public class EntityTestSupport extends TestEventDispatcher {
                 decimal[i] = new BigDecimal(strings[i]);
             }
             return decimal;
+        } else if (clazz.isAssignableFrom(Date.class)) {
+            // java.util.Dateの場合は、先頭要素をjava.util.Dateに変換
+            return parseDateString(strings[0]);
+        } else if (clazz.isAssignableFrom(Date[].class)) {
+            // java.util.Date[]の場合は、全要素を変換
+            Date[] dates = new Date[strings.length];
+            for (int i = 0; i < dates.length; i++) {
+                dates[i] = parseDateString(strings[i]);
+            }
+            return dates;
         }
         // 上記以外の場合は、valueOf(String)メソッドを使用して、変換
         if (clazz.isArray()) {
@@ -607,6 +619,22 @@ public class EntityTestSupport extends TestEventDispatcher {
         } else {
             Method method = clazz.getMethod("valueOf", String.class);
             return method.invoke(null, strings[0]);
+        }
+    }
+
+    /**
+     * 日付文字列をjava.util.Date型に変換する。
+     * 変換できる形式はyyyy-MM-ddとyyyy-MM-dd HH:mm:ssの2種類である。
+     * @param dateStr 日付文字列
+     * @return 変換後のDate型オブジェクト
+     * @throws IllegalArgumentException 日付文字列の形式が不正な場合。
+     */
+    private static Date parseDateString(String dateStr) throws IllegalArgumentException {
+        try{
+            final String s = (dateStr + " 00:00:00").substring(0, 19);
+            return new Date(Timestamp.valueOf(s).getTime());
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\" .");
         }
     }
 
