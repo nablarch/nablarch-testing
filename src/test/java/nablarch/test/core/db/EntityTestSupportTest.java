@@ -227,18 +227,27 @@ public class EntityTestSupportTest {
          .whichMessageContains("getter is not found. getter name=[] sheet=[testInvalidInput] id=[entity] row=[2].");
     }
 
-    /** {@link EntityTestSupport#cast(Class, String[])}のテスト。 */
+    /**
+     * {@link EntityTestSupport#cast(Class, String[])}のテスト。
+     * java.util.Date型への変換のテスト。
+     */
     @Test
-    public void testCast() throws Exception {
-        assertThat((java.util.Date) EntityTestSupport.cast(java.util.Date.class, new String[]{"2011-02-22"}), is((java.util.Date) java.sql.Date.valueOf("2011-02-22")));
+    public void testCastToDate() throws Exception {
+        Object date = EntityTestSupport.cast(java.util.Date.class, new String[]{"2011-02-22"});
+        assertThat("yyyy-MM-ddの変換結果が厳密にjava.util.Dateであること", date.getClass() == java.util.Date.class, is(true));
 
-        assertThat((java.util.Date) EntityTestSupport.cast(java.util.Date.class, new String[]{"2011-02-22 13:00:02"}), is((java.util.Date) Timestamp.valueOf("2011-02-22 13:00:02")));
+        Object datetime = EntityTestSupport.cast(java.util.Date.class, new String[]{"2011-02-22 13:00:01"});
+        assertThat("yyyy-MM-dd HH:mm:ssの変換結果が厳密にjava.util.Dateであること", datetime.getClass() == java.util.Date.class, is(true));
 
-        java.util.Date[] dateExpected = {(java.util.Date) java.sql.Date.valueOf("2011-02-22"), (java.util.Date) java.sql.Date.valueOf("2011-02-23")};
+        assertThat((java.util.Date) EntityTestSupport.cast(java.util.Date.class, new String[]{"2011-02-22"}), is(new java.util.Date(java.sql.Date.valueOf("2011-02-22").getTime())));
+
+        assertThat((java.util.Date) EntityTestSupport.cast(java.util.Date.class, new String[]{"2011-02-22 13:00:02"}), is(new java.util.Date(Timestamp.valueOf("2011-02-22 13:00:02").getTime())));
+
+        java.util.Date[] dateExpected = {new java.util.Date(java.sql.Date.valueOf("2011-02-22").getTime()) , new java.util.Date(java.sql.Date.valueOf("2011-02-23").getTime())};
         assertThat((java.util.Date[]) EntityTestSupport.cast(java.util.Date[].class, new String[]{"2011-02-22", "2011-02-23"}), is(dateExpected));
 
-        java.util.Date[] TimestampExpected = {(java.util.Date) Timestamp.valueOf("2011-02-22 13:00:02"), (java.util.Date) Timestamp.valueOf("2011-02-22 13:00:03")};
-        assertThat((java.util.Date[]) EntityTestSupport.cast(java.util.Date[].class, new String[]{"2011-02-22 13:00:02", "2011-02-22 13:00:03"}), is(TimestampExpected));
+        java.util.Date[] timestampExpected = {new java.util.Date(Timestamp.valueOf("2011-02-22 13:00:02").getTime()) , new java.util.Date(Timestamp.valueOf("2011-02-22 13:00:03").getTime()) };
+        assertThat((java.util.Date[]) EntityTestSupport.cast(java.util.Date[].class, new String[]{"2011-02-22 13:00:02", "2011-02-22 13:00:03"}), is(timestampExpected));
     }
 
     /**

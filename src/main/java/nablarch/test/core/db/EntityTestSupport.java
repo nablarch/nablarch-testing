@@ -624,20 +624,17 @@ public class EntityTestSupport extends TestEventDispatcher {
 
     /**
      * 日付文字列をjava.util.Date型に変換する。
-     * 変換できる形式はyyyy-MM-ddとyyyy-MM-dd hh:mm:ssの2種類である。
+     * 変換できる形式はyyyy-MM-ddとyyyy-MM-dd HH:mm:ssの2種類である。
      * @param dateStr 日付文字列
      * @return 変換後のDate型オブジェクト
      * @throws IllegalArgumentException 日付文字列の形式が不正な場合。
      */
     private static Date parseDateString(String dateStr) throws IllegalArgumentException {
-        if (dateStr.length() == 10) {
-            // yyyy-MM-dd形式であればjava.sql.DateのvalueOfを使用して変換
-            return (Date) java.sql.Date.valueOf(dateStr);
-        } else if (dateStr.length() == 19) {
-            // yyyy－MM-dd hh:mm:ss形式であればTimestampのvalueOfを使用して変換
-            return (Date) Timestamp.valueOf(dateStr);
-        } else {
-            throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd hh:mm:ss\" .");
+        try{
+            final String s = (dateStr + " 00:00:00").substring(0, 19);
+            return new Date(Timestamp.valueOf(s).getTime());
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Date pattern allowed only \"yyyy-MM-dd\" or \"yyyy-MM-dd HH:mm:ss\" .");
         }
     }
 
