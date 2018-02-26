@@ -42,7 +42,7 @@ public class OneShotLoopHandler implements Handler<Object, Object> {
 
         Result result = null;
         while (context.hasNextData()) {
-            result = new ExecutionContext(context).handleNext(data);
+            result = context.copy().handleNext(data);
 
             if (result instanceof NoMoreRecord) {
                 // これ以上データが存在しない場合は処理を終了する
