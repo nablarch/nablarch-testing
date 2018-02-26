@@ -12,6 +12,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hamcrest.CoreMatchers;
+
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.db.statement.SqlPStatement;
@@ -215,6 +217,27 @@ public class OneShotLoopHandlerTest {
         assertThat("データが存在しないので処理済みデータは無し", readData, hasItems(1, 2, 3, 4, 5));
     }
 
+    @Test
+    public void 後続のハンドラにはこのハンドラのインプットとなるExecutionContextのコピーが渡されること() {
+
+        final TestExecutionContext originalContext = new TestExecutionContext();
+        createTestData(1);
+        originalContext.setDataReader(createDataReader());
+        
+        originalContext.addHandler(new Handler<Object, Object>() {
+            @Override
+            public Object handle(final Object o, final ExecutionContext context) {
+                assertThat("ExecutionContextの実態が変わらないこと", context, instanceOf(originalContext.getClass()));
+                assertThat("コピーを作るので実態が変わること", context,
+                        not(CoreMatchers.<ExecutionContext>sameInstance(originalContext)));
+                return null;
+            }
+        });
+
+        final OneShotLoopHandler sut = new OneShotLoopHandler();
+        sut.handle(null, originalContext);
+    }
+    
     /**
      * テストで使用するデータリーダを生成する。
      *
@@ -259,6 +282,24 @@ public class OneShotLoopHandlerTest {
 
         @Column(name = "STATUS", length = 1, nullable = false)
         public String status;
+    }
+
+    /**
+     * テスト用の{@link ExecutionContext}実装。
+     */
+    private static class TestExecutionContext extends ExecutionContext {
+
+        public TestExecutionContext() {
+        }
+
+        public TestExecutionContext(final TestExecutionContext original) {
+            super(original);
+        }
+
+        @Override
+        protected ExecutionContext copyInternal() {
+            return new TestExecutionContext(this);
+        }
     }
 }
 
