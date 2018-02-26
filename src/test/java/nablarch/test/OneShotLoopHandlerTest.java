@@ -223,7 +223,8 @@ public class OneShotLoopHandlerTest {
         final TestExecutionContext originalContext = new TestExecutionContext();
         createTestData(1);
         originalContext.setDataReader(createDataReader());
-        
+
+        originalContext.addHandler(new DataReadHandler());
         originalContext.addHandler(new Handler<Object, Object>() {
             @Override
             public Object handle(final Object o, final ExecutionContext context) {
