@@ -12,8 +12,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.hamcrest.CoreMatchers;
-
 import nablarch.core.db.connection.ConnectionFactory;
 import nablarch.core.db.connection.TransactionManagerConnection;
 import nablarch.core.db.statement.SqlPStatement;
@@ -228,9 +226,8 @@ public class OneShotLoopHandlerTest {
         originalContext.addHandler(new Handler<Object, Object>() {
             @Override
             public Object handle(final Object o, final ExecutionContext context) {
-                assertThat("ExecutionContextの実態が変わらないこと", context, instanceOf(originalContext.getClass()));
-                assertThat("コピーを作るので実態が変わること", context,
-                        not(CoreMatchers.<ExecutionContext>sameInstance(originalContext)));
+                assertThat("OneShotLoopHandlerに指定したExecutionContextと同じクラスが後続のハンドラに渡されること",
+                        context, instanceOf(originalContext.getClass()));
                 return null;
             }
         });
