@@ -52,6 +52,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 /**
@@ -202,6 +203,9 @@ public class AbstractHttpRequestTestTemplateTest {
 
     }
 
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
     /**
      * ダウンロードの場合にHTMLチェックツールが実行されないこと。
      * HTMLチェックツールをONにしてリクエスト単体テストを実施する。
@@ -226,9 +230,13 @@ public class AbstractHttpRequestTestTemplateTest {
                 return new HttpServerForTesting() {
                     @Override
                     public File getHttpDumpFile() {
-                        return Hereis.file("hoge_テスト一時ファイル.txt");
-                        /*
-                        abcdefghij*/
+                        try {
+                            return Hereis.file(tempDir.newFile("テスト一時ファイル.txt").getAbsolutePath());
+                            /*
+                            abcdefghij*/
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 };
             }

@@ -2,13 +2,18 @@ package nablarch.test.tool.sanitizingcheck;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * SanitizingCheckTaskTestのテストクラス
@@ -17,6 +22,10 @@ import org.junit.Test;
  * @see SanitizingCheckTask
  */
 public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
+
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
 
     /**
      * mainメソッドのテスト
@@ -28,20 +37,21 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
 
         // メソッドの呼び出し確認（additionalextの指定がない場合）
         String[] args = new String[5];
+        File file = tempDir.newFile();
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml";
+        args[1] = file.getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
         SanitizingCheckTask.main(args);
-        File file = new File("src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml");
         assertTrue(file.exists());
 
         // メソッドの呼び出し確認（additionalextの指定がある場合）
         assertTrue(file.delete());
         args = new String[6];
+        file = tempDir.newFile();
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml";
+        args[1] = file.getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
@@ -52,7 +62,7 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
         // 引数が2の場合
         args = new String[2];
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml";
+        args[1] = tempDir.newFile().getAbsolutePath();
         try {
             SanitizingCheckTask.main(args);
             fail();
@@ -65,7 +75,7 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
         // 引数が4の場合
         args = new String[4];
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputArgs4.xml";
+        args[1] = tempDir.newFile().getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         try {
@@ -79,19 +89,19 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
 
         // 引数が5の場合
         args = new String[5];
+        file = tempDir.newFile();
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputArgs5.xml";
+        args[1] = file.getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
         SanitizingCheckTask.main(args);
-        file = new File("src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputArgs5.xml");
         assertTrue(file.exists());
 
         // 引数が7の場合
         args = new String[8];
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml";
+        args[1] = tempDir.newFile().getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
@@ -110,7 +120,7 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
         // 設定ファイルが存在しない場合
         args = new String[5];
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testCheckSanitizing/testCheckSanitizing";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml";
+        args[1] = tempDir.newFile().getAbsolutePath();
         args[2] = "noSuchFile";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
@@ -128,7 +138,7 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
         // チェック対象JSPが存在しない場合
         args = new String[5];
         args[0] = "noSuchDir";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutput.xml";
+        args[1] = tempDir.newFile().getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
@@ -142,7 +152,7 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
         // 使用できない文字コードを指定した場合
         args = new String[5];
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/all.jsp";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputForAllJspTag.xml";
+        args[1] = tempDir.newFile().getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "test";
         args[4] = "\\r\\n";
@@ -155,28 +165,28 @@ public class SanitizingCheckTaskTest extends SanitizingCheckTestSupport {
 
         // 全てのタグに対して指摘を行えることの確認
         args = new String[6];
+        file = tempDir.newFile();
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/all.jsp";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputForAllJspTag.xml";
+        args[1] = file.getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
         args[5] = "tag,fragment";
         SanitizingCheckTask.main(args);
-        file = new File("src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputForAllJspTag.xml");
         assertTrue(file.exists());
         assertThat(readFileToString(file.getAbsolutePath()), is(containsString("all.jsp")));
 
         // 除外設定が有効であることの確認
         args = new String[7];
+        file = tempDir.newFile();
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/all.jsp";
-        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputForAllJspTag.xml";
+        args[1] = file.getAbsolutePath();
         args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/config.txt";
         args[3] = "UTF-8";
         args[4] = "\\r\\n";
         args[5] = "tag,fragment";
         args[6] = "sanitizingcheck(\\\\|/)all\\.jsp";
         SanitizingCheckTask.main(args);
-        file = new File("src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualOutputForAllJspTag.xml");
         assertTrue(file.exists());
         assertThat(readFileToString(file.getAbsolutePath()), is(not(containsString("all.jsp"))));
 

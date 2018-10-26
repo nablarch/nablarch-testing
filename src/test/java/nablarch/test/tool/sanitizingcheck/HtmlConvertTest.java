@@ -1,7 +1,14 @@
 package nablarch.test.tool.sanitizingcheck;
 
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * HtmlConvertテスト
@@ -10,11 +17,14 @@ import org.junit.Test;
  */
 public class HtmlConvertTest extends SanitizingCheckTestSupport {
 
+    @Rule
+    public TemporaryFolder tmpDir = new TemporaryFolder();
+
     /**
      * mainメソッドテスト
      */
     @Test
-    public void testMain() {
+    public void testMain() throws IOException {
 
         // 引数が2の場合
         String[] args = new String[2];
@@ -31,7 +41,7 @@ public class HtmlConvertTest extends SanitizingCheckTestSupport {
         args = new String[3];
         args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testHtmlConvert.xml";
         args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/TransformToHTML.xsl";
-        args[2] = "src/test/java/nablarch/test/tool/sanitizingcheck/actual/actualHtml.html";
+        args[2] = tmpDir.newFile().getAbsolutePath();
         HtmlConvert.main(args);
         assertFile("src/test/java/nablarch/test/tool/sanitizingcheck/expected/expectedHtml.html", args[2]);
         
