@@ -53,8 +53,7 @@ public class RequestTestingMessagingClientTest {
     public static void loadRepository() {
         new RequestTestingSendSyncSupport(RequestTestingMessagingClientTest.class);
         
-        RepositoryInitializer.recreateRepository("nablarch/test/core/messaging/web/web-component-configuration" +
-                                                         "-request-testing.xml");
+        RepositoryInitializer.recreateRepository("nablarch/test/core/messaging/web/web-component-configuration-request-testing.xml");
     }
     
     /** テスト実行後にリポジトリを戻す。    */
