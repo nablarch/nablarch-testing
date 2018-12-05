@@ -355,7 +355,7 @@ public class RequestTestingMessagingClientTest {
     public void testInitializeForRequestUnitTestingError() throws Exception {
         // expectedMessage と responseMessage が null
         RequestTestingMessagingClient.clearSendingMessageCache();
-        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", null, null);
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", null, null);
         try {
             new RequestTestingMessagingClient().sendSync(null, null);
             fail("例外が発生する");
@@ -364,7 +364,7 @@ public class RequestTestingMessagingClientTest {
         }
         
         // expectedMessage が null
-        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testSendSync", "1", null);
+        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testInitializeError", "1", null);
         
         Map<String, Object> reqrec = createTestRecord();
 
@@ -373,17 +373,17 @@ public class RequestTestingMessagingClientTest {
         MessageSenderSettings settings = new MessageSenderSettings("RM11AD0201");
         
         RequestTestingMessagingClient.clearSendingMessageCache();
-        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", "case1", null);
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", "case1", null);
         try {
             new RequestTestingMessagingClient().sendSync(settings, request);
             fail("例外が発生する");
         } catch (RuntimeException e) {
-            assertTrue(e.getMessage().contains("response message was not found in sheet. sheet name=[testSendSync], case no=[1], message id=[case1], data type name=[RESPONSE_BODY_MESSAGES], request id=[RM11AD0201]."));
+            assertTrue(e.getMessage().contains("response message was not found in sheet. sheet name=[testInitializeError], case no=[1], message id=[case1], data type name=[RESPONSE_BODY_MESSAGES], request id=[RM11AD0201]."));
         }
 
         // expectedMessage が null の状態でassert
-        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", "case1", null);
-        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testSendSync", "1", null);
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", "case1", null);
+        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testInitializeError", "1", null);
     }
     
     /**
