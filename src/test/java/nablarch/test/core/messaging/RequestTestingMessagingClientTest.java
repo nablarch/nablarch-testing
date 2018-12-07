@@ -353,37 +353,39 @@ public class RequestTestingMessagingClientTest {
      */
     @Test
     public void testInitializeForRequestUnitTestingError() throws Exception {
-        // expectedMessage と responseMessage が null
+
         RequestTestingMessagingClient.clearSendingMessageCache();
-        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", null, null);
         try {
-            new RequestTestingMessagingClient().sendSync(null, null);
+            // 送信するときに設定を詰めなかった場合に例外が発生する。
+            new RequestTestingMessagingClient().sendSync(null, new SyncMessage("RM11AD0201"));
             fail("例外が発生する");
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("expectedMessage and responseMessage was not specified in test data. expectedMessage and responseMessage must be specified."));
         }
-        
-        // expectedMessage が null
-        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testSendSync", "1", null);
-        
-        Map<String, Object> reqrec = createTestRecord();
 
+        // expectedMessageとresponseMessageを詰めなかった場合に expectedMessageがnullとなる。
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", null, null);
+        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testInitializeError", "1", null);
+
+        // テストデータに1ペアの要求と応答電文しか記載しなかったときに、2回目のsendSyncで例外が返ってくる。
+        Map<String, Object> reqrec = createTestRecord();
         SyncMessage request = new SyncMessage("RM11AD0201");
         request.addDataRecord(reqrec);
         MessageSenderSettings settings = new MessageSenderSettings("RM11AD0201");
-        
         RequestTestingMessagingClient.clearSendingMessageCache();
-        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", "case1", null);
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", "case1", "RM11AD0201");
+        RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.sendSync(settings, request);
         try {
-            new RequestTestingMessagingClient().sendSync(settings, request);
+            client.sendSync(settings, request);
             fail("例外が発生する");
         } catch (RuntimeException e) {
-            assertTrue(e.getMessage().contains("response message was not found in sheet. sheet name=[testSendSync], case no=[1], message id=[case1], data type name=[RESPONSE_BODY_MESSAGES], request id=[RM11AD0201]."));
+            assertTrue(e.getMessage().contains("response message was not found in sheet. sheet name=[testInitializeError], case no=[1], message id=[case1], data type name=[RESPONSE_BODY_MESSAGES], request id=[RM11AD0201]."));
         }
 
         // expectedMessage が null の状態でassert
-        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testSendSync", "1", "case1", null);
-        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testSendSync", "1", null);
+        RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", "case1", null);
+        RequestTestingMessagingClient.assertSendingMessage(getClass(), "testInitializeError", "1", null);
     }
     
     /**
