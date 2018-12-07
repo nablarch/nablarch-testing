@@ -374,9 +374,10 @@ public class RequestTestingMessagingClientTest {
         MessageSenderSettings settings = new MessageSenderSettings("RM11AD0201");
         RequestTestingMessagingClient.clearSendingMessageCache();
         RequestTestingMessagingClient.initializeForRequestUnitTesting(getClass(), "testInitializeError", "1", "case1", "RM11AD0201");
+        RequestTestingMessagingClient client = new RequestTestingMessagingClient();
+        client.sendSync(settings, request);
         try {
-            new RequestTestingMessagingClient().sendSync(settings, request);
-            new RequestTestingMessagingClient().sendSync(settings, request);
+            client.sendSync(settings, request);
             fail("例外が発生する");
         } catch (RuntimeException e) {
             assertTrue(e.getMessage().contains("response message was not found in sheet. sheet name=[testInitializeError], case no=[1], message id=[case1], data type name=[RESPONSE_BODY_MESSAGES], request id=[RM11AD0201]."));
