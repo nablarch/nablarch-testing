@@ -227,7 +227,7 @@ public abstract class HttpServer extends HandlerQueueManager<HttpServer> impleme
             );
         }
 
-        if (scheme.equals("classpath") && path.getRealPath().startsWith("jar:")) {
+        if (scheme.equals("classpath") && (path.getRealPath().startsWith("jar:") || path.getRealPath().startsWith("jrt:"))) {
             throw new IllegalArgumentException(
                     "WAR base path can not be a JAR interior path. "
                             +  "Assign the path of the WAR archive itself "
