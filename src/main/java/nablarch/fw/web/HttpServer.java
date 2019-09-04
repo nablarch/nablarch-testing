@@ -46,6 +46,7 @@ import java.util.regex.Pattern;
  * </pre>
  *
  * @author Iwauo Tajima <iwauo@tis.co.jp>
+ * @see HttpServerFactory
  */
 @Published(tag = "architect")
 public abstract class HttpServer extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
