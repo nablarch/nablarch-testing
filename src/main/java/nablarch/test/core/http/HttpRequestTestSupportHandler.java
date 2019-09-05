@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
 import nablarch.core.util.annotation.Published;
 import nablarch.fw.ExecutionContext;
 import nablarch.fw.Handler;
@@ -11,7 +13,6 @@ import nablarch.fw.web.HttpRequest;
 import nablarch.fw.web.HttpRequestHandler;
 import nablarch.fw.web.HttpResponse;
 import nablarch.fw.web.upload.PartInfo;
-
 
 /**
  * HTTPリクエストのテスト時に先頭の設定するリクエストハンドラ。<br/>
@@ -51,6 +52,8 @@ import nablarch.fw.web.upload.PartInfo;
  */
 @Published
 public class HttpRequestTestSupportHandler implements HttpRequestHandler {
+    /** ロガー */
+    private static final Logger LOGGER = LoggerManager.get(HttpRequestTestSupportHandler.class);
 
     /** テストクラスから指定されたExecutionContext */
     private ExecutionContext contextFromTest;
@@ -82,7 +85,36 @@ public class HttpRequestTestSupportHandler implements HttpRequestHandler {
     public HttpResponse handle(HttpRequest request, ExecutionContext context) {
 
         // ExecutionContextの移送を行う
+        LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 1st start---------");
         convertExecutionContext(contextFromTest, context, false);
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 1st end---------");
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 1st result start---------");
+         LOGGER.logDebug("contextFromTest.getRequestScopeMap()");
+        if(contextFromTest.getRequestScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : contextFromTest.getRequestScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("contextFromTest.getSessionScopeMap()" + contextFromTest.getSessionScopeMap());
+        if(contextFromTest.getSessionScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : contextFromTest.getSessionScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("context,.getRequestScopeMap()" + context.getRequestScopeMap());
+        if(context.getRequestScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : context.getRequestScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("context,.getSessionScopeMap()" +context.getSessionScopeMap());
+        if(context.getSessionScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : context.getSessionScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 1st result end---------");
+
 
         // セッション情報の設定
         setDefaultScopeVars(context.getSessionScopeMap(), config.getSessionInfo());
@@ -91,14 +123,45 @@ public class HttpRequestTestSupportHandler implements HttpRequestHandler {
         request.setMultipart(multipart);
 
         // 次のハンドラを起動
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler handleNext start---------");
         HttpResponse httpResponse = context.handleNext(request);
-        
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler handleNext end---------");
+
         // ステータスコードを設定
         this.statusCode = httpResponse.getStatusCode();
 
         // ExecutionContextの移送を行う
         // 移送先のcontextは初期化を行う。
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 2nd start---------");
         convertExecutionContext(context, contextFromTest, true);
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 2nd start---------");
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 2st result start---------");
+         LOGGER.logDebug("contextFromTest.getRequestScopeMap()");
+        if(contextFromTest.getRequestScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : contextFromTest.getRequestScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("contextFromTest.getSessionScopeMap()" + contextFromTest.getSessionScopeMap());
+        if(contextFromTest.getSessionScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : contextFromTest.getSessionScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("context,.getRequestScopeMap()" + context.getRequestScopeMap());
+        if(context.getRequestScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : context.getRequestScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("context,.getSessionScopeMap()" +context.getSessionScopeMap());
+        if(context.getSessionScopeMap() != null) {
+            for (Map.Entry<String, Object> entry : context.getSessionScopeMap().entrySet()) {
+                 LOGGER.logDebug(entry.getKey() + " : " + entry.getValue());
+            }
+        }
+         LOGGER.logDebug("--------HttpRequestTestSupportHandler convertExecutionContext 2st result end---------");
+
         return httpResponse;
     }
     
