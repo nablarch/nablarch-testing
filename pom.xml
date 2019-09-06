@@ -47,7 +47,7 @@
       </build>
     </profile>
     <profile>
-      <id>java9</id>
+      <id>java11</id>
       <properties>
         <ecj.version>4.6.1</ecj.version>
       </properties>
@@ -65,6 +65,18 @@
           </plugin>
         </plugins>
       </build>
+      <dependencies>
+        <dependency>
+          <groupId>javax.activation</groupId>
+          <artifactId>javax.activation-api</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>javax.activation</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
   
