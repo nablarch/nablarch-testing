@@ -23,6 +23,7 @@ import nablarch.fw.ExecutionContext;
 import nablarch.fw.web.upload.PartInfo;
 import nablarch.fw.web.useragent.UserAgent;
 import nablarch.fw.web.useragent.UserAgentParser;
+import nablarch.test.core.http.MockHttpServer;
 import nablarch.test.support.tool.Hereis;
 
 import org.junit.Assert;
@@ -383,7 +384,7 @@ public class MockHttpRequestTest {
 
         final List<HttpRequest> holder = new ArrayList<HttpRequest>();
 
-        HttpServer server = new HttpServer()
+        HttpServer server = new MockHttpServer()
                 .addHandler("//*", new HttpRequestHandler() {
                     public HttpResponse handle(HttpRequest request, ExecutionContext ctx) {
                         request.getParamMap(); // リクエストスレッド内でパラメータの取得を行っておく必要がある。
@@ -431,7 +432,7 @@ public class MockHttpRequestTest {
 
         final List<HttpRequest> holder = new ArrayList<HttpRequest>();
 
-        HttpServer server = new HttpServer()
+        HttpServer server = new MockHttpServer()
                 .addHandler("//*", new HttpRequestHandler() {
                     public HttpResponse handle(HttpRequest request, ExecutionContext ctx) {
                         request.getParamMap(); // リクエストスレッド内でパラメータの取得を行っておく必要がある。
@@ -469,7 +470,7 @@ public class MockHttpRequestTest {
 
         final List<HttpRequest> holder = new ArrayList<HttpRequest>();
 
-        HttpServer server = new HttpServer()
+        HttpServer server = new MockHttpServer()
                 .addHandler("//*", new HttpRequestHandler() {
                     public HttpResponse handle(HttpRequest request, ExecutionContext ctx) {
                         request.getParamMap(); // リクエストスレッド内でパラメータの取得を行っておく必要がある。

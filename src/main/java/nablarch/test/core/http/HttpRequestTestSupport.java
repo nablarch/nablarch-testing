@@ -27,6 +27,7 @@ import nablarch.common.web.WebConfigFinder;
 import nablarch.common.web.token.TokenUtil;
 import nablarch.core.db.statement.SqlResultSet;
 import nablarch.core.db.statement.SqlRow;
+import nablarch.core.exception.IllegalConfigurationException;
 import nablarch.core.log.Logger;
 import nablarch.core.log.LoggerManager;
 import nablarch.core.message.ApplicationException;
@@ -42,6 +43,7 @@ import nablarch.fw.web.HttpCookie;
 import nablarch.fw.web.HttpRequest;
 import nablarch.fw.web.HttpResponse;
 import nablarch.fw.web.HttpServer;
+import nablarch.fw.web.HttpServerFactory;
 import nablarch.fw.web.MockHttpCookie;
 import nablarch.fw.web.MockHttpRequest;
 import nablarch.fw.web.ResourceLocator;
@@ -383,13 +385,18 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     }
 
 
+    private static final String HTTP_SERVER_FACTORY_KEY = "httpServerFactory";
     /**
      * HttpServerのインスタンスを生成する。
      *
      * @return HttpServerのインスタンス
      */
     protected HttpServer createHttpServer() {
-        return new HttpServer();
+        HttpServerFactory factory = SystemRepository.get(HTTP_SERVER_FACTORY_KEY);
+        if (factory == null) {
+            throw new IllegalConfigurationException("could not find component. name=[" + HTTP_SERVER_FACTORY_KEY + "].");
+        }
+        return factory.create();
     }
 
 
