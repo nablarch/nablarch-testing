@@ -89,7 +89,7 @@ public class HtmlConvertTest extends SanitizingCheckTestSupport {
      */
     @Test
     public void testMainSuccessCaseBeforeJava6() throws IOException {
-        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.6")) <= 0 );
+        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.6")) <= 0);
 
         // 引数が3かつ、引数が適切な場合。
         String[] args = new String[3];
@@ -101,13 +101,15 @@ public class HtmlConvertTest extends SanitizingCheckTestSupport {
     }
 
     /**
-     * 正常系のテスト(Java8以降用)。
+     * 正常系のテスト(Java8用)。
+     *
+     * 出力されされるHTMLが変換結果が、jdk1.8_152以降とJava11で異なるため場合わけしている。
      *
      * @throws IOException
      */
     @Test
     public void testMainSuccessCaseJava8() throws IOException {
-        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.8")) == 0 );
+        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.8")) == 0);
 
         // 引数が3かつ、引数が適切な場合。
         String[] args = new String[3];
@@ -119,13 +121,13 @@ public class HtmlConvertTest extends SanitizingCheckTestSupport {
     }
 
     /**
-     * 正常系のテスト(Java8以降用)。
+     * 正常系のテスト(Java11以降用)。
      *
      * @throws IOException
      */
     @Test
     public void testMainSuccessCaseAfterJava11() throws IOException {
-        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("11")) >= 0 );
+        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("11")) >= 0);
 
         // 引数が3かつ、引数が適切な場合。
         String[] args = new String[3];
