@@ -106,8 +106,8 @@ public class HtmlConvertTest extends SanitizingCheckTestSupport {
      * @throws IOException
      */
     @Test
-    public void testMainSuccessCasAfterJava8() throws IOException {
-        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.8")) >= 0 );
+    public void testMainSuccessCaseJava8() throws IOException {
+        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.8")) == 0 );
 
         // 引数が3かつ、引数が適切な場合。
         String[] args = new String[3];
@@ -115,7 +115,25 @@ public class HtmlConvertTest extends SanitizingCheckTestSupport {
         args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/TransformToHTML.xsl";
         args[2] = tmpDir.newFile().getAbsolutePath();
         HtmlConvert.main(args);
-        assertFile("src/test/java/nablarch/test/tool/sanitizingcheck/expected/expectedHtmlAfterJava8.html", args[2]);
+        assertFile("src/test/java/nablarch/test/tool/sanitizingcheck/expected/expectedHtmlJava8.html", args[2]);
+    }
+
+    /**
+     * 正常系のテスト(Java8以降用)。
+     *
+     * @throws IOException
+     */
+    @Test
+    public void testMainSuccessCaseAfterJava11() throws IOException {
+        Assume.assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("11")) >= 0 );
+
+        // 引数が3かつ、引数が適切な場合。
+        String[] args = new String[3];
+        args[0] = "src/test/java/nablarch/test/tool/sanitizingcheck/testHtmlConvert.xml";
+        args[1] = "src/test/java/nablarch/test/tool/sanitizingcheck/TransformToHTML.xsl";
+        args[2] = tmpDir.newFile().getAbsolutePath();
+        HtmlConvert.main(args);
+        assertFile("src/test/java/nablarch/test/tool/sanitizingcheck/expected/expectedHtmlAfterJava11.html", args[2]);
     }
 
 }
