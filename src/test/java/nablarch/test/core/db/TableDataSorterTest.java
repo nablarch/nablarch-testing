@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,11 +42,11 @@ import mockit.Mocked;
 @RunWith(DatabaseTestRunner.class)
 public class TableDataSorterTest {
 
-    @ClassRule
-    public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
+    @Rule
+    public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
-    @ClassRule
-    public static SystemPropertyResource systemPropertyResource = new SystemPropertyResource();
+    @Rule
+    public SystemPropertyResource systemPropertyResource = new SystemPropertyResource();
     
     private Connection conn;
 

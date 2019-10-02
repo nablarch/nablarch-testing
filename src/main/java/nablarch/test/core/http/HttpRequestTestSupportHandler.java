@@ -3,6 +3,7 @@ package nablarch.test.core.http;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 
 import nablarch.core.util.annotation.Published;
 import nablarch.fw.ExecutionContext;
@@ -52,6 +53,12 @@ import nablarch.fw.web.upload.PartInfo;
 @Published
 public class HttpRequestTestSupportHandler implements HttpRequestHandler {
 
+    /**
+     * {@link CountDownLatch}のキー。
+     * サーバ側の処理完了を待つためのラッチを格納・取得する用途に使用する。
+     */
+    public static final String NABLARCH_JETTY_CONNECTOR_LATCH = "nablarch.jetty.connector.larch";
+
     /** テストクラスから指定されたExecutionContext */
     private ExecutionContext contextFromTest;
 
@@ -80,27 +87,35 @@ public class HttpRequestTestSupportHandler implements HttpRequestHandler {
      * @param context nablarch.fw.web.HttpServerで生成された実際の{@link ExecutionContext}
      */
     public HttpResponse handle(HttpRequest request, ExecutionContext context) {
+        try {
+            // ExecutionContextの移送を行う
+            convertExecutionContext(contextFromTest, context, false);
 
-        // ExecutionContextの移送を行う
-        convertExecutionContext(contextFromTest, context, false);
+            // セッション情報の設定
+            setDefaultScopeVars(context.getSessionScopeMap(), config.getSessionInfo());
 
-        // セッション情報の設定
-        setDefaultScopeVars(context.getSessionScopeMap(), config.getSessionInfo());
+            // マルチパート情報の移送を行う。
+            request.setMultipart(multipart);
 
-        // マルチパート情報の移送を行う。
-        request.setMultipart(multipart);
+            // 次のハンドラを起動
+            HttpResponse httpResponse = context.handleNext(request);
 
-        // 次のハンドラを起動
-        HttpResponse httpResponse = context.handleNext(request);
-        
-        // ステータスコードを設定
-        this.statusCode = httpResponse.getStatusCode();
+            // ステータスコードを設定
+            this.statusCode = httpResponse.getStatusCode();
 
-        // ExecutionContextの移送を行う
-        // 移送先のcontextは初期化を行う。
-        convertExecutionContext(context, contextFromTest, true);
-        return httpResponse;
+            // ExecutionContextの移送を行う
+            // 移送先のcontextは初期化を行う。
+            convertExecutionContext(context, contextFromTest, true);
+            return httpResponse;
+        } finally {
+            CountDownLatch latch = context.getRequestScopedVar(NABLARCH_JETTY_CONNECTOR_LATCH);
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
     }
+
+
     
     /**
      * 指定されたスコープの変数に既定の値を設定する。

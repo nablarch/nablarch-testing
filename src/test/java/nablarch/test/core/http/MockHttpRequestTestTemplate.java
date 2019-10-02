@@ -73,7 +73,7 @@ class MockHttpRequestTestTemplate
 
 
     /** テスト用HttpServer */
-    class HttpServerForTesting extends HttpServer {
+    class HttpServerForTesting extends MockHttpServer {
 
         /** サーバは起動しない */
         @Override

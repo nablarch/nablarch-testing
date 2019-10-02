@@ -12,13 +12,15 @@ import java.nio.charset.Charset;
 
 import junit.framework.TestCase;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * サニタイジングチェックツールテストのサポートクラス
  * 
  * @author Tomokazu Kagawa
  * @see SanitizingChecker
  */
-public abstract class SanitizingCheckTestSupport extends TestCase {
+public abstract class SanitizingCheckTestSupport {
 
     /**
      * 行番号と列番号より文字列の位置を計算する。

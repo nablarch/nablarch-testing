@@ -1,5 +1,20 @@
 package nablarch.fw.web;
 
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
+import nablarch.core.util.Builder;
+import nablarch.core.util.FileUtil;
+import nablarch.core.util.StringUtil;
+import nablarch.core.util.annotation.Published;
+import nablarch.fw.Handler;
+import nablarch.fw.HandlerQueueManager;
+import nablarch.fw.handler.GlobalErrorHandler;
+import nablarch.fw.web.handler.ForwardingHandler;
+import nablarch.fw.web.handler.HttpCharacterEncodingHandler;
+import nablarch.fw.web.handler.HttpErrorHandler;
+import nablarch.fw.web.handler.HttpResponseHandler;
+import nablarch.fw.web.servlet.WebFrontController;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -21,31 +36,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mortbay.io.ByteArrayBuffer;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.LocalConnector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.servlet.FilterHolder;
-import org.mortbay.jetty.webapp.WebAppContext;
-import org.mortbay.resource.ResourceCollection;
-
-import nablarch.core.log.Logger;
-import nablarch.core.log.LoggerManager;
-import nablarch.core.util.Builder;
-import nablarch.core.util.FileUtil;
-import nablarch.core.util.StringUtil;
-import nablarch.core.util.annotation.Published;
-import nablarch.fw.ExecutionContext;
-import nablarch.fw.Handler;
-import nablarch.fw.HandlerQueueManager;
-import nablarch.fw.handler.GlobalErrorHandler;
-import nablarch.fw.web.handler.ForwardingHandler;
-import nablarch.fw.web.handler.HttpCharacterEncodingHandler;
-import nablarch.fw.web.handler.HttpErrorHandler;
-import nablarch.fw.web.handler.HttpResponseHandler;
-import nablarch.fw.web.servlet.WebFrontController;
-
 /**
  * エンベディドHTTPサーバー&サーブレットコンテナ。
  * <pre>
@@ -56,10 +46,11 @@ import nablarch.fw.web.servlet.WebFrontController;
  * </pre>
  *
  * @author Iwauo Tajima <iwauo@tis.co.jp>
+ * @see HttpServerFactory
  */
 @Published(tag = "architect")
-public class HttpServer
-extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
+public abstract class HttpServer extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
+
     /** ロガー */
     private static final Logger LOGGER = LoggerManager.get(HttpServer.class);
 
@@ -72,7 +63,30 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
     /** 拡張子を抜き出すための正規表現 */
     private static final Pattern EXTENSION_PATTERN = Pattern.compile("^.*?/(.*?)(;.*)?$");
 
-    /**{@inheritDoc}
+    /**
+     * サーバを起動する。
+     *
+     * @return このオブジェクト自体
+     */
+    public abstract HttpServer start();
+
+
+    /**
+     * このサーバをテストモードで起動する。
+     * @return このオブジェクト自体
+     */
+    public abstract HttpServer startLocal();
+
+    /**
+     * サーバスレッドが終了するまでカレントスレッドをwaitさせる。
+     *
+     * @return このオブジェクト自体
+     */
+    public abstract HttpServer join();
+
+
+    /**
+     * {@inheritDoc}
      * この実装では、サーバが処理を委譲するフロントコントローラ内の
      * ハンドラキューを返す。
      */
@@ -82,8 +96,8 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
     }
     
     /** 処理を委譲するサーブレットフィルタ */
-    private WebFrontController controller = new WebFrontController();
-    
+    private final WebFrontController controller = new WebFrontController();
+
     /** サーバインスタンスを生成する。 */
     public HttpServer() {
         setHandlerQueue(Arrays.asList(
@@ -95,30 +109,8 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
         setMethodBinder(new HttpMethodBinding.Binder());
     }
 
-    /** アプリケーションサーバの実体 */
-    private Server jetty = null;
-
-    /**
-     * 内部サーバにWARをデプロイする。
-     * <pre>
-     * エントリポイントサーブレットと、
-     * {@link #setWarBasePath(String)}で指定されたパス上に存在するWARをデプロイする。
-     * </pre>
-     */
-    private void deploy() {
-        WebAppContext webApp = new WebAppContext();
-        webApp.setContextPath(getServletContextPath());
-        webApp.setBaseResource(toResourceCollection(warBasePath));
-        webApp.setClassLoader(Thread.currentThread().getContextClassLoader());
-        webApp.addFilter(
-                new FilterHolder(controller)
-                , "/*"
-                , org.mortbay.jetty.Handler.REQUEST
-        );
-        if (tempDirectory != null) {
-            webApp.setTempDirectory(tempDirectory);
-        }
-        jetty.addHandler(webApp);
+    protected WebFrontController getWebFrontController() {
+        return controller;
     }
 
     /**
@@ -176,60 +168,6 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
     private int port = 7777;
 
     /**
-     * サーバを起動する。
-     * <pre>
-     * サーバスレッドを生成し、port()メソッドで指定されたポート番号上の
-     * HTTPリクエストに対して処理を行う。
-     * </pre>
-     *
-     * @return このオブジェクト自体
-     */
-    public HttpServer start() {
-        Connector conn = new SocketConnector();
-        conn.setPort(port);
-        initialize(conn);
-        try {
-            jetty.start();
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    /**
-     * Jettyサーバインスタンスの初期化を行う。
-     * 
-     * @param conn このサーバがacceptするコネクタ
-     * @return このオブジェクト自体
-     */
-    private HttpServer initialize(Connector conn) {
-        jetty = new Server();
-        jetty.setConnectors(new Connector[]{conn});
-        jetty.setSendServerVersion(false);
-        deploy();
-        return this;
-    }
-
-    /**
-     * サーバスレッドが終了するまでカレントスレッドをwaitさせる。
-     *
-     * @return このオブジェクト自体
-     */
-    public HttpServer join() {
-        try {
-            jetty.join();
-            
-        } catch (InterruptedException e) {
-            // カレントスレッドに割り込み要求を行ってから抜ける。
-            Thread.currentThread().interrupt();
-        }
-        return this;
-    }
-    
-    /**
      * このサーバにデプロイするWARのパスを設定する。
      * <pre>
      * 明示的に指定しなかった場合のデフォルト値は、
@@ -240,7 +178,7 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
      * @return このオブジェクト自体
      */
     public HttpServer setWarBasePath(String warBasePath) {
-        this.warBasePath = toLocatorList(warBasePath);
+        this.warBasePaths = toLocatorList(warBasePath);
         return this;
     }
 
@@ -257,7 +195,7 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
      * @return このオブジェクト自体
      */
     public HttpServer setWarBasePaths(List<ResourceLocator> warBasePaths) {
-        this.warBasePath = warBasePaths;
+        this.warBasePaths = warBasePaths;
         return this;
     }
 
@@ -270,23 +208,6 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
         return Arrays.asList(getResourceLocatorOf(path));
     }
 
-    /**
-     * {@link ResourceLocator}のリストを{@link ResourceCollection}に変換する。
-     * @param warBasePaths 変換元のリスト
-     * @return 変換後の {@link ResourceCollection}
-     */
-    private ResourceCollection toResourceCollection(List<ResourceLocator> warBasePaths) {
-        String[] realPaths = new String[warBasePaths.size()];
-        for (int i = 0; i < warBasePaths.size(); i++) {
-            realPaths[i] = warBasePaths.get(i).getRealPath();
-        }
-        try {
-            return new ResourceCollection(realPaths);
-        } catch (RuntimeException e) {
-            throw new IllegalStateException(
-                    "invalid warBasePath. " + warBasePaths, e);
-        }
-    }
 
     /**
      * 指定されたWarディレクトリに対応する{@link ResourceLocator}を取得する。
@@ -307,7 +228,7 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
             );
         }
 
-        if (scheme.equals("classpath") && path.getRealPath().startsWith("jar:")) {
+        if (scheme.equals("classpath") && (path.getRealPath().startsWith("jar:") || path.getRealPath().startsWith("jrt:"))) {
             throw new IllegalArgumentException(
                     "WAR base path can not be a JAR interior path. "
                             +  "Assign the path of the WAR archive itself "
@@ -324,13 +245,17 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
      * @return このサーバにデプロイするWARのパス
      */
     public ResourceLocator getWarBasePath() {
-        return warBasePath.get(0);     // 互換性維持のために先頭にひとつを返却する。
+        return warBasePaths.get(0);     // 互換性維持のために先頭にひとつを返却する。
     }
 
     /** このサーバにデプロイするWARのパス。 */
-    private List<ResourceLocator> warBasePath
+    private List<ResourceLocator> warBasePaths
             = Arrays.asList(ResourceLocator.valueOf("classpath://nablarch/fw/web/servlet/docroot/"));
 
+
+    protected List<ResourceLocator> getWarBasePaths() {
+        return warBasePaths;
+    }
 
     /**
      * HTTPダンプ機能の有効化/無効化を設定する。
@@ -425,70 +350,10 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
     /** context用の一時ディレクトリパス */
     private File tempDirectory;
 
-    /**
-     * {@inheritDoc}
-     * <pre>
-     * このクラスの実装では、
-     * 引数のHTTPリクエストオブジェクトをHTTPメッセージにシリアライズし、
-     * ローカルコネクションに送信する。
-     * 内蔵アプリケーションサーバでの処理後、返信されたHTTPレスポンスメッセージを
-     * HTTPレスポンスオブジェクトにパースし、この関数の戻り値として返す。
-     * また、HTTPダンプ出力が有効である場合、
-     * そのレスポンスボディの内容を所定のディレクトリに出力する。
-     * </pre>
-     */
-    public HttpResponse handle(HttpRequest req, ExecutionContext unused) {
-        if (localConnector == null) {
-            throw new RuntimeException(
-              "this server is not running on a local connector. "
-            + "you must call startLocal() method beforehand."
-            );
-        }
-        localConnector.reopen();
-            
-        String host = req.getHost();
-        if (host == null || host.isEmpty()) {
-            ((MockHttpRequest) req).setHost("127.0.0.1");
-        }
-
-        try {
-            byte[] rawReq = req.toString().getBytes();
-            byte[] rawRes = localConnector.getResponses(
-                                new ByteArrayBuffer(rawReq), false
-                            ).asArray();
-            HttpResponse res = HttpResponse.parse(rawRes);
-            if (httpDumpEnabled) {
-                dumpHttpMessage(req, res);
-            }
-            return res;
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    protected File getTempDirectory() {
+        return tempDirectory;
     }
 
-    /**
-     * このサーバをテストモードで起動する。
-     * @return このオブジェクト自体
-     */
-    public HttpServer startLocal() {
-        localConnector = new LocalConnector();
-        initialize(localConnector);
-        try {
-            jetty.start();
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-    
-    /** 自動テスト実行用コネクター */
-    private LocalConnector localConnector = null;
 
     /**
      * ダンプHTMLへの可変項目の出力可否。
@@ -517,7 +382,7 @@ extends HandlerQueueManager<HttpServer> implements HttpRequestHandler {
      * @param req HTTPリクエストオブジェクト
      * @param res HTTPレスポンスオブジェクト
      */
-    private void dumpHttpMessage(HttpRequest req, HttpResponse res) {
+    protected void dumpHttpMessage(HttpRequest req, HttpResponse res) {
         if (httpDumpFile != null && !httpDumpRoot.exists()) {
             if (!httpDumpRoot.mkdirs()) {
                 LOGGER.logWarn(

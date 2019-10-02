@@ -52,6 +52,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 /**
@@ -202,6 +203,9 @@ public class AbstractHttpRequestTestTemplateTest {
 
     }
 
+    @Rule
+    public TemporaryFolder tempDir = new TemporaryFolder();
+
     /**
      * ダウンロードの場合にHTMLチェックツールが実行されないこと。
      * HTMLチェックツールをONにしてリクエスト単体テストを実施する。
@@ -226,9 +230,13 @@ public class AbstractHttpRequestTestTemplateTest {
                 return new HttpServerForTesting() {
                     @Override
                     public File getHttpDumpFile() {
-                        return Hereis.file("hoge_テスト一時ファイル.txt");
-                        /*
-                        abcdefghij*/
+                        try {
+                            return Hereis.file(tempDir.newFile("テスト一時ファイル.txt").getAbsolutePath());
+                            /*
+                            abcdefghij*/
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 };
             }
@@ -600,42 +608,7 @@ public class AbstractHttpRequestTestTemplateTest {
         }
     }
 
-    /**
-     * セッション変数の内容をテストケース内で任意に書き換えられることを検証。
-     */
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testSessionScopedVarOverwrite() {
-
-        @SuppressWarnings("rawtypes")
-        final AbstractHttpRequestTestTemplate<TestCaseInfo>
-                target = new AbstractHttpRequestTestTemplate(getClass()) {
-            @Override
-            protected String getBaseUri() {
-                return "/nablarch/test/core/http/SessionOverwriteAction/";
-            }
-        };
-
-        target.execute("testSessionScopedVarOverwrite", new Advice<TestCaseInfo>() {
-            public void beforeExecute(TestCaseInfo info, ExecutionContext ctx) {
-                ctx.setSessionScopedVar("commonHeaderLoginUserName", "リクエスト単体テストユーザ2");
-                ctx.setSessionScopedVar("commonHeaderLoginDate", "20120914");
-                ctx.setSessionScopedVar("otherSessionParam", "hoge");
-            }
-
-            public void afterExecute(TestCaseInfo info, ExecutionContext ctx) {
-                // セッションが無効化されているので、beforeExecuteで設定した値はクリアされている。
-                assertThat(ctx.getSessionScopedVar("commonHeaderLoginUserName"), nullValue());
-                assertThat(ctx.getSessionScopedVar("commonHeaderLoginDate"), nullValue());
-                assertThat(ctx.getSessionScopedVar("otherSessionParam"), nullValue());
-
-                // 以下のキーは追加されていること。
-                assertThat((String) ctx.getSessionScopedVar("addKey"), is("これは追加される。"));
-            }
-        });
-    }
-
-    /**
+     /**
      * {@link TestCaseInfo#setIsAssertApplicationMessageId(boolean)}が設定されている場合、
      * メッセージIDのアサートが行われていないことを検証する。
      */
