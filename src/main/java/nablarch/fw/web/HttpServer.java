@@ -390,8 +390,11 @@ public abstract class HttpServer extends HandlerQueueManager<HttpServer> impleme
                 );
             }
         }
-        
-        boolean isHtml = HTML_PATTERN.matcher(res.getContentType()).matches();
+        boolean isHtml = false;
+        String contentType = res.getContentType();
+        if(contentType != null){
+            isHtml = HTML_PATTERN.matcher(res.getContentType()).matches();
+        }
         
         if (!isHtml) {
             // HTML以外の場合はContent-Dispositionヘッダに指定されたファイル名の取得を試みる。
@@ -545,7 +548,11 @@ public abstract class HttpServer extends HandlerQueueManager<HttpServer> impleme
      */
     private String getHttpDumpFileName(HttpRequest req, HttpResponse res) {
         DateFormat format = new SimpleDateFormat("yyyy-MMdd-HHmmss-SSS_");
-        String extension = EXTENSION_PATTERN.matcher(res.getContentType()).replaceAll(".$1");
+        String contentType = res.getContentType();
+        String extension = "";
+        if (contentType != null) {
+            extension = EXTENSION_PATTERN.matcher(res.getContentType()).replaceAll(".$1");
+        }
         return format.format(new Date())
                 + req.getMethod()
                 + SLASH.matcher(req.getRequestUri()).replaceAll("_")
