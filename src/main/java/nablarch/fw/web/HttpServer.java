@@ -391,7 +391,9 @@ public abstract class HttpServer extends HandlerQueueManager<HttpServer> impleme
             }
         }
         boolean isHtml = false;
-        String contentType = res.getContentType();
+        // レスポンスオブジェクトの書き換えを避けるためHttpResponse#getHeader()を使用してContent-Type"を取得する。
+        // HttpResponse#getContentType()を呼び出すと、ボディが空の場合自動的にレスポンスオブジェクトにContent-Typeを設定してしまう。
+        String contentType = res.getHeader("Content-Type");
         if(contentType != null){
             isHtml = HTML_PATTERN.matcher(res.getContentType()).matches();
         }
@@ -548,7 +550,9 @@ public abstract class HttpServer extends HandlerQueueManager<HttpServer> impleme
      */
     private String getHttpDumpFileName(HttpRequest req, HttpResponse res) {
         DateFormat format = new SimpleDateFormat("yyyy-MMdd-HHmmss-SSS_");
-        String contentType = res.getContentType();
+        // レスポンスオブジェクトの書き換えを避けるためHttpResponse#getHeader()を使用してContent-Type"を取得する。
+        // HttpResponse#getContentType()を呼び出すと、ボディが空の場合自動的にレスポンスオブジェクトにContent-Typeを設定してしまう。
+        String contentType = res.getHeader("Content-Type");
         String extension = "";
         if (contentType != null) {
             extension = EXTENSION_PATTERN.matcher(res.getContentType()).replaceAll(".$1");
