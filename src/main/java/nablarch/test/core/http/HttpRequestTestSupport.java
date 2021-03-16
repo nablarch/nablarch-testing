@@ -279,9 +279,11 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         setDumpFile(ctx, server.getHttpDumpFile());
 
         // 生成されたHTMLファイルを文法チェックする。
+        String contentType = res.getContentType();
         if (config.isCheckHtml()
                 && res.getStatusCode() < 500
-                && HTML_TYPE.matcher(res.getContentType()).matches()) {
+                && contentType != null
+                && HTML_TYPE.matcher(contentType).matches()) {
             checkHtml(dumpFilePath, config);
         }
         return res;
