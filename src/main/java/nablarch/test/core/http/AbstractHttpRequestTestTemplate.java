@@ -490,7 +490,8 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
         if (StringUtil.isNullOrEmpty(expectedContentFileName)) {
             return;
         }
-        if (response.getContentType().matches("[^/]*/html?.*")) {
+        String contentType = response.getContentType();
+        if (contentType != null && contentType.matches("[^/]*/html?.*")) {
             return;
         }
         File file = getDumpFile(context);

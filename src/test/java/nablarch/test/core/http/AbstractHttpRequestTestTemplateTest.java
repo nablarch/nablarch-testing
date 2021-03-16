@@ -246,6 +246,46 @@ public class AbstractHttpRequestTestTemplateTest {
         target.execute("testAssertDownloadResponse", false);
     }
 
+    /**
+     * レスポンスが空の場合にHTMLチェックツールが実行されず、正常終了すること。
+     * HTMLチェックツールをONにしてリクエスト単体テストを実施する。
+     */
+    @Test
+    public void testAssertDownloadResponseEmptyWithHtmlCheckOn() {
+        RepositoryInitializer.reInitializeRepository(
+                "nablarch/test/core/http/http-test-configuration-with-htmlcheck.xml"
+        );
+
+
+        HttpRequestHandler handler = new HttpRequestHandler() {
+            @Override
+            public HttpResponse handle(HttpRequest request, ExecutionContext context) {
+                return new HttpResponse(200);
+            }
+        };
+
+        target = new MockHttpRequestTestTemplate(getClass(), handler) {
+            @Override
+            protected HttpServer createHttpServer() {
+                return new HttpServerForTesting() {
+                    @Override
+                    public File getHttpDumpFile() {
+                        try {
+                            return Hereis.file(tempDir.newFile("テスト一時ファイル.txt").getAbsolutePath());
+                            /*
+                            abcdefghij*/
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                };
+            }
+        };
+
+        // 実行
+        target.execute("testAssertDownloadEmptyResponse", false);
+    }
+
     /** TestCasesが空であった場合、例外が発生すること。 */
     @Test
     public void testGetEmptyTestCase() {
