@@ -287,4 +287,34 @@ public class MockMessagingContextTest {
 
         context.close();
     }
+
+    /**
+     * キャッシュを利用しないテスト
+     */
+    @Test
+    public void test7() throws Exception {
+
+        FilePathSetting filePathSetting = FilePathSetting.getInstance();
+        File file = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0113");
+
+        DataRecord dataRecord = new DataRecord();
+        SyncMessage sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0113")
+                .addDataRecord(dataRecord));
+        assertEquals("test2", sendSync.getDataRecord().get("failureCode"));
+
+        // ファイルのタイムスタンプを書き換える
+        assertTrue(file.delete());
+        File fileCopy = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0113_timestamp");
+        FileInputStream fis = new FileInputStream(fileCopy);
+        FileChannel channel = fis.getChannel();
+        FileOutputStream fos = new FileOutputStream(file);
+        FileChannel ofc = fos.getChannel();
+        channel.transferTo(0, channel.size(), ofc);
+
+        // 最新のデータを取得できる
+        SyncMessage sendSync2 = MessageSender.sendSync(new SyncMessage("RM11AD0113"));
+        assertEquals("test4", sendSync2.getDataRecord().get("failureCode"));
+
+    }
+
 }
