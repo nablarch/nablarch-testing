@@ -289,7 +289,7 @@ public class MockMessagingContextTest {
     }
 
     /**
-     * キャッシュを利用しないテスト
+     * Excelファイルのタイムスタンプが変更される場合、キャッシュを利用しなく、Excelファイルを再読込できることを確認する
      */
     @Test
     public void test7() throws Exception {
