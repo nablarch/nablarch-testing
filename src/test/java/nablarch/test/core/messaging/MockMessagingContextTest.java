@@ -138,7 +138,10 @@ public class MockMessagingContextTest {
     }
 
     /**
-     * Excelの応答電文の数を上回るリクエストがやってきた場合のテスト。（noの2で落ちたことが分かる）
+     * Excelに記載された応答電文の数を上回るリクエストが来た場合のテスト。</br>
+     * ・応答電文の数を上回りエラーとなった場合、何回目のリクエストでエラーとなったかがわかること </br>
+     * ・Excelを更新してタイムスタンプが変わった場合は1つ目のリクエストから再読み込みされエラーとならないこと </br>
+     * ・再読み込みした場合、Excelの変更内容が応答電文に反映されること
      */
     @Test
     public void test6() throws Exception {
@@ -189,8 +192,19 @@ public class MockMessagingContextTest {
         // 例外が発生せず、一件目から値の取得ができる
         sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
         .addDataRecord(dataRecord));
+        assertEquals("test4", sendSync.getDataRecord().get("failureCode"));
+
+        // ファイルのタイムスタンプを書き換える
+        File fileBack = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0108_copy");
+        FileInputStream fis2 = new FileInputStream(fileBack);
+        FileChannel channel2 = fis2.getChannel();
+        FileOutputStream fos2 = new FileOutputStream(file);
+        FileChannel ofc2 = fos2.getChannel();
+        channel2.transferTo(0, channel2.size(), ofc2);
+
+        sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
+                .addDataRecord(dataRecord));
         assertEquals("test2", sendSync.getDataRecord().get("failureCode"));
-        
     }
     
     /**
@@ -286,35 +300,6 @@ public class MockMessagingContextTest {
         LogVerifier.verify("Failed!");
 
         context.close();
-    }
-
-    /**
-     * Excelファイルのタイムスタンプが変更される場合、キャッシュを利用しなく、Excelファイルを再読込できることを確認する
-     */
-    @Test
-    public void test7() throws Exception {
-
-        FilePathSetting filePathSetting = FilePathSetting.getInstance();
-        File file = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0113");
-
-        DataRecord dataRecord = new DataRecord();
-        SyncMessage sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0113")
-                .addDataRecord(dataRecord));
-        assertEquals("test2", sendSync.getDataRecord().get("failureCode"));
-
-        // ファイルのタイムスタンプを書き換える
-        assertTrue(file.delete());
-        File fileCopy = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0113_timestamp");
-        FileInputStream fis = new FileInputStream(fileCopy);
-        FileChannel channel = fis.getChannel();
-        FileOutputStream fos = new FileOutputStream(file);
-        FileChannel ofc = fos.getChannel();
-        channel.transferTo(0, channel.size(), ofc);
-
-        // 最新のデータを取得できる
-        SyncMessage sendSync2 = MessageSender.sendSync(new SyncMessage("RM11AD0113"));
-        assertEquals("test4", sendSync2.getDataRecord().get("failureCode"));
-
     }
 
 }

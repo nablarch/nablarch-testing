@@ -123,21 +123,21 @@ abstract class TestDataParsingTemplate<RET> {
      * @param directory 読み込み元のディレクトリ
      * @param resource  リソース名称
      * @param id        ID
-     * @param saveCacheFlag  読み込んだファイルのデータをキャッシュに保存するか
+     * @param saveCache  読み込んだファイルのデータをキャッシュに保存するか
      */
-    public final void parse(String directory, String resource, String id, boolean saveCacheFlag) {
+    public final void parse(String directory, String resource, String id, boolean saveCache) {
         this.directory = directory;
         this.resource = resource;
         String dataCacheKey = directory + '/' + resource;
         if (!TEST_DATA_CACHE.containsKey(dataCacheKey)) {
             // テストデータがキャッシュ上に存在しない場合は、テストデータをロードしキャッシュする。
             if (reader instanceof PoiXlsReader) {
-                ((PoiXlsReader) reader).setUseCache(saveCacheFlag);
+                ((PoiXlsReader) reader).setUseCache(saveCache);
             }
             reader.open(directory, resource);
             try {
                 testData = readTestData();
-                if (saveCacheFlag) {
+                if (saveCache) {
                     TEST_DATA_CACHE.put(dataCacheKey, testData);
                 }
             } finally {
