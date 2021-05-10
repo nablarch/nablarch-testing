@@ -147,11 +147,9 @@ public class MockMessagingContextTest {
     public void test6() throws Exception {
         
         FilePathSetting filePathSetting = FilePathSetting.getInstance();
-        File file = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0108");
+        File file = getFile(filePathSetting, "RM11AD0108");
 
-        if(file.exists()) {
-            fileCopy(filePathSetting, file, "RM11AD0108_copy");
-        }
+        copyFile(getFile(filePathSetting, "RM11AD0108_original"), file);
         
         DataRecord dataRecord = new DataRecord();
         SyncMessage sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
@@ -178,7 +176,7 @@ public class MockMessagingContextTest {
         
         // ファイルのタイムスタンプを書き換える
         assertTrue(file.delete());
-        fileCopy(filePathSetting, file, "RM11AD0108_timestamp");
+        copyFile(getFile(filePathSetting, "RM11AD0108_timestamp"), file);
 
         // 例外が発生せず、一件目から値の取得ができる
         sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
@@ -189,17 +187,24 @@ public class MockMessagingContextTest {
 
     /**
      * ファイルコピー用共通メソッド。
-     * @param filePathSetting 設定したファイルパス
-     * @param file ファイル
-     * @param fileName ファイル名
+     * @param inFile コピー元のファイル
+     * @param outFile コピー先のファイル
+     * @exception  Exception 例外
      */
-    public void fileCopy(FilePathSetting filePathSetting, File file , String fileName) throws Exception {
-        File fileCopy = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, fileName);
-        FileInputStream fis = new FileInputStream(fileCopy);
-        FileChannel channel = fis.getChannel();
-        FileOutputStream fos = new FileOutputStream(file);
-        FileChannel ofc = fos.getChannel();
-        channel.transferTo(0, channel.size(), ofc);
+    private void copyFile(File inFile, File outFile ) throws Exception {
+        FileChannel in = new FileInputStream(inFile).getChannel();;
+        FileChannel out = new FileOutputStream(outFile).getChannel();;
+        in.transferTo(0, in.size(), out);
+    }
+
+    /**
+     * ファイルを取得する。
+     * @param filePathSetting 設定したファイルパス
+     * @param fileName ファイル名
+     * @return  ファイル
+     */
+    private File getFile(FilePathSetting filePathSetting, String fileName ) {
+        return filePathSetting.getFile(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, fileName);
     }
     
     /**
