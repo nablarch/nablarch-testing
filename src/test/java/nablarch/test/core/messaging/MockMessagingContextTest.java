@@ -148,13 +148,9 @@ public class MockMessagingContextTest {
         
         FilePathSetting filePathSetting = FilePathSetting.getInstance();
         File file = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0108");
-        if(file == null) {
-            File fileCopy = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0108_timestamp");
-            FileInputStream fis = new FileInputStream(fileCopy);
-            FileChannel channel = fis.getChannel();
-            FileOutputStream fos = new FileOutputStream(filePathSetting.getBaseDirectory(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH).getAbsolutePath() + "/RM11AD0108.xls");
-            FileChannel ofc = fos.getChannel();
-            channel.transferTo(0, channel.size(), ofc);
+
+        if(file.exists()) {
+            fileCopy(filePathSetting, file, "RM11AD0108_copy");
         }
         
         DataRecord dataRecord = new DataRecord();
@@ -182,29 +178,28 @@ public class MockMessagingContextTest {
         
         // ファイルのタイムスタンプを書き換える
         assertTrue(file.delete());
-        File fileCopy = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0108_timestamp");
-        FileInputStream fis = new FileInputStream(fileCopy);
-        FileChannel channel = fis.getChannel();
-        FileOutputStream fos = new FileOutputStream(file);
-        FileChannel ofc = fos.getChannel();
-        channel.transferTo(0, channel.size(), ofc);
-        
+        fileCopy(filePathSetting, file, "RM11AD0108_timestamp");
+
         // 例外が発生せず、一件目から値の取得ができる
         sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
         .addDataRecord(dataRecord));
         assertEquals("test4", sendSync.getDataRecord().get("failureCode"));
 
-        // ファイルのタイムスタンプを書き換える
-        File fileBack = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, "RM11AD0108_copy");
-        FileInputStream fis2 = new FileInputStream(fileBack);
-        FileChannel channel2 = fis2.getChannel();
-        FileOutputStream fos2 = new FileOutputStream(file);
-        FileChannel ofc2 = fos2.getChannel();
-        channel2.transferTo(0, channel2.size(), ofc2);
+    }
 
-        sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
-                .addDataRecord(dataRecord));
-        assertEquals("test2", sendSync.getDataRecord().get("failureCode"));
+    /**
+     * ファイルコピー用共通メソッド。
+     * @param filePathSetting 設定したファイルパス
+     * @param file ファイル
+     * @param fileName ファイル名
+     */
+    public void fileCopy(FilePathSetting filePathSetting, File file , String fileName) throws Exception {
+        File fileCopy = filePathSetting.getFileIfExists(SendSyncSupport.SEND_SYNC_TEST_DATA_BASE_PATH, fileName);
+        FileInputStream fis = new FileInputStream(fileCopy);
+        FileChannel channel = fis.getChannel();
+        FileOutputStream fos = new FileOutputStream(file);
+        FileChannel ofc = fos.getChannel();
+        channel.transferTo(0, channel.size(), ofc);
     }
     
     /**
