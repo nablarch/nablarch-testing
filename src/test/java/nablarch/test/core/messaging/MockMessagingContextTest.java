@@ -149,6 +149,7 @@ public class MockMessagingContextTest {
         FilePathSetting filePathSetting = FilePathSetting.getInstance();
         File file = getFile(filePathSetting, "RM11AD0108");
 
+        assertTrue(file.delete());
         copyFile(getFile(filePathSetting, "RM11AD0108_original"), file);
         
         DataRecord dataRecord = new DataRecord();
@@ -175,7 +176,6 @@ public class MockMessagingContextTest {
         }
         
         // ファイルのタイムスタンプを書き換える
-        assertTrue(file.delete());
         copyFile(getFile(filePathSetting, "RM11AD0108_timestamp"), file);
 
         // 例外が発生せず、一件目から値の取得ができる
