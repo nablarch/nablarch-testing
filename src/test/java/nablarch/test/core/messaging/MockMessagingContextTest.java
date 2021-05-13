@@ -177,8 +177,15 @@ public class MockMessagingContextTest {
             assertTrue(e.getMessage().contains("resource name=[RM11AD0108/message]."));
         }
         
-        // ファイルのタイムスタンプを書き換える
+        // ファイルの内容を置き換える
         copyFile(getFile(filePathSetting, "RM11AD0108_timestamp"), file);
+
+        // CI環境(Unix環境)でも確実にテストが通るように、 lastModified を手動で設定している。
+        // Unix環境では lastModified() が秒の精度でしか得られない制限がある。
+        // このため、テストの先頭でオリジナルファイルを書き込んでから内容を置き換えるまでの時間が1秒未満だと、
+        // lastModified() の値が変化せずタイムスタンプが変わった場合のテストが正常に実施できない。
+        // この問題を回避するため、ここで明示的に1秒より先の未来時間を lastModified に設定している。
+        file.setLastModified(new Date().getTime() + 2000);
 
         // 例外が発生せず、一件目から値の取得ができる
         sendSync = MessageSender.sendSync(new SyncMessage("RM11AD0108")
@@ -194,28 +201,15 @@ public class MockMessagingContextTest {
      * @exception  Exception 例外
      */
     private void copyFile(File inFile, File outFile) throws Exception {
-
-        // デバッグ用ソースコード
-        System.out.println("[before　] inFile.lastModified =" + inFile.lastModified());
-        System.out.println("[before　] outFile.lastModified=" + outFile.lastModified());
-
         FileChannel in = null;
         FileChannel out = null;
         try {
             in = new FileInputStream(inFile).getChannel();
             out = new FileOutputStream(outFile).getChannel();
             in.transferTo(0, in.size(), out);
-            // FileChannel#transferToでコピーした際にWindows環境ではlastModifiedが更新されたが
-            // CI環境（Linux環境）ではlastModifiedが変化せずテストが失敗した。
-            // そのため現在時刻の1秒後という必ず未来時刻になるよう明示的にタイムスタンプを更新する。
-            outFile.setLastModified(new Date().getTime() + 1000);
         } finally {
             FileUtil.closeQuietly(in, out);
         }
-
-        // デバッグ用ソースコード
-        System.out.println("[after ] inFile.lastModified =" + inFile.lastModified());
-        System.out.println("[after ] outFile.lastModified=" + outFile.lastModified());
     }
 
     /**
