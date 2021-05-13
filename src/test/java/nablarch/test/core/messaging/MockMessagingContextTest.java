@@ -200,7 +200,9 @@ public class MockMessagingContextTest {
             in = new FileInputStream(inFile).getChannel();
             out = new FileOutputStream(outFile).getChannel();
             in.transferTo(0, in.size(), out);
-            // 明示的にタイムスタンプを更新する（現在時刻の1秒後）
+            // FileChannel#transferToでコピーした際にWindows環境ではlastModifiedが更新されたが
+            // CI環境（Linux環境）ではlastModifiedが変化せずテストが失敗した。
+            // そのため現在時刻の1秒後という必ず未来時刻になるよう明示的にタイムスタンプを更新する。
             outFile.setLastModified(new Date().getTime() + 1000);
         } finally {
             FileUtil.closeQuietly(in, out);
