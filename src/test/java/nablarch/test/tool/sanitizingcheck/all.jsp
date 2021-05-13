@@ -44,7 +44,7 @@ EL
     ${param['mycom.productId']}
     ${header["host"]}
     ${departments[deptName]}
-    ${requestScope['javax.servlet.forward.servlet_path']}
+    ${requestScope['jakarta.servlet.forward.servlet_path']}
 
 
 

@@ -1,19 +1,27 @@
 package nablarch.fw.web.servlet;
 
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpUpgradeHandler;
+import jakarta.servlet.http.Part;
 import nablarch.core.util.annotation.Published;
 import nablarch.fw.ExecutionContext;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -339,12 +347,12 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
-        public Enumeration<?> getHeaders(String s) {
+        public Enumeration<String> getHeaders(String s) {
             return null;
         }
 
         @Override
-        public Enumeration<?> getHeaderNames() {
+        public Enumeration<String> getHeaderNames() {
             return Collections.enumeration(Collections.emptyList());
         }
 
@@ -424,6 +432,11 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
+        public String changeSessionId() {
+            return null;
+        }
+
+        @Override
         public boolean isRequestedSessionIdValid() {
             return false;
         }
@@ -444,12 +457,40 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
+        public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
+            return false;
+        }
+
+        @Override
+        public void login(String username, String password) throws ServletException {
+        }
+
+        @Override
+        public void logout() throws ServletException {
+        }
+
+        @Override
+        public Collection<Part> getParts() throws IOException, ServletException {
+            return null;
+        }
+
+        @Override
+        public Part getPart(String name) throws IOException, ServletException {
+            return null;
+        }
+
+        @Override
+        public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
+            return null;
+        }
+
+        @Override
         public Object getAttribute(String s) {
             return null;
         }
 
         @Override
-        public Enumeration<?> getAttributeNames() {
+        public Enumeration<String> getAttributeNames() {
             return null;
         }
 
@@ -469,6 +510,11 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
+        public long getContentLengthLong() {
+            return 0;
+        }
+
+        @Override
         public String getContentType() {
             return null;
         }
@@ -484,7 +530,7 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
-        public Enumeration<?> getParameterNames() {
+        public Enumeration<String> getParameterNames() {
             return null;
         }
 
@@ -494,7 +540,7 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
-        public Map<?, ?> getParameterMap() {
+        public Map<String, String[]> getParameterMap() {
             return null;
         }
 
@@ -549,7 +595,7 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
-        public Enumeration<?> getLocales() {
+        public Enumeration<Locale> getLocales() {
             return null;
         }
 
@@ -586,6 +632,41 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         @Override
         public int getLocalPort() {
             return 0;
+        }
+
+        @Override
+        public ServletContext getServletContext() {
+            return null;
+        }
+
+        @Override
+        public AsyncContext startAsync() throws IllegalStateException {
+            return null;
+        }
+
+        @Override
+        public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
+            return null;
+        }
+
+        @Override
+        public boolean isAsyncStarted() {
+            return false;
+        }
+
+        @Override
+        public boolean isAsyncSupported() {
+            return false;
+        }
+
+        @Override
+        public AsyncContext getAsyncContext() {
+            return null;
+        }
+
+        @Override
+        public DispatcherType getDispatcherType() {
+            return null;
         }
     }
 }
