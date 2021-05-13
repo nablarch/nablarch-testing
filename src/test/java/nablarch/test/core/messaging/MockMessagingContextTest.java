@@ -1,24 +1,12 @@
 package nablarch.test.core.messaging;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.channels.FileChannel;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import nablarch.core.util.FileUtil;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.InvalidDataFormatException;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.repository.di.DiContainer;
 import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
 import nablarch.core.util.FilePathSetting;
+import nablarch.core.util.FileUtil;
 import nablarch.fw.messaging.MessageSendSyncTimeoutException;
 import nablarch.fw.messaging.MessageSender;
 import nablarch.fw.messaging.MessagingException;
@@ -26,6 +14,19 @@ import nablarch.fw.messaging.SendingMessage;
 import nablarch.fw.messaging.SyncMessage;
 import nablarch.fw.messaging.logging.MessagingLogUtil;
 import nablarch.test.core.log.LogVerifier;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.channels.FileChannel;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -199,6 +200,8 @@ public class MockMessagingContextTest {
             in = new FileInputStream(inFile).getChannel();
             out = new FileOutputStream(outFile).getChannel();
             in.transferTo(0, in.size(), out);
+            // 明示的にタイムスタンプを更新する（現在時刻の1秒後）
+            outFile.setLastModified(new Date().getTime() + 1000);
         } finally {
             FileUtil.closeQuietly(in, out);
         }
