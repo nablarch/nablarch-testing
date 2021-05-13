@@ -194,6 +194,11 @@ public class MockMessagingContextTest {
      * @exception  Exception 例外
      */
     private void copyFile(File inFile, File outFile) throws Exception {
+
+        // デバッグ用ソースコード
+        System.out.println("[before　] inFile.lastModified =" + inFile.lastModified());
+        System.out.println("[before　] outFile.lastModified=" + outFile.lastModified());
+
         FileChannel in = null;
         FileChannel out = null;
         try {
@@ -207,6 +212,10 @@ public class MockMessagingContextTest {
         } finally {
             FileUtil.closeQuietly(in, out);
         }
+
+        // デバッグ用ソースコード
+        System.out.println("[after ] inFile.lastModified =" + inFile.lastModified());
+        System.out.println("[after ] outFile.lastModified=" + outFile.lastModified());
     }
 
     /**
