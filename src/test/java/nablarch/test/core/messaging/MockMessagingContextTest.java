@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import nablarch.core.util.FileUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -175,7 +177,6 @@ public class MockMessagingContextTest {
         }
         
         // ファイルのタイムスタンプを書き換える
-        assertTrue(file.delete());
         copyFile(getFile(filePathSetting, "RM11AD0108_timestamp"), file);
 
         // 例外が発生せず、一件目から値の取得ができる
@@ -191,10 +192,16 @@ public class MockMessagingContextTest {
      * @param outFile コピー先のファイル
      * @exception  Exception 例外
      */
-    private void copyFile(File inFile, File outFile ) throws Exception {
-        FileChannel in = new FileInputStream(inFile).getChannel();;
-        FileChannel out = new FileOutputStream(outFile).getChannel();;
-        in.transferTo(0, in.size(), out);
+    private void copyFile(File inFile, File outFile) throws Exception {
+        FileChannel in = null;
+        FileChannel out = null;
+        try {
+            in = new FileInputStream(inFile).getChannel();
+            out = new FileOutputStream(outFile).getChannel();
+            in.transferTo(0, in.size(), out);
+        } finally {
+            FileUtil.closeQuietly(in, out);
+        }
     }
 
     /**
