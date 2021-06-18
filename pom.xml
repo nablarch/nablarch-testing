@@ -22,22 +22,13 @@
   </parent>
   
   <properties>
-    <ecj.version>3.5.1</ecj.version>
+    <ecj.version>4.6.1</ecj.version>
     <artemis.version>2.17.0</artemis.version>
   </properties>
   
   <profiles>
     <profile>
-      <id>java8</id>
-      <properties>
-        <ecj.version>4.6.1</ecj.version>
-      </properties>
-    </profile>
-    <profile>
       <id>java11</id>
-      <properties>
-        <ecj.version>4.6.1</ecj.version>
-      </properties>
       <dependencies>
         <dependency>
           <groupId>javax.activation</groupId>
@@ -213,6 +204,18 @@
         <directory>src/test/java</directory>
       </testResource>
     </testResources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>nablarch.test.tool.findbugs.PublishedApisInfoTest</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   
 </project>
