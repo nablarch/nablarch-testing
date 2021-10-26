@@ -385,7 +385,7 @@ public class MockHttpRequestTest {
         final List<HttpRequest> holder = new ArrayList<HttpRequest>();
 
         HttpServer server = new MockHttpServer()
-                .addHandler("//*", new HttpRequestHandler() {
+                .addHandler("//", new HttpRequestHandler() {
                     public HttpResponse handle(HttpRequest request, ExecutionContext ctx) {
                         request.getParamMap(); // リクエストスレッド内でパラメータの取得を行っておく必要がある。
                         holder.add(request);
@@ -433,7 +433,7 @@ public class MockHttpRequestTest {
         final List<HttpRequest> holder = new ArrayList<HttpRequest>();
 
         HttpServer server = new MockHttpServer()
-                .addHandler("//*", new HttpRequestHandler() {
+                .addHandler("//", new HttpRequestHandler() {
                     public HttpResponse handle(HttpRequest request, ExecutionContext ctx) {
                         request.getParamMap(); // リクエストスレッド内でパラメータの取得を行っておく必要がある。
                         holder.add(request);
@@ -471,7 +471,7 @@ public class MockHttpRequestTest {
         final List<HttpRequest> holder = new ArrayList<HttpRequest>();
 
         HttpServer server = new MockHttpServer()
-                .addHandler("//*", new HttpRequestHandler() {
+                .addHandler("//", new HttpRequestHandler() {
                     public HttpResponse handle(HttpRequest request, ExecutionContext ctx) {
                         request.getParamMap(); // リクエストスレッド内でパラメータの取得を行っておく必要がある。
                         holder.add(request);
