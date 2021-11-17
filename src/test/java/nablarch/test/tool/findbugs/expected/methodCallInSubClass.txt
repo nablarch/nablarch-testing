@@ -1,4 +1,0 @@
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassB.ClassB()]がnew nablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC()にて使用されています。  該当箇所 ClassC.java:[line 3]
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC.publishedUnpublishedOverriddenMethod()]がnablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC.methodC()にて使用されています。  該当箇所 ClassC.java:[line 9]
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC.unpublishedUnpublishedOverriddenMethod()]がnablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC.methodC()にて使用されています。  該当箇所 ClassC.java:[line 11]
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC.unpublishedMethodA()]がnablarch.test.tool.findbugs.data.methodcall.inherit.method.ClassC.methodC()にて使用されています。  該当箇所 ClassC.java:[line 15]
