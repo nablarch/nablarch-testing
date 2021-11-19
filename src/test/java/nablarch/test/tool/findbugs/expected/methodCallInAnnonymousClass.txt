@@ -1,1 +1,0 @@
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.methodcall.methods.UnpublishedMethods.unpublishedMethodBooleanReturn()]がnablarch.test.tool.findbugs.data.methodcall.ClassForVariousLocation$1.publishedInterface()にて使用されています。  該当箇所 ClassForVariousLocation.java:[line 37]
