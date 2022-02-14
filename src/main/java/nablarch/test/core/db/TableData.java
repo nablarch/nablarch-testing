@@ -260,14 +260,28 @@ public class TableData implements Cloneable {
 
     /**
      * JDBCタイムスタンプエスケープ形式でタイムスタンプに変換する。
+     * <p/>
+     * JDBCタイムスタンプエスケープ形式としては、以下の形式をサポートする。
+     * <ul>
+     * <li>yyyy-MM-dd</li>
+     * <li>yyyy-MM-dd HH:mm:ss</li>
+     * <li>yyyy-MM-dd HH:mm:ss.SSS</li>
+     * </ul>
+     * 
      * @param orig 変換対象文字列
      * @return タイムスタンプ
      * @throws ParseException 対象文字列がJDBCタイムスタンプエスケープ形式に合致しない場合
      */
     private Timestamp asJdbcTimestampEscape(String orig) throws ParseException {
-        String s = orig + "000000000";
-        s = s.substring(0, JDBC_TIMESTAMP_ESCAPE.length());
-        return Timestamp.valueOf(s);
+        StringBuilder sb = new StringBuilder(orig);
+        if (orig.length() == "yyyy-MM-dd".length()) {
+            // yyyy-MM-ddの場合に時刻を付与して正常に変換できるようにする
+            sb.append(" 00:00:00.000");
+        } else if (orig.length() < "yyyy-MM-dd HH:MM:SS".length()) {
+            // yyyy-MM-dd HH:MM:SSの場合にミリ秒を付与して正常に変換できるようにする
+            sb.append(" .000");
+        }
+        return Timestamp.valueOf(sb.toString());
     }
 
     /**
