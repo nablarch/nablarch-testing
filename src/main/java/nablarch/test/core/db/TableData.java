@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,9 +36,6 @@ import static nablarch.core.util.Builder.join;
 @Published(tag = "architect")
 public class TableData implements Cloneable {
 
-    /** JDBCタイムスタンプエスケープ形式 */
-    private static final String JDBC_TIMESTAMP_ESCAPE = "yyyy-MM-dd HH:mm:ss.SSS";
-
     /** デフォルトの日付フォーマット */
     private static final String DEFAULT_DATE_FORMAT = "yyyyMMddHHmmssSSS";
 
@@ -58,8 +54,6 @@ public class TableData implements Cloneable {
     /** 日付型のフォーマット用 */
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
-    /** JDBCタイムスタンプエスケープ形式のDateFormat */
-    private final DateFormat jdbcTimestamp = new SimpleDateFormat(JDBC_TIMESTAMP_ESCAPE);
 
     /** データベースデフォルト値実装クラス */
     private DefaultValues defaultValues = new BasicDefaultValues();
