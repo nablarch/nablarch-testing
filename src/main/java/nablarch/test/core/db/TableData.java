@@ -54,7 +54,6 @@ public class TableData implements Cloneable {
     /** 日付型のフォーマット用 */
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
 
-
     /** データベースデフォルト値実装クラス */
     private DefaultValues defaultValues = new BasicDefaultValues();
 
