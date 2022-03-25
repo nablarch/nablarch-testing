@@ -145,7 +145,9 @@ public class DbAccessTestSupportTest {
                 "2001-01-01 12:34:56.0",
                 "2002-02-02 12:34:56.123",
                 "2003-03-03 00:00:00.0",
-                "2004-04-04 12:34:56.787");
+                "2004-04-04 12:34:56.787",
+                "2005-05-05 00:00:00.0",
+                "2006-06-06 12:34:56.0");
         target.setUpDb(sheetName);
 
         List<TestTable> result = VariousDbTestHelper.findAll(TestTable.class, "pkCol1", "pkCol2");
@@ -164,6 +166,8 @@ public class DbAccessTestSupportTest {
                 new byte[] {0x31},
                 null,
                 new byte[] {0x33},
+                null,
+                null,
                 null
         };
         target.setUpDb("testSetUpDb");

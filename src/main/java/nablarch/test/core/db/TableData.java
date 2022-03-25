@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,9 +36,6 @@ import static nablarch.core.util.Builder.join;
 @Published(tag = "architect")
 public class TableData implements Cloneable {
 
-    /** JDBCタイムスタンプエスケープ形式 */
-    private static final String JDBC_TIMESTAMP_ESCAPE = "yyyy-MM-dd HH:mm:ss.SSS";
-
     /** デフォルトの日付フォーマット */
     private static final String DEFAULT_DATE_FORMAT = "yyyyMMddHHmmssSSS";
 
@@ -57,9 +53,6 @@ public class TableData implements Cloneable {
 
     /** 日付型のフォーマット用 */
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat(DEFAULT_DATE_FORMAT);
-
-    /** JDBCタイムスタンプエスケープ形式のDateFormat */
-    private final DateFormat jdbcTimestamp = new SimpleDateFormat(JDBC_TIMESTAMP_ESCAPE);
 
     /** データベースデフォルト値実装クラス */
     private DefaultValues defaultValues = new BasicDefaultValues();
@@ -260,14 +253,24 @@ public class TableData implements Cloneable {
 
     /**
      * JDBCタイムスタンプエスケープ形式でタイムスタンプに変換する。
+     * <p/>
+     * JDBCタイムスタンプエスケープ形式としては、以下の形式をサポートする。
+     * <ul>
+     * <li>yyyy-[M]M-[d]d</li>
+     * <li>yyyy-[M]M-[d]d HH:mm:ss[.SSS]</li>
+     * </ul>
+     * 
      * @param orig 変換対象文字列
      * @return タイムスタンプ
      * @throws ParseException 対象文字列がJDBCタイムスタンプエスケープ形式に合致しない場合
      */
     private Timestamp asJdbcTimestampEscape(String orig) throws ParseException {
-        String s = orig + "000000000";
-        s = s.substring(0, JDBC_TIMESTAMP_ESCAPE.length());
-        return Timestamp.valueOf(s);
+        StringBuilder sb = new StringBuilder(orig);
+        if (orig.indexOf(':') == -1) {
+            // yyyy-MM-ddの場合に時刻を付与して正常に変換できるようにする
+            sb.append(" 00:00:00.000");
+        }
+        return Timestamp.valueOf(sb.toString());
     }
 
     /**

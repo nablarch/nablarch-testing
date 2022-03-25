@@ -1,3 +1,0 @@
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.exception.UnpublishedException1]がnablarch.test.tool.findbugs.data.exception.Caller$1.testLocalClassException(boolean)にて使用されています。  該当箇所 Caller.java:[line 101]
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.exception.Caller$1.testLocalClassException(boolean)]がnablarch.test.tool.findbugs.data.exception.Caller$1.testExceptionCatcher(boolean)にて使用されています。  該当箇所 Caller.java:[line 106]
-M X UPU: 公開されていないAPI[nablarch.test.tool.findbugs.data.exception.UnpublishedException1]がnablarch.test.tool.findbugs.data.exception.Caller$1.testExceptionCatcher(boolean)にて使用されています。  該当箇所 Caller.java:[line 110]

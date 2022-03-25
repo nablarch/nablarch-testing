@@ -1,6 +1,0 @@
-<FindBugsFilter>
-	<Match>
-		<Bug pattern="UPU_UNPUBLISHED_API_USAGE" />
-	</Match>
-
-</FindBugsFilter>
