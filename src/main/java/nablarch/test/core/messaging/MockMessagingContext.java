@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import nablarch.core.log.Logger;
 import nablarch.core.log.LoggerManager;
+import nablarch.fw.messaging.MessageSenderSettings;
 import nablarch.fw.messaging.MessagingContext;
 import nablarch.fw.messaging.ReceivedMessage;
 import nablarch.fw.messaging.SendingMessage;
@@ -67,8 +68,13 @@ public class MockMessagingContext extends MessagingContext {
         }
         reply.setMessageId(messageId);
 
-        // 応答電文をログに出力する
-        emitLog(reply);
+        // 受信電文をログに出力する
+        // 応答電文としては作成前であり、フォーマッタ等はまだ未設定の状態であるため、設定される想定のフォーマッタを使用しておく
+        // ここでのフォーマッタ設定はあくまでログ用であるため、返却する受信電文には影響しないようにコピーを利用する
+        MessageSenderSettings settings = new MessageSenderSettings(requestId);
+        ReceivedMessage replyForLogging = new ReceivedMessage(reply);
+        replyForLogging.setFormatter(settings.getReceivedDataFormatter());
+        emitLog(replyForLogging);
 
         return reply;
     }

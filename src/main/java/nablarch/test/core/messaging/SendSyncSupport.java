@@ -23,6 +23,7 @@ import nablarch.test.core.reader.SendSyncMessageParser;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -191,7 +192,7 @@ public class SendSyncSupport {
             // ヘッダ部
             // 要求電文の内容をMap形式でログに出力する
             builder.append("message header = ").append(LOG_SEPARATOR);
-            builder.append(new String(outputStream.toByteArray()));
+            builder.append(new String(outputStream.toByteArray(), Charset.forName("UTF-8")));
             builder.append("message body   = ").append(LOG_SEPARATOR);
 
             outputStream = new ByteArrayOutputStream();
@@ -223,7 +224,7 @@ public class SendSyncSupport {
                 }
                 
                 // 要求電文の内容をMAP形式でログに出力する
-                builder.append(new String(outputStream.toByteArray()));
+                builder.append(new String(outputStream.toByteArray(), Charset.forName("UTF-8")));
             }
 
 
