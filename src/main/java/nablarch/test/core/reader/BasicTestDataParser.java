@@ -1,5 +1,7 @@
 package nablarch.test.core.reader;
 
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
 import nablarch.core.util.StringUtil;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
@@ -14,6 +16,7 @@ import nablarch.test.core.util.interpreter.BinaryFileInterpreter;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +31,9 @@ import static nablarch.core.util.Builder.concat;
  */
 public class BasicTestDataParser implements TestDataParser {
 
+    /** ロガー */
+    private static final Logger LOGGER = LoggerManager.get(BasicTestDataParser.class);
+    
     /** テストデータリーダ */
     private TestDataReader testDataReader;
 
@@ -42,6 +48,11 @@ public class BasicTestDataParser implements TestDataParser {
 
     /** {@inheritDoc} */
     public List<TableData> getSetupTableData(String path, String resourceName, String... groupId) {
+        // DBの事前準備が必要無ければ空シートを作成しなくてもいいようにしておく
+        if (!testDataReader.isDataExisting(path, resourceName)) {
+            LOGGER.logDebug("Skipping table data initialization because preparation data is not found. resource=[" + resourceName + "]");
+            return Collections.emptyList();
+        }
         return getTableData(path, resourceName, DataType.SETUP_TABLE_DATA, formatGroupId(groupId));
     }
 

@@ -251,6 +251,28 @@ public class PoiXlsReader implements TestDataReader {
         }
     }
 
+    @Override
+    public boolean isDataExisting(String basePath, String resourceName) {
+        String[] split = DATA_NAME_SPLIT_CHAR.split(resourceName);
+        if (split.length != 2) {
+            throw new IllegalArgumentException("invalid data name. [" + resourceName + "]");
+        }
+        String fileName = split[0];
+        String sheetName = split[1];
+
+        File dir = new File(basePath);
+        File file = new File(dir, fileName + ".xls");
+        if (!file.exists()) {
+            file = new File(dir, fileName + ".xlsx");
+        }
+        if (!file.exists()) {
+            return false;
+        }
+
+        Set<String> sheetNames = PoiXlsReader.getSheetNames(file);
+        return sheetNames.contains(sheetName);
+    }
+
     /**
      * ファイル名が許容可能かチェックする。
      * 

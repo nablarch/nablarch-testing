@@ -43,4 +43,9 @@ class MockTestDataReader implements TestDataReader {
     public boolean isResourceExisting(String basePath, String resourceName) {
         return true;
     }
+
+    @Override
+    public boolean isDataExisting(String basePath, String resourceName) {
+        return true;
+    }
 }
