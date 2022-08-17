@@ -20,7 +20,7 @@ import java.util.Map;
 public class DbLessTestDataParser implements TestDataParser {
 
     /** ロガー */
-    private static final Logger LOGGER = LoggerManager.get(BasicTestDataParser.class);
+    private static final Logger LOGGER = LoggerManager.get(DbLessTestDataParser.class);
 
     /** 委譲先のテストデータリーダ */
     private final TestDataParser testDataParser = new BasicTestDataParser();
