@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./component-configuration.xsd">
+  <!-- フレームワークコンポーネント設定ファイル -->
+  <import file="framework.xml"/>
+  <!-- テスト用に設定値を上書きするコンポーネント設定ファイル -->
+  <import file="override.xml"/>
+  <!-- テスト用コンバータ設定ファイル -->
+  <import file="convertorSetting.xml"/>
+
+  <!-- テスト用設定値 -->
+  <config-file file="unit-test.config"/>
+
+  <!-- TestDataParser -->
+  <component name="testDataParser" class="nablarch.test.core.reader.DbLessTestDataParser">
+    <property name="testDataReader">
+      <component name="xlsReaderForPoi" class="nablarch.test.core.reader.PoiXlsReader"/>
+    </property>
+    <property name="interpreters" ref="interpreters"/>
+  </component>
+
+  <!-- テストデータ記法の解釈を行うクラス群 -->
+  <list name="interpreters">
+    <!-- null変換 -->
+    <component class="nablarch.test.core.util.interpreter.NullInterpreter"/>
+    <!-- 引用符を外す -->
+    <component
+            class="nablarch.test.core.util.interpreter.QuotationTrimmer"/>
+    <!-- システム時刻記法 -->
+    <component
+            class="nablarch.test.core.util.interpreter.DateTimeInterpreter">
+      <property name="systemTimeProvider" ref="dateProvider"/>
+    </component>
+    <!-- 改行コードを変換する -->
+    <component class="nablarch.test.core.util.interpreter.LineSeparatorInterpreter"/>
+    <!-- 文字列増幅 -->
+    <component
+            class="nablarch.test.core.util.interpreter.CompositeInterpreter">
+      <property name="interpreters">
+        <list>
+          <component
+                  class="nablarch.test.core.util.interpreter.BasicJapaneseCharacterInterpreter"/>
+        </list>
+      </property>
+    </component>
+  </list>
+
+  <!-- デフォルトディレクティブ（共通） -->
+  <map name="defaultDirectives">
+    <entry key="text-encoding" value="Windows-31J"/>
+  </map>
+
+  <!-- デフォルトディレクティブ（固定長） -->
+  <map name="fixedLengthDirectives">
+    <entry key="record-separator" value="NONE"/>
+  </map>
+
+  <!-- デフォルトディレクティブ（可変長） -->
+  <map name="variableLengthDirectives">
+    <entry key="quoting-delimiter" value="&quot;"/>
+    <entry key="record-separator" value="CRLF"/>
+  </map>
+
+  <component name="filePathSetting"
+             class="nablarch.core.util.FilePathSetting" autowireType="None">
+    <property name="basePathSettings">
+      <map>
+        <entry key="move" value="file:tmp"/>
+      </map>
+    </property>
+    <property name="fileExtensions">
+      <map>
+        <entry key="sendSyncTestData" value="xls"/>
+      </map>
+    </property>
+  </component>
+
+</component-configuration>

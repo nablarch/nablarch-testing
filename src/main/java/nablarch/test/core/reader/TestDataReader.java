@@ -40,4 +40,11 @@ public interface TestDataReader {
      */
     boolean isResourceExisting(String basePath, String resourceName);
 
+    /**
+     * 指定されたパスとリソース名に該当するExcelファイルおよびデータシートが存在するか判定する。
+     * @param basePath パス
+     * @param resourceName リソース名
+     * @return 存在する場合、真
+     */
+    boolean isDataExisting(String basePath, String resourceName);
 }
