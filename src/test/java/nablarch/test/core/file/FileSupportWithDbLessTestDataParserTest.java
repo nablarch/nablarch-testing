@@ -44,7 +44,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author T.Kawasaki
+ * {@link FileSupport}で{@link nablarch.test.core.reader.DbLessTestDataParser}を使用する場合のテストクラス。
+ * 
+ * @author Shinya Hijiri
  */
 public class FileSupportWithDbLessTestDataParserTest {
 
