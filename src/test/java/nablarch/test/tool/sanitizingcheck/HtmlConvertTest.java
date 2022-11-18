@@ -9,9 +9,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
