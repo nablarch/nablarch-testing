@@ -3,6 +3,7 @@ package nablarch.fw.web.servlet;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletConnection;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletInputStream;
@@ -452,11 +453,6 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
-        public boolean isRequestedSessionIdFromUrl() {
-            return false;
-        }
-
-        @Override
         public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
             return false;
         }
@@ -610,11 +606,6 @@ public class MockServletExecutionContext extends ServletExecutionContext {
         }
 
         @Override
-        public String getRealPath(String s) {
-            return null;
-        }
-
-        @Override
         public int getRemotePort() {
             return 0;
         }
@@ -666,6 +657,21 @@ public class MockServletExecutionContext extends ServletExecutionContext {
 
         @Override
         public DispatcherType getDispatcherType() {
+            return null;
+        }
+
+        @Override
+        public String getRequestId() {
+            return null;
+        }
+
+        @Override
+        public String getProtocolRequestId() {
+            return null;
+        }
+
+        @Override
+        public ServletConnection getServletConnection() {
             return null;
         }
     }
