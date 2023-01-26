@@ -3,8 +3,10 @@ package nablarch.test.core.http;
 import static nablarch.test.Assertion.fail;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -51,6 +53,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -744,6 +747,60 @@ public class AbstractHttpRequestTestTemplateTest {
 
         // 実行
         target.execute("testAssertTablesCRLF");
+    }
+
+    /**
+     * HTTPメソッド指定のテスト。
+     */
+    @Test
+    public void testHttpMethod() {
+        target = createMock(new HttpRequestHandler() {
+            @Override
+            public HttpResponse handle(HttpRequest request, ExecutionContext context) {
+                context.setRequestScopedVar("http_method", request.getMethod());
+                String requestPath = request.getRequestPath();
+                String queryString = request.getRequestUri().replace(requestPath, "");
+                context.setRequestScopedVar("query_string", queryString);
+                return new HttpResponse();
+            }
+        });
+
+        // 実行
+        target.execute("testHttpMethod");
+    }
+
+    /**
+     * HTTPメソッド指定のテスト（コンテキストの定義が無い場合はエラー）。
+     */
+    @Test
+    public void testHttpMethodNoContext() {
+        target = createDefaultMock();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                target.execute("testHttpMethodNoContext");
+            }
+        });
+
+        assertThat(exception.getMessage(), is("Context LIST_MAP must be 1 row."));
+    }
+
+    /**
+     * HTTPメソッド指定のテスト（コンテキストの定義が複数の場合はエラー）。
+     */
+    @Test
+    public void testHttpMethodMultipleContext() {
+        target = createDefaultMock();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, new ThrowingRunnable() {
+            @Override
+            public void run() {
+                target.execute("testHttpMethodMultipleContext");
+            }
+        });
+
+        assertThat(exception.getMessage(), is("Context LIST_MAP must be 1 row."));
     }
 
     /** @see MockHttpRequestTestTemplate */

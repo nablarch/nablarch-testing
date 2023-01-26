@@ -4,6 +4,9 @@ import static nablarch.core.util.Builder.concat;
 import static nablarch.test.Assertion.assertEqualsAsString;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +19,7 @@ import nablarch.core.util.annotation.Published;
 import nablarch.fw.ExecutionContext;
 import nablarch.fw.web.HttpRequest;
 import nablarch.fw.web.HttpResponse;
+import nablarch.fw.web.MockHttpRequest;
 import nablarch.test.Assertion;
 import nablarch.test.core.file.FileSupport;
 import nablarch.test.core.messaging.RequestTestingMessagingProvider.RequestTestingMessagingContext;
@@ -391,7 +395,34 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      */
     protected HttpRequest createHttpRequest(INF testCaseInfo) {
         String uri = getBaseUri() + testCaseInfo.getRequestId();
-        return createHttpRequestWithConversion(uri, testCaseInfo.getRequestParameters(), testCaseInfo.getCookie());
+        MockHttpRequest request = (MockHttpRequest)createHttpRequestWithConversion(
+                uri, testCaseInfo.getRequestParameters(), testCaseInfo.getCookie());
+        request.setMethod(testCaseInfo.getHttpMethod());
+
+        if ("GET".equals(testCaseInfo.getHttpMethod())) {
+            // Excelから読み込んだパラメータをURIクエリに変換する
+            Map<String, String> paramMap = testCaseInfo.getRequestParameters();
+
+            if (!paramMap.isEmpty()) {
+                List<String> params = new ArrayList<>();
+                for (String key : paramMap.keySet()) {
+                    String value = paramMap.get(key);
+                    if (!StringUtil.isNullOrEmpty(value)) {
+                        String encodedKey;
+                        String encodedValue;
+                        try {
+                            encodedKey = URLEncoder.encode(key, "UTF-8");
+                            encodedValue = URLEncoder.encode(value, "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
+                            throw new RuntimeException(e);
+                        }
+                        params.add(encodedKey + "=" + encodedValue);
+                    }
+                }
+                request.setRequestUri(request.getRequestUri() + "?" + StringUtil.join("&", params));
+            }
+        }
+        return request;
     }
 
     /**

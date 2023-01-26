@@ -24,6 +24,9 @@ public class TestCaseInfo {
     /** リクエストIDを定義しているカラム名 */
     protected static final String REQUEST_ID = "REQUEST_ID";
 
+    /** HTTPメソッドを定義しているカラム名 */
+    protected static final String HTTP_METHOD_ID = "HTTP_METHOD";
+
     /** テストケース番号を定義しているカラム名 */
     protected static final String TEST_CASE_NO = "no";
 
@@ -381,6 +384,24 @@ public class TestCaseInfo {
             throw new IllegalArgumentException("Context LIST_MAP must be 1 row.");
         }
         return getValue(context.get(0), USER_ID_COLUMN_NAME);
+    }
+
+    /**
+     * HTTPメソッドを取得する。
+     * <p>
+     * 指定されていない場合はデフォルトで {@code POST} を返す。
+     * </p>
+     * @return HTTPメソッド
+     */
+    public String getHttpMethod() {
+        if (context == null || context.size() != 1) {
+            throw new IllegalArgumentException("Context LIST_MAP must be 1 row.");
+        }
+        if (context.get(0).containsKey(HTTP_METHOD_ID)) {
+            return context.get(0).get(HTTP_METHOD_ID);
+        } else {
+            return "POST";
+        }
     }
 
     /**
