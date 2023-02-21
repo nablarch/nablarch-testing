@@ -22,35 +22,8 @@
   </parent>
   
   <properties>
-    <ecj.version>3.5.1</ecj.version>
+    <ecj.version>4.6.1</ecj.version>
   </properties>
-  
-  <profiles>
-    <profile>
-      <id>java8</id>
-      <properties>
-        <ecj.version>4.6.1</ecj.version>
-      </properties>
-    </profile>
-    <profile>
-      <id>java11</id>
-      <properties>
-        <ecj.version>4.6.1</ecj.version>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>javax.activation</groupId>
-          <artifactId>javax.activation-api</artifactId>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>com.sun.activation</groupId>
-          <artifactId>javax.activation</artifactId>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
   
   <dependencies>
     <dependency>
@@ -113,21 +86,28 @@
 
     <dependency>
       <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-all</artifactId>
-      <version>5.4.2</version>
+      <artifactId>artemis-server</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>javax.jms</groupId>
-      <artifactId>jms-api</artifactId>
-      <version>1.1-rev-1</version>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>artemis-jakarta-server</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>artemis-jakarta-client</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.jms</groupId>
+      <artifactId>jakarta.jms-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>servlet-api</artifactId>
-      <version>2.5</version>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -187,7 +167,6 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
   
   <build>
@@ -200,6 +179,18 @@
         <directory>src/test/java</directory>
       </testResource>
     </testResources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>nablarch.test.tool.findbugs.PublishedApisInfoTest</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   
 </project>

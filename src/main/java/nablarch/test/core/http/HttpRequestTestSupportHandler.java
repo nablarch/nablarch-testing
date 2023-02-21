@@ -41,7 +41,7 @@ import nablarch.fw.web.upload.PartInfo;
  * 実際のレスポンスコードが一致しなくなるので、本ハンドラにHttpResponseオブジェクトのステータス
  * コードを保持しておき、後続のアサート処理で参照する。
  *
- * ただし、リダイレクトの場合はServletAPI({@link javax.servlet.http.HttpServletResponse#sendRedirect(String)})
+ * ただし、リダイレクトの場合はServletAPI({@link jakarta.servlet.http.HttpServletResponse#sendRedirect(String)})
  * を使用しているため、{@link HttpResponse}にはリダイレクトのステータスコードは設定されない。
  * （ステータスコードの設定をコンテナに任せているため）
  * 従って、リダイレクトの場合のステータスコードは、本クラスではなく、
