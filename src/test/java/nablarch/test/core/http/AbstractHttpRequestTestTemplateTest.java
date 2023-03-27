@@ -46,7 +46,6 @@ import nablarch.test.support.db.helper.VariousDbTestHelper;
 import nablarch.test.support.tool.Hereis;
 import nablarch.test.tool.sanitizingcheck.util.FileUtil;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

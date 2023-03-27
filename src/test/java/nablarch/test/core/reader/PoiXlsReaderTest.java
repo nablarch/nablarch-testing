@@ -130,6 +130,27 @@ public class PoiXlsReaderTest {
 
     }
 
+    @Test
+    public void testIsDataExisting() {
+
+        // xls ファイル
+        assertThat(target.isDataExisting("src/test/java/nablarch/test/core/reader/", "PoiXlsReaderTestData/EXCEL_TEST_DATA"),
+                is(true));
+
+        // xlsx ファイル
+        assertThat(target.isDataExisting("src/test/java/nablarch/test/core/reader/", "PoiXlsReaderXLSXTestData/EXCEL_TEST_DATA"),
+                is(true));
+
+        // ディレクトリが存在しない場合
+        assertThat(target.isDataExisting("xxx/yyy", "TestSupportTest/SetUpDb"), is(false));
+
+        // ファイルが存在しない場合
+        assertThat(target.isDataExisting("src/test/java/nablarch/test/core/reader/", "NoSuchFile/SetUpDb"), is(false));
+
+        // シートが存在しない場合
+        assertThat(target.isDataExisting("src/test/java/nablarch/test/core/reader/", "PoiXlsReaderTestData/SetUpDb"), is(false));
+    }
+
     /**
      * 完全な空行を含むシートを読む場合、空行が読み込まれないこと。
      */

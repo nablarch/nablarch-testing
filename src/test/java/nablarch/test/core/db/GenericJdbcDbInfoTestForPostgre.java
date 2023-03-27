@@ -1,6 +1,5 @@
 package nablarch.test.core.db;
 
-import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;

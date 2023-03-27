@@ -8,9 +8,7 @@ import nablarch.fw.web.HttpRequest;
 import nablarch.fw.web.HttpResponse;
 import nablarch.fw.web.HttpServer;
 import nablarch.fw.web.handler.ForwardingHandler;
-import nablarch.fw.web.handler.HttpCharacterEncodingHandler;
 import nablarch.fw.web.handler.HttpErrorHandler;
-import nablarch.fw.web.handler.HttpResponseHandler;
 
 import java.util.Arrays;
 import java.util.List;

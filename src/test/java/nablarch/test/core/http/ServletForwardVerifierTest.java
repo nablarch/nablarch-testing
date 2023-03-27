@@ -15,7 +15,6 @@ import nablarch.fw.web.MockHttpRequest;
 import nablarch.fw.web.handler.HttpErrorHandler;
 import nablarch.test.support.tool.Hereis;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 /**

@@ -181,6 +181,9 @@ public class DbAccessTestSupport extends TestEventDispatcher {
         // 複数のテーブルにデータを登録する。
         final List<TableData> allTables = testSupport.getSetupTableData(sheetName, groupId);
 
+        if (allTables.isEmpty()) {
+            return;
+        }
 
         new TransactionTemplateInternal(DB_TRANSACTION_FOR_TEST) {
             @Override
