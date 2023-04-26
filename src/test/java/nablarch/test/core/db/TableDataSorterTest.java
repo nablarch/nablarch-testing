@@ -1,11 +1,19 @@
 package nablarch.test.core.db;
 
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.repository.SystemRepository;
+import nablarch.test.RepositoryInitializer;
+import nablarch.test.SystemPropertyResource;
+import nablarch.test.support.SystemRepositoryResource;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.support.db.helper.VariousDbTestHelper;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,23 +23,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.repository.SystemRepository;
-import nablarch.test.RepositoryInitializer;
-import nablarch.test.SystemPropertyResource;
-import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.VariousDbTestHelper;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import mockit.Expectations;
-import mockit.Mocked;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link TableDataSorter}のテストクラス。
@@ -135,7 +134,7 @@ public class TableDataSorterTest {
         }
     }
 
-    @Mocked private TransactionManagerConnection mockTranConn;
+    private final TransactionManagerConnection mockTranConn = mock(TransactionManagerConnection.class);
 
     /** フラグが設定されていた場合、ソートがスキップされること。 */
     @Test
@@ -143,10 +142,7 @@ public class TableDataSorterTest {
 
         RepositoryInitializer.reInitializeRepository("nablarch/test/core/db/suppress-sort-table.xml");
 
-        new Expectations() {{
-            mockTranConn.getConnection();
-            result = conn;
-        }};
+        when(mockTranConn.getConnection()).thenReturn(conn);
 
         final DbInfo unusedDbInfo = null;
         final String[] unusedColumnNames = new String[0];
