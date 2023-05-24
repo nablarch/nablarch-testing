@@ -348,7 +348,18 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
                 throw new IllegalArgumentException("Cookie LIST_MAP was not found. name = [" + listMapName + "]");
             }
         }
-        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+
+        // クエリパラメータ(任意項目)
+        List<Map<String, String>> queryParams = null;
+        if (testCaseParams.containsKey(TestCaseInfo.QUERYPARAMS_LIST_MAP)
+                && !StringUtil.isNullOrEmpty(getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP))) {
+            String listMapName = getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP);
+            queryParams = getCachedListMap(sheetName, listMapName);
+            if (queryParams.isEmpty()) {
+                throw new IllegalArgumentException("Query Parameter LIST_MAP was not found. name = [" + listMapName + "]");
+            }
+        }
+        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
     }
 
     /**
@@ -369,8 +380,9 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             List<Map<String, String>> contexts,
             List<Map<String, String>> requests,
             List<Map<String, String>> expectedResponses,
-            List<Map<String, String>> cookie) {
-        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+            List<Map<String, String>> cookie,
+            List<Map<String, String>> queryParams) {
+        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
     }
 
     /**
@@ -391,7 +403,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      */
     protected HttpRequest createHttpRequest(INF testCaseInfo) {
         String uri = getBaseUri() + testCaseInfo.getRequestId();
-        return createHttpRequestWithConversion(uri, testCaseInfo.getRequestParameters(), testCaseInfo.getCookie());
+        return createHttpRequestWithConversion(uri, testCaseInfo.getHttpMethod(), testCaseInfo.getRequestParameters(), testCaseInfo.getCookie(), testCaseInfo.getQueryParams());
     }
 
     /**

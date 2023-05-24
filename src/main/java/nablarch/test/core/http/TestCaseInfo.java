@@ -24,6 +24,9 @@ public class TestCaseInfo {
     /** リクエストIDを定義しているカラム名 */
     protected static final String REQUEST_ID = "REQUEST_ID";
 
+    /** HTTPメソッドを定義しているカラム名 */
+    protected static final String HTTP_METHOD_COLUMN_NAME = "HTTP_METHOD";
+
     /** テストケース番号を定義しているカラム名 */
     protected static final String TEST_CASE_NO = "no";
 
@@ -38,6 +41,8 @@ public class TestCaseInfo {
 
     /** CookieのLIST_MAP定義名 */
     protected static final String COOKIE_LIST_MAP = "cookie";
+    /** CookieのLIST_MAP定義名 */
+    protected static final String QUERYPARAMS_LIST_MAP = "queryParams";
 
     /** トークンを設定するかどうかを記述しているカラム名 */
     protected static final String IS_VALID_TOKEN = "isValidToken";
@@ -90,6 +95,8 @@ public class TestCaseInfo {
     private List<Map<String, String>> expectedResponseParams;
     /** Cookie情報 */
     private List<Map<String, String>> cookie;
+    /** クエリパラメータ情報 */
+    private List<Map<String, String>> queryParams;
 
     /** リクエストスコープ値アサートを行うか？（各テストケースで個別検証する場合にfalseを設定） */
     private boolean isAssertRequestScopeVar = true;
@@ -129,7 +136,7 @@ public class TestCaseInfo {
             List<Map<String, String>> context,
             List<Map<String, String>> request,
             List<Map<String, String>> expectedResponseListMap) {
-        this(sheetName, testCaseParams, context, request, expectedResponseListMap, null);
+        this(sheetName, testCaseParams, context, request, expectedResponseListMap, null, null);
     }
 
     /**
@@ -146,13 +153,15 @@ public class TestCaseInfo {
             List<Map<String, String>> context,
             List<Map<String, String>> request,
             List<Map<String, String>> expectedResponseListMap,
-            List<Map<String, String>> cookie) {
+            List<Map<String, String>> cookie,
+            List<Map<String, String>> queryParams) {
         this.sheetName = sheetName;
         this.testCaseParams = testCaseParams;
         this.context = context;
         this.request = request;
         this.expectedResponseParams = expectedResponseListMap;
         this.cookie = cookie;
+        this.queryParams = queryParams;
     }
 
     /**
@@ -270,6 +279,17 @@ public class TestCaseInfo {
     }
 
     /**
+     * テストリクエストのHTTPメソッドを返却する.<br/>
+     * 任意指定項目であり、指定されていない場合はPOSTを返却する。
+     *
+     * @return HTTPメソッド
+     */
+    public String getHttpMethod() {
+        String httpMethod = context.get(0).get(HTTP_METHOD_COLUMN_NAME);
+        return StringUtil.hasValue(httpMethod) ? httpMethod : "POST";
+    }
+
+    /**
      * Cookieを返却する。
      * @return Cookie情報
      */
@@ -278,6 +298,17 @@ public class TestCaseInfo {
             return null;
         }
         return cookie.get(0);
+    }
+
+    /**
+     * クエリパラメータを返却する。
+     * @return Cookie情報
+     */
+    public Map<String, String> getQueryParams() {
+        if (queryParams == null || queryParams.isEmpty()) {
+            return null;
+        }
+        return queryParams.get(0);
     }
 
     /**
