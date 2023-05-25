@@ -372,6 +372,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
                          encodedName = URLEncoder.encode(entry.getKey(), "UTF-8");
                          encodedValue = URLEncoder.encode(entry.getValue(), "UTF-8");
                     } catch (UnsupportedEncodingException e) {
+                        // ここには来ない
                         throw new RuntimeException(e);
                     }
 

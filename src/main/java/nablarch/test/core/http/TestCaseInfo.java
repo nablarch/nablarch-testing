@@ -281,7 +281,6 @@ public class TestCaseInfo {
     /**
      * テストリクエストのHTTPメソッドを返却する.<br/>
      * 任意指定項目であり、指定されていない場合はPOSTを返却する。
-     *
      * @return HTTPメソッド
      */
     public String getHttpMethod() {
