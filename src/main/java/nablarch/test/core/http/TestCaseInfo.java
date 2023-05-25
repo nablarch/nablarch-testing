@@ -301,7 +301,7 @@ public class TestCaseInfo {
 
     /**
      * クエリパラメータを返却する。
-     * @return Cookie情報
+     * @return クエリパラメータ情報
      */
     public Map<String, String> getQueryParams() {
         if (queryParams == null || queryParams.isEmpty()) {

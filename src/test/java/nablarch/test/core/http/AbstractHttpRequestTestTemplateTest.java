@@ -651,6 +651,9 @@ public class AbstractHttpRequestTestTemplateTest {
         }
     }
 
+    /**
+     * HTTPメソッドを指定できることを検証する。
+     */
     @Test
     public void testHttpMethod() {
         target = createMock(new HttpRequestHandler() {
