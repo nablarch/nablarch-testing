@@ -356,7 +356,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             String listMapName = getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP);
             queryParams = getCachedListMap(sheetName, listMapName);
             if (queryParams.isEmpty()) {
-                throw new IllegalArgumentException("Query Parameter LIST_MAP was not found. name = [" + listMapName + "]");
+                throw new IllegalArgumentException("Query parameter LIST_MAP was not found. name = [" + listMapName + "]");
             }
         }
         return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);

@@ -3,8 +3,11 @@ package nablarch.test.core.http;
 import static nablarch.test.Assertion.fail;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,6 +20,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -644,6 +648,122 @@ public class AbstractHttpRequestTestTemplateTest {
         } catch (Exception e) {
             assertThat(e.getMessage(), is(
                     "Cookie LIST_MAP was not found. name = [cookie0]"));
+        }
+    }
+
+
+    /**
+     * urlからクエリパラメータを取得する。
+     * テスト用であるため、urlの厳密な解析は実施していない。
+     * @param url
+     * @return
+     */
+    private Map<String, String> getQueryParams(String url) {
+        String[] split = url.split("\\?");
+        if (split.length == 1) {
+            return null;
+        }
+
+        String[] params = split[1].split("&");
+        Map<String, String> result = new HashMap<String, String>();
+        for (String param : params) {
+            String[] keyValue = param.split("=");
+            if(keyValue.length == 2) {
+                result.put(keyValue[0], keyValue[1]);
+            } else {
+                result.put(keyValue[0], "");
+            }
+        }
+
+        return result;
+    }
+
+
+    /**
+     * クエリパラメータの設定が正しくなされていることを検証する。
+     */
+    @Test
+    public void testQueryParamsNormal() {
+
+        // テスト用にサブクラス化
+        target = createMock(new HttpRequestHandler() {
+            /** リクエストパラメータを変更し、200 OKを返却する。 */
+            @Override
+            public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
+                // ボディを設定する。
+                String body = Hereis.string();
+                // Cookieをリクエストスコープに移送
+                /*
+                <html>
+                  <head><title>test</title></head>
+                  <body><p>Hello, World!</p></body>
+                </html>
+                */
+                return new HttpResponse().write(body);
+            }
+        });
+
+        // 実行
+        target.execute("testQueryParamsNormal", new BasicAdvice() {
+            @Override
+            public void afterExecute(TestCaseInfo testCaseInfo,
+                    ExecutionContext context) {
+                String no = testCaseInfo.getTestCaseNo();
+                HttpRequest request = testCaseInfo.getHttpRequest();
+
+                Map<String, String> queryParamsMap = getQueryParams(request.getRequestUri());
+                if (no.equals("3")) {
+                    // 3ケース目は、クエリパラメータを設定していないので空のはず
+                    assertNull(queryParamsMap);
+                } else {
+                    // それ以外は、Excelに設定したCookieが設定されているはず
+                    assert queryParamsMap != null;
+                    Map<String, String> map = target.getListMap(
+                            testCaseInfo.getSheetName(), "expectedQueryParams" + no)
+                            .get(0);
+
+                    for (Map.Entry<String, String> entry : map.entrySet()) {
+                        if (entry.getValue() == null) {
+                            assertNull(queryParamsMap.get(entry.getKey()));
+                        } else {
+                            assertEquals(entry.getValue(), queryParamsMap.get(entry.getKey()));
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Cookie列に定義された参照先が存在しない場合、例外が発生することを検証する。
+     */
+    @Test
+    public void testQueryParamsFailed() {
+
+        // テスト用にサブクラス化
+        target = createMock(new HttpRequestHandler() {
+            /** リクエストパラメータを変更し、200 OKを返却する。 */
+            @Override
+            public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
+                // ボディを設定する。
+                String body = Hereis.string();
+                // Cookieをリクエストスコープに移送
+                /*
+                <html>
+                <head><title>test</title></head>
+                <body><p>Hello, World!</p></body>
+                </html>*/
+                return new HttpResponse().write(body); // 200 OK
+            }
+        });
+
+        // 実行
+        try {
+            target.execute("testQueryParamsFailed");
+            fail("does not run...");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), is(
+                    "Query parameter LIST_MAP was not found. name = [queryParams0]"));
         }
     }
 
