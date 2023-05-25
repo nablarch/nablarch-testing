@@ -651,6 +651,18 @@ public class AbstractHttpRequestTestTemplateTest {
         }
     }
 
+    @Test
+    public void testHttpMethod() {
+        target = createMock(new HttpRequestHandler() {
+            @Override
+            public HttpResponse handle(HttpRequest request, ExecutionContext context) {
+                context.setRequestScopedVar("http_method", request.getMethod());
+                return new HttpResponse();
+            }
+        });
+
+        target.execute("testHttpMethod");
+    }
 
     /**
      * urlからクエリパラメータを取得する。
