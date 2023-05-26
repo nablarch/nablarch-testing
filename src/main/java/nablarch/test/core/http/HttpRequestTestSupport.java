@@ -1071,9 +1071,9 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         StringBuilder sb = new StringBuilder();
         sb.append(uri).append("?");
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            sb.append(percentEncodedString(entry.getKey()))
+            sb.append(getPercentEncodedString(entry.getKey()))
                 .append("=")
-                .append(percentEncodedString(entry.getValue()))
+                .append(getPercentEncodedString(entry.getValue()))
                 .append("&");
         }
         // 最後の&を削除
@@ -1081,7 +1081,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         return sb.toString();
     }
 
-    private String percentEncodedString(String rawString) {
+    private String getPercentEncodedString(String rawString) {
         try {
             return URLEncoder.encode(rawString, "UTF-8");
         } catch  (UnsupportedEncodingException e) {
@@ -1100,13 +1100,13 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     public HttpRequest createHttpRequestWithConversion(String requestUri,
             Map<String, String> commaSeparated, Map<String, String> cookie) {
-        return createHttpRequestWithConversion(requestUri, "POST", commaSeparated, cookie, null);
+        return createHttpRequestWithConversion(requestUri, "POST", commaSeparated, cookie);
     }
 
     /**
      * リクエストパラメータを作成する。
      *
-     * @param requestUri     リクエストURI
+g     * @param requestUri     リクエストURI
      * @param httpMethod     HTTPメソッド
      * @param commaSeparated パラメータが格納されたMap
      * @param cookie         Cookie情報が格納されたMap

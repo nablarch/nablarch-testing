@@ -669,13 +669,13 @@ public class AbstractHttpRequestTestTemplateTest {
     }
 
     /**
-     * urlからクエリパラメータを取得する。
-     * テスト用であるため、urlの厳密な解析は実施していない。
-     * @param url
+     * リクエストURIからクエリパラメータを取得する。
+     * テスト用であるため、URIの厳密な解析は実施していない。
+     * @param uri リクエストURI
      * @return クエリパラメータのマップ
      */
-    private Map<String, String> getQueryParams(String url) {
-        String[] split = url.split("\\?");
+    private Map<String, String> getQueryParams(String uri) {
+        String[] split = uri.split("\\?");
         if (split.length == 1) {
             return null;
         }
@@ -749,14 +749,13 @@ public class AbstractHttpRequestTestTemplateTest {
                         if (entry.getValue() == null) {
                             assertNull(queryParamsMap.get(encodedKey));
                         } else {
-                            String decodedResult;
                             try {
-                                decodedResult = URLDecoder.decode(queryParamsMap.get(encodedKey), "UTF-8");
+                                String decodedResult = URLDecoder.decode(queryParamsMap.get(encodedKey), "UTF-8");
+                                assertEquals(entry.getValue(), decodedResult);
                             } catch (UnsupportedEncodingException e) {
                                 // ここには来ない
                                 throw new RuntimeException(e);
                             }
-                            assertEquals(entry.getValue(), decodedResult);
                         }
                     }
                 }
