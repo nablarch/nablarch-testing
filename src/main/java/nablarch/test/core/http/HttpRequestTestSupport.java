@@ -1071,9 +1071,9 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         StringBuilder sb = new StringBuilder();
         sb.append(uri).append("?");
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            sb.append(getPercentEncodedString(entry.getKey()))
+            sb.append(encode(entry.getKey()))
                 .append("=")
-                .append(getPercentEncodedString(entry.getValue()))
+                .append(encode(entry.getValue()))
                 .append("&");
         }
         // 最後の&を削除
@@ -1081,7 +1081,12 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         return sb.toString();
     }
 
-    private String getPercentEncodedString(String rawString) {
+    /**
+     * 文字列をパーセントエンコーディングする。
+     * @param rawString エンコード前文字列
+     * @return エンコード後文字列
+     */
+    private String encode(String rawString) {
         try {
             return URLEncoder.encode(rawString, "UTF-8");
         } catch  (UnsupportedEncodingException e) {

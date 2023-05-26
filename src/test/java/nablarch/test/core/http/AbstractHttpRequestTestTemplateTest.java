@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -670,6 +669,7 @@ public class AbstractHttpRequestTestTemplateTest {
 
     /**
      * リクエストURIからクエリパラメータを取得する。
+     * クエリパラメータはパーセントエンコーディング済みなので、デコードして返却する。
      * テスト用であるため、URIの厳密な解析は実施していない。
      * @param uri リクエストURI
      * @return クエリパラメータのマップ
@@ -683,14 +683,18 @@ public class AbstractHttpRequestTestTemplateTest {
         String[] params = split[1].split("&");
         Map<String, String> result = new HashMap<String, String>();
         for (String param : params) {
-            String[] keyValue = param.split("=");
-            if(keyValue.length == 2) {
-                result.put(keyValue[0], keyValue[1]);
-            } else {
-                result.put(keyValue[0], "");
+            try {
+                String decoded = URLDecoder.decode(param, "UTF-8");
+                String[] keyValue = decoded.split("=");
+                if(keyValue.length == 2) {
+                    result.put(keyValue[0], keyValue[1]);
+                } else {
+                    result.put(keyValue[0], "");
+                }
+            } catch (UnsupportedEncodingException e) {
+                fail("UTF-8指定しているのでUnsupportedEncodingExceptionはthrowされない。(" + e.getMessage() + ")");
             }
         }
-
         return result;
     }
 
@@ -733,29 +737,12 @@ public class AbstractHttpRequestTestTemplateTest {
                 } else {
                     // それ以外は、Excelに設定したクエリパラメータが設定されているはず
                     assert queryParamsMap != null;
-                    Map<String, String> map = target.getListMap(
-                            testCaseInfo.getSheetName(), "expectedQueryParams" + no)
-                            .get(0);
-
+                    Map<String, String> map = target.getListMap(testCaseInfo.getSheetName(), "expectedQueryParams" + no).get(0);
                     for (Map.Entry<String, String> entry : map.entrySet()) {
-                        String encodedKey;
-                        try {
-                            encodedKey = URLEncoder.encode(entry.getKey(), "UTF-8");
-                        } catch (UnsupportedEncodingException e) {
-                            // ここには来ない
-                            throw new RuntimeException(e);
-                        }
-
                         if (entry.getValue() == null) {
-                            assertNull(queryParamsMap.get(encodedKey));
+                            assertNull(queryParamsMap.get(entry.getKey()));
                         } else {
-                            try {
-                                String decodedResult = URLDecoder.decode(queryParamsMap.get(encodedKey), "UTF-8");
-                                assertEquals(entry.getValue(), decodedResult);
-                            } catch (UnsupportedEncodingException e) {
-                                // ここには来ない
-                                throw new RuntimeException(e);
-                            }
+                            assertEquals(entry.getValue(), queryParamsMap.get(entry.getKey()));
                         }
                     }
                 }
