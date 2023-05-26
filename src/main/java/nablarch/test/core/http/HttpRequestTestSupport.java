@@ -12,7 +12,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1069,14 +1071,23 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         StringBuilder sb = new StringBuilder();
         sb.append(uri).append("?");
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            sb.append(entry.getKey())
+            sb.append(percentEncodedString(entry.getKey()))
                 .append("=")
-                .append(entry.getValue())
+                .append(percentEncodedString(entry.getValue()))
                 .append("&");
         }
         // 最後の&を削除
         sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
+    }
+
+    private String percentEncodedString(String rawString) {
+        try {
+            return URLEncoder.encode(rawString, "UTF-8");
+        } catch  (UnsupportedEncodingException e) {
+            // ここには来ない
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -1090,6 +1101,20 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     public HttpRequest createHttpRequestWithConversion(String requestUri,
             Map<String, String> commaSeparated, Map<String, String> cookie) {
         return createHttpRequestWithConversion(requestUri, "POST", commaSeparated, cookie, null);
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+     * @param requestUri     リクエストURI
+     * @param httpMethod     HTTPメソッド
+     * @param commaSeparated パラメータが格納されたMap
+     * @param cookie         Cookie情報が格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequestWithConversion(String requestUri, String httpMethod,
+            Map<String, String> commaSeparated, Map<String, String> cookie) {
+        return createHttpRequestWithConversion(requestUri, httpMethod, commaSeparated, cookie, null);
     }
 
 

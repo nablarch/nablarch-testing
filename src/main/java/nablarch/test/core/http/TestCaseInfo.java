@@ -153,6 +153,25 @@ public class TestCaseInfo {
             List<Map<String, String>> context,
             List<Map<String, String>> request,
             List<Map<String, String>> expectedResponseListMap,
+            List<Map<String, String>> cookie) {
+        this(sheetName, testCaseParams, context, request, expectedResponseListMap, cookie, null);
+    }
+
+    /**
+     * コンストラクタ
+     *
+     * @param sheetName テストシート名
+     * @param testCaseParams テストケースパラメータ
+     * @param context スレッドコンテキスト・ユーザコンテキスト生成用パラメータ
+     * @param request リクエストパラメータ
+     * @param expectedResponseListMap レスポンス期待値パラメータ
+     * @param cookie Cookie情報
+     * @param queryParams クエリパラメータ情報
+     */
+    public TestCaseInfo(String sheetName, Map<String, String> testCaseParams,
+            List<Map<String, String>> context,
+            List<Map<String, String>> request,
+            List<Map<String, String>> expectedResponseListMap,
             List<Map<String, String>> cookie,
             List<Map<String, String>> queryParams) {
         this.sheetName = sheetName;

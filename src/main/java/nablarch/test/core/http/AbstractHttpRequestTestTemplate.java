@@ -4,9 +4,6 @@ import static nablarch.core.util.Builder.concat;
 import static nablarch.test.Assertion.assertEqualsAsString;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -353,35 +350,16 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
         }
 
         // クエリパラメータ(任意項目)
-        List<Map<String, String>> rawQueryParams;
-        List<Map<String, String>> queryParams = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> queryParams = null;
         if (testCaseParams.containsKey(TestCaseInfo.QUERYPARAMS_LIST_MAP)
                 && !StringUtil.isNullOrEmpty(getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP))) {
             String listMapName = getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP);
-            rawQueryParams = getCachedListMap(sheetName, listMapName);
-            if (rawQueryParams.isEmpty()) {
+            queryParams = getCachedListMap(sheetName, listMapName);
+            if (queryParams.isEmpty()) {
                 throw new IllegalArgumentException("Query parameter LIST_MAP was not found. name = [" + listMapName + "]");
             }
-
-            for (Map<String, String> rawQueryParam : rawQueryParams) {
-                Map<String, String> queryParam = new HashMap<String, String>();
-                for(Map.Entry<String, String> entry : rawQueryParam.entrySet()) {
-                    String encodedName;
-                    String encodedValue;
-                    try {
-                         encodedName = URLEncoder.encode(entry.getKey(), "UTF-8");
-                         encodedValue = URLEncoder.encode(entry.getValue(), "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        // ここには来ない
-                        throw new RuntimeException(e);
-                    }
-
-                    queryParam.put(encodedName, encodedValue);
-                }
-                queryParams.add(queryParam);
-            }
-
         }
+
         return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
     }
 

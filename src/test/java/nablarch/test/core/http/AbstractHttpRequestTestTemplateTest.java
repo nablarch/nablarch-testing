@@ -7,20 +7,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -671,7 +672,7 @@ public class AbstractHttpRequestTestTemplateTest {
      * urlからクエリパラメータを取得する。
      * テスト用であるため、urlの厳密な解析は実施していない。
      * @param url
-     * @return
+     * @return クエリパラメータのマップ
      */
     private Map<String, String> getQueryParams(String url) {
         String[] split = url.split("\\?");
@@ -707,7 +708,6 @@ public class AbstractHttpRequestTestTemplateTest {
             public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
                 // ボディを設定する。
                 String body = Hereis.string();
-                // Cookieをリクエストスコープに移送
                 /*
                 <html>
                   <head><title>test</title></head>
@@ -731,17 +731,32 @@ public class AbstractHttpRequestTestTemplateTest {
                     // 3ケース目は、クエリパラメータを設定していないので空のはず
                     assertNull(queryParamsMap);
                 } else {
-                    // それ以外は、Excelに設定したCookieが設定されているはず
+                    // それ以外は、Excelに設定したクエリパラメータが設定されているはず
                     assert queryParamsMap != null;
                     Map<String, String> map = target.getListMap(
                             testCaseInfo.getSheetName(), "expectedQueryParams" + no)
                             .get(0);
 
                     for (Map.Entry<String, String> entry : map.entrySet()) {
+                        String encodedKey;
+                        try {
+                            encodedKey = URLEncoder.encode(entry.getKey(), "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
+                            // ここには来ない
+                            throw new RuntimeException(e);
+                        }
+
                         if (entry.getValue() == null) {
-                            assertNull(queryParamsMap.get(entry.getKey()));
+                            assertNull(queryParamsMap.get(encodedKey));
                         } else {
-                            assertEquals(entry.getValue(), queryParamsMap.get(entry.getKey()));
+                            String decodedResult;
+                            try {
+                                decodedResult = URLDecoder.decode(queryParamsMap.get(encodedKey), "UTF-8");
+                            } catch (UnsupportedEncodingException e) {
+                                // ここには来ない
+                                throw new RuntimeException(e);
+                            }
+                            assertEquals(entry.getValue(), decodedResult);
                         }
                     }
                 }
@@ -750,7 +765,7 @@ public class AbstractHttpRequestTestTemplateTest {
     }
 
     /**
-     * Cookie列に定義された参照先が存在しない場合、例外が発生することを検証する。
+     * クエリパラメータ列に定義された参照先が存在しない場合、例外が発生することを検証する。
      */
     @Test
     public void testQueryParamsFailed() {
@@ -762,7 +777,6 @@ public class AbstractHttpRequestTestTemplateTest {
             public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
                 // ボディを設定する。
                 String body = Hereis.string();
-                // Cookieをリクエストスコープに移送
                 /*
                 <html>
                 <head><title>test</title></head>
