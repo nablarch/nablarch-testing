@@ -360,7 +360,38 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             }
         }
 
-        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
+        // createTestCaseInfo()はオーバーロードされているため、本来であればqueryParamsがnullか否かで場合分けする必要はない。
+        // ただし、nablarch-example-webでqueryParamsが無いメソッドをオーバーライドする使い方をしているため、
+        // 後方互換性を考慮して、明示的に場合分けを行う。
+        if (queryParams == null) {
+            return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+        } else {
+            return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
+        }
+    }
+
+    /**
+     * テストケース情報を作成する。
+     *
+     *
+     * @param sheetName         シート名
+     * @param testCaseParams    テストケースパラメータ
+     * @param contexts          コンテキスト全件
+     * @param requests          リクエスト全件
+     * @param expectedResponses 期待するレスポンス全件
+     * @param cookie            本テストで使用するクッキー情報
+     * @param queryParams       本テストで使用するクエリパラメータ情報
+     * @return 作成したテストケース情報
+     */
+    @SuppressWarnings("unchecked")
+    protected INF createTestCaseInfo(String sheetName,
+            Map<String, String> testCaseParams,
+            List<Map<String, String>> contexts,
+            List<Map<String, String>> requests,
+            List<Map<String, String>> expectedResponses,
+            List<Map<String, String>> cookie,
+            List<Map<String, String>> queryParams) {
+        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
     }
 
     /**
@@ -378,12 +409,11 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
     @SuppressWarnings("unchecked")
     protected INF createTestCaseInfo(String sheetName,
             Map<String, String> testCaseParams,
-            List<Map<String, String>> contexts,
+                                     List<Map<String, String>> contexts,
             List<Map<String, String>> requests,
             List<Map<String, String>> expectedResponses,
-            List<Map<String, String>> cookie,
-            List<Map<String, String>> queryParams) {
-        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
+            List<Map<String, String>> cookie) {
+        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
     }
 
     /**
