@@ -136,7 +136,7 @@ public class TestCaseInfo {
             List<Map<String, String>> context,
             List<Map<String, String>> request,
             List<Map<String, String>> expectedResponseListMap) {
-        this(sheetName, testCaseParams, context, request, expectedResponseListMap, null, null);
+        this(sheetName, testCaseParams, context, request, expectedResponseListMap, null);
     }
 
     /**

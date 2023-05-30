@@ -360,14 +360,13 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             }
         }
 
-        // createTestCaseInfo()はオーバーロードされているため、本来であればqueryParamsがnullか否かで場合分けする必要はない。
-        // ただし、nablarch-example-webでqueryParamsが無いメソッドをオーバーライドする使い方をしているため、
-        // 後方互換性を考慮して、明示的に場合分けを行う。
+        // createTestCaseInfo()は公開APIとして定義されており、個別にオーバーライドされている可能性がある。
+        // そのため、後方互換性を考慮して場合分けを行う。
         if (queryParams == null) {
             return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
-        } else {
-            return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
         }
+        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
+
     }
 
     /**
@@ -413,7 +412,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             List<Map<String, String>> requests,
             List<Map<String, String>> expectedResponses,
             List<Map<String, String>> cookie) {
-        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, null);
     }
 
     /**
