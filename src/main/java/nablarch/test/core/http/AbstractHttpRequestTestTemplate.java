@@ -405,7 +405,6 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      * @param cookie            本テストで使用するクッキー情報
      * @return 作成したテストケース情報
      */
-    @SuppressWarnings("unchecked")
     protected INF createTestCaseInfo(String sheetName,
             Map<String, String> testCaseParams,
                                      List<Map<String, String>> contexts,
