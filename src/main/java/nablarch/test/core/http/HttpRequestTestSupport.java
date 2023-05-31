@@ -12,7 +12,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -916,20 +918,32 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * リクエストパラメータを作成する。
      *
      * @param requestUri リクエストURI
+     * @param httpMethod HTTPメソッド
      * @param params     パラメータが格納されたMap
      * @return リクエストパラメータ
      */
-    public HttpRequest createHttpRequest(String requestUri, Map<String, String[]> params) {
+    public HttpRequest createHttpRequest(String requestUri, String httpMethod, Map<String, String[]> params) {
 
         MockHttpRequest httpRequest = new MockHttpRequest();
         httpRequest.setRequestUri(requestUri);    // URI設定
-        httpRequest.setMethod("POST");           // HTTPメソッド設定
+        httpRequest.setMethod(httpMethod);           // HTTPメソッド設定
 
         // マルチパート情報を抽出・作成
         PartInfoHolder parts = extractMultipart(params);
         httpRequest.setMultipart(parts);
         httpRequest.setParamMap(params);
         return httpRequest;
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+     * @param requestUri リクエストURI
+     * @param params     パラメータが格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequest(String requestUri, Map<String, String[]> params) {
+        return createHttpRequest(requestUri, "POST", params);
     }
 
     /**
@@ -1024,16 +1038,18 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * リクエストパラメータを作成する。
      *
      * @param requestUri     リクエストURI
+     * @param httpMethod     HTTPメソッド
      * @param commaSeparated パラメータが格納されたMap
      * @param cookie         Cookie情報が格納されたMap
+     * @param queryParams    クエリパラメータ情報が格納されたMap
      * @return リクエストパラメータ
      */
 
-    public HttpRequest createHttpRequestWithConversion(String requestUri,
-            Map<String, String> commaSeparated, Map<String, String> cookie) {
+    public HttpRequest createHttpRequestWithConversion(String requestUri, String httpMethod,
+            Map<String, String> commaSeparated, Map<String, String> cookie, Map<String, String> queryParams) {
         // リクエストパラメータの形式に変換
         Map<String, String[]> requestParameters = TestSupport.convert(commaSeparated);
-        HttpRequest request = createHttpRequest(requestUri, requestParameters);
+        HttpRequest request = createHttpRequest(requestUri, httpMethod, requestParameters);
 
         // Cookieが準備データで定義されている場合は、Cookieを追加する。
         if (cookie != null && !cookie.isEmpty()) {
@@ -1041,7 +1057,69 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             httpCookie.putAll(cookie);
             ((MockHttpRequest) request).setCookie(httpCookie);
         }
+
+        // クエリパラメータが準備データで定義されている場合は、クエリパラメータを追加する。
+        if (queryParams != null && !queryParams.isEmpty()) {
+            String uri = request.getRequestUri();
+            uri = appendQueryParamsToUri(uri, queryParams);
+            request.setRequestUri(uri);
+        }
         return request;
+    }
+
+    private String appendQueryParamsToUri (String uri, Map<String, String> queryParams) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(uri).append("?");
+        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+            sb.append(encode(entry.getKey()))
+                .append("=")
+                .append(encode(entry.getValue()))
+                .append("&");
+        }
+        // 最後の&を削除
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
+    /**
+     * 文字列をパーセントエンコーディングする。
+     * @param rawString エンコード前文字列
+     * @return エンコード後文字列
+     */
+    private String encode(String rawString) {
+        try {
+            return URLEncoder.encode(rawString, "UTF-8");
+        } catch  (UnsupportedEncodingException e) {
+            // ここには来ない
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+     * @param requestUri     リクエストURI
+     * @param commaSeparated パラメータが格納されたMap
+     * @param cookie         Cookie情報が格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequestWithConversion(String requestUri,
+            Map<String, String> commaSeparated, Map<String, String> cookie) {
+        return createHttpRequestWithConversion(requestUri, "POST", commaSeparated, cookie);
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+g     * @param requestUri     リクエストURI
+     * @param httpMethod     HTTPメソッド
+     * @param commaSeparated パラメータが格納されたMap
+     * @param cookie         Cookie情報が格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequestWithConversion(String requestUri, String httpMethod,
+            Map<String, String> commaSeparated, Map<String, String> cookie) {
+        return createHttpRequestWithConversion(requestUri, httpMethod, commaSeparated, cookie, null);
     }
 
 
