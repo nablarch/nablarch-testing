@@ -323,7 +323,7 @@ public class TestCaseInfo {
      * @return クエリパラメータ情報
      */
     public Map<String, String> getQueryParams() {
-        if (queryParams == null || queryParams.isEmpty()) {
+        if (null == queryParams || queryParams.isEmpty()) {
             return null;
         }
         return queryParams.get(0);

@@ -1059,7 +1059,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         }
 
         // クエリパラメータが準備データで定義されている場合は、クエリパラメータを追加する。
-        if (queryParams != null && !queryParams.isEmpty()) {
+        if (null != queryParams && !queryParams.isEmpty()) {
             String uri = request.getRequestUri();
             uri = appendQueryParamsToUri(uri, queryParams);
             request.setRequestUri(uri);
@@ -1067,14 +1067,20 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         return request;
     }
 
+    /**
+     * クエリパラメータをURIに追加する。
+     * @param uri リクエストURI
+     * @param queryParams クエリパラメータのマップ
+     * @return クエリパラメータが追加されたURI
+     */
     private String appendQueryParamsToUri (String uri, Map<String, String> queryParams) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(uri).append("?");
+        StringBuilder sb = new StringBuilder(uri);
+        sb.append('?');
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
             sb.append(encode(entry.getKey()))
-                .append("=")
+                .append('=')
                 .append(encode(entry.getValue()))
-                .append("&");
+                .append('&');
         }
         // 最後の&を削除
         sb.deleteCharAt(sb.length() - 1);
@@ -1124,7 +1130,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
 
 
     /**
-     * {@link nablarch.fw.ExecutionContext}を生成する。
+     * {@link ExecutionContext}を生成する。
      *
      * @param userId セッションスコープに格納するユーザID
      * @return 生成したExecutionContext

@@ -356,13 +356,13 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             String listMapName = getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP);
             queryParams = getCachedListMap(sheetName, listMapName);
             if (queryParams.isEmpty()) {
-                throw new IllegalArgumentException("Query parameter LIST_MAP was not found. name = [" + listMapName + "]");
+                throw new IllegalArgumentException("Query parameter LIST_MAP was not found. name = [" + listMapName + ']');
             }
         }
 
         // createTestCaseInfo()は公開APIとして定義されており、個別にオーバーライドされている可能性がある。
         // そのため、後方互換性を考慮して場合分けを行う。
-        if (queryParams == null) {
+        if (null == queryParams) {
             return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
         }
         return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
