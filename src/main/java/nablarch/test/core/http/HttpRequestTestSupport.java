@@ -1111,7 +1111,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     /**
      * リクエストパラメータを作成する。
      *
-g     * @param requestUri     リクエストURI
+     * @param requestUri     リクエストURI
      * @param httpMethod     HTTPメソッド
      * @param commaSeparated パラメータが格納されたMap
      * @param cookie         Cookie情報が格納されたMap
