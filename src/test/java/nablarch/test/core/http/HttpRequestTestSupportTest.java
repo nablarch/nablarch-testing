@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class HttpRequestTestSupportTest {
 
@@ -27,7 +26,7 @@ public class HttpRequestTestSupportTest {
 
 
     @Test
-    public void クッキー及びクエリパラメータがnullの場合にHttpRequestにクエリパラメータが設定されないこと() {
+    public void クッキー及びクエリパラメータそれぞれについて_nullの場合にHttpRequestに値が設定されないこと() {
 
         String requestUri = "http://localhost:8080/index";
         Map<String, String> requestParams = new HashMap<String, String>();
@@ -39,7 +38,7 @@ public class HttpRequestTestSupportTest {
     }
 
     @Test
-    public void クッキー及びクエリパラメータが空の場合にHttpRequestにクエリパラメータが設定されないこと() {
+    public void クッキー及びクエリパラメータそれぞれについて_空の場合にHttpRequestに値が設定されないこと() {
 
         String requestUri = "http://localhost:8080/index";
         Map<String, String> requestParams = new HashMap<String, String>();
