@@ -312,7 +312,7 @@ public class TestCaseInfo {
      * @return Cookie情報
      */
     public Map<String, String> getCookie() {
-        if (cookie == null || cookie.isEmpty()) {
+        if (null == cookie || cookie.isEmpty()) {
             return null;
         }
         return cookie.get(0);
@@ -426,7 +426,7 @@ public class TestCaseInfo {
      * @return ユーザID
      */
     public String getUserId() {
-        if (context == null || context.size() != 1) {
+        if (null == context || 1 != context.size()) {
             throw new IllegalArgumentException("Context LIST_MAP must be 1 row.");
         }
         return getValue(context.get(0), USER_ID_COLUMN_NAME);

@@ -305,7 +305,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     void checkHtml(String dumpFilePath, HttpTestConfiguration config) {
         HtmlChecker checker = config.getHtmlChecker();
         
-        if (checker == null) {
+        if (null == checker) {
             // 置き換えを使わない場合のHTMLチェック(後方互換性維持のため)
             throw new RuntimeException("HtmlChecker not found. please set property htmlCheckerConfig of " + HTTP_TEST_CONFIGURATION + ".");
         }
@@ -397,7 +397,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     protected HttpServer createHttpServer() {
         HttpServerFactory factory = SystemRepository.get(HTTP_SERVER_FACTORY_KEY);
-        if (factory == null) {
+        if (null == factory) {
             throw new IllegalConfigurationException("could not find component. name=[" + HTTP_SERVER_FACTORY_KEY + "].");
         }
         return factory.create();
@@ -432,7 +432,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         FileUtils.copyDir(warDir, destDir, filter, false);
         String jsTestFileName = testClass.getSimpleName() + ".js";
         URL jsTestFilePath = testClass.getResource(jsTestFileName);
-        if (jsTestFilePath == null) {
+        if (null == jsTestFilePath) {
             return;
         }
         File jsTestCase = new File(jsTestFilePath.getPath().replaceAll("/", "\\" + fileSeparator));
@@ -450,7 +450,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     protected void deleteHtmlResourceFile(File srcDir, File destDir) {
         File[] destFiles = destDir.listFiles();
-        if (destFiles == null) {
+        if (null == destFiles) {
             return;
         }
         String dumpFileExtension = getConfig().getDumpFileExtension();
@@ -493,7 +493,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     protected void rewriteResourceFile(HttpTestConfiguration config, File dumpDir, ResourceLocator warBaseLocator) {
 
-        if (jsTestResourcePath == null) {
+        if (null == jsTestResourcePath) {
             jsTestResourcePath = new File(config.getJsTestResourceDir()).getAbsolutePath();
         }
         String realPath = warBaseLocator.getRealPath();
@@ -529,7 +529,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
 
                 // 一行づつ書き出す
                 String line;
-                while ((line = reader.readLine()) != null) {
+                while (null != (line = reader.readLine())) {
                     String rewriteLine = rewritePath(line, relativePath);
                     writer.println(rewriteLine);
                 }
@@ -660,7 +660,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             if (file.isDirectory()) {
                 List<String> ignoreHtmlResourceDirectory = configuration.getIgnoreHtmlResourceDirectory();
                 // コピー対象以外のディレクトリのみをコピーするようにする。
-                return ignoreHtmlResourceDirectory == null || !ignoreHtmlResourceDirectory.contains(name);
+                return null == ignoreHtmlResourceDirectory || !ignoreHtmlResourceDirectory.contains(name);
             }
 
             for (String extension : configuration.getHtmlResourcesExtensionList()) {
@@ -690,7 +690,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         Map<String, String> configHttpHeader = config.getHttpHeader();
 
         for (Entry<String, String> stringStringEntry : configHttpHeader.entrySet()) {
-            if (headerMap.get(stringStringEntry.getKey()) == null) {
+            if (null == headerMap.get(stringStringEntry.getKey())) {
                 // 対象のキーがnullまたは、設定されていない場合のみ追加する。
                 headerMap.put(stringStringEntry.getKey(), stringStringEntry.getValue());
             }
@@ -751,7 +751,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @return ステータスコードがリダイレクトであればtrue。
      */
     private boolean isRedirected(int statusCode) {
-        return 302 == statusCode || statusCode == 303;
+        return 302 == statusCode || 303 == statusCode;
     }
 
     /**
@@ -821,8 +821,8 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     public void assertApplicationMessageId(String msg, String[] expected, ExecutionContext actual) {
         HttpTestConfiguration config = getConfig();
         ApplicationException applicationError = actual.getRequestScopedVar(config.getExceptionRequestVarKey());
-        if (applicationError == null) {
-            if (expected.length != 0) {
+        if (null == applicationError) {
+            if (0 != expected.length) {
                 // 期待値のメッセージIDが設定されている場合には、fail
                 Assertion.fail("the request is normal end. message = [", msg, "]");
             }
@@ -1314,7 +1314,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     public void assertObjectPropertyEquals(String message, String sheetName, String id, Object actual) {
         List<Map<String, String>> list = getListMap(sheetName, id);
-        if (list == null || list.isEmpty()) {
+        if (null == list || list.isEmpty()) {
             throw new IllegalArgumentException("no data row. sheetName=[" + sheetName + "], id=[" + id + "]");
         }
         Assertion.assertProperties(message, list.get(0), actual);
@@ -1332,8 +1332,8 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     public void assertObjectArrayPropertyEquals(String message, String sheetName, String id, Object[] actual) {
         List<Map<String, String>> list = getListMap(sheetName, id);
-        if (actual == null) {
-            if (list == null || list.isEmpty()) {
+        if (null == actual) {
+            if (null == list || list.isEmpty()) {
                 // OK
                 return;
             }
@@ -1361,7 +1361,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param actual    実際の値
      */
     public void assertObjectListPropertyEquals(String message, String sheetName, String id, List<?> actual) {
-        Object[] array = actual == null ? null : actual.toArray();
+        Object[] array = null == actual ? null : actual.toArray();
         assertObjectArrayPropertyEquals(message, sheetName, id, array);
     }
 
