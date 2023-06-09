@@ -1052,7 +1052,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         HttpRequest request = createHttpRequest(requestUri, httpMethod, requestParameters);
 
         // Cookieが準備データで定義されている場合は、Cookieを追加する。
-        if (cookie != null && !cookie.isEmpty()) {
+        if (null != cookie && !cookie.isEmpty()) {
             HttpCookie httpCookie = new MockHttpCookie();
             httpCookie.putAll(cookie);
             ((MockHttpRequest) request).setCookie(httpCookie);
