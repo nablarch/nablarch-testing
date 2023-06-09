@@ -22,11 +22,7 @@ public class TestCaseInfoTest {
             createExpectedResponse(),
             createCookie());
 
-        assertEquals("testSheet", sut.getSheetName());
-        assertEquals("200", sut.getExpectedStatusCode());
-        assertEquals("TESTUSER", sut.getUserId());
-        assertEquals("testValue1", sut.getRequestParameters().get("testParam1"));
-        assertEquals("foobar", sut.getExpectedRequestScopeVar().get("requestScopedVar"));
+        assertRequiredParams(sut);
         assertEquals("testCookieValue1", sut.getCookie().get("testCookieName1"));
         assertNull(sut.getQueryParams());
 
@@ -41,14 +37,18 @@ public class TestCaseInfoTest {
             createRequestParams(),
             createExpectedResponse());
 
+        assertRequiredParams(sut);
+        assertNull(sut.getCookie());
+        assertNull(sut.getQueryParams());
+
+    }
+
+    private void assertRequiredParams(TestCaseInfo sut) {
         assertEquals("testSheet", sut.getSheetName());
         assertEquals("200", sut.getExpectedStatusCode());
         assertEquals("TESTUSER", sut.getUserId());
         assertEquals("testValue1", sut.getRequestParameters().get("testParam1"));
         assertEquals("foobar", sut.getExpectedRequestScopeVar().get("requestScopedVar"));
-        assertNull(sut.getCookie());
-        assertNull(sut.getQueryParams());
-
     }
 
     private Map<String, String> createTestCaseParams() {
