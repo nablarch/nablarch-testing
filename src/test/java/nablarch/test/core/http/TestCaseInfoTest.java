@@ -1,6 +1,5 @@
 package nablarch.test.core.http;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -15,34 +14,13 @@ public class TestCaseInfoTest {
 
     @Test
     public void クエリパラメータを指定しないコンストラクタで適切にインスタンスを生成できること() {
-        String sheetName = "testSheet";
 
-        Map<String, String> testCaseParams = new HashMap<String, String>();
-        testCaseParams.put("no", "1");
-        testCaseParams.put("description", "test01");
-        testCaseParams.put("expectedStatusCode", "200");
-
-        List<Map<String, String>> context = new ArrayList<Map<String, String>>();
-        Map<String, String> contextElement = new HashMap<String, String>();
-        contextElement.put("USER_ID", "TESTUSER");
-        context.add(contextElement);
-
-        List<Map<String, String>> requestParams = new ArrayList<Map<String, String>>();
-        Map<String, String> requestParamElement = new HashMap<String, String>();
-        requestParamElement.put("testParam1", "testValue1");
-        requestParams.add(requestParamElement);
-
-        List<Map<String, String>> expectedResponseListMap = new ArrayList<Map<String, String>>();
-        Map<String, String> expectedResponseElement = new HashMap<String, String>();
-        expectedResponseElement.put("requestScopedVar", "foobar");
-        expectedResponseListMap.add(expectedResponseElement);
-
-        List<Map<String, String>> cookie = new ArrayList<Map<String, String>>();
-        Map<String, String> cookieElement = new HashMap<String, String>();
-        cookieElement.put("testCookieName1", "testCookieValue1");
-        cookie.add(cookieElement);
-
-        TestCaseInfo sut = new TestCaseInfo(sheetName, testCaseParams, context, requestParams, expectedResponseListMap, cookie);
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            createTestCaseParams(),
+            createContext(),
+            createRequestParams(),
+            createExpectedResponse(),
+            createCookie());
 
         assertEquals("testSheet", sut.getSheetName());
         assertEquals("200", sut.getExpectedStatusCode());
@@ -56,29 +34,12 @@ public class TestCaseInfoTest {
 
     @Test
     public void クッキー及びクエリパラメータを指定しないコンストラクタで適切にインスタンスを生成できること() {
-        String sheetName = "testSheet";
 
-        Map<String, String> testCaseParams = new HashMap<String, String>();
-        testCaseParams.put("no", "1");
-        testCaseParams.put("description", "test01");
-        testCaseParams.put("expectedStatusCode", "200");
-
-        List<Map<String, String>> context = new ArrayList<Map<String, String>>();
-        Map<String, String> contextElement = new HashMap<String, String>();
-        contextElement.put("USER_ID", "TESTUSER");
-        context.add(contextElement);
-
-        List<Map<String, String>> requestParams = new ArrayList<Map<String, String>>();
-        Map<String, String> requestParamElement = new HashMap<String, String>();
-        requestParamElement.put("testParam1", "testValue1");
-        requestParams.add(requestParamElement);
-
-        List<Map<String, String>> expectedResponseListMap = new ArrayList<Map<String, String>>();
-        Map<String, String> expectedResponseElement = new HashMap<String, String>();
-        expectedResponseElement.put("requestScopedVar", "foobar");
-        expectedResponseListMap.add(expectedResponseElement);
-
-        TestCaseInfo sut = new TestCaseInfo(sheetName, testCaseParams, context, requestParams, expectedResponseListMap);
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            createTestCaseParams(),
+            createContext(),
+            createRequestParams(),
+            createExpectedResponse());
 
         assertEquals("testSheet", sut.getSheetName());
         assertEquals("200", sut.getExpectedStatusCode());
@@ -88,6 +49,42 @@ public class TestCaseInfoTest {
         assertNull(sut.getCookie());
         assertNull(sut.getQueryParams());
 
+    }
+
+    private Map<String, String> createTestCaseParams() {
+        Map<String, String> testCaseParams = new HashMap<String, String>();
+        testCaseParams.put("no", "1");
+        testCaseParams.put("description", "test01");
+        testCaseParams.put("expectedStatusCode", "200");
+        return testCaseParams;
+    }
+
+    private List<Map<String, String>> createSimpleListMap(String key, String value) {
+        Map<String, String> contextElement = new HashMap<String, String>();
+        contextElement.put(key, value);
+
+        List<Map<String, String>> listMap = new ArrayList<Map<String, String>>();
+        listMap.add(contextElement);
+
+        return listMap;
+
+    }
+
+    private List<Map<String, String>> createContext() {
+        return createSimpleListMap("USER_ID", "TESTUSER");
+    }
+
+    private List<Map<String, String>> createRequestParams() {
+        return createSimpleListMap("testParam1", "testValue1");
+
+    }
+
+    private List<Map<String,String>> createExpectedResponse() {
+        return createSimpleListMap("requestScopedVar", "foobar");
+    }
+
+    private List<Map<String,String>> createCookie() {
+        return createSimpleListMap("testCookieName1", "testCookieValue1");
     }
 
 }
