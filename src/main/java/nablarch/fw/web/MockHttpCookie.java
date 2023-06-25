@@ -47,7 +47,7 @@ public class MockHttpCookie extends HttpCookie {
      * @return {@link HttpCookie}
      */
     public static HttpCookie valueOf(final String cookieStr) {
-        final HttpCookie result = new HttpCookie();
+        final HttpCookie result = new MockHttpCookie();
         if (StringUtil.isNullOrEmpty(cookieStr)) {
             return result;
         }

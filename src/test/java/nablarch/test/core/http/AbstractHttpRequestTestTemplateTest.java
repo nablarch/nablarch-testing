@@ -3,7 +3,9 @@ package nablarch.test.core.http;
 import static nablarch.test.Assertion.fail;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import java.io.BufferedReader;
@@ -11,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -644,6 +648,137 @@ public class AbstractHttpRequestTestTemplateTest {
         } catch (Exception e) {
             assertThat(e.getMessage(), is(
                     "Cookie LIST_MAP was not found. name = [cookie0]"));
+        }
+    }
+
+    /**
+     * HTTPメソッドを指定できることを検証する。
+     */
+    @Test
+    public void testHttpMethod() {
+        target = createMock(new HttpRequestHandler() {
+            @Override
+            public HttpResponse handle(HttpRequest request, ExecutionContext context) {
+                context.setRequestScopedVar("http_method", request.getMethod());
+                return new HttpResponse();
+            }
+        });
+
+        target.execute("testHttpMethod");
+    }
+
+    /**
+     * リクエストURIからクエリパラメータを取得する。
+     * クエリパラメータはパーセントエンコーディング済みなので、デコードして返却する。
+     * テスト用であるため、URIの厳密な解析は実施していない。
+     * @param uri リクエストURI
+     * @return クエリパラメータのマップ
+     */
+    private Map<String, String> getQueryParams(String uri) {
+        String[] split = uri.split("\\?");
+        if (split.length == 1) {
+            return null;
+        }
+
+        String[] params = split[1].split("&");
+        Map<String, String> result = new HashMap<String, String>();
+        for (String param : params) {
+            try {
+                String decoded = URLDecoder.decode(param, "UTF-8");
+                String[] keyValue = decoded.split("=");
+                if(keyValue.length == 2) {
+                    result.put(keyValue[0], keyValue[1]);
+                } else {
+                    result.put(keyValue[0], "");
+                }
+            } catch (UnsupportedEncodingException e) {
+                fail("UTF-8指定しているのでUnsupportedEncodingExceptionはthrowされない。(" + e.getMessage() + ")");
+            }
+        }
+        return result;
+    }
+
+
+    /**
+     * クエリパラメータの設定が正しくなされていることを検証する。
+     */
+    @Test
+    public void testQueryParamsNormal() {
+
+        // テスト用にサブクラス化
+        target = createMock(new HttpRequestHandler() {
+            /** リクエストパラメータを変更し、200 OKを返却する。 */
+            @Override
+            public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
+                // ボディを設定する。
+                String body = Hereis.string();
+                /*
+                <html>
+                  <head><title>test</title></head>
+                  <body><p>Hello, World!</p></body>
+                </html>
+                */
+                return new HttpResponse().write(body);
+            }
+        });
+
+        // 実行
+        target.execute("testQueryParamsNormal", new BasicAdvice() {
+            @Override
+            public void afterExecute(TestCaseInfo testCaseInfo,
+                    ExecutionContext context) {
+                String no = testCaseInfo.getTestCaseNo();
+                HttpRequest request = testCaseInfo.getHttpRequest();
+
+                Map<String, String> queryParamsMap = getQueryParams(request.getRequestUri());
+                if (no.equals("3")) {
+                    // 3ケース目は、クエリパラメータを設定していないので空のはず
+                    assertNull(queryParamsMap);
+                } else {
+                    // それ以外は、Excelに設定したクエリパラメータが設定されているはず
+                    assert queryParamsMap != null;
+                    Map<String, String> map = target.getListMap(testCaseInfo.getSheetName(), "expectedQueryParams" + no).get(0);
+                    for (Map.Entry<String, String> entry : map.entrySet()) {
+                        if (entry.getValue() == null) {
+                            assertNull(queryParamsMap.get(entry.getKey()));
+                        } else {
+                            assertEquals(entry.getValue(), queryParamsMap.get(entry.getKey()));
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * クエリパラメータ列に定義された参照先が存在しない場合、例外が発生することを検証する。
+     */
+    @Test
+    public void testQueryParamsFailed() {
+
+        // テスト用にサブクラス化
+        target = createMock(new HttpRequestHandler() {
+            /** リクエストパラメータを変更し、200 OKを返却する。 */
+            @Override
+            public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
+                // ボディを設定する。
+                String body = Hereis.string();
+                /*
+                <html>
+                <head><title>test</title></head>
+                <body><p>Hello, World!</p></body>
+                </html>*/
+                return new HttpResponse().write(body); // 200 OK
+            }
+        });
+
+        // 実行
+        try {
+            target.execute("testQueryParamsFailed");
+            fail("does not run...");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), is(
+                    "Query parameter LIST_MAP was not found. name = [queryParams0]"));
         }
     }
 
