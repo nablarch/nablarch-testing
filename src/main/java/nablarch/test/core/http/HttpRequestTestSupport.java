@@ -261,6 +261,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         String dumpFilePath = dumpDir.getAbsolutePath() + fileSeparator + caseName
                 + '.' + config.getDumpFileExtension();
 
+        server.setHttpDumpRoot(dumpDir.getAbsolutePath());
         server.setHttpDumpFilePath(dumpFilePath);
         // ExecutionContextの設定(ハンドラ実行中にExecutionContextの移送を行う為）
         handler.setContext(ctx);
