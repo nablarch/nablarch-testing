@@ -1,15 +1,9 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
-import nablarch.core.repository.SystemRepository;
-import nablarch.core.validation.ValidationContext;
-import nablarch.core.validation.ValidationManager;
-import nablarch.core.validation.ValidationUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -34,6 +28,9 @@ public class SingleValidationTester<ENTITY> {
     /** テスト対象プロパティ名 */
     private final String targetPropertyName;
 
+    /** バリデーションストラテジ */
+    private final ValidationTestStrategy validationStrategy;
+
     /**
      * コンストラクタ
      *
@@ -43,6 +40,7 @@ public class SingleValidationTester<ENTITY> {
     public SingleValidationTester(Class<ENTITY> entityClass, String targetPropertyName) {
         this.entityClass = entityClass;
         this.targetPropertyName = targetPropertyName;
+        this.validationStrategy = new NablarchValidationTestStrategy();
     }
 
     /**
@@ -66,7 +64,7 @@ public class SingleValidationTester<ENTITY> {
     public void testSingleValidation(String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
-        ValidationContext<ENTITY> ctx = invokeValidation(paramValue);
+        ValidationTestContext ctx = validationStrategy.invokeValidation(entityClass, targetPropertyName, paramValue);
         // 実際のメッセージ
         List<Message> actualMessages = ctx.getMessages();
         // テスト失敗時のメッセージを作成
@@ -97,9 +95,9 @@ public class SingleValidationTester<ENTITY> {
      * @param paramValue パラメータ値
      * @return バリデーション実行後の{@link ValidationContext}
      */
-    ValidationContext<ENTITY> invokeValidation(String paramValue) {
-        return invokeValidation(new String[]{paramValue});
-    }
+//    ValidationContext<ENTITY> invokeValidation(String paramValue) {
+//        return invokeValidation(new String[]{paramValue});
+//    }
 
     /**
      * バリデーションを実行する。
@@ -107,23 +105,23 @@ public class SingleValidationTester<ENTITY> {
      * @param paramValue 入力値
      * @return バリデーション実行後の{@link ValidationContext}
      */
-    public ValidationContext<ENTITY> invokeValidation(String[] paramValue) {
-        // 入力値（1項目分のみ）
-        Map<String, String[]> params = new HashMap<String, String[]>(1);
-        params.put(targetPropertyName, paramValue);
-        // バリデーション実行
-        ValidationContext<ENTITY> ctx
-                = getValidationManager().createValidationContext(
-                entityClass, params, "", null);
-        try {
-            ValidationUtil.validate(ctx, new String[]{targetPropertyName});
-        } catch (RuntimeException e) {
-            throw new RuntimeException(concat(
-                    "unexpected exception occurred. ", toString(),
-                    " parameter=[", paramValue, "]"), e);
-        }
-        return ctx;
-    }
+//    public ValidationContext<ENTITY> invokeValidation(String[] paramValue) {
+//        // 入力値（1項目分のみ）
+//        Map<String, String[]> params = new HashMap<String, String[]>(1);
+//        params.put(targetPropertyName, paramValue);
+//        // バリデーション実行
+//        ValidationContext<ENTITY> ctx
+//                = getValidationManager().createValidationContext(
+//                entityClass, params, "", null);
+//        try {
+//            ValidationUtil.validate(ctx, new String[]{targetPropertyName});
+//        } catch (RuntimeException e) {
+//            throw new RuntimeException(concat(
+//                    "unexpected exception occurred. ", toString(),
+//                    " parameter=[", paramValue, "]"), e);
+//        }
+//        return ctx;
+//    }
     /** {@inheritDoc} */
     @Override
     public String toString() {
@@ -174,23 +172,5 @@ public class SingleValidationTester<ENTITY> {
             lengths.add(e.length());
         }
         return lengths;
-    }
-
-
-    /** {@link ValidationManager}を取得する為のキー */
-    private static final String VALIDATION_MANAGER_NAME = "validationManager";
-
-    /**
-     * {@link ValidationManager}を取得する。
-     *
-     * @return {@link ValidationManager}
-     */
-    private static ValidationManager getValidationManager() {
-        ValidationManager validationManager = SystemRepository.get(VALIDATION_MANAGER_NAME);
-        if (validationManager == null) {
-            throw new IllegalStateException("can't get ValidationManager instance from System Repository."
-                    + "check configuration. key=[" + VALIDATION_MANAGER_NAME + "]");
-        }
-        return validationManager;
     }
 }

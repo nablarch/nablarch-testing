@@ -1,5 +1,6 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.repository.SystemRepository;
 import nablarch.test.core.util.generator.CharacterGenerator;
 
 import static nablarch.core.util.Builder.concat;
@@ -28,6 +29,26 @@ public class EntityTestConfiguration {
 
     /** 文字列生成クラス */
     private CharacterGenerator characterGenerator;
+
+    /** バリデーションストラテジ */
+    private ValidationTestStrategy validationStrategy;
+
+    /** テスト設定取得用のキー */
+    private static final String CONFIG_KEY = "entityTestConfiguration";
+
+    /**
+     * テスト設定を取得する。
+     *
+     * @return テスト設定
+     */
+    static EntityTestConfiguration getConfig() {
+        EntityTestConfiguration config = SystemRepository.get(CONFIG_KEY);
+        if (config == null) {
+            throw new IllegalStateException("can't get EntityTestConfiguration from SystemRepository."
+                    + " key=[" + CONFIG_KEY + "]");
+        }
+        return config;
+    }
 
     /**
      * 未入力時のメッセージIDを取得する。
@@ -138,5 +159,9 @@ public class EntityTestConfiguration {
      */
     public void setCharacterGenerator(CharacterGenerator characterGenerator) {
         this.characterGenerator = characterGenerator;
+    }
+
+    public void setValidationStrategy(ValidationTestStrategy validationStrategy) {
+        this.validationStrategy = validationStrategy;
     }
 }

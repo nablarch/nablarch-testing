@@ -1,7 +1,5 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.repository.SystemRepository;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -152,7 +150,7 @@ public class CharsetTestVariation<ENTITY> {
     /** 最長桁数超過のテストを行う。 */
     public void testOverLimit() {
         Integer min = isMinEmpty ? null : this.min;
-        String expectedMessageId = getConfig().getOverLimitMessageId(max, min);
+        String expectedMessageId = EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min);
         testValidationWithValidCharset(max + 1, expectedMessageId, "over limit length test.");
     }
 
@@ -163,7 +161,7 @@ public class CharsetTestVariation<ENTITY> {
         if (min <= 1) {
             return;
         }
-        String expectedMessageId = getConfig().getUnderLimitMessageId(max, min);
+        String expectedMessageId = EntityTestConfiguration.getConfig().getUnderLimitMessageId(max, min);
         testValidationWithValidCharset(min - 1, expectedMessageId, "under limit length test.");
     }
 
@@ -171,7 +169,7 @@ public class CharsetTestVariation<ENTITY> {
     public void testEmptyInput() {
         String expectedMessageId = (isEmptyAllowed)
                 ? ""                                      // 必須項目でない場合（メッセージが出ないこと）
-                : getConfig().getEmptyInputMessageId();   // 必須項目の場合
+                : EntityTestConfiguration.getConfig().getEmptyInputMessageId();   // 必須項目の場合
         testValidationWithValidCharset(0, expectedMessageId, "empty input test.");
     }
 
@@ -199,7 +197,7 @@ public class CharsetTestVariation<ENTITY> {
      * @return 生成した文字列
      */
     private String generate(String charsetType, int length) {
-        return getConfig().getCharacterGenerator().generate(charsetType, length);
+        return EntityTestConfiguration.getConfig().getCharacterGenerator().generate(charsetType, length);
     }
 
     /**
@@ -215,23 +213,6 @@ public class CharsetTestVariation<ENTITY> {
         String charsetType = getApplicableType();       // 文字種
         String param = generate(charsetType, length);   // 入力値
         tester.testSingleValidation(param, expectedMessageId, msgOnFail);
-    }
-
-    /** テスト設定取得用のキー */
-    private static final String CONFIG_KEY = "entityTestConfiguration";
-
-    /**
-     * テスト設定を取得する。
-     *
-     * @return テスト設定
-     */
-    private EntityTestConfiguration getConfig() {
-        EntityTestConfiguration config = SystemRepository.get(CONFIG_KEY);
-        if (config == null) {
-            throw new IllegalStateException("can't get EntityTestConfiguration from SystemRepository."
-                    + " key=[" + CONFIG_KEY + "]");
-        }
-        return config;
     }
 
     /**

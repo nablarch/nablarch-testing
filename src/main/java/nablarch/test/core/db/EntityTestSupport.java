@@ -23,12 +23,9 @@ import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
-import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationResultMessage;
-import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
-import nablarch.test.core.entity.CharsetTestVariation;
-import nablarch.test.core.entity.SingleValidationTester;
+import nablarch.test.core.entity.*;
 import nablarch.test.event.TestEventDispatcher;
 
 import static nablarch.core.util.Builder.concat;
@@ -88,12 +85,16 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     private final DbAccessTestSupport dbSupport;
 
+    /** バリデーションストラテジ */
+    private final ValidationTestStrategy validationTestStrategy;
+
     /**
      * コンストラクタ。<br/>
      * 本クラスを継承する場合に呼び出されることを想定している。
      */
     protected EntityTestSupport() {
         dbSupport = new DbAccessTestSupport(getClass());
+        this.validationTestStrategy = new NablarchValidationTestStrategy();
     }
 
     /**
@@ -104,6 +105,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     public EntityTestSupport(Class<?> testClass) {
         dbSupport = new DbAccessTestSupport(testClass);
+        this.validationTestStrategy = new NablarchValidationTestStrategy();
     }
 
     /**
@@ -113,7 +115,6 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(Class, Map, String)
      */
     public <T> void testValidateAndConvert(Class<T> entityClass, String sheetName, String validateFor) {
         testValidateAndConvert(null, entityClass, sheetName, validateFor);
@@ -127,7 +128,6 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(String, Class, Map, String)
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
 
@@ -145,8 +145,8 @@ public class EntityTestSupport extends TestEventDispatcher {
             Map<String, String> testCase = testCases.get(i);
             Map<String, String[]> httpParams = httpParamsList.get(i);
             // バリデーション実行
-            ValidationContext<T> ctx =
-                    ValidationUtil.validateAndConvertRequest(prefix, entityClass, httpParams, validateFor);
+            ValidationTestContext ctx =
+                    validationTestStrategy.validate(prefix, entityClass, httpParams, validateFor);
             // メッセージID確認
             assertMessageEquals(testCase, ctx);
         }
@@ -222,7 +222,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param aTestCase テストケース（テストケース表の1行）
      * @param ctx       バリデーション結果
      */
-    private void assertMessageEquals(Map<String, String> aTestCase, ValidationContext<?> ctx) {
+    private void assertMessageEquals(Map<String, String> aTestCase, ValidationTestContext ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
