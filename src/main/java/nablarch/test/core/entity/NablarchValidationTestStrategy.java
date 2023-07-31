@@ -12,10 +12,10 @@ import java.util.Map;
 public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
     @Override
-    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValue) {
+    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues) {
         // 入力値（1項目分のみ）
         Map<String, String[]> params = new HashMap<String, String[]>(1);
-        params.put(targetPropertyName, paramValue);
+        params.put(targetPropertyName, paramValues);
         // バリデーション実行
         ValidationContext<?> ctx
                 = getValidationManager().createValidationContext(
@@ -25,7 +25,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         } catch (RuntimeException e) {
             throw new RuntimeException(Builder.concat(
                     "unexpected exception occurred. ", toString(),
-                    " parameter=[", paramValue, "]"), e);
+                    " parameter=[", paramValues, "]"), e);
         }
 
         return new ValidationTestContext(ctx.getMessages());
