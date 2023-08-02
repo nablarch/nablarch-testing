@@ -31,7 +31,7 @@ public class EntityTestConfiguration {
     private CharacterGenerator characterGenerator;
 
     /** バリデーションストラテジ */
-    private ValidationTestStrategy validationStrategy;
+    private ValidationTestStrategy validationTestStrategy;
 
     /** テスト設定取得用のキー */
     private static final String CONFIG_KEY = "entityTestConfiguration";
@@ -41,7 +41,7 @@ public class EntityTestConfiguration {
      *
      * @return テスト設定
      */
-    static EntityTestConfiguration getConfig() {
+    public static EntityTestConfiguration getConfig() {
         EntityTestConfiguration config = SystemRepository.get(CONFIG_KEY);
         if (config == null) {
             throw new IllegalStateException("can't get EntityTestConfiguration from SystemRepository."
@@ -161,7 +161,24 @@ public class EntityTestConfiguration {
         this.characterGenerator = characterGenerator;
     }
 
-    public void setValidationStrategy(ValidationTestStrategy validationStrategy) {
-        this.validationStrategy = validationStrategy;
+    /**
+     * テスト用バリデーションストラテジを取得する。
+     *
+     * @return テスト用バリデーションストラテジ
+     */
+    public ValidationTestStrategy getValidationTestStrategy(){
+        return validationTestStrategy;
+    }
+
+    /**
+     * テスト用バリデーションストラテジを設定する。
+     *
+     * @param validationTestStrategy テスト用バリデーションストラテジ
+     */
+    public void setValidationTestStrategy(ValidationTestStrategy validationTestStrategy) {
+        this.validationTestStrategy =
+                null == validationTestStrategy
+                        ? new NablarchValidationTestStrategy()
+                        : validationTestStrategy;
     }
 }

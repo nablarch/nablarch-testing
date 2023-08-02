@@ -58,14 +58,23 @@ public class CharsetTestVariation<ENTITY> {
     /** 単項目バリデーションテスト */
     private final SingleValidationTester<ENTITY> tester;
 
+    /** バリデーションストラテジ */
+    private final ValidationTestStrategy validationTestStrategy;
+
+    /** BeanValidationのグループ */
+    private final Class<?> group;
+
 
     /**
      * コンストラクタ。
      *
      * @param entityClass テスト対象エンティティクラス
+     * @param group       Bean Validationのグループ
      * @param testData    テストデータ
      */
-    public CharsetTestVariation(Class<ENTITY> entityClass, Map<String, String> testData) {
+    public CharsetTestVariation(Class<ENTITY> entityClass, Class<?> group, Map<String, String> testData) {
+
+        this.validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         // 引数を破壊しないようにシャローコピー
         testData = new HashMap<String, String>(testData);
@@ -86,6 +95,10 @@ public class CharsetTestVariation<ENTITY> {
             min = isMinEmpty
                     ? (isEmptyAllowed ? 0 : 1)  // 未入力許可時は最短0桁、必須の場合は1桁
                     : Integer.parseInt(minStr);
+
+            // Bean Validationのグループ
+            this.group = group;
+
             // 残りのデータ
             this.testData = testData;
             // 単項目バリデーションテスト用クラス
@@ -185,7 +198,7 @@ public class CharsetTestVariation<ENTITY> {
             // 入力値
             String param = generate(charsetType, max);
             // 単項目バリデーションを実行
-            tester.testSingleValidation(param, expectedMessageId, "charset type=[" + charsetType + "]");
+            tester.testSingleValidation(null, param, expectedMessageId, "charset type=[" + charsetType + "]");
         }
     }
 
@@ -212,7 +225,7 @@ public class CharsetTestVariation<ENTITY> {
 
         String charsetType = getApplicableType();       // 文字種
         String param = generate(charsetType, length);   // 入力値
-        tester.testSingleValidation(param, expectedMessageId, msgOnFail);
+        tester.testSingleValidation(group, param, expectedMessageId, msgOnFail);
     }
 
     /**

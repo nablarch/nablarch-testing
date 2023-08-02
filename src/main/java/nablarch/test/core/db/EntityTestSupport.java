@@ -23,7 +23,9 @@ import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
+import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationResultMessage;
+import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
 import nablarch.test.core.entity.*;
 import nablarch.test.event.TestEventDispatcher;
@@ -62,6 +64,12 @@ public class EntityTestSupport extends TestEventDispatcher {
     /** プロパティ名のプレフィックス */
     private static final String PROP_NAME_PREFIX = "propertyName";
 
+    /** BeanValidationのグループが属するパッケージ名のキー */
+    private static final String PACKAGE_NAME_KEY = "packageName";
+
+    /** BeanValidationのグループのクラス名 */
+    private static final String GROUP_NAME = "groupName";
+
     /** 必須カラム一覧 */
     private static final Set<String> REQUIRED_COLUMNS_FOR_RELATIONAL_VALIDATION = new TreeSet<String>(
             Arrays.asList(
@@ -86,7 +94,7 @@ public class EntityTestSupport extends TestEventDispatcher {
     private final DbAccessTestSupport dbSupport;
 
     /** バリデーションストラテジ */
-    private final ValidationTestStrategy validationTestStrategy;
+    private ValidationTestStrategy validationTestStrategy;
 
     /**
      * コンストラクタ。<br/>
@@ -94,7 +102,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     protected EntityTestSupport() {
         dbSupport = new DbAccessTestSupport(getClass());
-        this.validationTestStrategy = new NablarchValidationTestStrategy();
+        validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
     }
 
     /**
@@ -105,7 +113,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     public EntityTestSupport(Class<?> testClass) {
         dbSupport = new DbAccessTestSupport(testClass);
-        this.validationTestStrategy = new NablarchValidationTestStrategy();
+        validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
     }
 
     /**
@@ -131,6 +139,10 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
 
+        if (!(validationTestStrategy instanceof NablarchValidationTestStrategy)) {
+            throw new IllegalArgumentException("not allowed.");
+        }
+
         // テストケース表
         List<Map<String, String>> testCases = getTestCasesFromSheet(sheetName);
 
@@ -145,8 +157,8 @@ public class EntityTestSupport extends TestEventDispatcher {
             Map<String, String> testCase = testCases.get(i);
             Map<String, String[]> httpParams = httpParamsList.get(i);
             // バリデーション実行
-            ValidationTestContext ctx =
-                    validationTestStrategy.validate(prefix, entityClass, httpParams, validateFor);
+            ValidationContext<T> ctx =
+                    ValidationUtil.validateAndConvertRequest(prefix, entityClass, httpParams, validateFor);
             // メッセージID確認
             assertMessageEquals(testCase, ctx);
         }
@@ -222,7 +234,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param aTestCase テストケース（テストケース表の1行）
      * @param ctx       バリデーション結果
      */
-    private void assertMessageEquals(Map<String, String> aTestCase, ValidationTestContext ctx) {
+    private <T> void assertMessageEquals(Map<String, String> aTestCase, ValidationContext<T> ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
@@ -651,8 +663,12 @@ public class EntityTestSupport extends TestEventDispatcher {
 
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
         for (Map<String, String> testData : testDataList) {
+            String packageKey = testData.remove(PACKAGE_NAME_KEY);
+            String groupName = testData.remove(GROUP_NAME);
+            Class<?> group = validationTestStrategy.getGroupFromTestSheet(targetClass, sheetName, packageKey, groupName);
+
             CharsetTestVariation<ENTITY> tester
-                    = new CharsetTestVariation<ENTITY>(targetClass, testData);
+                    = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
             tester.testAll();
         }
     }
@@ -679,6 +695,7 @@ public class EntityTestSupport extends TestEventDispatcher {
                     MESSAGE_ID
             ));
 
+
     /**
      * 単項目のバリデーションテストをする。
      *
@@ -698,8 +715,10 @@ public class EntityTestSupport extends TestEventDispatcher {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
+            Class<?> group = validationTestStrategy.getGroupFromTestSheet(
+                    targetClass, sheetName, row.get(PACKAGE_NAME_KEY), row.get(GROUP_NAME));
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
-                    .testSingleValidation(input, messageId);
+                    .testSingleValidation(group, input, messageId);
         }
     }
 

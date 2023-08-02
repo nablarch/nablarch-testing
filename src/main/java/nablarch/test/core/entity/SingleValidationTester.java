@@ -40,7 +40,7 @@ public class SingleValidationTester<ENTITY> {
     public SingleValidationTester(Class<ENTITY> entityClass, String targetPropertyName) {
         this.entityClass = entityClass;
         this.targetPropertyName = targetPropertyName;
-        this.validationStrategy = new NablarchValidationTestStrategy();
+        this.validationStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
     }
 
     /**
@@ -50,8 +50,8 @@ public class SingleValidationTester<ENTITY> {
      * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
      * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(String paramValue, String expectedMessageId, String... additionalMsgOnFail) {
-        testSingleValidation(new String[]{paramValue}, expectedMessageId, additionalMsgOnFail);
+    public void testSingleValidation(Class<?> group, String paramValue, String expectedMessageId, String... additionalMsgOnFail) {
+        testSingleValidation(group, new String[]{paramValue}, expectedMessageId, additionalMsgOnFail);
     }
 
     /**
@@ -61,10 +61,10 @@ public class SingleValidationTester<ENTITY> {
      * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
      * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
+    public void testSingleValidation(Class<?> group, String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
-        ValidationTestContext ctx = validationStrategy.invokeValidation(entityClass, targetPropertyName, paramValue);
+        ValidationTestContext ctx = validationStrategy.invokeValidation(entityClass, targetPropertyName, group, paramValue);
         // 実際のメッセージ
         List<Message> actualMessages = ctx.getMessages();
         // テスト失敗時のメッセージを作成
@@ -89,39 +89,6 @@ public class SingleValidationTester<ENTITY> {
         }
     }
 
-    /**
-     * バリデーションを実行する。
-     *
-     * @param paramValue パラメータ値
-     * @return バリデーション実行後の{@link ValidationContext}
-     */
-//    ValidationContext<ENTITY> invokeValidation(String paramValue) {
-//        return invokeValidation(new String[]{paramValue});
-//    }
-
-    /**
-     * バリデーションを実行する。
-     *
-     * @param paramValue 入力値
-     * @return バリデーション実行後の{@link ValidationContext}
-     */
-//    public ValidationContext<ENTITY> invokeValidation(String[] paramValue) {
-//        // 入力値（1項目分のみ）
-//        Map<String, String[]> params = new HashMap<String, String[]>(1);
-//        params.put(targetPropertyName, paramValue);
-//        // バリデーション実行
-//        ValidationContext<ENTITY> ctx
-//                = getValidationManager().createValidationContext(
-//                entityClass, params, "", null);
-//        try {
-//            ValidationUtil.validate(ctx, new String[]{targetPropertyName});
-//        } catch (RuntimeException e) {
-//            throw new RuntimeException(concat(
-//                    "unexpected exception occurred. ", toString(),
-//                    " parameter=[", paramValue, "]"), e);
-//        }
-//        return ctx;
-//    }
     /** {@inheritDoc} */
     @Override
     public String toString() {

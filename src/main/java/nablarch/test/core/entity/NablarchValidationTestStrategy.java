@@ -12,7 +12,7 @@ import java.util.Map;
 public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
     @Override
-    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues) {
+    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, Class<?> notUse, String[] paramValues) {
         // 入力値（1項目分のみ）
         Map<String, String[]> params = new HashMap<String, String[]>(1);
         params.put(targetPropertyName, paramValues);
@@ -24,19 +24,20 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
             ValidationUtil.validate(ctx, new String[]{targetPropertyName});
         } catch (RuntimeException e) {
             throw new RuntimeException(Builder.concat(
-                    "unexpected exception occurred. ", toString(),
+                    "unexpected exception occurred. ", buildMsg(entityClass, targetPropertyName),
                     " parameter=[", paramValues, "]"), e);
         }
 
         return new ValidationTestContext(ctx.getMessages());
     }
 
+    /**
+     * {@inheritDoc}
+     * Nablarch Validationではグループを使用しないため、常にnullを返却する。
+     */
     @Override
-    public ValidationTestContext validate(String prefix, Class<?> targetClass, Map<String, ?> params, String validateFor) {
-        ValidationContext<?> ctx =
-                ValidationUtil.validateAndConvertRequest(prefix, targetClass, params, validateFor);
-
-        return new ValidationTestContext(ctx.getMessages());
+    public Class<?> getGroupFromTestSheet(Class<?> entityClass, String sheetName, String packageKey, String groupName) {
+        return null;
     }
 
     /** {@link ValidationManager}を取得する為のキー */
@@ -51,5 +52,8 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         return validationManager;
     }
 
+    private String buildMsg(Class<?> entityClass, String targetPropertyName) {
+        return Builder.concat("target entity=[", entityClass.getName(), "] property=[", targetPropertyName, "]");
+    }
 
 }
