@@ -1,5 +1,7 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.util.StringUtil;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -19,12 +21,22 @@ public class CharsetTestVariation<ENTITY> {
     private static final String ALLOW_EMPTY = "allowEmpty";
     /** プロパティ名のカラム名 */
     private static final String PROPERTY_NAME = "propertyName";
+    /** 桁数不正時のメッセージIDのカラム名 */
+    private static final String MESSAGE_ID_WHEN_INVALID_LENGTH = "messageIdWhenInvalidLength";
+    /** 未入力時のメッセージIDのカラム名 */
+    private static final String MESSAGE_ID_WHEN_EMPTY_INPUT = "messageIdWhenEmptyInput";
     /** 文字が適応不可の場合のメッセージIDのカラム名 */
     private static final String MESSAGE_ID_WHEN_NOT_APPLICABLE = "messageIdWhenNotApplicable";
     /** 最長桁数のカラム名 */
     private static final String MAX = "max";
     /** 最短桁数のカラム名 */
     private static final String MIN = "min";
+
+    /** BeanValidationのグループが属するパッケージ名のキー */
+    private static final String PACKAGE_KEY = "packageName";
+
+    /** BeanValidationのグループのクラス名 */
+    private static final String GROUP_NAME = "groupName";
 
     /** 必須カラム */
     private static final List<String> REQUIRED_COLUMNS = Arrays.asList(
@@ -39,6 +51,12 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 未入力を許容するか */
     private final boolean isEmptyAllowed;
+
+    /** 桁数不正時のメッセージID */
+    private final String messageIdWhenInvalidLength;
+
+    /** 未入力時のメッセージID */
+    private final String messageIdWhenEmptyInput;
 
     /** 適用不可時に期待するメッセージID */
     private final String messageIdWhenNotApplicable;
@@ -58,9 +76,6 @@ public class CharsetTestVariation<ENTITY> {
     /** 単項目バリデーションテスト */
     private final SingleValidationTester<ENTITY> tester;
 
-    /** バリデーションストラテジ */
-    private final ValidationTestStrategy validationTestStrategy;
-
     /** BeanValidationのグループ */
     private final Class<?> group;
 
@@ -69,12 +84,9 @@ public class CharsetTestVariation<ENTITY> {
      * コンストラクタ。
      *
      * @param entityClass テスト対象エンティティクラス
-     * @param group       Bean Validationのグループ
      * @param testData    テストデータ
      */
-    public CharsetTestVariation(Class<ENTITY> entityClass, Class<?> group, Map<String, String> testData) {
-
-        this.validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+    public CharsetTestVariation(Class<ENTITY> entityClass, Map<String, String> testData, List<Map<String, String>> packageListMap) {
 
         // 引数を破壊しないようにシャローコピー
         testData = new HashMap<String, String>(testData);
@@ -85,6 +97,10 @@ public class CharsetTestVariation<ENTITY> {
             isEmptyAllowed = testData.remove(ALLOW_EMPTY).equals(OK);
             // テスト対象プロパティ名
             String targetPropertyName = testData.remove(PROPERTY_NAME);
+            // 桁数不正時のメッセージID
+            messageIdWhenInvalidLength = testData.remove(MESSAGE_ID_WHEN_INVALID_LENGTH);
+            // 未入力時のメッセージID
+            messageIdWhenEmptyInput = testData.remove(MESSAGE_ID_WHEN_EMPTY_INPUT);
             // 文字種バリデーション失敗時のメッセージID
             messageIdWhenNotApplicable = testData.remove(MESSAGE_ID_WHEN_NOT_APPLICABLE);
             // 最長桁数
@@ -97,7 +113,10 @@ public class CharsetTestVariation<ENTITY> {
                     : Integer.parseInt(minStr);
 
             // Bean Validationのグループ
-            this.group = group;
+            String packageKey = testData.remove(PACKAGE_KEY);
+            String groupName = testData.remove(GROUP_NAME);
+            ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+            this.group = validationTestStrategy.getGroupFromTestCase(packageKey, groupName, packageListMap);
 
             // 残りのデータ
             this.testData = testData;
@@ -163,7 +182,9 @@ public class CharsetTestVariation<ENTITY> {
     /** 最長桁数超過のテストを行う。 */
     public void testOverLimit() {
         Integer min = isMinEmpty ? null : this.min;
-        String expectedMessageId = EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min);
+        String expectedMessageId = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
+                ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min) // デフォルトのメッセージを出力
+                : messageIdWhenInvalidLength;                                         // テストケースで明示的に指定したメッセージを出力
         testValidationWithValidCharset(max + 1, expectedMessageId, "over limit length test.");
     }
 
@@ -174,7 +195,9 @@ public class CharsetTestVariation<ENTITY> {
         if (min <= 1) {
             return;
         }
-        String expectedMessageId = EntityTestConfiguration.getConfig().getUnderLimitMessageId(max, min);
+        String expectedMessageId = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
+                ? EntityTestConfiguration.getConfig().getUnderLimitMessageId(max, min) // デフォルトのメッセージを出力
+                : messageIdWhenInvalidLength;                                          // テストケースで明示的に指定したメッセージを出力
         testValidationWithValidCharset(min - 1, expectedMessageId, "under limit length test.");
     }
 
@@ -182,7 +205,9 @@ public class CharsetTestVariation<ENTITY> {
     public void testEmptyInput() {
         String expectedMessageId = (isEmptyAllowed)
                 ? ""                                      // 必須項目でない場合（メッセージが出ないこと）
-                : EntityTestConfiguration.getConfig().getEmptyInputMessageId();   // 必須項目の場合
+                : StringUtil.isNullOrEmpty(messageIdWhenEmptyInput)            // 必須項目の場合、メッセージを出力する。
+                ? EntityTestConfiguration.getConfig().getEmptyInputMessageId() // デフォルトのメッセージを出力
+                : messageIdWhenEmptyInput;                                     // テストケースで明示的に指定したメッセージを出力
         testValidationWithValidCharset(0, expectedMessageId, "empty input test.");
     }
 

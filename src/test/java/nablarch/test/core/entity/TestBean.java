@@ -1,25 +1,14 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.validation.validator.AlnumChar;
-import nablarch.core.validation.validator.AlphaChar;
-import nablarch.core.validation.validator.AsciiChar;
-import nablarch.core.validation.validator.Length;
-import nablarch.core.validation.validator.NumberChar;
-import nablarch.core.validation.validator.NumberRange;
-import nablarch.core.validation.validator.Required;
-import nablarch.core.validation.validator.japanese.HankakuChar;
-import nablarch.core.validation.validator.japanese.HankakuKanaChar;
-import nablarch.core.validation.validator.japanese.ZenkakuAndGaijiChar;
-import nablarch.core.validation.validator.japanese.ZenkakuChar;
-import nablarch.core.validation.validator.japanese.ZenkakuHiraganaChar;
-import nablarch.core.validation.validator.japanese.ZenkakuKatakanaChar;
+import nablarch.core.validation.validator.*;
+import nablarch.core.validation.validator.japanese.*;
 import nablarch.core.validation.validator.unicode.SystemChar;
 
 /**
  * 単項目バリデーションのテスト用エンティティクラス
  * @author T.Kawasaki
  */
-public class TestEntity {
+public class TestBean {
 
     @Length(max = 50)
     @AsciiChar
@@ -91,26 +80,5 @@ public class TestEntity {
     @Length(max = 100)
     @SystemChar(messageId = "MSG90001", allowLineSeparator = true)
     public void setSystemCharWithLS(String s) {
-    }
-
-    @Length(max = 50, messageId = "MSG20013")
-    @AsciiChar
-    public void setAsciiWithMaxMessage(String s) {
-    }
-
-    @Length(max = 50, min = 10, messageId = "MSG20011")
-    @AsciiChar
-    public void setAsciiWithMaxMinMessage(String s) {
-    }
-
-    @Length(max = 20, min = 20, messageId = "MSG20012")
-    @AsciiChar
-    public void setAsciiWithFixMessage(String s) {
-    }
-
-    @Required(messageId = "MSG20010")
-    @Length(max = 20)
-    @AsciiChar
-    public void setAsciiWithEmptyMessage(String s) {
     }
 }

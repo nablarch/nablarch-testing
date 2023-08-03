@@ -7,9 +7,7 @@ import nablarch.core.beans.CopyOptions;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
-import nablarch.test.TestSupport;
 
-import javax.validation.Constraint;
 import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
 import java.util.HashMap;
@@ -38,21 +36,22 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
                         .convert(result));
     }
 
-
-    private static final String PACKAGE_LIST_MAP_ID = "packages";
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Class<?> getGroupFromTestSheet(Class<?> entityClass, String sheetName, String packageKey, String groupName) {
-        if (StringUtil.isNullOrEmpty(groupName) || StringUtil.isNullOrEmpty(packageKey)) {
+    public Class<?> getGroupFromTestCase(String packageKey, String groupName, List<Map<String, String>> packageListMap) {
+
+        if (StringUtil.isNullOrEmpty(groupName) || StringUtil.isNullOrEmpty(packageKey) || packageListMap.isEmpty()) {
             return null;
         }
 
-        Map<String, String> packageNameMap = getListMapRequired(entityClass, sheetName, PACKAGE_LIST_MAP_ID).get(0);
-        if(!packageNameMap.containsKey(packageKey)) {
-            throw new IllegalArgumentException("");
+        Map<String, String> packageMap = packageListMap.get(0);
+        if(!packageMap.containsKey(packageKey)) {
+            throw new IllegalArgumentException("not contained.");
         }
 
-        String packageName = packageNameMap.get(packageKey);
+        String packageName = packageMap.get(packageKey);
         Class<?> group;
         try {
             group = Class.forName(packageName + "." + groupName);
@@ -60,24 +59,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
             throw new RuntimeException(e);
         }
         return group;
-    }
-
-    /**
-     * 必須のList-Mapデータを取得する。<br/>
-     * 結果が空の場合は指定したIDに合致するデータが存在しないとみなし、例外を発生させる。
-     *
-     * @param entityClass テスト対象クラス名
-     * @param sheetName シート名
-     * @param id        ID
-     * @return List-Map形式のデータ
-     * @throws IllegalArgumentException 指定したIDのデータが存在しない場合
-     */
-    private List<Map<String, String>> getListMapRequired(Class<?> entityClass, String sheetName, String id) {
-        List<Map<String, String>> ret = new TestSupport(entityClass).getListMap(sheetName, id);
-        if (ret.isEmpty()) {
-            throw new IllegalArgumentException("data [" + id + "] not found in sheet [" + sheetName + "].");
-        }
-        return ret;
     }
 
     /** フォームファクトリ。 */

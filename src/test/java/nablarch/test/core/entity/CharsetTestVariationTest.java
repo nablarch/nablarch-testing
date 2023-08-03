@@ -76,7 +76,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, null);
         target.testAllCharsetVariation();
         target.testOverLimit();  // 最大桁数超過
         target.testUnderLimit(); // 桁数不足
@@ -111,7 +111,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, null);
         target.testAllCharsetVariation();
 
     }
@@ -141,7 +141,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
         target.testOverLimit();  // 最大桁数超過
         target.testUnderLimit(); // 桁数不足
         target.testMaxLength();  // 最大桁数
@@ -175,7 +175,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
         try {
             target.testOverLimit(); // 期待したメッセージが出ないのでアサート失敗
             fail();
@@ -210,7 +210,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
         try {
             target.testUnderLimit(); // 期待したメッセージが出ないのでアサート失敗
             fail();
@@ -245,7 +245,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
         try {
             target.testMaxLength();
             fail();
@@ -281,7 +281,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
         try {
             target.testMinLength();
             fail();
@@ -314,7 +314,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric, null);
         // テストがスキップされるので例外は発生しないこと
         target.testUnderLimit();
     }
@@ -341,7 +341,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric, null);
         // テストがスキップされるので例外は発生しないこと
         target.testUnderLimit();
     }
@@ -373,7 +373,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
         try {
             target.testEmptyInput();
             fail();

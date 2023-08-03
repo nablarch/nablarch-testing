@@ -167,6 +167,9 @@ public class EntityTestConfiguration {
      * @return テスト用バリデーションストラテジ
      */
     public ValidationTestStrategy getValidationTestStrategy(){
+        if (null == validationTestStrategy) {
+            validationTestStrategy = new NablarchValidationTestStrategy();
+        }
         return validationTestStrategy;
     }
 
@@ -176,9 +179,6 @@ public class EntityTestConfiguration {
      * @param validationTestStrategy テスト用バリデーションストラテジ
      */
     public void setValidationTestStrategy(ValidationTestStrategy validationTestStrategy) {
-        this.validationTestStrategy =
-                null == validationTestStrategy
-                        ? new NablarchValidationTestStrategy()
-                        : validationTestStrategy;
+        this.validationTestStrategy = validationTestStrategy;
     }
 }

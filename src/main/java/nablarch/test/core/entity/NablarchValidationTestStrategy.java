@@ -7,6 +7,7 @@ import nablarch.core.validation.ValidationManager;
 import nablarch.core.validation.ValidationUtil;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class NablarchValidationTestStrategy implements ValidationTestStrategy {
@@ -23,9 +24,9 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         try {
             ValidationUtil.validate(ctx, new String[]{targetPropertyName});
         } catch (RuntimeException e) {
-            throw new RuntimeException(Builder.concat(
-                    "unexpected exception occurred. ", buildMsg(entityClass, targetPropertyName),
-                    " parameter=[", paramValues, "]"), e);
+            throw new RuntimeException(Builder.concat("unexpected exception occurred. ",
+                    "target entity=[", entityClass.getName(), "] property=[", targetPropertyName, "] parameter=[", paramValues, "]"
+            ), e);
         }
 
         return new ValidationTestContext(ctx.getMessages());
@@ -36,7 +37,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
      * Nablarch Validationではグループを使用しないため、常にnullを返却する。
      */
     @Override
-    public Class<?> getGroupFromTestSheet(Class<?> entityClass, String sheetName, String packageKey, String groupName) {
+    public Class<?> getGroupFromTestCase(String packageKey, String groupName, List<Map<String, String>> packageListMap) {
         return null;
     }
 
@@ -51,9 +52,4 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         }
         return validationManager;
     }
-
-    private String buildMsg(Class<?> entityClass, String targetPropertyName) {
-        return Builder.concat("target entity=[", entityClass.getName(), "] property=[", targetPropertyName, "]");
-    }
-
 }

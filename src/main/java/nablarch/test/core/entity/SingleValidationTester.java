@@ -89,12 +89,6 @@ public class SingleValidationTester<ENTITY> {
         }
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public String toString() {
-        return concat("target entity=[", entityClass.getName(), "] property=[", targetPropertyName, "]");
-    }
-
     /**
      * テスト失敗時のメッセージ文言を作成する。
      *
