@@ -112,6 +112,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     * @see ValidationUtil#validateAndConvertRequest(Class, Map, String)
      */
     public <T> void testValidateAndConvert(Class<T> entityClass, String sheetName, String validateFor) {
         testValidateAndConvert(null, entityClass, sheetName, validateFor);
@@ -125,6 +126,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     * @see ValidationUtil#validateAndConvertRequest(Class, Map, String)
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
@@ -224,7 +226,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param aTestCase テストケース（テストケース表の1行）
      * @param ctx       バリデーション結果
      */
-    private <T> void assertMessageEquals(Map<String, String> aTestCase, ValidationContext<T> ctx) {
+    private void assertMessageEquals(Map<String, String> aTestCase, ValidationContext<?> ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);

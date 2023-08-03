@@ -223,7 +223,7 @@ public class CharsetTestVariation<ENTITY> {
             // 入力値
             String param = generate(charsetType, max);
             // 単項目バリデーションを実行
-            tester.testSingleValidation(null, param, expectedMessageId, "charset type=[" + charsetType + "]");
+            tester.testSingleValidation(group, param, expectedMessageId, "charset type=[" + charsetType + "]");
         }
     }
 
