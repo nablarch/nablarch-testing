@@ -1,6 +1,7 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.MockStringResourceHolder;
+import nablarch.core.validation.validator.unicode.LiteralCharsetDef;
 import nablarch.test.core.db.EntityTestSupport;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
@@ -33,6 +34,8 @@ public class TestBeanTest extends EntityTestSupport {
             {"MSG00023", "ja", "{0}は{1}桁で入力してください。"},
             {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
+            {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須でっせ"},
+
     };
 
     @Before

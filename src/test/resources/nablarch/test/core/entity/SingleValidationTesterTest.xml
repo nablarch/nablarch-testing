@@ -5,6 +5,12 @@
 
     <import file="db-default.xml"/>
 
+    <!-- 半角数字の文字集合 -->
+    <component name="半角数字" class="nablarch.core.validation.validator.unicode.LiteralCharsetDef">
+        <property name="allowedCharacters" value="0123456789"/>
+        <property name="messageId" value="error.numericCharset"/>
+    </component>
+
     <component name="stringResourceHolder" class="nablarch.core.message.MockStringResourceHolder">
     </component>
 

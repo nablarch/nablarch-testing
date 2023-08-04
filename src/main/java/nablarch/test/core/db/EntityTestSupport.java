@@ -654,9 +654,9 @@ public class EntityTestSupport extends TestEventDispatcher {
             Class<ENTITY> targetClass, String sheetName, String id) {
 
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
-        List<Map<String, String>> packageListMap = getListMap(sheetName, PACKAGE_LIST_MAP_ID);
 
         for (Map<String, String> testData : testDataList) {
+            List<Map<String, String>> packageListMap = getListMap(sheetName, testData.remove(PACKAGE_KEY));
             CharsetTestVariation<ENTITY> tester
                     = new CharsetTestVariation<ENTITY>(targetClass, testData, packageListMap);
             tester.testAll();
@@ -666,8 +666,6 @@ public class EntityTestSupport extends TestEventDispatcher {
 
     /** プロパティ名のカラム名 */
     private static final String PROPERTY_NAME = "propertyName";
-
-    private static final String PACKAGE_LIST_MAP_ID = "packages";
 
     /** メッセージIDのカラム名 */
     private static final String MESSAGE_ID = "messageId";
@@ -687,7 +685,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             ));
 
     /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String PACKAGE_KEY = "packageNameKey";
+    private static final String PACKAGE_KEY = "packageKey";
 
     /** BeanValidationのグループのクラス名 */
     private static final String GROUP_NAME = "groupName";
@@ -707,16 +705,15 @@ public class EntityTestSupport extends TestEventDispatcher {
         checkRequiredColumns(REQUIRED_COLUMNS_FOR_SINGLE_VALIDATION, list, sheetName, id);
 
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
-        List<Map<String, String>> packageListMap = getListMap(sheetName, PACKAGE_LIST_MAP_ID);
 
         // 全件実行
         for (Map<String, String> row : list) {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
-            String packageKey = row.get(PACKAGE_KEY);
             String groupName = row.get(GROUP_NAME);
-            Class<?> group = validationTestStrategy.getGroupFromTestCase(packageKey, groupName, packageListMap);
+            List<Map<String, String>> packageListMap = getListMap(sheetName, row.get(PACKAGE_KEY));
+            Class<?> group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
                     .testSingleValidation(group, input, messageId);
         }

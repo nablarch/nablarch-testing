@@ -23,10 +23,9 @@ public interface ValidationTestStrategy {
     /**
      * Bean Validationのグループを検索し、取得する。
      *
-     * @param packageKey BeanValidationのグループが属するパッケージ名のキー
      * @param groupName BeanValidationのグループのクラス名
      * @param packageListMap パッケージ情報のList-Map
      * @return Bean Validationのグループ
      */
-    Class<?> getGroupFromTestCase(String packageKey, String groupName, List<Map<String, String>> packageListMap);
+    Class<?> getGroupFromTestCase(String groupName, List<Map<String, String>> packageListMap);
 }

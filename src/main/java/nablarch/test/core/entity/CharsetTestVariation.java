@@ -32,9 +32,6 @@ public class CharsetTestVariation<ENTITY> {
     /** 最短桁数のカラム名 */
     private static final String MIN = "min";
 
-    /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String PACKAGE_KEY = "packageName";
-
     /** BeanValidationのグループのクラス名 */
     private static final String GROUP_NAME = "groupName";
 
@@ -113,10 +110,9 @@ public class CharsetTestVariation<ENTITY> {
                     : Integer.parseInt(minStr);
 
             // Bean Validationのグループ
-            String packageKey = testData.remove(PACKAGE_KEY);
             String groupName = testData.remove(GROUP_NAME);
             ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
-            this.group = validationTestStrategy.getGroupFromTestCase(packageKey, groupName, packageListMap);
+            this.group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
 
             // 残りのデータ
             this.testData = testData;
