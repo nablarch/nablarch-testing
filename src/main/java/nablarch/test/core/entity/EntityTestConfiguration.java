@@ -60,7 +60,7 @@ public class EntityTestConfiguration {
     }
 
     /**
-     * 桁数超過テスト時に期待するメッセージIDを取得する。
+     * 桁数不足テスト時に期待するメッセージIDを取得する。
      * 許容する桁数に応じて適切なメッセージIDを返却される。
      *
      * @param max 最長桁数
@@ -78,7 +78,7 @@ public class EntityTestConfiguration {
     }
 
     /**
-     * 桁数不足時のメッセージIDを取得する。
+     * 桁数超過時のメッセージIDを取得する。
      * 許容する桁数に応じて適切なメッセージIDを返却される。
      *
      * @param max 最大桁数

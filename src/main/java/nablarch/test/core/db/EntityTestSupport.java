@@ -27,8 +27,14 @@ import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
-import nablarch.test.core.entity.*;
+import nablarch.test.core.entity.CharsetTestVariation;
+import nablarch.test.core.entity.EntityTestConfiguration;
+import nablarch.test.core.entity.NablarchValidationTestStrategy;
+import nablarch.test.core.entity.SingleValidationTester;
+import nablarch.test.core.entity.ValidationTestStrategy;
 import nablarch.test.event.TestEventDispatcher;
+
+import javax.transaction.NotSupportedException;
 
 import static nablarch.core.util.Builder.concat;
 import static org.junit.Assert.assertArrayEquals;
@@ -126,13 +132,13 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(Class, Map, String)
+     * @see ValidationUtil#validateAndConvertRequest(String, Class, Map, String)
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         if (!(validationTestStrategy instanceof NablarchValidationTestStrategy)) {
-            throw new IllegalArgumentException("not allowed.");
+            throw new IllegalArgumentException("This method cannot be used to test bean validation.");
         }
 
         // テストケース表
@@ -654,7 +660,6 @@ public class EntityTestSupport extends TestEventDispatcher {
             Class<ENTITY> targetClass, String sheetName, String id) {
 
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
-
         for (Map<String, String> testData : testDataList) {
             List<Map<String, String>> packageListMap = getListMap(sheetName, testData.remove(PACKAGE_KEY));
             CharsetTestVariation<ENTITY> tester
@@ -666,6 +671,7 @@ public class EntityTestSupport extends TestEventDispatcher {
 
     /** プロパティ名のカラム名 */
     private static final String PROPERTY_NAME = "propertyName";
+
 
     /** メッセージIDのカラム名 */
     private static final String MESSAGE_ID = "messageId";

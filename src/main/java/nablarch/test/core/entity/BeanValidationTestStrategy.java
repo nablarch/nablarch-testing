@@ -29,7 +29,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         BeanUtil.copy(entityClass, bean, params, CopyOptions.empty());
 
         Set<ConstraintViolation<Object>> result =
-                ValidatorUtil.getValidator().validate(bean, group != null ? group : Default.class);
+                ValidatorUtil.getValidator().validateProperty(bean, targetPropertyName, group != null ? group : Default.class);
 
         List<Message> messages = new ConstraintViolationConverterFactory().create("").convert(result);
 
@@ -45,10 +45,9 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     @Override
     public Class<?> getGroupFromTestCase(String groupName, List<Map<String, String>> packageListMap) {
 
-        // 不適切な状態は絶対許さないマン
         if ((!StringUtil.isNullOrEmpty(groupName) && packageListMap.isEmpty())
                 || (StringUtil.isNullOrEmpty(groupName) && !packageListMap.isEmpty())) {
-            throw new IllegalArgumentException("invalid group specification.");
+            throw new IllegalArgumentException("Both the groupName and packageKey must be specified. Otherwise, both must be unspecified.");
         }
 
         // 両方空ならnullを返す
@@ -58,14 +57,14 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
         Map<String, String> packageMap = packageListMap.get(0);
         if(!packageMap.containsKey(PACKAGE_NAME)) {
-            throw new IllegalArgumentException("invalid List-Map.");
+            throw new IllegalArgumentException("PACKAGE_NAME is required for the package name LIST_MAP.");
         }
 
         String FQCN = packageMap.get(PACKAGE_NAME) + "." + groupName;
         try {
             return Class.forName(FQCN);
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Non-existence class is specified for bean validation group. FQCN is" + FQCN);
+            throw new IllegalArgumentException("Non-existent class is specified for bean validation group. Specified FQCN is " + FQCN);
         }
     }
 

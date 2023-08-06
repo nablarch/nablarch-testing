@@ -10,20 +10,57 @@ import nablarch.core.validation.ee.SystemChar;
  */
 public class TestBean {
 
-    @Length(max = 50)
+    @Length.List({
+            @Length(max = 50),
+            @Length(max = 10, groups = Test1.class)
+    })
     @SystemChar(charsetDef = "半角数字")
-    public String numberMax;
+    private String numberMax;
 
     @Length(max = 50, min = 20)
     @SystemChar(charsetDef = "半角数字")
-    public String numberMaxMin;
+    private String numberMaxMin;
 
     @Length(max = 10, min = 10)
     @SystemChar(charsetDef = "半角数字")
-    public String numberFixed;
+    private String numberFixed;
 
     @Required
     @Length(max = 5, min = 5)
     @SystemChar(charsetDef = "半角数字")
-    public String numberProhibitEmpty;
+    private String numberProhibitEmpty;
+
+    public String getNumberMax() {
+        return numberMax;
+    }
+
+    public void setNumberMax(String numberMax) {
+        this.numberMax = numberMax;
+    }
+
+    public String getNumberMaxMin() {
+        return numberMaxMin;
+    }
+
+    public void setNumberMaxMin(String numberMaxMin) {
+        this.numberMaxMin = numberMaxMin;
+    }
+
+    public String getNumberFixed() {
+        return numberFixed;
+    }
+
+    public void setNumberFixed(String numberFixed) {
+        this.numberFixed = numberFixed;
+    }
+
+    public String getNumberProhibitEmpty() {
+        return numberProhibitEmpty;
+    }
+
+    public void setNumberProhibitEmpty(String numberProhibitEmpty) {
+        this.numberProhibitEmpty = numberProhibitEmpty;
+    }
+
+    public interface Test1{}
 }

@@ -50,26 +50,6 @@ public class SingleValidationTesterTest {
     }
 
     /**
-     * 妥当な値を投入した場合、バリデーションが成功すること。
-     */
-//    @Test
-//    public void testInvokeValidationWithValidParam() {
-//        SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
-//        ValidationContext<TestEntity> ctx = target.invokeValidation("abc");
-//        assertTrue(ctx.isValid());
-//    }
-
-    /**
-     * 不正な値を投入した場合、バリデーションは失敗すること。
-     */
-//    @Test
-//    public void testInvokeValidationWithInvalidParam() {
-//        SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
-//        ValidationContext<TestEntity> ctx = target.invokeValidation("あいう"); // ASCIIでない
-//        assertFalse(ctx.isValid());  // バリデーションはNGのはず
-//    }
-
-    /**
      * 妥当な値を投入した場合、例外が発生しないこと。
      */
     @Test
@@ -102,13 +82,4 @@ public class SingleValidationTesterTest {
     }
 
 
-    /**
-     * リポジトリからインスタンス取得に失敗した場合、例外が発生すること。
-     */
-//    @Test(expected = IllegalStateException.class)
-//    public void testGetValidationManagerFail() {
-//        SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
-//        SystemRepository.clear();  // ValidationManager is removed.
-//        target.invokeValidation("hoge");  // must throw exception.
-//    }
 }

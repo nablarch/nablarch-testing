@@ -3,17 +3,15 @@
                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ../../../../component-configuration.xsd">
 
-    <import file="db-default.xml"/>
-
     <component name="stringResourceHolder" class="nablarch.core.message.MockStringResourceHolder">
     </component>
 
     <component name="entityTestConfiguration" class="nablarch.test.core.entity.EntityTestConfiguration">
-        <property name="maxMessageId" value="MSG00024"/>
-        <property name="maxAndMinMessageId" value="MSG00011"/>
-        <property name="fixLengthMessageId" value="MSG00023"/>
-        <property name="underLimitMessageId" value="MSG00011"/>
-        <property name="emptyInputMessageId" value="MSG00010"/>
+        <property name="maxMessageId" value="HOGE"/>
+        <property name="maxAndMinMessageId" value="FUGA"/>
+        <property name="fixLengthMessageId" value="PIYO"/>
+        <property name="underLimitMessageId" value="HOGEHOGE"/>
+        <property name="emptyInputMessageId" value="FUGAFUGA"/>
         <property name="characterGenerator">
             <component name="characterGenerator" class="nablarch.test.core.util.generator.BasicJapaneseCharacterGenerator"/>
         </property>

@@ -7,6 +7,9 @@ import java.util.Map;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.validation.validator.Required;
 import nablarch.test.Trap;
+import nablarch.test.core.entity.BeanValidationTestStrategy;
+import nablarch.test.core.entity.EntityTestConfiguration;
+import nablarch.test.core.entity.ValidationTestStrategy;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Assert;
@@ -59,6 +62,21 @@ public class EntityTestSupportTest {
     public void testTestValidateAndConvert() {
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
+
+        support.testValidateAndConvert(FugaEntity.class, "testValidateAndConvert", null);
+    }
+
+    /**
+     * {@link EntityTestSupport#testValidateAndConvert(Class, String, String)}のテスト。
+     * {@link ValidationTestStrategy}に{@link BeanValidationTestStrategy}を設定している場合、例外が送出されること。
+     */
+    @Test
+    public void testTestValidateAndConvertWithInvalidValidationTestStrategy() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                          .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("This method cannot be used to test bean validation.");
 
         support.testValidateAndConvert(FugaEntity.class, "testValidateAndConvert", null);
     }
