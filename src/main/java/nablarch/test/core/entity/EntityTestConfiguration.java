@@ -15,14 +15,23 @@ public class EntityTestConfiguration {
     /** 最長桁超過時のメッセージID */
     private String maxMessageId;
 
-    /** 最長最短桁範囲外のメッセージID(max > min) */
+    /**
+     * 最長最短桁範囲外のメッセージID(max > min)。
+     * 最大桁数を超過した場合。
+     */
     private String maxAndMinMessageId;
 
     /** 最長最短桁範囲外のメッセージID(max == min) */
     private String fixLengthMessageId;
 
-    /** 桁数不足時のメッセージID */
+    /**
+     * 最長最短桁範囲外のメッセージID(max > min)。
+     * 最小桁数より不足した場合。
+     */
     private String underLimitMessageId;
+
+    /** 桁数不足時のメッセージID */
+    private String minMessageId;
 
     /** 未入力時のメッセージID */
     private String emptyInputMessageId;
@@ -63,12 +72,20 @@ public class EntityTestConfiguration {
      * 桁数不足テスト時に期待するメッセージIDを取得する。
      * 許容する桁数に応じて適切なメッセージIDを返却される。
      *
+     *
      * @param max 最長桁数
      * @param min 最短桁数
      * @return 桁数超過時のメッセージID
      */
     String getUnderLimitMessageId(Integer max, Integer min) {
-        if (max.equals(min)) {
+        // 最大桁数及び桁数不足メッセージの両方が設定されていない場合はエラーとする。
+        if (null == max && null == minMessageId) {
+            throw new IllegalArgumentException("");
+        }
+
+        if (null == max) {
+            return minMessageId;      // 最短のみ
+        } else if (max.equals(min)) {
             return fixLengthMessageId;
         } else if (max > min) {
             return underLimitMessageId;
@@ -126,6 +143,15 @@ public class EntityTestConfiguration {
     }
 
     /**
+     * 桁数の最大値が指定されない場合の、桁数不足時のメッセージIDを設定する。
+     *
+     * @param minMessageId 桁数不足時のメッセージID
+     */
+    public void setMinMessageId(String minMessageId) {
+        this.minMessageId = minMessageId;
+    }
+
+    /**
      * 桁数誤り時のメッセージIDを設定する（最大桁＝最小桁）。
      *
      * @param fixLengthMessageId 桁数誤り時のメッセージID
@@ -163,6 +189,7 @@ public class EntityTestConfiguration {
 
     /**
      * テスト用バリデーションストラテジを取得する。
+     * バリデーションストラテジが設定されていない場合は、{@link NablarchValidationTestStrategy}を返却する。
      *
      * @return テスト用バリデーションストラテジ
      */

@@ -5,6 +5,8 @@ import nablarch.common.web.validator.SimpleReflectionBeanValidationFormFactory;
 import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MessageUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
@@ -15,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
 
 public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
@@ -66,6 +70,18 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("Non-existent class is specified for bean validation group. Specified FQCN is " + FQCN);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * Bean ValidationではメッセージIDによる同一性の確認ができないため、メッセージ本文が同一であるかを検証する。
+     */
+    @Override
+    public void assertMessageEquals(String msgOnFail, String expectedMessageId, Message actualMessage) {
+        String expectedFormatMessage = MessageUtil.createMessage(MessageLevel.ERROR, expectedMessageId).formatMessage();
+        String actualFormatMessage = actualMessage.formatMessage();
+
+        assertEquals(msgOnFail, expectedFormatMessage, actualFormatMessage);
     }
 
     /** フォームファクトリ。 */

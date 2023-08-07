@@ -1,5 +1,8 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MessageUtil;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
@@ -25,7 +28,8 @@ public class BeanValidationTestStrategyTest {
 
     private static final String[][] MESSAGES = {
             {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}文字以下で入力して下さい。"},
-            {"nablarch.core.validation.ee.SystemChar.message", "ja", "{0}を入力してください。"}
+            {"nablarch.core.validation.ee.SystemChar.message", "ja", "{0}を入力してください。"},
+            {"MSG00024", "ja", "{0}は{2}文字以下でないとあかんで"}
     };
 
     @Before
@@ -174,5 +178,34 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         sut.getGroupFromTestCase("TestBean$Test1", packageListMap);
+    }
+
+    /**
+     * 期待するメッセージと実際のメッセージが同一である場合、アサーションOKとなること。
+     */
+    @Test
+    public void assertOKWhenIdenticalMessage() {
+        // setup
+        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "nablarch.core.validation.ee.Length.max.message");
+
+        // execute
+        sut.assertMessageEquals("", "nablarch.core.validation.ee.Length.max.message", actualMessage);
+
+    }
+
+    /**
+     * 期待するメッセージと実際のメッセージが一致しない場合、アサーションNGとなること。
+     */
+    @Test
+    public void assertFailWhenDifferentMessage() {
+        // setup
+        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "nablarch.core.validation.ee.Length.max.message");
+
+        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage("assertion message.");
+
+        // execute
+        sut.assertMessageEquals("assertion message.", "nablarch.core.validation.ee.SystemChar.message", actualMessage);
+
     }
 }

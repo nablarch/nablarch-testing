@@ -18,30 +18,36 @@ public class TestBeanTest extends EntityTestSupport {
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
     private static final String[][] MESSAGES = {
-            {"MSG00010", "ja", "{0}を入力してください。"},
+            {"MSG00010", "ja", "入力必須項目です。"},
             {"MSG00011", "ja", "{0}は{1}桁以上{2}桁以下で入力してください。"},
-            {"MSG00012", "ja", "{0}は半角英数字または記号で入力してください。"},
-            {"MSG00013", "ja", "{0}は半角英字で入力してください。"},
-            {"MSG00014", "ja", "{0}は半角英数字で入力してください。"},
-            {"MSG00015", "ja", "{0}は半角文字で入力してください。"},
-            {"MSG00016", "ja", "{0}は半角カナで入力してください。"},
-            {"MSG00017", "ja", "{0}は全角文字で入力してください。"},
-            {"MSG00018", "ja", "{0}は全角ひらがなで入力してください。"},
-            {"MSG00019", "ja", "{0}は半角数字で入力してください。"},
-            {"MSG00020", "ja", "{0}は全角カタカナで入力してください。"},
-            {"MSG00021", "ja", "{0}は{1}から{2}の間の数値を入力してください。"},
-            {"MSG00022", "ja", "画面遷移が不正です。"},
+            {"MSG00012", "ja", "{0}を入力してください。"},
             {"MSG00023", "ja", "{0}は{1}桁で入力してください。"},
             {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
-            {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須でっせ"},
-
+            {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}桁以下で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Length.min.max.message", "ja", "{0}は{1}桁以上{2}桁以下で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Length.fixed.message", "ja", "{0}は{1}桁で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Length.min.message", "ja", "{0}は{1}桁以上で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須ですよ"},
+            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{0}を使用してくださいよ。"}
     };
 
     @Before
     public void before() {
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                 .setMessages(MESSAGES);
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMaxMessageId("nablarch.core.validation.ee.Length.max.message");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMaxAndMinMessageId("nablarch.core.validation.ee.Length.min.max.message");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setFixLengthMessageId("nablarch.core.validation.ee.Length.fixed.message");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setUnderLimitMessageId("nablarch.core.validation.ee.Length.min.max.message");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setEmptyInputMessageId("nablarch.core.validation.ee.Required.message");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMinMessageId("nablarch.core.validation.ee.Length.min.message");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
     }
@@ -52,7 +58,6 @@ public class TestBeanTest extends EntityTestSupport {
      * 文字種と文字列長のテスト
      */
     @Test
-    @Ignore
     public void testCharsetAndLength() {
         String sheetName = "testCharsetAndLength";
         String id = "charsetAndLength";
@@ -60,10 +65,16 @@ public class TestBeanTest extends EntityTestSupport {
     }
 
     @Test
-    @Ignore
     public void testSingleValidation() {
         String sheetName = "testSingleValidation";
         String id = "singleValidation";
         testSingleValidation(targetClass, sheetName, id);
+    }
+
+    @Test
+    public void testCharsetAndLengthWithGroup() {
+        String sheetName = "testCharsetAndLengthWithGroup";
+        String id = "charsetAndLength";
+        testValidateCharsetAndLength(targetClass, sheetName, id);
     }
 }

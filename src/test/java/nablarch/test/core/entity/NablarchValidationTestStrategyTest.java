@@ -1,9 +1,13 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MessageUtil;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.repository.SystemRepository;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.*;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,10 +22,15 @@ public class NablarchValidationTestStrategyTest {
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
             "nablarch/test/core/entity/NablarchValidationTestStrategyTest.xml");
 
+    @SuppressWarnings("deprecation")
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     private final ValidationTestStrategy sut = new NablarchValidationTestStrategy();
 
     private static final String[][] MESSAGES = {
             {"MSG00012", "ja", "{0}は半角英数字または記号で入力してください。"},
+            {"MSG90012", "ja", "{0}は半角英数字または記号で入力せんとあかんで"},
     };
 
     @Before
@@ -148,6 +157,35 @@ public class NablarchValidationTestStrategyTest {
 
         // execute, verify
         assertNull(sut.getGroupFromTestCase("TestBean$Test1", packageListMap));
+    }
+
+    /**
+     * 期待するメッセージIDと実際のメッセージIDが同一である場合、アサーションOKとなること。
+     */
+    @Test
+    public void assertOKWhenIdenticalMessageId() {
+        // setup
+        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "MSG00012");
+
+        // execute
+        sut.assertMessageEquals("", "MSG00012", actualMessage);
+
+    }
+
+    /**
+     * 期待するメッセージIDと実際のメッセージIDが一致しない場合、アサーションNGとなること。
+     */
+    @Test
+    public void assertFailWhenDifferentMessageId() {
+        // setup
+        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "MSG00012");
+
+        expectedException.expect(AssertionError.class);
+        expectedException.expectMessage("assertion message.");
+
+        // execute
+        sut.assertMessageEquals("assertion message.", "MSG90012", actualMessage);
+
     }
 
 }

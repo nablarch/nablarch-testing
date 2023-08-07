@@ -12,21 +12,35 @@ public class TestBean {
 
     @Length.List({
             @Length(max = 50),
-            @Length(max = 10, groups = Test1.class)
+            @Length(max = 10, groups = Test1.class, message = "{MSG00024}")
     })
     @SystemChar(charsetDef = "半角数字")
     private String numberMax;
 
-    @Length(max = 50, min = 20)
+    @Length.List({
+            @Length(max = 50, min = 20),
+            @Length(max = 35, min = 15, groups = Test1.class, message = "{MSG00011}")
+
+    })
     @SystemChar(charsetDef = "半角数字")
     private String numberMaxMin;
 
-    @Length(max = 10, min = 10)
+    @Length.List({
+            @Length(max = 10, min = 10),
+            @Length(max = 20, min = 20, groups = Test1.class, message = "{MSG00023}")
+    })
+
     @SystemChar(charsetDef = "半角数字")
     private String numberFixed;
 
-    @Required
-    @Length(max = 5, min = 5)
+    @Required.List({
+            @Required,
+            @Required(groups = Test1.class, message = "{MSG00010}")
+    })
+    @Length.List({
+            @Length(max = 50),
+            @Length(max = 10, groups = Test1.class, message = "{MSG00024}")
+    })
     @SystemChar(charsetDef = "半角数字")
     private String numberProhibitEmpty;
 

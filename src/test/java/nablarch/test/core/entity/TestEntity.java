@@ -109,7 +109,7 @@ public class TestEntity {
     }
 
     @Required(messageId = "MSG20010")
-    @Length(max = 20)
+    @Length(max = 20, messageId = "MSG20013")
     @AsciiChar
     public void setAsciiWithEmptyMessage(String s) {
     }

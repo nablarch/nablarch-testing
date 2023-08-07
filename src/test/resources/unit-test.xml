@@ -86,6 +86,11 @@
     </property>
   </component>
 
+  <!-- 半角数字の文字集合 -->
+  <component name="半角数字" class="nablarch.core.validation.validator.unicode.LiteralCharsetDef">
+    <property name="allowedCharacters" value="0123456789"/>
+  </component>
+
   <!-- デフォルトディレクティブ（共通） -->
   <map name="defaultDirectives">
     <entry key="text-encoding" value="Windows-31J"/>

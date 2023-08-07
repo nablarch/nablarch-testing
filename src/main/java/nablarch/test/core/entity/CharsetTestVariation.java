@@ -64,6 +64,9 @@ public class CharsetTestVariation<ENTITY> {
     /** 最小桁数 */
     private final int min;
 
+    /** 最大桁数欄は空欄か（Bean ValidationのときのみTrueとなりうる） */
+    private final boolean isMaxEmpty;
+
     /** 最小桁数欄は空欄か */
     private final boolean isMinEmpty;
 
@@ -100,8 +103,14 @@ public class CharsetTestVariation<ENTITY> {
             messageIdWhenEmptyInput = testData.remove(MESSAGE_ID_WHEN_EMPTY_INPUT);
             // 文字種バリデーション失敗時のメッセージID
             messageIdWhenNotApplicable = testData.remove(MESSAGE_ID_WHEN_NOT_APPLICABLE);
-            // 最長桁数
-            max = Integer.parseInt(testData.remove(MAX));
+            // 最長桁数（Nablarch Validationで最長桁数が指定されていない場合は実行時エラーとする）
+            ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+            String maxStr = testData.remove(MAX);
+            isMaxEmpty = isNullOrEmpty(maxStr);
+            if(validationTestStrategy instanceof NablarchValidationTestStrategy && isMaxEmpty) {
+                throw new IllegalArgumentException("When using Nablarch validation, max must be specified.");
+            }
+            max = isMaxEmpty ? 0 : Integer.parseInt(maxStr);
             // 最短桁数
             String minStr = testData.remove(MIN);
             isMinEmpty = isNullOrEmpty(minStr);
@@ -111,7 +120,6 @@ public class CharsetTestVariation<ENTITY> {
 
             // Bean Validationのグループ
             String groupName = testData.remove(GROUP_NAME);
-            ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
             this.group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
 
             // 残りのデータ
@@ -191,6 +199,7 @@ public class CharsetTestVariation<ENTITY> {
         if (min <= 1) {
             return;
         }
+        Integer max = isMaxEmpty ? null : this.max;
         String expectedMessageId = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
                 ? EntityTestConfiguration.getConfig().getUnderLimitMessageId(max, min) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                          // テストケースで明示的に指定したメッセージを出力
@@ -217,7 +226,7 @@ public class CharsetTestVariation<ENTITY> {
                     ? ""                              // メッセージが出ないこと
                     : messageIdWhenNotApplicable;     // 適用不可時のメッセージID
             // 入力値
-            String param = generate(charsetType, max);
+            String param = generate(charsetType, isMaxEmpty ? min : max);
             // 単項目バリデーションを実行
             tester.testSingleValidation(group, param, expectedMessageId, "charset type=[" + charsetType + "]");
         }

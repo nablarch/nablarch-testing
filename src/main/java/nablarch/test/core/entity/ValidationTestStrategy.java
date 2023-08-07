@@ -1,5 +1,7 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.message.Message;
+
 import java.util.List;
 import java.util.Map;
 
@@ -28,4 +30,13 @@ public interface ValidationTestStrategy {
      * @return Bean Validationのグループ
      */
     Class<?> getGroupFromTestCase(String groupName, List<Map<String, String>> packageListMap);
+
+    /**
+     * 実際のメッセージが期待するメッセージと等しいかを検証する。
+     *
+     * @param msgOnFail
+     * @param expectedMessageId
+     * @param actualMessage
+     */
+    void assertMessageEquals(String msgOnFail, String expectedMessageId, Message actualMessage);
 }

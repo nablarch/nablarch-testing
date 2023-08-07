@@ -4,7 +4,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import nablarch.core.message.MockStringResourceHolder;
@@ -23,7 +25,7 @@ public class CharsetTestVariationTest {
 
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource(
-            "nablarch/test/core/entity/SingleValidationTesterTest.xml");
+            "nablarch/test/core/entity/CharsetTestVariationTest.xml");
 
     private static final String[][] MESSAGES = {
             {"MSG00010", "ja", "{0}を入力してください。"},
@@ -41,7 +43,11 @@ public class CharsetTestVariationTest {
             {"MSG00022", "ja", "画面遷移が不正です。"},
             {"MSG00023", "ja", "{0}は{1}桁で入力してください。"},
             {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
+            {"MSG20010", "ja", "{0}の入力は必須です。"},
+            {"MSG20013", "ja", "{0}は{1}桁以下でなければなりません。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
+            {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須やで"},
+            {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}文字以下でないとあかんで"}
     };
 
     @Before
@@ -76,7 +82,45 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, new ArrayList<Map<String, String>>());
+        target.testAllCharsetVariation();
+        target.testOverLimit();  // 最大桁数超過
+        target.testUnderLimit(); // 桁数不足
+        target.testMaxLength();  // 最大桁数
+        target.testMinLength();  // 最短桁数
+        target.testEmptyInput(); // 未入力
+    }
+
+    /**
+     * ASCII文字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
+     * 想定通りである場合、例外が発生しない。
+     * 文字列未入力・文字列長違反時のメッセージIDが、パラメータで指定した値であること。
+     */
+    @Test
+    public void testAsciiSuccessWithSpecifiedMessages() {
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "asciiWithEmptyMessage"},
+                {"allowEmpty", "x"},
+                {"min", ""},
+                {"max", "20"},
+                {"messageIdWhenInvalidLength", "MSG20013"},
+                {"messageIdWhenEmptyInput","MSG20010"},
+                {"messageIdWhenNotApplicable", "MSG00012"},
+                {"半角英字", "o"},
+                {"半角数字", "o"},
+                {"半角記号", "o"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+        CharsetTestVariation<TestEntity> target
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, new ArrayList<Map<String, String>>());
         target.testAllCharsetVariation();
         target.testOverLimit();  // 最大桁数超過
         target.testUnderLimit(); // 桁数不足
@@ -111,7 +155,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsForAscii, new ArrayList<Map<String, String>>());
         target.testAllCharsetVariation();
 
     }
@@ -141,7 +185,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, new ArrayList<Map<String, String>>());
         target.testOverLimit();  // 最大桁数超過
         target.testUnderLimit(); // 桁数不足
         target.testMaxLength();  // 最大桁数
@@ -175,7 +219,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, new ArrayList<Map<String, String>>());
         try {
             target.testOverLimit(); // 期待したメッセージが出ないのでアサート失敗
             fail();
@@ -210,7 +254,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, new ArrayList<Map<String, String>>());
         try {
             target.testUnderLimit(); // 期待したメッセージが出ないのでアサート失敗
             fail();
@@ -245,7 +289,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, new ArrayList<Map<String, String>>());
         try {
             target.testMaxLength();
             fail();
@@ -281,7 +325,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, new ArrayList<Map<String, String>>());
         try {
             target.testMinLength();
             fail();
@@ -314,7 +358,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric, new ArrayList<Map<String, String>>());
         // テストがスキップされるので例外は発生しないこと
         target.testUnderLimit();
     }
@@ -341,7 +385,7 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsAlphaNumeric, new ArrayList<Map<String, String>>());
         // テストがスキップされるので例外は発生しないこと
         target.testUnderLimit();
     }
@@ -373,13 +417,58 @@ public class CharsetTestVariationTest {
                 {"外字", "x"}
         });
         CharsetTestVariation<TestEntity> target
-                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, null);
+                = new CharsetTestVariation<TestEntity>(TestEntity.class, paramsZenkakuKatakana, new ArrayList<Map<String, String>>());
         try {
             target.testEmptyInput();
             fail();
         } catch (AssertionError e) {
             assertThat(e.getMessage(), containsString("no message is expected"));
         }
+    }
+
+    /**
+     * ASCII文字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
+     * 想定通りである場合、例外が発生しない。
+     * {@link ValidationTestStrategy}として{@link BeanValidationTestStrategy}を使用してテストできること。
+     */
+    @Test
+    public void testAsciiSuccessWithBeanValidationTestStrategy() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberMax"},
+                {"allowEmpty", "o"},
+                {"min", ""},
+                {"max", "10"},
+                {"messageIdWhenNotApplicable", ""},
+                {"groupName", "TestBean$Test1"},
+                {"半角英字", "o"},
+                {"半角数字", "o"},
+                {"半角記号", "o"},
+                {"半角カナ", "o"},
+                {"全角英字", "o"},
+                {"全角数字", "o"},
+                {"全角ひらがな", "o"},
+                {"全角カタカナ", "o"},
+                {"全角漢字", "o"},
+                {"全角記号その他", "o"},
+                {"外字", "o"}
+        });
+        Map<String, String> packageMap = newMap(new String[][] {
+                {"PACKAGE_NAME", "nablarch.test.core.entity"}
+        });
+        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
+        packageListMap.add(packageMap);
+
+        CharsetTestVariation<TestBean> target
+                = new CharsetTestVariation<TestBean>(TestBean.class, paramsForAscii, packageListMap);
+        target.testAllCharsetVariation();
+        target.testOverLimit();  // 最大桁数超過
+        target.testUnderLimit(); // 桁数不足
+        target.testMaxLength();  // 最大桁数
+        target.testMinLength();  // 最短桁数
+        target.testEmptyInput(); // 未入力
     }
 
 
