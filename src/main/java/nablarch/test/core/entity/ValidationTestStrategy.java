@@ -34,9 +34,9 @@ public interface ValidationTestStrategy {
     /**
      * 実際のメッセージが期待するメッセージと等しいかを検証する。
      *
-     * @param msgOnFail
-     * @param expectedMessageId
-     * @param actualMessage
+     * @param msgOnFail          バリデーション失敗時のメッセージ
+     * @param expectedMessageId  期待するメッセージID
+     * @param actualMessage     実際の{@link Message}
      */
     void assertMessageEquals(String msgOnFail, String expectedMessageId, Message actualMessage);
 }

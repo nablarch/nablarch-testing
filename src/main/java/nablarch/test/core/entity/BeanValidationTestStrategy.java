@@ -85,6 +85,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     }
 
     /** フォームファクトリ。 */
-    private BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
+    private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
 
 }
