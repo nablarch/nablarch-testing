@@ -34,8 +34,6 @@ import nablarch.test.core.entity.SingleValidationTester;
 import nablarch.test.core.entity.ValidationTestStrategy;
 import nablarch.test.event.TestEventDispatcher;
 
-import javax.transaction.NotSupportedException;
-
 import static nablarch.core.util.Builder.concat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -619,7 +617,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 上記以外の場合は、valueOf(String)メソッドを使用して、変換
         if (clazz.isArray()) {
             // 対象が配列の場合
-            Class componentType = clazz.getComponentType();
+            Class<?> componentType = clazz.getComponentType();
             Method method = componentType.getMethod("valueOf", String.class);
             Object[] result = (Object[]) Array.newInstance(componentType, strings.length);
             for (int i = 0; i < strings.length; i++) {
@@ -745,7 +743,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             }
             result.add(row.get(key));
         }
-        return result.toArray(new String[result.size()]);
+        return result.toArray(new String[0]);
     }
 
     /**
