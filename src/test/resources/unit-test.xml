@@ -86,9 +86,24 @@
     </property>
   </component>
 
-  <!-- 半角数字の文字集合 -->
+  <!-- Form/Entityテストで使用する文字集合の定義 -->
   <component name="半角数字" class="nablarch.core.validation.validator.unicode.LiteralCharsetDef">
     <property name="allowedCharacters" value="0123456789"/>
+  </component>
+  <component name="半角英字" class="nablarch.core.validation.validator.unicode.LiteralCharsetDef">
+    <property name="allowedCharacters" value="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"/>
+  </component>
+  <component name="半角記号" class="nablarch.core.validation.validator.unicode.LiteralCharsetDef">
+    <property name="allowedCharacters" value="!&quot;\#$%&amp;&apos;()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"/>
+  </component>
+  <component name="ASCII文字" class="nablarch.core.validation.validator.unicode.CompositeCharsetDef">
+    <property name="charsetDefList">
+      <list>
+        <component-ref name="半角数字"/>
+        <component-ref name="半角英字"/>
+        <component-ref name="半角記号"/>
+      </list>
+    </property>
   </component>
 
   <!-- デフォルトディレクティブ（共通） -->

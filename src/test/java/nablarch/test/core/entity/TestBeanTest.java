@@ -65,6 +65,13 @@ public class TestBeanTest extends EntityTestSupport {
     }
 
     @Test
+    public void testCharsetAndLengthWithGroup() {
+        String sheetName = "testCharsetAndLengthWithGroup";
+        String id = "charsetAndLength";
+        testValidateCharsetAndLength(targetClass, sheetName, id);
+    }
+
+    @Test
     public void testSingleValidation() {
         String sheetName = "testSingleValidation";
         String id = "singleValidation";
@@ -72,9 +79,10 @@ public class TestBeanTest extends EntityTestSupport {
     }
 
     @Test
-    public void testCharsetAndLengthWithGroup() {
-        String sheetName = "testCharsetAndLengthWithGroup";
-        String id = "charsetAndLength";
-        testValidateCharsetAndLength(targetClass, sheetName, id);
+    public void testSingleValidationWithGroup() {
+        String sheetName = "testSingleValidationWithGroup";
+        String id = "singleValidation";
+        testSingleValidation(targetClass, sheetName, id);
     }
+
 }

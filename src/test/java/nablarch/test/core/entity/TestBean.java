@@ -44,6 +44,12 @@ public class TestBean {
     @SystemChar(charsetDef = "半角数字")
     private String numberProhibitEmpty;
 
+    @SystemChar.List({
+            @SystemChar(charsetDef = "ASCII文字", message = "{MSG00012}"),
+            @SystemChar(charsetDef = "半角英字", groups = Test1.class, message = "{MSG90001}")
+    })
+    private String ascii;
+
     public String getNumberMax() {
         return numberMax;
     }
@@ -74,6 +80,14 @@ public class TestBean {
 
     public void setNumberProhibitEmpty(String numberProhibitEmpty) {
         this.numberProhibitEmpty = numberProhibitEmpty;
+    }
+
+    public String getAscii() {
+        return ascii;
+    }
+
+    public void setAscii(String ascii) {
+        this.ascii = ascii;
     }
 
     public interface Test1{}
