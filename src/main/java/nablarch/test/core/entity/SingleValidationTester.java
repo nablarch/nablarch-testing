@@ -1,13 +1,10 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
-import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static nablarch.core.util.Builder.concat;
 import static nablarch.core.util.Builder.join;

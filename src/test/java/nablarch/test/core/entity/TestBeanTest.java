@@ -23,6 +23,7 @@ public class TestBeanTest extends EntityTestSupport {
             {"MSG00012", "ja", "{0}を入力してください。"},
             {"MSG00023", "ja", "{0}は{1}桁で入力してください。"},
             {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
+            {"MSG00025", "ja", "{0}は{2}文字以上で入力して下さい。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
             {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}桁以下で入力してくださいよ。"},
             {"nablarch.core.validation.ee.Length.min.max.message", "ja", "{0}は{1}桁以上{2}桁以下で入力してくださいよ。"},

@@ -26,10 +26,16 @@ public class TestBean {
     private String numberMaxMin;
 
     @Length.List({
+            @Length(min = 50),
+            @Length(min = 10, groups = Test1.class, message = "{MSG00025}")
+    })
+    @SystemChar(charsetDef = "半角数字")
+    private String numberMin;
+
+    @Length.List({
             @Length(max = 10, min = 10),
             @Length(max = 20, min = 20, groups = Test1.class, message = "{MSG00023}")
     })
-
     @SystemChar(charsetDef = "半角数字")
     private String numberFixed;
 
@@ -64,6 +70,14 @@ public class TestBean {
 
     public void setNumberMaxMin(String numberMaxMin) {
         this.numberMaxMin = numberMaxMin;
+    }
+
+    public String getNumberMin() {
+        return numberMin;
+    }
+
+    public void setNumberMin(String numberMin) {
+        this.numberMin = numberMin;
     }
 
     public String getNumberFixed() {

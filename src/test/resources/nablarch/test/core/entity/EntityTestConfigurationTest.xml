@@ -12,6 +12,7 @@
         <property name="fixLengthMessageId" value="PIYO"/>
         <property name="underLimitMessageId" value="HOGEHOGE"/>
         <property name="emptyInputMessageId" value="FUGAFUGA"/>
+        <property name="minMessageId" value="PIYOPIYO"/>
         <property name="characterGenerator">
             <component name="characterGenerator" class="nablarch.test.core.util.generator.BasicJapaneseCharacterGenerator"/>
         </property>

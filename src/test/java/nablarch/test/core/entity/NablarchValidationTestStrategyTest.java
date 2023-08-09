@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
 
 public class NablarchValidationTestStrategyTest {
@@ -67,6 +68,20 @@ public class NablarchValidationTestStrategyTest {
                 sut.invokeValidation(TestEntity.class, "ascii", null, paramValues);
 
         assertFalse(context.isValid()); // バリデーションはNGのはず
+    }
+
+    @Test
+    public void testInvokeValidationWithNullTargetPropertyName() {
+        // setup
+        String[] paramValues = new String[]{"abc"};
+
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage(containsString("unexpected exception occurred. target entity=[nablarch.test.core.entity.TestEntity] property=[] parameter=["));
+        // execute
+        ValidationTestContext context =
+                sut.invokeValidation(TestEntity.class, null, null, paramValues);
+
+        assertTrue(context.isValid());
     }
 
     /**

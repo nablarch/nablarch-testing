@@ -80,7 +80,7 @@ public class EntityTestConfiguration {
     String getUnderLimitMessageId(Integer max, Integer min) {
         // 最大桁数及び桁数不足メッセージの両方が設定されていない場合はエラーとする。
         if (null == max && null == minMessageId) {
-            throw new IllegalArgumentException("");
+            throw new IllegalArgumentException("If max is not specified, minMessageId must be specified.");
         }
 
         if (null == max) {

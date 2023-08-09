@@ -2,8 +2,9 @@ package nablarch.test.core.util.generator;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
 
 /**
  * {@link CharacterGeneratorBase.RandomStringGenerator}のテストクラス
@@ -48,6 +49,18 @@ public class RandomStringGeneratorTest {
         assertTrue(
                 "expected [a-n]{100}? but was " + actual,
                 actual.matches("[a-n]{100}"));
+    }
+
+    /**
+     * ランダムな文字列が生成できること。
+     * 文字集合にサロゲートペアが含まれていても、文字数カウントがずれないこと
+     */
+    @Test
+    public void testGenerateSurrogatePairString() {
+        CharacterGeneratorBase.RandomStringGenerator target
+                = new CharacterGeneratorBase.RandomStringGenerator("\uD867\uDE3D\uD842\uDFB7");
+        String actual = target.generate(100);
+        assertThat(Character.codePointCount(actual, 0, actual.length()), is(100));
     }
 
     /** 桁数0の文字列を生成した場合、空文字が返却されるケース */

@@ -21,18 +21,32 @@ public class EntityTestConfigurationTest {
 
     @Test
     public void エンティティテスト設定を取得できること() {
-        // execute
+        // setup
         EntityTestConfiguration config = EntityTestConfiguration.getConfig();
 
-        // verify
+        // execute, verify
         assertEquals("HOGE", config.getOverLimitMessageId(10, null));
         assertEquals("FUGA", config.getOverLimitMessageId(10, 1));
         assertEquals("PIYO", config.getOverLimitMessageId(10, 10));
         assertEquals("PIYO", config.getUnderLimitMessageId(10, 10));
         assertEquals("HOGEHOGE", config.getUnderLimitMessageId(10, 1));
         assertEquals("FUGAFUGA", config.getEmptyInputMessageId());
+        assertEquals("PIYOPIYO", config.getUnderLimitMessageId(null, 10));
         assertEquals(BasicJapaneseCharacterGenerator.class, config.getCharacterGenerator().getClass());
     }
+
+    @Test
+    public void minMessageIdが指定されていない場合_例外が送出されること() {
+        // setup
+        EntityTestConfiguration config = EntityTestConfiguration.getConfig();
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMinMessageId(null);
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("If max is not specified, minMessageId must be specified.");
+
+        config.getUnderLimitMessageId(null, 10);
+    }
+
 
     @Test
     public void エンティティテスト設定を取得できない場合_例外が送出されること() {

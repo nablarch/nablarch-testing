@@ -111,7 +111,7 @@ public class CharsetTestVariation<ENTITY> {
             // Nablarch Validationでは最大桁数の指定が必須。Bean Validationでは任意項目。
             throw new IllegalArgumentException("When using Nablarch validation, max must be specified.");
         }
-        max = isMaxEmpty ? 0 : Integer.parseInt(maxStr);
+        max = isMaxEmpty ? Integer.MAX_VALUE : Integer.parseInt(maxStr);
         // 最短桁数
         String minStr = testData.remove(MIN);
         isMinEmpty = isNullOrEmpty(minStr);
@@ -173,6 +173,11 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 最長桁数のテストを行う。 */
     public void testMaxLength() {
+        // 最長桁がInteger.MAX_VALUEの場合はテストしない
+        // (テスト用文字列の生成に時間がかかりすぎるため。この場合は実質的に文字列長には制限が無い)
+        if (max == Integer.MAX_VALUE) {
+            return;
+        }
         testValidationWithValidCharset(max, null, "max length test.");
     }
 
@@ -183,6 +188,10 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 最長桁数超過のテストを行う。 */
     public void testOverLimit() {
+        // 最長桁がInteger.MAX_VALUEの場合はテストしない (オーバーフローしてしまうため)
+        if (max == Integer.MAX_VALUE) {
+            return;
+        }
         Integer min = isMinEmpty ? null : this.min;
         String expectedMessageId = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
                 ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min) // デフォルトのメッセージを出力

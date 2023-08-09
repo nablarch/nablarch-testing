@@ -108,6 +108,10 @@
         </property>
     </component>
 
+    <!-- 半角数字の文字集合 -->
+    <component name="半角数字" class="nablarch.core.validation.validator.unicode.LiteralCharsetDef">
+        <property name="allowedCharacters" value="0123456789"/>
+    </component>
 
     <component name="entityTestConfiguration" class="nablarch.test.core.entity.EntityTestConfiguration">
         <property name="maxMessageId" value="MSG00024"/>
