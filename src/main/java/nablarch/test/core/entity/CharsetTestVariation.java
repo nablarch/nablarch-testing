@@ -90,45 +90,43 @@ public class CharsetTestVariation<ENTITY> {
 
         // 引数を破壊しないようにシャローコピー
         testData = new HashMap<String, String>(testData);
-        try {
-            // 必須カラム存在チェック
-            checkRequiredColumns(testData);
-            // 未入力を許容するか
-            isEmptyAllowed = testData.remove(ALLOW_EMPTY).equals(OK);
-            // テスト対象プロパティ名
-            String targetPropertyName = testData.remove(PROPERTY_NAME);
-            // 桁数不正時のメッセージID
-            messageIdWhenInvalidLength = testData.remove(MESSAGE_ID_WHEN_INVALID_LENGTH);
-            // 未入力時のメッセージID
-            messageIdWhenEmptyInput = testData.remove(MESSAGE_ID_WHEN_EMPTY_INPUT);
-            // 文字種バリデーション失敗時のメッセージID
-            messageIdWhenNotApplicable = testData.remove(MESSAGE_ID_WHEN_NOT_APPLICABLE);
-            // 最長桁数（Nablarch Validationで最長桁数が指定されていない場合は実行時エラーとする）
-            ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
-            String maxStr = testData.remove(MAX);
-            isMaxEmpty = isNullOrEmpty(maxStr);
-            if(validationTestStrategy instanceof NablarchValidationTestStrategy && isMaxEmpty) {
-                throw new IllegalArgumentException("When using Nablarch validation, max must be specified.");
-            }
-            max = isMaxEmpty ? 0 : Integer.parseInt(maxStr);
-            // 最短桁数
-            String minStr = testData.remove(MIN);
-            isMinEmpty = isNullOrEmpty(minStr);
-            min = isMinEmpty
-                    ? (isEmptyAllowed ? 0 : 1)  // 未入力許可時は最短0桁、必須の場合は1桁
-                    : Integer.parseInt(minStr);
 
-            // Bean Validationのグループ
-            String groupName = testData.remove(GROUP_NAME);
-            this.group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
-
-            // 残りのデータ
-            this.testData = testData;
-            // 単項目バリデーションテスト用クラス
-            tester = new SingleValidationTester<ENTITY>(entityClass, targetPropertyName);
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("invalid test data. testData=[" + testData + "]", e);
+        // 必須カラム存在チェック
+        checkRequiredColumns(testData);
+        // 未入力を許容するか
+        isEmptyAllowed = testData.remove(ALLOW_EMPTY).equals(OK);
+        // テスト対象プロパティ名
+        String targetPropertyName = testData.remove(PROPERTY_NAME);
+        // 桁数不正時のメッセージID
+        messageIdWhenInvalidLength = testData.remove(MESSAGE_ID_WHEN_INVALID_LENGTH);
+        // 未入力時のメッセージID
+        messageIdWhenEmptyInput = testData.remove(MESSAGE_ID_WHEN_EMPTY_INPUT);
+        // 文字種バリデーション失敗時のメッセージID
+        messageIdWhenNotApplicable = testData.remove(MESSAGE_ID_WHEN_NOT_APPLICABLE);
+        // 最長桁数（Nablarch Validationで最長桁数が指定されていない場合は実行時エラーとする）
+        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        String maxStr = testData.remove(MAX);
+        isMaxEmpty = isNullOrEmpty(maxStr);
+        if(validationTestStrategy instanceof NablarchValidationTestStrategy && isMaxEmpty) {
+            // Nablarch Validationでは最大桁数の指定が必須。Bean Validationでは任意項目。
+            throw new IllegalArgumentException("When using Nablarch validation, max must be specified.");
         }
+        max = isMaxEmpty ? 0 : Integer.parseInt(maxStr);
+        // 最短桁数
+        String minStr = testData.remove(MIN);
+        isMinEmpty = isNullOrEmpty(minStr);
+        min = isMinEmpty
+                ? (isEmptyAllowed ? 0 : 1)  // 未入力許可時は最短0桁、必須の場合は1桁
+                : Integer.parseInt(minStr);
+
+        // Bean Validationのグループ
+        String groupName = testData.remove(GROUP_NAME);
+        this.group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
+
+        // 残りのデータ
+        this.testData = testData;
+        // 単項目バリデーションテスト用クラス
+        tester = new SingleValidationTester<ENTITY>(entityClass, targetPropertyName);
     }
 
     /**
