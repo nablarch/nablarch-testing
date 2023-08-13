@@ -1,18 +1,17 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.message.Message;
-import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
-import nablarch.core.message.MockStringResourceHolder;
+import nablarch.core.message.*;
 import nablarch.core.repository.SystemRepository;
+import nablarch.core.validation.validator.AsciiChar;
+import nablarch.core.validation.validator.Length;
+import nablarch.core.validation.validator.NumberChar;
+import nablarch.core.validation.validator.Required;
+import nablarch.test.Assertion;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
@@ -31,7 +30,7 @@ public class NablarchValidationTestStrategyTest {
 
     private static final String[][] MESSAGES = {
             {"MSG00012", "ja", "{0}は半角英数字または記号で入力してください。"},
-            {"MSG90012", "ja", "{0}は半角英数字または記号で入力せんとあかんで"},
+            {"MSG00024", "ja", "{0}は半角英数字または記号で入力せなあかんで"},
     };
 
     @Before
@@ -50,8 +49,9 @@ public class NablarchValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(TestEntity.class, "ascii", null, paramValues);
+                sut.invokeValidation(SampleEntity.class, "ascii", null, paramValues);
 
+        // verify
         assertTrue(context.isValid());
     }
 
@@ -65,21 +65,24 @@ public class NablarchValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(TestEntity.class, "ascii", null, paramValues);
+                sut.invokeValidation(SampleEntity.class, "ascii", null, paramValues);
 
         assertFalse(context.isValid()); // バリデーションはNGのはず
     }
 
+    /**
+     * 検証対象のプロパティ名を指定しない場合、例外が発生すること。
+     */
     @Test
     public void testInvokeValidationWithNullTargetPropertyName() {
         // setup
         String[] paramValues = new String[]{"abc"};
 
         expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(containsString("unexpected exception occurred. target entity=[nablarch.test.core.entity.TestEntity] property=[] parameter=["));
+        expectedException.expectMessage(containsString("unexpected exception occurred. target entity=[nablarch.test.core.entity.NablarchValidationTestStrategyTest$SampleEntity] property=[] parameter=["));
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(TestEntity.class, null, null, paramValues);
+                sut.invokeValidation(SampleEntity.class, null, null, paramValues);
 
         assertTrue(context.isValid());
     }
@@ -95,7 +98,66 @@ public class NablarchValidationTestStrategyTest {
 
         // execute
         // must throw exception.
-        sut.invokeValidation(TestEntity.class, "ascii", null, paramValues);
+        sut.invokeValidation(SampleEntity.class, "ascii", null, paramValues);
+    }
+
+    private final String asciis21 = "0123456789abcdefghijk";
+    private final String asciis20 = "0123456789abcdefghij";
+    private final String digits = "0123456789";
+
+    /**
+     * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     */
+    @Test
+    public void testAllValidateWithValidParameters() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("ascii", new String[]{asciis20}); // ASCII文字, 20文字以下
+        httpParams.put("number", new String[]{digits});  // 半角数字, 必須
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("", SampleEntity.class, null, null, httpParams);
+
+        System.out.println(context.getMessages());
+        // verify
+        assertTrue(context.isValid());
+    }
+
+    /**
+     * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     * プレフィクスを指定したパラメータのみ、Beanに設定されること。
+     */
+    @Test
+    public void testAllValidateWithValidParametersAndPrefix() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("ascii", new String[]{asciis21});      // 不正な値だがプレフィクスがないのでEntityに設定されない
+        httpParams.put("form.number", new String[]{digits});  // 半角数字, 必須
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("form", SampleEntity.class, null, null, httpParams);
+
+        // verify
+        assertTrue(context.isValid());
+    }
+
+    /**
+     * いずれかのプロパティの値が不正であるとき、バリデーションに失敗すること。
+     */
+    @Test
+    public void testAllValidateWithInvalidParameters() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("ascii", new String[]{asciis21}); // ascii文字, 20文字以下である必要があるが21文字の値を指定
+        httpParams.put("number", new String[]{digits});  // 半角数字, 必須
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("", SampleEntity.class, null, null, httpParams);
+
+        // verify
+        assertFalse(context.isValid());
+        assertEquals(1, context.getMessages().size());
+        assertEquals("asciiは半角英数字または記号で入力せなあかんで", context.getMessages().get(0).formatMessage());
     }
 
     /**
@@ -174,33 +236,53 @@ public class NablarchValidationTestStrategyTest {
         assertNull(sut.getGroupFromTestCase("TestBean$Test1", packageListMap));
     }
 
-    /**
-     * 期待するメッセージIDと実際のメッセージIDが同一である場合、アサーションOKとなること。
+     /**
+     * Assertion.AsMessageContentのインスタンスを取得できること。
      */
     @Test
-    public void assertOKWhenIdenticalMessageId() {
-        // setup
-        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "MSG00012");
+    public void isInstanceOfAsMessageContent() {
+        // setup, execute
+        Assertion.EquivCondition<Message, Message> condition = sut.getEquivCondition();
+        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("msg1", "value1"));
+        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("msg2", "value2"));
+        Message message3 = new Message(MessageLevel.ERROR, new MockStringResource("msg1", "value2"));
 
-        // execute
-        sut.assertMessageEquals("", "MSG00012", actualMessage);
-
+        // verify
+        assertTrue(condition.isEquivalent(message1, message3));
+        assertFalse(condition.isEquivalent(message2, message3));
     }
 
-    /**
-     * 期待するメッセージIDと実際のメッセージIDが一致しない場合、アサーションNGとなること。
-     */
-    @Test
-    public void assertFailWhenDifferentMessageId() {
-        // setup
-        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "MSG00012");
 
-        expectedException.expect(AssertionError.class);
-        expectedException.expectMessage("assertion message.");
+    private static class MockStringResource implements StringResource {
 
-        // execute
-        sut.assertMessageEquals("assertion message.", "MSG90012", actualMessage);
+        private final String id;
+        private final String value;
 
+        public MockStringResource(String id, String value) {
+            this.id = id;
+            this.value = value;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public String getValue(Locale locale) {
+            return value;
+        }
     }
 
+    public static class SampleEntity {
+        @Length(max = 20)
+        @AsciiChar
+        public void setAscii(String s) {
+        }
+
+        @Required
+        @NumberChar
+        public void setNumber(String s) {
+        }
+    }
 }

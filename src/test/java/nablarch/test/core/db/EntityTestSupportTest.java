@@ -36,7 +36,10 @@ public class EntityTestSupportTest {
     /** テスト対象 */
     private EntityTestSupport support = new EntityTestSupport(getClass());
 
-    private static final String[][] MESSAGES = {{"MSG00010", "ja", "message", "en", "message"}};
+    private static final String[][] MESSAGES = {
+            {"MSG00010", "ja", "message", "en", "message"},
+            {"MSG90010", "ja", "messageFoo", "en", "messageBar"}
+    };
 
     /** {@link EntityTestSupport#testSetterAndGetter(java.lang.Class, java.lang.String, java.lang.String)}のテスト。 */
     @Test
@@ -79,6 +82,47 @@ public class EntityTestSupportTest {
         expectedException.expectMessage("This method cannot be used to test bean validation.");
 
         support.testValidateAndConvert(FugaEntity.class, "testValidateAndConvert", null);
+    }
+
+    /**
+     * {@link EntityTestSupport#testBeanValidation(String, Class, String)}のテスト。
+     */
+    @Test
+    public void testTestBeanValidation() {
+        repositoryResource.getComponentByType(MockStringResourceHolder.class)
+                          .setMessages(MESSAGES);
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                          .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        support.testBeanValidation(FugaBean.class, "testValidateAndConvert");
+    }
+
+    /**
+     * {@link EntityTestSupport#testBeanValidation(String, Class, String)}のテスト。
+     */
+    @Test
+    public void testTestBeanValidationWithGroup() {
+        repositoryResource.getComponentByType(MockStringResourceHolder.class)
+                          .setMessages(MESSAGES);
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                          .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        support.testBeanValidation(FugaBean.class, "testValidateAndConvertWithGroup");
+    }
+
+    /**
+     * {@link EntityTestSupport#testValidateAndConvert(Class, String, String)}のテスト。
+     * {@link ValidationTestStrategy}に{@link BeanValidationTestStrategy}を設定している場合、例外が送出されること。
+     */
+    @Test
+    public void testTestBeanValidationWithInvalidValidationTestStrategy() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                          .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("This method cannot be used to test nablarch validation.");
+
+        support.testBeanValidation(FugaEntity.class, "");
     }
 
     @Test
@@ -353,6 +397,32 @@ public class EntityTestSupportTest {
         public void setUserName(String userName) {
             this.userName = userName;
         }
+    }
+
+    public static class FugaBean {
+
+        @nablarch.core.validation.ee.Required.List({
+                @nablarch.core.validation.ee.Required(message = "{MSG00010}"),
+                @nablarch.core.validation.ee.Required(message = "{MSG00010}", groups = Test1.class)
+        })
+        private String userName;
+
+        public FugaBean() {
+        }
+
+        public FugaBean(Map<String, Object> params) {
+            userName = (String) params.get("userName");
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        public void setUserName(String userName) {
+            this.userName = userName;
+        }
+
+        public interface Test1{};
     }
 
     public static class HogeEntity {

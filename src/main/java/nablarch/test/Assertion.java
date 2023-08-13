@@ -3,6 +3,7 @@ package nablarch.test;
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.db.statement.SqlResultSet;
 import nablarch.core.db.statement.SqlRow;
+import nablarch.core.message.Message;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
@@ -373,7 +374,20 @@ public final class Assertion {
      * @param actual   実際の値
      */
     public static <T> void assertEqualsIgnoringOrder(String message, Collection<T> expected, Collection<T> actual) {
-        new AssertionIgnoringOrder<T, T>(message, expected, actual).doAssert();
+        assertEqualsIgnoringOrder(new AsIdentical<T, T>(), message, expected, actual);
+    }
+
+    /**
+     * 要素の順序を考慮しないで、２つのコレクションが等価な要素を保持していることを表明する。<br/>
+     *
+     * @param <T>      コレクションの総称型
+     * @param message  メッセージ
+     * @param expected 期待する値
+     * @param actual   実際の値
+     */
+    public static <T> void assertEqualsIgnoringOrder(EquivCondition<T,T> equivCondition, String message,
+                                                     Collection<T> expected, Collection<T> actual) {
+        new AssertionIgnoringOrder<T, T>(message, expected, actual).doAssert(equivCondition);
     }
 
     /**
@@ -446,12 +460,7 @@ public final class Assertion {
 
         /** アサートを実行する。 */
         void doAssert() {
-            doAssert(new EquivCondition<E, A>() {
-                /** {@inheritDoc} */
-                public boolean isEquivalent(E expected, A actual) {
-                    return expected.equals(actual);
-                }
-            });
+            doAssert(new AsIdentical<E, A>());
         }
 
         /**
@@ -504,7 +513,7 @@ public final class Assertion {
      * @param <E> 期待値の型
      * @param <A> 実際の値の型
      */
-    static interface EquivCondition<E, A> {
+    public interface EquivCondition<E, A> {
         /**
          * 等価であるか判定する。
          * @param expected 期待値
@@ -526,6 +535,17 @@ public final class Assertion {
             Map<?, ?> sortedExpected = wrap(expected);
             Map<?, ?> sortedActual = wrap(actual);
             return sortedExpected.toString().equals(sortedActual.toString());
+        }
+    }
+
+    /**
+     * {@link Message}のメッセージ内容が同一であるか判定する{@link EquivCondition}実装クラス。
+     */
+    public static class AsIdentical<E, A> implements EquivCondition<E, A> {
+
+        /** {@inheritDoc} */
+        public boolean isEquivalent(E expected, A actual) {
+            return expected.equals(actual);
         }
     }
 
@@ -693,15 +713,29 @@ public final class Assertion {
      * @throws ComparisonFailure 等価でなかった場合
      */
     public static void assertEquals(String msg, Object expected, Object actual) throws ComparisonFailure {
+        assertEquals(new AsIdentical<Object, Object>(), msg, expected, actual);
+    }
+
+    /**
+     * 期待値と実際の値が等価であることを表明する。<br/>
+     * 等価でなかった場合は、デバッグを容易にするため
+     * AssertionErrorではなくComparisonFailureをスローする。
+     *
+     * @param msg      比較失敗時のメッセージ
+     * @param expected 期待値
+     * @param actual   実際の値
+     * @throws ComparisonFailure 等価でなかった場合
+     */
+    public static <E, A> void assertEquals(EquivCondition<E, A> equivCondition, String msg,
+                                           E expected, A actual) throws ComparisonFailure {
         if (expected == actual) {
             return;
         }
         assertNotXorNull(msg, expected, actual);
-        if (!expected.equals(actual)) {
+        if (!equivCondition.isEquivalent(expected, actual)) {
             failComparing(msg, expected, actual);
         }
     }
-
 
     /**
      * プライベートコンストラクタ<br/>

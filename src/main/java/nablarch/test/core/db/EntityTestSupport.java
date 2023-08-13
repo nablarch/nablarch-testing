@@ -18,20 +18,16 @@ import java.util.TreeSet;
 
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MessageUtil;
 import nablarch.core.message.StringResource;
 import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
-import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
-import nablarch.test.core.entity.CharsetTestVariation;
-import nablarch.test.core.entity.EntityTestConfiguration;
-import nablarch.test.core.entity.NablarchValidationTestStrategy;
-import nablarch.test.core.entity.SingleValidationTester;
-import nablarch.test.core.entity.ValidationTestStrategy;
+import nablarch.test.core.entity.*;
 import nablarch.test.event.TestEventDispatcher;
 
 import static nablarch.core.util.Builder.concat;
@@ -64,6 +60,9 @@ public class EntityTestSupport extends TestEventDispatcher {
 
     /** 期待するメッセージIDのプレフィクス */
     private static final String MSG_ID_PREFIX = "expectedMessageId";
+
+    /** 期待するメッセージ本文のプレフィクス */
+    private static final String MSG_CONTENT_PREFIX = "expectedMessageContent";
 
     /** プロパティ名のプレフィックス */
     private static final String PROP_NAME_PREFIX = "propertyName";
@@ -130,7 +129,6 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(String, Class, Map, String)
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
@@ -139,6 +137,39 @@ public class EntityTestSupport extends TestEventDispatcher {
             throw new IllegalArgumentException("This method cannot be used to test bean validation.");
         }
 
+        testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, validateFor);
+    }
+
+    /**
+     * バリデーションテストを実行する。
+     *
+     * @param entityClass バリデーション対象のエンティティのクラス
+     * @param sheetName   シート名
+     * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     */
+    public <T> void testBeanValidation(Class<T> entityClass, String sheetName) {
+        testBeanValidation(null, entityClass, sheetName);
+    }
+
+    /**
+     * バリデーションテストを実行する。
+     *
+     * @param prefix      パラメータのMapに入ったキーのプレフィクス
+     * @param entityClass バリデーション対象のエンティティのクラス
+     * @param sheetName   シート名
+     * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     */
+    public <T> void testBeanValidation(String prefix, Class<T> entityClass, String sheetName) {
+        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+
+        if (!(validationTestStrategy instanceof BeanValidationTestStrategy)) {
+            throw new IllegalArgumentException("This method cannot be used to test nablarch validation.");
+        }
+
+        testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, null);
+    }
+
+    private <T> void testValidateAllParameters(ValidationTestStrategy strategy, String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         // テストケース表
         List<Map<String, String>> testCases = getTestCasesFromSheet(sheetName);
 
@@ -151,12 +182,16 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 全テストケース実行
         for (int i = 0; i < testCases.size(); i++) {
             Map<String, String> testCase = testCases.get(i);
+
+            // Bean Validationのグループ取得
+            Class<?> group = strategy.getGroupFromTestCase(
+                    testCase.get(GROUP_NAME), getListMap(sheetName, testCase.remove(PACKAGE_KEY)));
             Map<String, String[]> httpParams = httpParamsList.get(i);
             // バリデーション実行
-            ValidationContext<T> ctx =
-                    ValidationUtil.validateAndConvertRequest(prefix, entityClass, httpParams, validateFor);
+            ValidationTestContext ctx =
+                    strategy.validateParameters(prefix, entityClass, group, validateFor, httpParams);
             // メッセージID確認
-            assertMessageEquals(testCase, ctx);
+            assertMessageEquals(strategy, testCase, ctx);
         }
     }
 
@@ -227,10 +262,11 @@ public class EntityTestSupport extends TestEventDispatcher {
     /**
      * メッセージが等しいことを表明する。
      *
-     * @param aTestCase テストケース（テストケース表の1行）
-     * @param ctx       バリデーション結果
+     * @param validationTestStrategy テスト用バリデーションストラテジ
+     * @param aTestCase              テストケース（テストケース表の1行）
+     * @param ctx                    バリデーション結果
      */
-    private void assertMessageEquals(Map<String, String> aTestCase, ValidationContext<?> ctx) {
+    private void assertMessageEquals(ValidationTestStrategy validationTestStrategy, Map<String, String> aTestCase, ValidationTestContext ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
@@ -240,7 +276,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         List<Message> actual = ctx.getMessages();
 
         // 比較失敗時に原因がわかりやすいようにソートして比較。
-        Assertion.assertEqualsIgnoringOrder(msg,
+        Assertion.assertEqualsIgnoringOrder(validationTestStrategy.getEquivCondition(), msg,
                                             MessageComparator.sort(expected),
                                             MessageComparator.sort(actual));
     }
@@ -260,7 +296,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             if (StringUtil.isNullOrEmpty(msgId)) {
                 break;
             }
-            StringResource stringResource = new StringMessageMock(msgId);
+            StringResource stringResource = MessageUtil.getStringResource(msgId);
             Message msg = StringUtil.isNullOrEmpty(prop)
                     ? new Message(MessageLevel.ERROR, stringResource, new Object[0])
                     : new ValidationResultMessage(prop, stringResource, null);
@@ -278,35 +314,6 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     private String createMessageOnFailure(Map<String, String> testCase) {
         return concat("Case [", testCase.get(TEST_TITLE), "]");
-    }
-
-    /** テスト用StringResource実装クラス */
-    static class StringMessageMock implements StringResource {
-
-        /** ID */
-        private final String id;
-
-        /**
-         * コンストラクタ
-         *
-         * @param id ID
-         */
-        StringMessageMock(String id) {
-            this.id = id;
-        }
-
-        /** {@inheritDoc} */
-        public String getId() {
-            return id;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 使用不可
-         */
-        public String getValue(Locale locale) {
-            throw new UnsupportedOperationException();
-        }
     }
 
 

@@ -10,6 +10,7 @@ import nablarch.core.message.MessageUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
+import nablarch.test.Assertion;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
@@ -21,6 +22,12 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 public class BeanValidationTestStrategy implements ValidationTestStrategy{
+
+    private final Assertion.EquivCondition<Message, Message> condition;
+
+    public BeanValidationTestStrategy() {
+        condition = new AsMessageContent();
+    }
 
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, Class<?> group, String[] paramValues) {
@@ -38,6 +45,35 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         List<Message> messages = new ConstraintViolationConverterFactory().create("").convert(result);
 
         return new ValidationTestContext(messages);
+    }
+
+    @Override
+    public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Class<?> group, String notUse, Map<String, String[]> params) {
+        // 入力値 (キーがprefixから始まるもののみ)
+        Map<String, String[]> convertedParams;
+
+        if(StringUtil.isNullOrEmpty(prefix)) {
+            convertedParams = params;
+        } else {
+            String innerPrefix = prefix + ".";
+            convertedParams = new HashMap<String, String[]>();
+            for (Map.Entry<String, String[]> entry : params.entrySet()) {
+                if (entry.getKey().startsWith(innerPrefix)) {
+                    convertedParams.put(entry.getKey().substring(innerPrefix.length()), entry.getValue());
+                }
+            }
+        }
+
+        Object bean = formFactory.create(entityClass);
+        BeanUtil.copy(entityClass, bean, convertedParams, CopyOptions.empty());
+
+        Set<ConstraintViolation<Object>> result =
+                ValidatorUtil.getValidator().validate(bean, group != null ? group : Default.class);
+
+        List<Message> messages = new ConstraintViolationConverterFactory().create("").convert(result);
+
+        return new ValidationTestContext(messages);
+
     }
 
     /** BeanValidationのグループが属するパッケージ名のキー */
@@ -77,14 +113,23 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
      * Bean ValidationではメッセージIDによる同一性の確認ができないため、メッセージ本文が同一であるかを検証する。
      */
     @Override
-    public void assertMessageEquals(String msgOnFail, String expectedMessageId, Message actualMessage) {
-        String expectedFormatMessage = MessageUtil.createMessage(MessageLevel.ERROR, expectedMessageId).formatMessage();
-        String actualFormatMessage = actualMessage.formatMessage();
-
-        assertEquals(msgOnFail, expectedFormatMessage, actualFormatMessage);
+    public Assertion.EquivCondition<Message, Message> getEquivCondition() {
+        return condition;
     }
 
     /** フォームファクトリ。 */
     private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
 
+    /**
+     * {@link Message}のメッセージ本文が同一であるか判定する{@link Assertion.EquivCondition}実装クラス。
+     */
+    private static class AsMessageContent implements Assertion.EquivCondition<Message, Message> {
+
+        /** {@inheritDoc} */
+        public boolean isEquivalent(Message expected, Message actual) {
+            final String expectedContent = expected.formatMessage();
+            final String actualContent = actual.formatMessage();
+            return expectedContent.equals(actualContent);
+        }
+    }
 }

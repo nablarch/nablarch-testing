@@ -1,6 +1,10 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MessageUtil;
+import nablarch.core.validation.ValidationResultMessage;
+import nablarch.test.Assertion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,8 +83,9 @@ public class SingleValidationTester<ENTITY> {
             //-- 異常系 --
             // バリデーションが失敗していること
             assertFalse(msgOnFail, ctx.isValid());
-            // メッセージIDが期待通りであること
-            validationStrategy.assertMessageEquals(msgOnFail, expectedMessageId, actualMessages.get(0));
+            // メッセージが期待通りであること
+            Message expectedMessage = MessageUtil.createMessage(MessageLevel.ERROR, expectedMessageId);
+            Assertion.assertEquals(validationStrategy.getEquivCondition(), msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
             // バリデーションが成功していること

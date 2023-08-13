@@ -1,9 +1,10 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.message.Message;
-import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
-import nablarch.core.message.MockStringResourceHolder;
+import nablarch.core.message.*;
+import nablarch.core.validation.ee.Length;
+import nablarch.core.validation.ee.Required;
+import nablarch.core.validation.ee.SystemChar;
+import nablarch.test.Assertion;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,7 +49,7 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(TestBean.class, "numberMax", null, paramValues);
+                sut.invokeValidation(SampleBean.class, "number", null, paramValues);
 
         // verify
         assertTrue(context.isValid());
@@ -64,7 +65,7 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(TestBean.class, "numberMax", null, paramValues);
+                sut.invokeValidation(SampleBean.class, "number", null, paramValues);
 
         // verify
         assertFalse(context.isValid()); // バリデーションはNGのはず
@@ -81,10 +82,85 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(TestBean.class, "numberMax", TestBean.Test1.class, paramValues);
+                sut.invokeValidation(SampleBean.class, "number", SampleBean.Test1.class, paramValues);
 
         // verify
         assertFalse(context.isValid()); // バリデーションはNGのはず
+    }
+
+    private final String digits50 = "01234567890123456789012345678901234567890123456789";
+    private final String digits20 = "01234567890123456789";
+    private final String digits10 = "0123456789";
+
+    /**
+     * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     */
+    @Test
+    public void testAllValidateWithValidParameters() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("number", new String[]{digits20});  // 半角数字, 20文字以下
+        httpParams.put("ascii", new String[]{"abcdef"});   // ascii文字
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("", SampleBean.class, null, null, httpParams);
+
+        // verify
+        assertTrue(context.isValid());
+    }
+
+    /**
+     * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     * プレフィクスを指定したパラメータのみ、Beanに設定されること。
+     */
+    @Test
+    public void testAllValidateWithValidParametersAndPrefix() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("number", new String[]{digits50});      // 不正な値だがプレフィクスがないのでBeanに設定されない
+        httpParams.put("form.ascii", new String[]{"abcdef"});  // ascii文字
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("form", SampleBean.class, null, null, httpParams);
+
+        // verify
+        assertTrue(context.isValid());
+    }
+
+    /**
+     * いずれかのプロパティの値が不正であるとき、バリデーションに失敗すること。
+     */
+    @Test
+    public void testAllValidateWithInvalidParameters() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("number", new String[]{digits50});  // 半角数字, 20文字以下である必要があるが50文字の値を指定
+        httpParams.put("ascii", new String[]{"abcdef"});   // ascii文字
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("", SampleBean.class, null, null, httpParams);
+
+        // verify
+        assertFalse(context.isValid());
+        assertEquals(1, context.getMessages().size());
+        assertEquals("{0}は{2}文字以下で入力して下さい。", context.getMessages().get(0).formatMessage());
+    }
+
+    /**
+     * Test1グループですべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     */
+    @Test
+    public void testAllValidateWithValidParametersOnTest1Group() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("number", new String[]{digits10});    // 半角数字, 10文字以下
+        httpParams.put("ascii", new String[]{"abcdef"});     // 半角英字
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("", SampleBean.class, SampleBean.Test1.class, null, httpParams);
+
+        // verify
+        assertTrue(context.isValid());
     }
 
     /**
@@ -106,10 +182,10 @@ public class BeanValidationTestStrategyTest {
         packageListMap.add(packageMap);
 
         // execute
-        Class<?> group = sut.getGroupFromTestCase("TestBean$Test1", packageListMap);
+        Class<?> group = sut.getGroupFromTestCase("BeanValidationTestStrategyTest$SampleBean$Test1", packageListMap);
 
         // verify
-        assertEquals(TestBean.Test1.class, group);
+        assertEquals(SampleBean.Test1.class, group);
 
     }
 
@@ -123,7 +199,7 @@ public class BeanValidationTestStrategyTest {
         expectedException.expectMessage("Both the groupName and packageKey must be specified. Otherwise, both must be unspecified.");
 
         // execute
-        sut.getGroupFromTestCase("TestBean$Test1", new ArrayList<Map<String, String>>());
+        sut.getGroupFromTestCase("SampleBean$Test1", new ArrayList<Map<String, String>>());
     }
 
     /**
@@ -159,7 +235,7 @@ public class BeanValidationTestStrategyTest {
         expectedException.expectMessage("PACKAGE_NAME is required for the package name LIST_MAP.");
 
         // execute
-        sut.getGroupFromTestCase("TestBean$Test1", packageListMap);
+        sut.getGroupFromTestCase("SampleBean$Test1", packageListMap);
     }
 
     /**
@@ -174,38 +250,86 @@ public class BeanValidationTestStrategyTest {
         packageListMap.add(packageMap);
 
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Non-existent class is specified for bean validation group. Specified FQCN is foo.bar.baz.qux.TestBean$Test1");
+        expectedException.expectMessage("Non-existent class is specified for bean validation group. Specified FQCN is foo.bar.baz.qux.Sample$Test1");
 
         // execute
-        sut.getGroupFromTestCase("TestBean$Test1", packageListMap);
+        sut.getGroupFromTestCase("Sample$Test1", packageListMap);
     }
 
     /**
-     * 期待するメッセージと実際のメッセージが同一である場合、アサーションOKとなること。
+     * Assertion.AsMessageContentのインスタンスを取得できること。
      */
     @Test
-    public void assertOKWhenIdenticalMessage() {
-        // setup
-        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "nablarch.core.validation.ee.Length.max.message");
+    public void isInstanceOfAsMessageContent() {
+        // setup, execute
+        Assertion.EquivCondition<Message, Message> condition = sut.getEquivCondition();
+        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("msg1", "value1"));
+        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("msg2", "value2"));
+        Message message3 = new Message(MessageLevel.ERROR, new MockStringResource("msg1", "value2"));
 
-        // execute
-        sut.assertMessageEquals("", "nablarch.core.validation.ee.Length.max.message", actualMessage);
-
+        // verify
+        assertTrue(condition.isEquivalent(message2, message2));
+        assertFalse(condition.isEquivalent(message1, message3));
     }
 
-    /**
-     * 期待するメッセージと実際のメッセージが一致しない場合、アサーションNGとなること。
-     */
-    @Test
-    public void assertFailWhenDifferentMessage() {
-        // setup
-        Message actualMessage = MessageUtil.createMessage(MessageLevel.ERROR, "nablarch.core.validation.ee.Length.max.message");
 
-        expectedException.expect(AssertionError.class);
-        expectedException.expectMessage("assertion message.");
+    private static class MockStringResource implements StringResource {
 
-        // execute
-        sut.assertMessageEquals("assertion message.", "nablarch.core.validation.ee.SystemChar.message", actualMessage);
+        private final String id;
+        private final String value;
+
+        public MockStringResource(String id, String value) {
+            this.id = id;
+            this.value = value;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public String getValue(Locale locale) {
+            return value;
+        }
+    }
+
+    public static class SampleBean {
+        @Length.List({
+                @Length(max = 20),
+                @Length(max = 10, groups = Test1.class, message = "{MSG00024}")
+        })
+        @SystemChar(charsetDef = "半角数字")
+        private String number;
+
+        @Required.List({
+                @Required,
+                @Required(groups = Test1.class, message = "{MSG00010}")
+        })
+        @SystemChar(charsetDef = "ASCII文字")
+        private String ascii;
+
+        public SampleBean() {
+        }
+
+        public String getNumber() {
+            return number;
+        }
+
+        public void setNumber(String number) {
+            this.number = number;
+        }
+
+        public String getAscii() {
+            return ascii;
+        }
+
+        public void setAscii(String ascii) {
+            this.ascii = ascii;
+        }
+
+        public interface Test1 {
+        }
 
     }
 }
