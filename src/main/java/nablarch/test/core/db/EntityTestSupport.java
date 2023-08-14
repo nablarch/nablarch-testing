@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -184,8 +183,8 @@ public class EntityTestSupport extends TestEventDispatcher {
             Map<String, String> testCase = testCases.get(i);
 
             // Bean Validationのグループ取得
-            Class<?> group = strategy.getGroupFromTestCase(
-                    testCase.get(GROUP_NAME), getListMap(sheetName, testCase.remove(PACKAGE_KEY)));
+            String groupKey = testCase.remove(GROUP_KEY);
+            Class<?> group = strategy.getGroupFromTestCase(groupKey, getListMap(sheetName, groupKey));
             Map<String, String[]> httpParams = httpParamsList.get(i);
             // バリデーション実行
             ValidationTestContext ctx =
@@ -664,11 +663,15 @@ public class EntityTestSupport extends TestEventDispatcher {
     public <ENTITY> void testValidateCharsetAndLength(
             Class<ENTITY> targetClass, String sheetName, String id) {
 
+        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
         for (Map<String, String> testData : testDataList) {
-            List<Map<String, String>> packageListMap = getListMap(sheetName, testData.remove(PACKAGE_KEY));
+
+            String groupKey = testData.remove(GROUP_KEY);
+            Class<?> group = validationTestStrategy.getGroupFromTestCase(groupKey, getListMap(sheetName, groupKey));
             CharsetTestVariation<ENTITY> tester
-                    = new CharsetTestVariation<ENTITY>(targetClass, testData, packageListMap);
+                    = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
             tester.testAll();
         }
     }
@@ -696,10 +699,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             ));
 
     /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String PACKAGE_KEY = "packageKey";
-
-    /** BeanValidationのグループのクラス名 */
-    private static final String GROUP_NAME = "groupName";
+    private static final String GROUP_KEY = "groupKey";
 
     /**
      * 単項目のバリデーションテストをする。
@@ -722,9 +722,8 @@ public class EntityTestSupport extends TestEventDispatcher {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
-            String groupName = row.get(GROUP_NAME);
-            List<Map<String, String>> packageListMap = getListMap(sheetName, row.get(PACKAGE_KEY));
-            Class<?> group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
+            String groupKey = row.get(GROUP_KEY);
+            Class<?> group = validationTestStrategy.getGroupFromTestCase(groupKey, getListMap(sheetName, groupKey));
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
                     .testSingleValidation(group, input, messageId);
         }

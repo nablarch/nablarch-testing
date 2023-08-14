@@ -56,7 +56,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
      * Nablarch Validationではグループを使用しないため、常にnullを返却する。
      */
     @Override
-    public Class<?> getGroupFromTestCase(String groupName, List<Map<String, String>> packageListMap) {
+    public Class<?> getGroupFromTestCase(String groupKey, List<Map<String, String>> groupListMap) {
         return null;
     }
 

@@ -161,83 +161,75 @@ public class NablarchValidationTestStrategyTest {
     }
 
     /**
-     * グループ名、パッケージ名マップの両者が空の場合は、nullを返却すること。
-     */
-    @Test
-    public void getGroupFromTestCase() {
-        assertNull(sut.getGroupFromTestCase(null, null));
-    }
-
-    /**
-     * グループ名、パッケージ名が両者とも正しく指定されている場合は、nullを返却すること。
+     * グループのキー値、グループのリストマップが両者とも正しく指定されている場合は、nullを返却すること。
      */
     @Test
     public void getGroupClassFromTestCase() {
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("PACKAGE_NAME", "nablarch.test.core.entity");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
         // execute, verify
-        assertNull(sut.getGroupFromTestCase("TestBean$Test1", packageListMap));
+        assertNull(sut.getGroupFromTestCase("test", groupListMap));
     }
 
     /**
-     * グループ名のみ指定されている場合は、nullを返却すること。
+     * グループのキー値のみ指定されている場合は、nullが返却されること。
      */
     @Test
-    public void thrownWhenOnlyGroupNameSpecified() {
+    public void thrownWhenOnlyGroupKeySpecified() {
         // execute, verify
-        assertNull(sut.getGroupFromTestCase("TestBean$Test1", new ArrayList<Map<String, String>>()));
+        assertNull(sut.getGroupFromTestCase("test1", new ArrayList<Map<String, String>>()));
     }
 
     /**
-     * パッケージリストマップのみ指定されている場合は、nullを返却すること。
+     * グループのキー値が空の場合は、nullが返却されること。
      */
     @Test
-    public void thrownWhenOnlyPackageListMapSpecified() {
+    public void nullWhenGroupKeyNotSpecified() {
         // setup
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("PACKAGE_NAME", "nablarch.test.core.entity");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
-        // execute, verify
-        assertNull(sut.getGroupFromTestCase(null, packageListMap));
+        // execute
+        assertNull(sut.getGroupFromTestCase(null, groupListMap));
     }
 
     /**
-     * 不正なフォーマットのリストマップが指定された場合、nullを返却すること。
+     * 不正なフォーマットのリストマップが指定された場合、nullが返却されること。
      */
     @Test
     public void thrownWhenInvalidListMapSpecified() {
         // setup
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("HOGE_NAME", "nablarch.test.core.entity");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("HOGE_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
         // execute, verify
-        assertNull(sut.getGroupFromTestCase("TestBean$Test1", packageListMap));
+        assertNull(sut.getGroupFromTestCase("test1", groupListMap));
     }
 
     /**
-     * 存在しないクラスのFQCNを指定した場合、nullを返却すること。
+     * 存在しないクラスのFQCNを指定した場合、nullが返却されること。
      */
     @Test
     public void thrownWhenNonExistentClassSpecified() {
         // setup
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("PACKAGE_NAME", "foo.bar.baz.qux");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("GROUP_NAME", "foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
         // execute, verify
-        assertNull(sut.getGroupFromTestCase("TestBean$Test1", packageListMap));
+        assertNull(sut.getGroupFromTestCase("test1", groupListMap));
     }
 
      /**
-     * Assertion.AsMessageContentのインスタンスを取得できること。
+     * Assertion.AsMessageIDのインスタンスを取得できること。
      */
     @Test
     public void isInstanceOfAsMessageContent() {

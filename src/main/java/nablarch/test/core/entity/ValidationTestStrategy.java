@@ -36,11 +36,13 @@ public interface ValidationTestStrategy {
     /**
      * Bean Validationのグループを検索し、取得する。
      *
-     * @param groupName BeanValidationのグループのクラス名
-     * @param packageListMap パッケージ情報のList-Map
+     * {@code groupListMap}は、テストシートより{@code groupKey}をキーとして取得したList-Mapでなければならない。
+     *
+     * @param groupKey グループ情報のList-Map名
+     * @param groupListMap グループ情報のList-Map内容
      * @return Bean Validationのグループ
      */
-    Class<?> getGroupFromTestCase(String groupName, List<Map<String, String>> packageListMap);
+    Class<?> getGroupFromTestCase(String groupKey, List<Map<String, String>> groupListMap);
 
     /**
      * {@link Message}の同一性条件を返却する。

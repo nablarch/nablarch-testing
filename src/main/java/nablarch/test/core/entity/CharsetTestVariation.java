@@ -86,7 +86,7 @@ public class CharsetTestVariation<ENTITY> {
      * @param entityClass テスト対象エンティティクラス
      * @param testData    テストデータ
      */
-    public CharsetTestVariation(Class<ENTITY> entityClass, Map<String, String> testData, List<Map<String, String>> packageListMap) {
+    public CharsetTestVariation(Class<ENTITY> entityClass, Class<?> group, Map<String, String> testData) {
 
         // 引数を破壊しないようにシャローコピー
         testData = new HashMap<String, String>(testData);
@@ -104,10 +104,11 @@ public class CharsetTestVariation<ENTITY> {
         // 文字種バリデーション失敗時のメッセージID
         messageIdWhenNotApplicable = testData.remove(MESSAGE_ID_WHEN_NOT_APPLICABLE);
         // 最長桁数（Nablarch Validationで最長桁数が指定されていない場合は実行時エラーとする）
-        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+
         String maxStr = testData.remove(MAX);
         isMaxEmpty = isNullOrEmpty(maxStr);
-        if(validationTestStrategy instanceof NablarchValidationTestStrategy && isMaxEmpty) {
+        if(isMaxEmpty &&
+                EntityTestConfiguration.getConfig().getValidationTestStrategy() instanceof NablarchValidationTestStrategy) {
             // Nablarch Validationでは最大桁数の指定が必須。Bean Validationでは任意項目。
             throw new IllegalArgumentException("When using Nablarch validation, max must be specified.");
         }
@@ -120,8 +121,7 @@ public class CharsetTestVariation<ENTITY> {
                 : Integer.parseInt(minStr);
 
         // Bean Validationのグループ
-        String groupName = testData.remove(GROUP_NAME);
-        this.group = validationTestStrategy.getGroupFromTestCase(groupName, packageListMap);
+        this.group = group;
 
         // 残りのデータ
         this.testData = testData;

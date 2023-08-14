@@ -5,8 +5,6 @@ import nablarch.common.web.validator.SimpleReflectionBeanValidationFormFactory;
 import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
-import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
@@ -77,30 +75,30 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     }
 
     /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String PACKAGE_NAME = "PACKAGE_NAME";
+    private static final String GROUP_NAME = "GROUP_NAME";
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Class<?> getGroupFromTestCase(String groupName, List<Map<String, String>> packageListMap) {
+    public Class<?> getGroupFromTestCase(String groupKey, List<Map<String, String>> groupListMap) {
 
-        if ((!StringUtil.isNullOrEmpty(groupName) && packageListMap.isEmpty())
-                || (StringUtil.isNullOrEmpty(groupName) && !packageListMap.isEmpty())) {
-            throw new IllegalArgumentException("Both the groupName and packageKey must be specified. Otherwise, both must be unspecified.");
+        if (!StringUtil.isNullOrEmpty(groupKey) && groupListMap.isEmpty()) {
+            throw new IllegalArgumentException("Group LIST_MAP was not found. name = [" + groupKey + "]");
         }
 
-        // 両方空ならnullを返す
-        if (packageListMap.isEmpty()) {
+        // groupKeyが空なら、グループ情報が指定されなかったということなのでnullを返却する。
+        if (StringUtil.isNullOrEmpty(groupKey)) {
             return null;
         }
 
-        Map<String, String> packageMap = packageListMap.get(0);
-        if(!packageMap.containsKey(PACKAGE_NAME)) {
-            throw new IllegalArgumentException("PACKAGE_NAME is required for the package name LIST_MAP.");
+        // 上記以外の場合は、必ずgroupListMapは空ではない。
+        Map<String, String> packageMap = groupListMap.get(0);
+        if(!packageMap.containsKey(GROUP_NAME)) {
+            throw new IllegalArgumentException("GROUP_NAME is required for the group name LIST_MAP.");
         }
 
-        String FQCN = packageMap.get(PACKAGE_NAME) + "." + groupName;
+        String FQCN = packageMap.get(GROUP_NAME);
         try {
             return Class.forName(FQCN);
         } catch (ClassNotFoundException e) {

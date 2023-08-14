@@ -164,25 +164,17 @@ public class BeanValidationTestStrategyTest {
     }
 
     /**
-     * グループ名、パッケージ名マップの両者が空の場合は、nullを返却すること。
-     */
-    @Test
-    public void getNullFromTestCase() {
-        assertNull(sut.getGroupFromTestCase(null, new ArrayList<Map<String, String>>()));
-    }
-
-    /**
-     * グループ名、パッケージ名が両者とも正しく指定されている場合は、グループクラスを返却すること。
+     * グループのキー値、グループのリストマップが両者とも正しく指定されている場合は、グループクラスを返却すること。
      */
     @Test
     public void getGroupClassFromTestCase() {
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("PACKAGE_NAME", "nablarch.test.core.entity");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
         // execute
-        Class<?> group = sut.getGroupFromTestCase("BeanValidationTestStrategyTest$SampleBean$Test1", packageListMap);
+        Class<?> group = sut.getGroupFromTestCase("test1", groupListMap);
 
         // verify
         assertEquals(SampleBean.Test1.class, group);
@@ -190,34 +182,31 @@ public class BeanValidationTestStrategyTest {
     }
 
     /**
-     * グループ名のみ指定されている場合は、例外が送出されること。
+     * グループのキー値のみ指定されている場合は、例外が送出されること。
      */
     @Test
-    public void thrownWhenOnlyGroupNameSpecified() {
+    public void thrownWhenOnlyGroupKeySpecified() {
         // setup
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Both the groupName and packageKey must be specified. Otherwise, both must be unspecified.");
+        expectedException.expectMessage("Group LIST_MAP was not found. name = [test1]");
 
         // execute
-        sut.getGroupFromTestCase("SampleBean$Test1", new ArrayList<Map<String, String>>());
+        sut.getGroupFromTestCase("test1", new ArrayList<Map<String, String>>());
     }
 
     /**
-     * パッケージリストマップのみ指定されている場合は、例外が送出されること。
+     * グループのキー値が空の場合は、nullが返却されること。
      */
     @Test
-    public void thrownWhenOnlyPackageListMapSpecified() {
+    public void nullWhenGroupKeyNotSpecified() {
         // setup
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("PACKAGE_NAME", "nablarch.test.core.entity");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Both the groupName and packageKey must be specified. Otherwise, both must be unspecified.");
-
-        // execute
-        sut.getGroupFromTestCase(null, packageListMap);
+        // execute, verify
+        assertNull(sut.getGroupFromTestCase(null, groupListMap));
     }
 
     /**
@@ -226,16 +215,16 @@ public class BeanValidationTestStrategyTest {
     @Test
     public void thrownWhenInvalidListMapSpecified() {
         // setup
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("HOGE_NAME", "nablarch.test.core.entity");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("HOGE_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("PACKAGE_NAME is required for the package name LIST_MAP.");
+        expectedException.expectMessage("GROUP_NAME is required for the group name LIST_MAP.");
 
         // execute
-        sut.getGroupFromTestCase("SampleBean$Test1", packageListMap);
+        sut.getGroupFromTestCase("test1", groupListMap);
     }
 
     /**
@@ -244,16 +233,16 @@ public class BeanValidationTestStrategyTest {
     @Test
     public void thrownWhenNonExistentClassSpecified() {
         // setup
-        Map<String, String> packageMap = new HashMap<String, String>();
-        packageMap.put("PACKAGE_NAME", "foo.bar.baz.qux");
-        List<Map<String, String>> packageListMap = new ArrayList<Map<String, String>>();
-        packageListMap.add(packageMap);
+        Map<String, String> groupMap = new HashMap<String, String>();
+        groupMap.put("GROUP_NAME", "foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
+        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
+        groupListMap.add(groupMap);
 
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Non-existent class is specified for bean validation group. Specified FQCN is foo.bar.baz.qux.Sample$Test1");
+        expectedException.expectMessage("Non-existent class is specified for bean validation group. Specified FQCN is foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
 
         // execute
-        sut.getGroupFromTestCase("Sample$Test1", packageListMap);
+        sut.getGroupFromTestCase("test1", groupListMap);
     }
 
     /**
