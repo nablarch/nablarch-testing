@@ -5,10 +5,12 @@ import java.sql.Timestamp;
 import java.util.Map;
 
 import nablarch.core.message.MockStringResourceHolder;
+import nablarch.core.util.StringUtil;
 import nablarch.core.validation.validator.Required;
 import nablarch.test.Trap;
 import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.EntityTestConfiguration;
+import nablarch.test.core.entity.NablarchValidationTestStrategy;
 import nablarch.test.core.entity.ValidationTestStrategy;
 import nablarch.test.support.SystemRepositoryResource;
 
@@ -16,6 +18,9 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import javax.validation.constraints.AssertFalse;
+import javax.validation.constraints.AssertTrue;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -38,7 +43,9 @@ public class EntityTestSupportTest {
 
     private static final String[][] MESSAGES = {
             {"MSG00010", "ja", "message", "en", "message"},
-            {"MSG90010", "ja", "messageFoo", "en", "messageBar"}
+            {"MSG00019", "ja", "messageAssertTrue", "en", "messageAssertTrue"},
+            {"MSG90010", "ja", "messageFoo", "en", "messageBar"},
+            {"MSG90019", "ja", "messageAssertFalse", "en", "messageAssertFalse"}
     };
 
     /** {@link EntityTestSupport#testSetterAndGetter(java.lang.Class, java.lang.String, java.lang.String)}のテスト。 */
@@ -94,35 +101,19 @@ public class EntityTestSupportTest {
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                           .setValidationTestStrategy(new BeanValidationTestStrategy());
 
-        support.testBeanValidation(FugaBean.class, "testValidateAndConvert");
+        support.testBeanValidation(FugaBean.class, "testBeanValidation");
     }
 
     /**
-     * {@link EntityTestSupport#testBeanValidation(String, Class, String)}のテスト。
-     */
-    @Test
-    public void testTestBeanValidationWithGroup() {
-        repositoryResource.getComponentByType(MockStringResourceHolder.class)
-                          .setMessages(MESSAGES);
-        repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                          .setValidationTestStrategy(new BeanValidationTestStrategy());
-
-        support.testBeanValidation(FugaBean.class, "testValidateAndConvertWithGroup");
-    }
-
-    /**
-     * {@link EntityTestSupport#testValidateAndConvert(Class, String, String)}のテスト。
-     * {@link ValidationTestStrategy}に{@link BeanValidationTestStrategy}を設定している場合、例外が送出されること。
+     * {@link EntityTestSupport#testBeanValidation(Class, String)}のテスト。
+     * {@link ValidationTestStrategy}に{@link NablarchValidationTestStrategy}を設定している場合、例外が送出されること。
      */
     @Test
     public void testTestBeanValidationWithInvalidValidationTestStrategy() {
-        repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                          .setValidationTestStrategy(new BeanValidationTestStrategy());
-
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("This method cannot be used to test nablarch validation.");
 
-        support.testBeanValidation(FugaEntity.class, "");
+        support.testBeanValidation(FugaBean.class, "testValidateAndConvert");
     }
 
     @Test
@@ -403,7 +394,7 @@ public class EntityTestSupportTest {
 
         @nablarch.core.validation.ee.Required.List({
                 @nablarch.core.validation.ee.Required(message = "{MSG00010}"),
-                @nablarch.core.validation.ee.Required(message = "{MSG00010}", groups = Test1.class)
+                @nablarch.core.validation.ee.Required(message = "{MSG90010}", groups = Test1.class)
         })
         private String userName;
 
@@ -420,6 +411,22 @@ public class EntityTestSupportTest {
 
         public void setUserName(String userName) {
             this.userName = userName;
+        }
+
+        @AssertTrue(message = "{MSG00019}")
+        public boolean isUserNameXXX(){
+            if(StringUtil.isNullOrEmpty(userName)){
+                return true;
+            }
+            return "xxx".equals(userName);
+        }
+
+        @AssertFalse(groups = Test1.class, message = "{MSG90019}")
+        public boolean isUserNameYYY(){
+            if(StringUtil.isNullOrEmpty(userName)){
+                return false;
+            }
+            return "yyy".equals(userName);
         }
 
         public interface Test1{};

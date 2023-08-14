@@ -60,9 +60,6 @@ public class EntityTestSupport extends TestEventDispatcher {
     /** 期待するメッセージIDのプレフィクス */
     private static final String MSG_ID_PREFIX = "expectedMessageId";
 
-    /** 期待するメッセージ本文のプレフィクス */
-    private static final String MSG_CONTENT_PREFIX = "expectedMessageContent";
-
     /** プロパティ名のプレフィックス */
     private static final String PROP_NAME_PREFIX = "propertyName";
 

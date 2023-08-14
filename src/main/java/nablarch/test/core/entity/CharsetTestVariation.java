@@ -32,9 +32,6 @@ public class CharsetTestVariation<ENTITY> {
     /** 最短桁数のカラム名 */
     private static final String MIN = "min";
 
-    /** BeanValidationのグループのクラス名 */
-    private static final String GROUP_NAME = "groupName";
-
     /** 必須カラム */
     private static final List<String> REQUIRED_COLUMNS = Arrays.asList(
             ALLOW_EMPTY,
