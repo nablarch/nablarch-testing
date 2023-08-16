@@ -130,7 +130,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         if (!(validationTestStrategy instanceof NablarchValidationTestStrategy)) {
-            throw new IllegalArgumentException("This method cannot be used to test bean validation.");
+            throw new UnsupportedOperationException("Use method 'testBeanValidation'.");
         }
 
         testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, validateFor);
@@ -159,7 +159,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         if (!(validationTestStrategy instanceof BeanValidationTestStrategy)) {
-            throw new IllegalArgumentException("This method cannot be used to test nablarch validation.");
+            throw new UnsupportedOperationException("Use method 'testValidateAndConvert'");
         }
 
         testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, null);

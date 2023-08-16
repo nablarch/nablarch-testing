@@ -40,7 +40,7 @@ public class EntityTestConfiguration {
     private CharacterGenerator characterGenerator;
 
     /** バリデーションストラテジ */
-    private ValidationTestStrategy validationTestStrategy;
+    private ValidationTestStrategy validationTestStrategy = new NablarchValidationTestStrategy();
 
     /** テスト設定取得用のキー */
     private static final String CONFIG_KEY = "entityTestConfiguration";
@@ -189,14 +189,10 @@ public class EntityTestConfiguration {
 
     /**
      * テスト用バリデーションストラテジを取得する。
-     * バリデーションストラテジが設定されていない場合は、{@link NablarchValidationTestStrategy}を返却する。
      *
      * @return テスト用バリデーションストラテジ
      */
     public ValidationTestStrategy getValidationTestStrategy(){
-        if (null == validationTestStrategy) {
-            validationTestStrategy = new NablarchValidationTestStrategy();
-        }
         return validationTestStrategy;
     }
 

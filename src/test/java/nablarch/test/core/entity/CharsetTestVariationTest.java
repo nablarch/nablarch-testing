@@ -227,7 +227,7 @@ public class CharsetTestVariationTest {
         });
 
         expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("When using Nablarch validation, max must be specified.");
+        expectedException.expectMessage("max must be specified.");
 
         new CharsetTestVariation<TestEntity>(TestEntity.class, null, paramsZenkakuKatakana);
     }

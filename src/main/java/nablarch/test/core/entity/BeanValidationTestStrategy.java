@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-
 public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     private final Assertion.EquivCondition<Message, Message> condition;
@@ -40,7 +38,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         Set<ConstraintViolation<Object>> result =
                 ValidatorUtil.getValidator().validateProperty(bean, targetPropertyName, group != null ? group : Default.class);
 
-        List<Message> messages = new ConstraintViolationConverterFactory().create("").convert(result);
+        List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
 
         return new ValidationTestContext(messages);
     }
@@ -68,7 +66,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         Set<ConstraintViolation<Object>> result =
                 ValidatorUtil.getValidator().validate(bean, group != null ? group : Default.class);
 
-        List<Message> messages = new ConstraintViolationConverterFactory().create("").convert(result);
+        List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
 
         return new ValidationTestContext(messages);
 

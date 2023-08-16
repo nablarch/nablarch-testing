@@ -1,8 +1,6 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
-import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationManager;
@@ -14,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import static nablarch.core.util.Builder.concat;
-import static org.junit.Assert.assertEquals;
 
 public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 

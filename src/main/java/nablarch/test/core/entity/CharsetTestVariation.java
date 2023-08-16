@@ -1,6 +1,7 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.util.StringUtil;
+import org.junit.Assume;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -107,7 +108,7 @@ public class CharsetTestVariation<ENTITY> {
         if(isMaxEmpty &&
                 EntityTestConfiguration.getConfig().getValidationTestStrategy() instanceof NablarchValidationTestStrategy) {
             // Nablarch Validationでは最大桁数の指定が必須。Bean Validationでは任意項目。
-            throw new IllegalArgumentException("When using Nablarch validation, max must be specified.");
+            throw new IllegalArgumentException("max must be specified.");
         }
         max = isMaxEmpty ? Integer.MAX_VALUE : Integer.parseInt(maxStr);
         // 最短桁数
@@ -170,9 +171,8 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 最長桁数のテストを行う。 */
     public void testMaxLength() {
-        // 最長桁がInteger.MAX_VALUEの場合はテストしない
-        // (テスト用文字列の生成に時間がかかりすぎるため。この場合は実質的に文字列長には制限が無い)
-        if (max == Integer.MAX_VALUE) {
+        // maxが空の場合はテストしない (最大値に制限が無いため)。
+        if(isMaxEmpty) {
             return;
         }
         testValidationWithValidCharset(max, null, "max length test.");
