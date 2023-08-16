@@ -85,8 +85,8 @@ public class EntityTestSupportTest {
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                           .setValidationTestStrategy(new BeanValidationTestStrategy());
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("This method cannot be used to test bean validation.");
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Use method 'testBeanValidation'.");
 
         support.testValidateAndConvert(FugaEntity.class, "testValidateAndConvert", null);
     }
@@ -110,8 +110,8 @@ public class EntityTestSupportTest {
      */
     @Test
     public void testTestBeanValidationWithInvalidValidationTestStrategy() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("This method cannot be used to test nablarch validation.");
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage("Use method 'testValidateAndConvert'.");
 
         support.testBeanValidation(FugaBean.class, "testValidateAndConvert");
     }

@@ -17,6 +17,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import javax.validation.groups.Default;
+
 /**
  * {@link CharsetTestVariation}のテストクラス
  *
@@ -537,7 +539,7 @@ public class CharsetTestVariationTest {
         });
 
         CharsetTestVariation<TestBean> target
-                = new CharsetTestVariation<TestBean>(TestBean.class, null, paramsForAscii);
+                = new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
         target.testAllCharsetVariation();
         target.testOverLimit();  // 最大桁数超過
         target.testUnderLimit(); // 桁数不足

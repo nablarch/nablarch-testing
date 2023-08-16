@@ -11,6 +11,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import javax.validation.groups.Default;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -49,7 +50,7 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(SampleBean.class, "number", null, paramValues);
+                sut.invokeValidation(SampleBean.class, "number", paramValues, Default.class);
 
         // verify
         assertTrue(context.isValid());
@@ -65,7 +66,7 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(SampleBean.class, "number", null, paramValues);
+                sut.invokeValidation(SampleBean.class, "number", paramValues, Default.class);
 
         // verify
         assertFalse(context.isValid()); // バリデーションはNGのはず
@@ -82,7 +83,7 @@ public class BeanValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(SampleBean.class, "number", SampleBean.Test1.class, paramValues);
+                sut.invokeValidation(SampleBean.class, "number", paramValues, SampleBean.Test1.class);
 
         // verify
         assertFalse(context.isValid()); // バリデーションはNGのはず
@@ -103,7 +104,7 @@ public class BeanValidationTestStrategyTest {
         httpParams.put("ascii", new String[]{"abcdef"});   // ascii文字
 
         // execute
-        ValidationTestContext context = sut.validateParameters("", SampleBean.class, null, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("", SampleBean.class, httpParams, null, Default.class);
 
         // verify
         assertTrue(context.isValid());
@@ -121,7 +122,7 @@ public class BeanValidationTestStrategyTest {
         httpParams.put("form.ascii", new String[]{"abcdef"});  // ascii文字
 
         // execute
-        ValidationTestContext context = sut.validateParameters("form", SampleBean.class, null, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("form", SampleBean.class, httpParams, null, Default.class);
 
         // verify
         assertTrue(context.isValid());
@@ -138,7 +139,7 @@ public class BeanValidationTestStrategyTest {
         httpParams.put("ascii", new String[]{"abcdef"});   // ascii文字
 
         // execute
-        ValidationTestContext context = sut.validateParameters("", SampleBean.class, null, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("", SampleBean.class, httpParams, null, Default.class);
 
         // verify
         assertFalse(context.isValid());
@@ -157,92 +158,44 @@ public class BeanValidationTestStrategyTest {
         httpParams.put("ascii", new String[]{"abcdef"});     // 半角英字
 
         // execute
-        ValidationTestContext context = sut.validateParameters("", SampleBean.class, SampleBean.Test1.class, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("", SampleBean.class, httpParams, null, SampleBean.Test1.class);
 
         // verify
         assertTrue(context.isValid());
     }
 
     /**
-     * グループのキー値、グループのリストマップが両者とも正しく指定されている場合は、グループクラスを返却すること。
+     * グループ名が正しく指定されている場合は、グループクラスを返却すること。
      */
     @Test
-    public void getGroupClassFromTestCase() {
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
+    public void getGroupClassFromName() {
         // execute
-        Class<?> group = sut.getGroupFromTestCase("test1", groupListMap);
+        Class<?> group = sut.getGroupFromName("nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
 
         // verify
         assertEquals(SampleBean.Test1.class, group);
-
     }
 
     /**
-     * グループのキー値のみ指定されている場合は、例外が送出されること。
+     * グループ名が空の場合は、{@link Default}が返却されること。
      */
     @Test
-    public void thrownWhenOnlyGroupKeySpecified() {
-        // setup
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Group LIST_MAP was not found. name = [test1]");
-
-        // execute
-        sut.getGroupFromTestCase("test1", new ArrayList<Map<String, String>>());
-    }
-
-    /**
-     * グループのキー値が空の場合は、nullが返却されること。
-     */
-    @Test
-    public void nullWhenGroupKeyNotSpecified() {
-        // setup
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
+    public void getDefaultGroupWhenGroupNameNotSpecified() {
         // execute, verify
-        assertNull(sut.getGroupFromTestCase(null, groupListMap));
+        assertEquals(Default.class, sut.getGroupFromName(null));
     }
 
     /**
-     * 不正なフォーマットのリストマップが指定された場合、例外が送出されること。
-     */
-    @Test
-    public void thrownWhenInvalidListMapSpecified() {
-        // setup
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("HOGE_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("GROUP_NAME is required for the group name LIST_MAP.");
-
-        // execute
-        sut.getGroupFromTestCase("test1", groupListMap);
-    }
-
-    /**
-     * 存在しないクラスのFQCNを指定した場合、例外が送出されること。
+     * 存在しないクラス名を指定した場合、例外が送出されること。
      */
     @Test
     public void thrownWhenNonExistentClassSpecified() {
         // setup
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("GROUP_NAME", "foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Non-existent class is specified for bean validation group. Specified FQCN is foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
 
         // execute
-        sut.getGroupFromTestCase("test1", groupListMap);
+        sut.getGroupFromName("foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
     }
 
     /**

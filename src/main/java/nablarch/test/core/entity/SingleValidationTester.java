@@ -67,7 +67,7 @@ public class SingleValidationTester<ENTITY> {
     public void testSingleValidation(Class<?> group, String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
-        ValidationTestContext ctx = validationStrategy.invokeValidation(entityClass, targetPropertyName, group, paramValue);
+        ValidationTestContext ctx = validationStrategy.invokeValidation(entityClass, targetPropertyName, paramValue, group);
         // 実際のメッセージ
         List<Message> actualMessages = ctx.getMessages();
         // テスト失敗時のメッセージを作成

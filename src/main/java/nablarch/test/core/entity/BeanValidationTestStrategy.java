@@ -26,7 +26,8 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     }
 
     @Override
-    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, Class<?> group, String[] paramValues) {
+    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group) {
+        assert(null != group);
 
         // 入力値（1項目分のみ）
         Map<String, String[]> params = new HashMap<String, String[]>(1);
@@ -36,7 +37,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         BeanUtil.copy(entityClass, bean, params, CopyOptions.empty());
 
         Set<ConstraintViolation<Object>> result =
-                ValidatorUtil.getValidator().validateProperty(bean, targetPropertyName, group != null ? group : Default.class);
+                ValidatorUtil.getValidator().validateProperty(bean, targetPropertyName, group);
 
         List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
 
@@ -44,7 +45,9 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     }
 
     @Override
-    public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Class<?> group, String notUse, Map<String, String[]> params) {
+    public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String notUse, Class<?> group) {
+        assert(null != group);
+
         // 入力値 (キーがprefixから始まるもののみ)
         Map<String, String[]> convertedParams;
 
@@ -64,7 +67,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         BeanUtil.copy(entityClass, bean, convertedParams, CopyOptions.empty());
 
         Set<ConstraintViolation<Object>> result =
-                ValidatorUtil.getValidator().validate(bean, group != null ? group : Default.class);
+                ValidatorUtil.getValidator().validate(bean, group);
 
         List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
 
@@ -72,35 +75,21 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     }
 
-    /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String GROUP_NAME = "GROUP_NAME";
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public Class<?> getGroupFromTestCase(String groupKey, List<Map<String, String>> groupListMap) {
+    public Class<?> getGroupFromName(String groupName) {
 
-        if (!StringUtil.isNullOrEmpty(groupKey) && groupListMap.isEmpty()) {
-            throw new IllegalArgumentException("Group LIST_MAP was not found. name = [" + groupKey + "]");
+        // groupNameが空なら、グループ情報が指定されなかったということなのでDefaultを返却する。
+        if (StringUtil.isNullOrEmpty(groupName)) {
+            return Default.class;
         }
 
-        // groupKeyが空なら、グループ情報が指定されなかったということなのでnullを返却する。
-        if (StringUtil.isNullOrEmpty(groupKey)) {
-            return null;
-        }
-
-        // 上記以外の場合は、必ずgroupListMapは空ではない。
-        Map<String, String> packageMap = groupListMap.get(0);
-        if(!packageMap.containsKey(GROUP_NAME)) {
-            throw new IllegalArgumentException("GROUP_NAME is required for the group name LIST_MAP.");
-        }
-
-        String FQCN = packageMap.get(GROUP_NAME);
         try {
-            return Class.forName(FQCN);
+            return Class.forName(groupName);
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Non-existent class is specified for bean validation group. Specified FQCN is " + FQCN);
+            throw new IllegalArgumentException("Non-existent class is specified for bean validation group. Specified FQCN is " + groupName);
         }
     }
 

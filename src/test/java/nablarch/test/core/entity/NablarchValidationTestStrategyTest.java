@@ -49,7 +49,7 @@ public class NablarchValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(SampleEntity.class, "ascii", null, paramValues);
+                sut.invokeValidation(SampleEntity.class, "ascii", paramValues, null);
 
         // verify
         assertTrue(context.isValid());
@@ -65,7 +65,7 @@ public class NablarchValidationTestStrategyTest {
 
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(SampleEntity.class, "ascii", null, paramValues);
+                sut.invokeValidation(SampleEntity.class, "ascii", paramValues, null);
 
         assertFalse(context.isValid()); // バリデーションはNGのはず
     }
@@ -82,7 +82,7 @@ public class NablarchValidationTestStrategyTest {
         expectedException.expectMessage(containsString("unexpected exception occurred. target entity=[nablarch.test.core.entity.NablarchValidationTestStrategyTest$SampleEntity] property=[] parameter=["));
         // execute
         ValidationTestContext context =
-                sut.invokeValidation(SampleEntity.class, null, null, paramValues);
+                sut.invokeValidation(SampleEntity.class, null, paramValues, null);
 
         assertTrue(context.isValid());
     }
@@ -98,7 +98,7 @@ public class NablarchValidationTestStrategyTest {
 
         // execute
         // must throw exception.
-        sut.invokeValidation(SampleEntity.class, "ascii", null, paramValues);
+        sut.invokeValidation(SampleEntity.class, "ascii", paramValues, null);
     }
 
     private final String asciis21 = "0123456789abcdefghijk";
@@ -116,7 +116,7 @@ public class NablarchValidationTestStrategyTest {
         httpParams.put("number", new String[]{digits});  // 半角数字, 必須
 
         // execute
-        ValidationTestContext context = sut.validateParameters("", SampleEntity.class, null, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("", SampleEntity.class, httpParams, null, null);
 
         System.out.println(context.getMessages());
         // verify
@@ -135,7 +135,7 @@ public class NablarchValidationTestStrategyTest {
         httpParams.put("form.number", new String[]{digits});  // 半角数字, 必須
 
         // execute
-        ValidationTestContext context = sut.validateParameters("form", SampleEntity.class, null, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("form", SampleEntity.class, httpParams, null, null);
 
         // verify
         assertTrue(context.isValid());
@@ -152,7 +152,7 @@ public class NablarchValidationTestStrategyTest {
         httpParams.put("number", new String[]{digits});  // 半角数字, 必須
 
         // execute
-        ValidationTestContext context = sut.validateParameters("", SampleEntity.class, null, null, httpParams);
+        ValidationTestContext context = sut.validateParameters("", SampleEntity.class, httpParams, null, null);
 
         // verify
         assertFalse(context.isValid());
@@ -161,71 +161,36 @@ public class NablarchValidationTestStrategyTest {
     }
 
     /**
-     * グループのキー値、グループのリストマップが両者とも正しく指定されている場合は、nullを返却すること。
+     * グループ名が正しく指定されている場合は、nullを返却すること。
      */
     @Test
-    public void getGroupClassFromTestCase() {
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
-        // execute, verify
-        assertNull(sut.getGroupFromTestCase("test", groupListMap));
-    }
-
-    /**
-     * グループのキー値のみ指定されている場合は、nullが返却されること。
-     */
-    @Test
-    public void thrownWhenOnlyGroupKeySpecified() {
-        // execute, verify
-        assertNull(sut.getGroupFromTestCase("test1", new ArrayList<Map<String, String>>()));
-    }
-
-    /**
-     * グループのキー値が空の場合は、nullが返却されること。
-     */
-    @Test
-    public void nullWhenGroupKeyNotSpecified() {
-        // setup
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("GROUP_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
+    public void getGroupClassFromName() {
         // execute
-        assertNull(sut.getGroupFromTestCase(null, groupListMap));
+        Class<?> group = sut.getGroupFromName("nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
+
+        // verify
+        assertNull(group);
     }
 
     /**
-     * 不正なフォーマットのリストマップが指定された場合、nullが返却されること。
+     * グループ名が空の場合は、nullが返却されること。
      */
     @Test
-    public void thrownWhenInvalidListMapSpecified() {
-        // setup
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("HOGE_NAME", "nablarch.test.core.entity.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
-
+    public void nullWhenGroupNameNotSpecified() {
         // execute, verify
-        assertNull(sut.getGroupFromTestCase("test1", groupListMap));
+        assertNull(sut.getGroupFromName(null));
     }
 
     /**
-     * 存在しないクラスのFQCNを指定した場合、nullが返却されること。
+     * 存在しないクラス名を指定した場合、nullが返却されること。
      */
     @Test
     public void thrownWhenNonExistentClassSpecified() {
-        // setup
-        Map<String, String> groupMap = new HashMap<String, String>();
-        groupMap.put("GROUP_NAME", "foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
-        List<Map<String, String>> groupListMap = new ArrayList<Map<String, String>>();
-        groupListMap.add(groupMap);
+        // execute
+        Class<?> group = sut.getGroupFromName("foo.bar.baz.qux.BeanValidationTestStrategyTest$SampleBean$Test1");
 
-        // execute, verify
-        assertNull(sut.getGroupFromTestCase("test1", groupListMap));
+        // verify
+        assertNull(group);
     }
 
      /**

@@ -21,7 +21,7 @@ public interface ValidationTestStrategy {
      * @param paramValues パラメータとして使用する値
      * @return テスト用バリデーションコンテキスト
      */
-    ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, Class<?> group, String[] paramValues);
+    ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group);
 
     /**
      * 入力全体のバリデーションを実行する。
@@ -31,18 +31,15 @@ public interface ValidationTestStrategy {
      * @param params 入力値を表すマップ
      * @return テスト用バリデーションコンテキスト
      */
-    ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Class<?> group, String validateFor, Map<String, String[]> params);
+    ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String validateFor, Class<?> group);
 
     /**
-     * Bean Validationのグループを検索し、取得する。
+     * Bean Validationのグループを取得する。
      *
-     * {@code groupListMap}は、テストシートより{@code groupKey}をキーとして取得したList-Mapでなければならない。
-     *
-     * @param groupKey グループ情報のList-Map名
-     * @param groupListMap グループ情報のList-Map内容
+     * @param groupName グループ名
      * @return Bean Validationのグループ
      */
-    Class<?> getGroupFromTestCase(String groupKey, List<Map<String, String>> groupListMap);
+    Class<?> getGroupFromName(String groupName);
 
     /**
      * {@link Message}の同一性条件を返却する。

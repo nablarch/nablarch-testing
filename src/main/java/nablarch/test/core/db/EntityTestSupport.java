@@ -159,7 +159,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         if (!(validationTestStrategy instanceof BeanValidationTestStrategy)) {
-            throw new UnsupportedOperationException("Use method 'testValidateAndConvert'");
+            throw new UnsupportedOperationException("Use method 'testValidateAndConvert'.");
         }
 
         testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, null);
@@ -180,12 +180,12 @@ public class EntityTestSupport extends TestEventDispatcher {
             Map<String, String> testCase = testCases.get(i);
 
             // Bean Validationのグループ取得
-            String groupKey = testCase.remove(GROUP_KEY);
-            Class<?> group = strategy.getGroupFromTestCase(groupKey, getListMap(sheetName, groupKey));
+            Class<?> group = strategy.getGroupFromName(testCase.remove(GROUP_KEY));
+
             Map<String, String[]> httpParams = httpParamsList.get(i);
             // バリデーション実行
             ValidationTestContext ctx =
-                    strategy.validateParameters(prefix, entityClass, group, validateFor, httpParams);
+                    strategy.validateParameters(prefix, entityClass, httpParams, validateFor, group);
             // メッセージID確認
             assertMessageEquals(strategy, testCase, ctx);
         }
@@ -665,8 +665,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
         for (Map<String, String> testData : testDataList) {
 
-            String groupKey = testData.remove(GROUP_KEY);
-            Class<?> group = validationTestStrategy.getGroupFromTestCase(groupKey, getListMap(sheetName, groupKey));
+            Class<?> group = validationTestStrategy.getGroupFromName(testData.remove(GROUP_KEY));
             CharsetTestVariation<ENTITY> tester
                     = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
             tester.testAll();
@@ -696,7 +695,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             ));
 
     /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String GROUP_KEY = "groupKey";
+    private static final String GROUP_KEY = "group";
 
     /**
      * 単項目のバリデーションテストをする。
@@ -719,8 +718,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
-            String groupKey = row.get(GROUP_KEY);
-            Class<?> group = validationTestStrategy.getGroupFromTestCase(groupKey, getListMap(sheetName, groupKey));
+            Class<?> group = validationTestStrategy.getGroupFromName(row.get(GROUP_KEY));
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
                     .testSingleValidation(group, input, messageId);
         }

@@ -22,7 +22,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
     }
 
     @Override
-    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, Class<?> notUse, String[] paramValues) {
+    public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> notUse) {
         // 入力値（1項目分のみ）
         Map<String, String[]> params = new HashMap<String, String[]>(1);
         params.put(targetPropertyName, paramValues);
@@ -42,7 +42,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
     }
 
     @Override
-    public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Class<?> notUse, String validateFor, Map<String, String[]> params) {
+    public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String validateFor, Class<?> notUse) {
             ValidationContext<?> ctx =
                     ValidationUtil.validateAndConvertRequest(prefix, entityClass, params, validateFor);
         return new ValidationTestContext(ctx.getMessages());
@@ -53,7 +53,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
      * Nablarch Validationではグループを使用しないため、常にnullを返却する。
      */
     @Override
-    public Class<?> getGroupFromTestCase(String groupKey, List<Map<String, String>> groupListMap) {
+    public Class<?> getGroupFromName(String groupKey) {
         return null;
     }
 
