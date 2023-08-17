@@ -1,14 +1,10 @@
 package nablarch.test.core.entity;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import nablarch.core.message.MockStringResourceHolder;
-import nablarch.core.repository.SystemRepository;
-import nablarch.core.validation.ValidationContext;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Before;
@@ -81,6 +77,4 @@ public class SingleValidationTesterTest {
         SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
         target.testSingleValidation(null, "漢字", "MSG00012"); // expected messageId should be returned
     }
-
-
 }

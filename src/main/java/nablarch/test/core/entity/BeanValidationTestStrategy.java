@@ -8,6 +8,7 @@ import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.StringResource;
 import nablarch.core.util.StringUtil;
+import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
 
@@ -90,13 +91,17 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     /**
      * {@inheritDoc}
-     * メッセージIDの代わりに、メッセージ本文で比較する{@link BeanValidationResultMessage}を返却する。
+     * Bean Validationで{@link ValidationResultMessage}を検証する際は、メッセージ本文を比較する。
      */
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
         return new BeanValidationResultMessage(propertyName, stringResource, options);
     }
 
+    /**
+     * {@inheritDoc}
+     * Bean Validationで{@link Message}を検証する際は、メッセージ本文を比較する。
+     */
     @Override
     public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
         return new MessageComparedByContent(level, stringResource, options);

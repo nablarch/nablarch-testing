@@ -1,11 +1,14 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.message.*;
+import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MockStringResourceHolder;
+import nablarch.core.message.StringResource;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ee.Length;
 import nablarch.core.validation.ee.Required;
+import nablarch.core.validation.ee.Size;
 import nablarch.core.validation.ee.SystemChar;
-import nablarch.test.Assertion;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
 import org.junit.Rule;
@@ -13,7 +16,10 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.validation.groups.Default;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -32,6 +38,7 @@ public class BeanValidationTestStrategyTest {
     private static final String[][] MESSAGES = {
             {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}文字以下で入力して下さい。"},
             {"nablarch.core.validation.ee.SystemChar.message", "ja", "{0}を入力してください。"},
+            {"nablarch.core.validation.ee.Size.max.message", "ja", "不正なサイズです"},
             {"MSG00024", "ja", "{0}は{2}文字以下でないとあかんで"}
     };
 
@@ -68,6 +75,74 @@ public class BeanValidationTestStrategyTest {
         // execute
         ValidationTestContext context =
                 sut.invokeValidation(SampleBean.class, "number", paramValues, Default.class);
+
+        // verify
+        assertFalse(context.isValid()); // バリデーションはNGのはず
+    }
+
+    /**
+     * Defaultグループにおける妥当な値を投入した場合、バリデーションが成功すること。
+     * 配列の要素数が妥当な場合の検証を実施する。
+     */
+    @Test
+    public void testInvokeValidationWithValidSizedArrayParam() {
+        // setup
+        String[] paramValues = new String[]{"0","1","2","3","4"};
+
+        // execute
+        ValidationTestContext context =
+                sut.invokeValidation(SampleBean.class, "sizedArray", paramValues, Default.class);
+
+        // verify
+        assertTrue(context.isValid());
+    }
+
+    /**
+     * Defaultグループにおける不正な値を投入した場合、バリデーションが失敗すること。
+     * 配列の要素数が上限超過した場合を検証する。
+     */
+    @Test
+    public void testInvokeValidationWithInvalidSizedArrayParam() {
+        // setup
+        String[] paramValues = new String[]{"0","1","2","3","4","5","6"};
+
+        // execute
+        ValidationTestContext context =
+                sut.invokeValidation(SampleBean.class, "sizedArray", paramValues, Default.class);
+
+        // verify
+        assertFalse(context.isValid()); // バリデーションはNGのはず
+    }
+
+    /**
+     * Defaultグループにおける妥当な値を投入した場合、バリデーションが成功すること。
+     * リストの要素数が妥当な場合の検証を実施する。
+     */
+    @Test
+    public void testInvokeValidationWithValidSizedListParam() {
+        // setup
+        String[] paramValues = new String[]{"0","1","2","3","4"};
+
+        // execute
+        ValidationTestContext context =
+                sut.invokeValidation(SampleBean.class, "sizedList", paramValues, Default.class);
+
+        // verify
+        assertTrue(context.isValid());
+    }
+
+    /**
+     * Defaultグループにおける不正な値を投入した場合、バリデーションが失敗すること。
+     * 配列の要素数が上限超過した場合を検証する。
+     */
+    @Test
+    public void testInvokeValidationWithInvalidSizedListParam() {
+        // setup
+        String[] paramValues = new String[]{"0","1","2","3","4","5","6"};
+
+        // execute
+        ValidationTestContext context =
+                sut.invokeValidation(SampleBean.class, "sizedList", paramValues, Default.class);
 
         // verify
         assertFalse(context.isValid()); // バリデーションはNGのはず
@@ -289,6 +364,12 @@ public class BeanValidationTestStrategyTest {
         @SystemChar(charsetDef = "ASCII文字")
         private String ascii;
 
+        @Size(max = 6)
+        private String[] sizedArray;
+
+        @Size(max = 6)
+        private List<String> sizedList;
+
         public SampleBean() {
         }
 
@@ -306,6 +387,22 @@ public class BeanValidationTestStrategyTest {
 
         public void setAscii(String ascii) {
             this.ascii = ascii;
+        }
+
+        public String[] getSizedArray() {
+            return sizedArray;
+        }
+
+        public void setSizedArray(String[] sizedArray) {
+            this.sizedArray = sizedArray;
+        }
+
+        public List<String> getSizedList() {
+            return sizedList;
+        }
+
+        public void setSizedList(List<String> sizedList) {
+            this.sizedList = sizedList;
         }
 
         public interface Test1 {

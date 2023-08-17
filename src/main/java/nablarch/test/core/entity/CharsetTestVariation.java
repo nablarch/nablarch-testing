@@ -1,7 +1,6 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.util.StringUtil;
-import org.junit.Assume;
 
 import java.util.Arrays;
 import java.util.HashMap;

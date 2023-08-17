@@ -1,18 +1,24 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.message.*;
+import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MockStringResourceHolder;
+import nablarch.core.message.StringResource;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.validator.AsciiChar;
 import nablarch.core.validation.validator.Length;
 import nablarch.core.validation.validator.NumberChar;
 import nablarch.core.validation.validator.Required;
-import nablarch.test.Assertion;
 import nablarch.test.support.SystemRepositoryResource;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;

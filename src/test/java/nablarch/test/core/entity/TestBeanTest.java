@@ -1,11 +1,9 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.MockStringResourceHolder;
-import nablarch.core.validation.validator.unicode.LiteralCharsetDef;
 import nablarch.test.core.db.EntityTestSupport;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
