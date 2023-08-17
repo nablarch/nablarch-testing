@@ -1,25 +1,20 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.StringResource;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationManager;
+import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ValidationUtil;
-import nablarch.test.Assertion;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static nablarch.core.util.Builder.concat;
 
 public class NablarchValidationTestStrategy implements ValidationTestStrategy {
-
-    private final Assertion.EquivCondition<Message, Message> condition;
-
-    public NablarchValidationTestStrategy() {
-        condition = new AsMessageID();
-    }
 
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> notUse) {
@@ -59,11 +54,20 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
     /**
      * {@inheritDoc}
-     * Nablarch Validationでは、メッセージIDが同一であるかを検証する。
+     * Nablarch Validationで{@link ValidationResultMessage}を検証する際は、メッセージIDを比較する。
      */
     @Override
-    public Assertion.EquivCondition<Message, Message> getEquivCondition() {
-        return condition;
+    public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
+        return new ValidationResultMessage(propertyName, stringResource, options);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Nablarch Validationで{@link Message}を検証する際は、メッセージIDを比較する。
+     */
+    @Override
+    public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
+        return new MessageComparedById(level, stringResource, options);
     }
 
     /** {@link ValidationManager}を取得する為のキー */
@@ -76,17 +80,5 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
                     + "check configuration. key=[" + VALIDATION_MANAGER_NAME + "]");
         }
         return validationManager;
-    }
-    /**
-     * {@link Message}のメッセージIDが同一であるか判定する{@link Assertion.EquivCondition}実装クラス。
-     */
-    private static class AsMessageID implements Assertion.EquivCondition<Message, Message> {
-
-        /** {@inheritDoc} */
-        public boolean isEquivalent(Message expected, Message actual) {
-            final String expectedMessageId = expected.getMessageId();
-            final String actualMessageId = actual.getMessageId();
-            return expectedMessageId.equals(actualMessageId);
-        }
     }
 }

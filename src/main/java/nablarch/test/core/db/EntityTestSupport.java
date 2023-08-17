@@ -23,7 +23,6 @@ import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
-import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
 import nablarch.test.core.entity.*;
@@ -267,12 +266,12 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
         // 期待値
-        List<Message> expected = createExpectedMessages(aTestCase);
+        List<Message> expected = createExpectedMessages(validationTestStrategy, aTestCase);
         // 実際の値
         List<Message> actual = ctx.getMessages();
 
         // 比較失敗時に原因がわかりやすいようにソートして比較。
-        Assertion.assertEqualsIgnoringOrder(validationTestStrategy.getEquivCondition(), msg,
+        Assertion.assertEqualsIgnoringOrder(msg,
                                             MessageComparator.sort(expected),
                                             MessageComparator.sort(actual));
     }
@@ -284,7 +283,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param aTestCase テストケース（テストケース表の1行）
      * @return メッセージ
      */
-    private List<Message> createExpectedMessages(Map<String, String> aTestCase) {
+    private List<Message> createExpectedMessages(ValidationTestStrategy strategy, Map<String, String> aTestCase) {
         List<Message> msgs = new ArrayList<Message>();
         for (int i = 1;; i++) {
             String msgId = aTestCase.get(MSG_ID_PREFIX + i);
@@ -295,7 +294,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             StringResource stringResource = MessageUtil.getStringResource(msgId);
             Message msg = StringUtil.isNullOrEmpty(prop)
                     ? new Message(MessageLevel.ERROR, stringResource, new Object[0])
-                    : new ValidationResultMessage(prop, stringResource, null);
+                    : strategy.createExpectedValidationResultMessage(prop, stringResource, null);
             msgs.add(msg);
         }
         return msgs;

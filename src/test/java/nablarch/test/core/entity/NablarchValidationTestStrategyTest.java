@@ -2,6 +2,7 @@ package nablarch.test.core.entity;
 
 import nablarch.core.message.*;
 import nablarch.core.repository.SystemRepository;
+import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.validator.AsciiChar;
 import nablarch.core.validation.validator.Length;
 import nablarch.core.validation.validator.NumberChar;
@@ -194,21 +195,53 @@ public class NablarchValidationTestStrategyTest {
     }
 
      /**
-     * Assertion.AsMessageIDのインスタンスを取得できること。
+     * {@link ValidationResultMessage}を取得できること。
      */
     @Test
-    public void isInstanceOfAsMessageContent() {
-        // setup, execute
-        Assertion.EquivCondition<Message, Message> condition = sut.getEquivCondition();
-        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("msg1", "value1"));
-        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("msg2", "value2"));
-        Message message3 = new Message(MessageLevel.ERROR, new MockStringResource("msg1", "value2"));
+    public void createExpectedValidationResultMessage() {
 
-        // verify
-        assertTrue(condition.isEquivalent(message1, message3));
-        assertFalse(condition.isEquivalent(message2, message3));
+        Message actual = sut.createExpectedValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
+        Message validationResultMessage1 = new ValidationResultMessage("test", new MockStringResource("2", "message1"), new Object[0]);
+        Message validationResultMessage2 = new ValidationResultMessage("test", new MockStringResource("1", "message2"), new Object[0]);
+        Message validationResultMessage3 = new ValidationResultMessage("hoge", new MockStringResource("1", "message1"), new Object[0]);
+        Message basicMessage = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+
+        // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(validationResultMessage1));
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(validationResultMessage2));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(validationResultMessage3));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(basicMessage));
     }
 
+    /**
+     * {@link MessageComparedById}を取得できること。
+     */
+    @Test
+    public void createExpectedMessage() {
+
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), new Object[0]);
+        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("1", "message2"), new Object[0]);
+        Message message3 = new Message(MessageLevel.WARN, new MockStringResource("1", "message1"), new Object[0]);
+        Message validationResultMessage = new ValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
+        Message forCompareHashCode = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+
+        // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(message1));
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(message2));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(message3));
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(validationResultMessage));
+
+        assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
+    }
 
     private static class MockStringResource implements StringResource {
 
@@ -231,7 +264,7 @@ public class NablarchValidationTestStrategyTest {
         }
     }
 
-    public static class SampleEntity {
+   public static class SampleEntity {
         @Length(max = 20)
         @AsciiChar
         public void setAscii(String s) {

@@ -1,9 +1,10 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
-import nablarch.test.Assertion;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.StringResource;
+import nablarch.core.validation.ValidationResultMessage;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,9 +43,20 @@ public interface ValidationTestStrategy {
     Class<?> getGroupFromName(String groupName);
 
     /**
-     * {@link Message}の同一性条件を返却する。
-     * @return メッセージの同一性条件（{@link Assertion.EquivCondition})
+     * メッセージ比較用の{@link ValidationResultMessage}を生成する。
+     * @param propertyName   プロパティ名
+     * @param stringResource メッセージ
+     * @param options        オプションパラメータ
+     * @return {@link ValidationResultMessage}
      */
-    Assertion.EquivCondition<Message, Message> getEquivCondition() ;
+    Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options);
 
+    /**
+     * メッセージ比較用の{@link Message}を生成する。
+     * @param level          メッセージレベル
+     * @param stringResource メッセージ
+     * @param options        オプションパラメータ
+     * @return {@link Message}
+     */
+    Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options);
 }

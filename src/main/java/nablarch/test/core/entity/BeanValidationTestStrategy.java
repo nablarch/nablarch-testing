@@ -5,10 +5,11 @@ import nablarch.common.web.validator.SimpleReflectionBeanValidationFormFactory;
 import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
+import nablarch.core.message.MessageLevel;
+import nablarch.core.message.StringResource;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
-import nablarch.test.Assertion;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
@@ -18,12 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class BeanValidationTestStrategy implements ValidationTestStrategy{
-
-    private final Assertion.EquivCondition<Message, Message> condition;
-
-    public BeanValidationTestStrategy() {
-        condition = new AsMessageContent();
-    }
 
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group) {
@@ -95,26 +90,18 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     /**
      * {@inheritDoc}
-     * Bean ValidationではメッセージIDによる同一性の確認ができないため、メッセージ本文が同一であるかを検証する。
+     * メッセージIDの代わりに、メッセージ本文で比較する{@link BeanValidationResultMessage}を返却する。
      */
     @Override
-    public Assertion.EquivCondition<Message, Message> getEquivCondition() {
-        return condition;
+    public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
+        return new BeanValidationResultMessage(propertyName, stringResource, options);
+    }
+
+    @Override
+    public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
+        return new MessageComparedByContent(level, stringResource, options);
     }
 
     /** フォームファクトリ。 */
     private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
-
-    /**
-     * {@link Message}のメッセージ本文が同一であるか判定する{@link Assertion.EquivCondition}実装クラス。
-     */
-    private static class AsMessageContent implements Assertion.EquivCondition<Message, Message> {
-
-        /** {@inheritDoc} */
-        public boolean isEquivalent(Message expected, Message actual) {
-            final String expectedContent = expected.formatMessage();
-            final String actualContent = actual.formatMessage();
-            return expectedContent.equals(actualContent);
-        }
-    }
 }

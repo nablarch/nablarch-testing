@@ -3,8 +3,7 @@ package nablarch.test.core.entity;
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.MessageUtil;
-import nablarch.core.validation.ValidationResultMessage;
-import nablarch.test.Assertion;
+import nablarch.core.message.StringResource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +13,7 @@ import static nablarch.core.util.Builder.concat;
 import static nablarch.core.util.Builder.join;
 import static nablarch.core.util.StringUtil.hasValue;
 import static nablarch.core.util.StringUtil.isNullOrEmpty;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 
@@ -84,8 +84,9 @@ public class SingleValidationTester<ENTITY> {
             // バリデーションが失敗していること
             assertFalse(msgOnFail, ctx.isValid());
             // メッセージが期待通りであること
-            Message expectedMessage = MessageUtil.createMessage(MessageLevel.ERROR, expectedMessageId);
-            Assertion.assertEquals(validationStrategy.getEquivCondition(), msgOnFail, expectedMessage, actualMessages.get(0));
+            StringResource stringResource = MessageUtil.getStringResource(expectedMessageId);
+            Message expectedMessage = validationStrategy.createExpectedMessage(MessageLevel.ERROR, stringResource, null);
+            assertEquals(msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
             // バリデーションが成功していること
