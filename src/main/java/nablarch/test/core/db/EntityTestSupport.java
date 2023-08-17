@@ -132,13 +132,13 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
-        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
-        if (!(validationTestStrategy instanceof NablarchValidationTestStrategy)) {
+        if (!(strategy instanceof NablarchValidationTestStrategy)) {
             throw new UnsupportedOperationException("Use method 'testBeanValidation'.");
         }
 
-        testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, validateFor);
+        testValidateAllParameters(strategy, prefix, entityClass, sheetName, validateFor);
     }
 
     /**
@@ -161,13 +161,13 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
      */
     public <T> void testBeanValidation(String prefix, Class<T> entityClass, String sheetName) {
-        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
-        if (!(validationTestStrategy instanceof BeanValidationTestStrategy)) {
+        if (!(strategy instanceof BeanValidationTestStrategy)) {
             throw new UnsupportedOperationException("Use method 'testValidateAndConvert'.");
         }
 
-        testValidateAllParameters(validationTestStrategy, prefix, entityClass, sheetName, null);
+        testValidateAllParameters(strategy, prefix, entityClass, sheetName, null);
     }
 
     private <T> void testValidateAllParameters(ValidationTestStrategy strategy, String prefix, Class<T> entityClass, String sheetName, String validateFor) {
@@ -263,16 +263,16 @@ public class EntityTestSupport extends TestEventDispatcher {
     /**
      * メッセージが等しいことを表明する。
      *
-     * @param validationTestStrategy テスト用バリデーションストラテジ
-     * @param aTestCase              テストケース（テストケース表の1行）
-     * @param ctx                    バリデーション結果
+     * @param strategy  テスト用バリデーションストラテジ
+     * @param aTestCase テストケース（テストケース表の1行）
+     * @param ctx       バリデーション結果
      */
-    private void assertMessageEquals(ValidationTestStrategy validationTestStrategy, Map<String, String> aTestCase, ValidationTestContext ctx) {
+    private void assertMessageEquals(ValidationTestStrategy strategy, Map<String, String> aTestCase, ValidationTestContext ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
         // 期待値
-        List<Message> expected = createExpectedMessages(validationTestStrategy, aTestCase);
+        List<Message> expected = createExpectedMessages(strategy, aTestCase);
         // 実際の値
         List<Message> actual = ctx.getMessages();
 
@@ -665,12 +665,12 @@ public class EntityTestSupport extends TestEventDispatcher {
     public <ENTITY> void testValidateCharsetAndLength(
             Class<ENTITY> targetClass, String sheetName, String id) {
 
-        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
         for (Map<String, String> testData : testDataList) {
 
-            Class<?> group = validationTestStrategy.getGroupFromName(testData.remove(GROUP_KEY));
+            Class<?> group = strategy.getGroupFromName(testData.remove(GROUP_KEY));
             CharsetTestVariation<ENTITY> tester
                     = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
             tester.testAll();
@@ -716,14 +716,14 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 必須カラム存在チェック
         checkRequiredColumns(REQUIRED_COLUMNS_FOR_SINGLE_VALIDATION, list, sheetName, id);
 
-        ValidationTestStrategy validationTestStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         // 全件実行
         for (Map<String, String> row : list) {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
-            Class<?> group = validationTestStrategy.getGroupFromName(row.get(GROUP_KEY));
+            Class<?> group = strategy.getGroupFromName(row.get(GROUP_KEY));
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
                     .testSingleValidation(group, input, messageId);
         }

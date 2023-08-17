@@ -32,7 +32,7 @@ public class SingleValidationTester<ENTITY> {
     private final String targetPropertyName;
 
     /** バリデーションストラテジ */
-    private final ValidationTestStrategy validationStrategy;
+    private final ValidationTestStrategy strategy;
 
     /**
      * コンストラクタ
@@ -43,7 +43,7 @@ public class SingleValidationTester<ENTITY> {
     public SingleValidationTester(Class<ENTITY> entityClass, String targetPropertyName) {
         this.entityClass = entityClass;
         this.targetPropertyName = targetPropertyName;
-        this.validationStrategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        this.strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
     }
 
     /**
@@ -67,7 +67,7 @@ public class SingleValidationTester<ENTITY> {
     public void testSingleValidation(Class<?> group, String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
-        ValidationTestContext ctx = validationStrategy.invokeValidation(entityClass, targetPropertyName, paramValue, group);
+        ValidationTestContext ctx = strategy.invokeValidation(entityClass, targetPropertyName, paramValue, group);
         // 実際のメッセージ
         List<Message> actualMessages = ctx.getMessages();
         // テスト失敗時のメッセージを作成
@@ -85,7 +85,7 @@ public class SingleValidationTester<ENTITY> {
             assertFalse(msgOnFail, ctx.isValid());
             // メッセージが期待通りであること
             StringResource stringResource = MessageUtil.getStringResource(expectedMessageId);
-            Message expectedMessage = validationStrategy.createExpectedMessage(MessageLevel.ERROR, stringResource, null);
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, stringResource, null);
             assertEquals(msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
