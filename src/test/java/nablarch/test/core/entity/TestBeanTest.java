@@ -28,7 +28,8 @@ public class TestBeanTest extends EntityTestSupport {
             {"nablarch.core.validation.ee.Length.fixed.message", "ja", "{0}は{1}桁で入力してくださいよ。"},
             {"nablarch.core.validation.ee.Length.min.message", "ja", "{0}は{1}桁以上で入力してくださいよ。"},
             {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須ですよ"},
-            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{0}を使用してくださいよ。"}
+            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{0}を使用してくださいよ。"},
+            {"nablarch.core.validation.ee.Size.min.max.message", "ja", "要素の個数は{0}以上{1}以下にしてくださいよよ。"}
     };
 
     @Before

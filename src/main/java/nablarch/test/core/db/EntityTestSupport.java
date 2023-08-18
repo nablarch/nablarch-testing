@@ -747,7 +747,11 @@ public class EntityTestSupport extends TestEventDispatcher {
             if (!row.containsKey(key)) {
                 break;
             }
-            result.add(row.get(key));
+            String value = row.get(key);
+            if (StringUtil.isNullOrEmpty(value)) {
+                break;
+            }
+            result.add(value);
         }
         return result.toArray(new String[0]);
     }

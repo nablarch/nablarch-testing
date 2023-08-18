@@ -2,7 +2,10 @@ package nablarch.test.core.entity;
 
 import nablarch.core.validation.ee.Length;
 import nablarch.core.validation.ee.Required;
+import nablarch.core.validation.ee.Size;
 import nablarch.core.validation.ee.SystemChar;
+
+import java.util.List;
 
 /**
  * 単項目バリデーションのテスト用エンティティクラス
@@ -56,6 +59,12 @@ public class TestBean {
     })
     private String ascii;
 
+    @Size(max = 4, min = 1)
+    private String[] sizedArray;
+
+    @Size(max = 3, min = 1)
+    private List<String> sizedList;
+
     public String getNumberMax() {
         return numberMax;
     }
@@ -102,6 +111,22 @@ public class TestBean {
 
     public void setAscii(String ascii) {
         this.ascii = ascii;
+    }
+
+    public String[] getSizedArray() {
+        return sizedArray;
+    }
+
+    public void setSizedArray(String[] sizedArray) {
+        this.sizedArray = sizedArray;
+    }
+
+    public List<String> getSizedList() {
+        return sizedList;
+    }
+
+    public void setSizedList(List<String> sizedList) {
+        this.sizedList = sizedList;
     }
 
     public interface Test1{}
