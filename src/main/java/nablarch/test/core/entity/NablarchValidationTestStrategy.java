@@ -9,7 +9,9 @@ import nablarch.core.validation.ValidationManager;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ValidationUtil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static nablarch.core.util.Builder.concat;
@@ -42,7 +44,11 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
             ), e);
         }
 
-        return new ValidationTestContext(ctx.getMessages());
+        List<Message> convertedMessages = new ArrayList<Message>();
+        for(Message message : ctx.getMessages()) {
+            convertedMessages.add(new MessageComparedById(message));
+        }
+        return new ValidationTestContext(convertedMessages);
     }
 
     /**
@@ -77,7 +83,7 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
      */
     @Override
     public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
-        return new MessageComparedById(level, stringResource, options);
+        return new MessageComparedById(new Message(level, stringResource, options));
     }
 
     private static ValidationManager getValidationManager() {

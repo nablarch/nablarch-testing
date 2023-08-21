@@ -109,9 +109,15 @@ public class SingleValidationTester<ENTITY> {
         // 追加の文言
         String additional = concat(additionalMsg);
         // 期待値
-        String expected = isNullOrEmpty(expectedMessageId)
-                ? "no message"
-                : concat("messageId [", expectedMessageId, "]");
+        String expected;
+        if(isNullOrEmpty(expectedMessageId)) {
+            expected = "no message";
+        } else {
+            StringResource stringResource = MessageUtil.getStringResource(expectedMessageId);
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, stringResource, new Object[0]);
+            expected = concat("message [", expectedMessage, "]");
+        }
+
         // 入力パラメータ
         String inputParam = (paramValue == null) ? "null" : join(paramValue, ",");
         // 長さ

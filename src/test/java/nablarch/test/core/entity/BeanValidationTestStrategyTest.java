@@ -299,6 +299,8 @@ public class BeanValidationTestStrategyTest {
         assertFalse(actual.equals(basicMessage));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
+
+        assertEquals("messageContent=[message1] propertyName=[test]", actual.toString());
     }
 
     /**
@@ -325,6 +327,8 @@ public class BeanValidationTestStrategyTest {
         assertTrue(actual.equals(validationResultMessage));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
+
+        assertEquals("messageContent=[message1] errorLevel=[ERROR]", actual.toString());
     }
 
 

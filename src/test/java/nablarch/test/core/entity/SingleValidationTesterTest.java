@@ -38,6 +38,7 @@ public class SingleValidationTesterTest {
             {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
             {"MSG00025", "ja", "{0}は{2}文字以上で入力して下さい。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
+            {"MSG999999", "ja", "どのエラーにもマッチしないメッセージ。"}
     };
 
     @Before
@@ -65,7 +66,7 @@ public class SingleValidationTesterTest {
             target.testSingleValidation(null, "abc123#", "MSG999999", "[testTestSingleValidationFail]");  // 期待したメッセージIDではない
             fail();
         } catch (AssertionError e) {
-            assertThat(e.getMessage(), containsString("messageId [MSG999999] is expected"));
+            assertThat(e.getMessage(), containsString("property=[ascii] message [messageId=[MSG999999] errorLevel=[ERROR]] is expected."));
         }
     }
 

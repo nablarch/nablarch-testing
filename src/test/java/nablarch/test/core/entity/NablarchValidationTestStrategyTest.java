@@ -247,6 +247,8 @@ public class NablarchValidationTestStrategyTest {
         assertTrue(actual.equals(validationResultMessage));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
+
+        assertEquals("messageId=[1] errorLevel=[ERROR]", actual.toString());
     }
 
     private static class MockStringResource implements StringResource {

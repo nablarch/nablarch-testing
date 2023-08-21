@@ -8,11 +8,13 @@ import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.StringResource;
 import nablarch.core.util.StringUtil;
+import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.groups.Default;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +47,11 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
         List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
 
-        return new ValidationTestContext(messages);
+        List<Message> convertedMessages = new ArrayList<Message>();
+        for(Message message : messages) {
+            convertedMessages.add(new MessageComparedByContent(message));
+        }
+        return new ValidationTestContext(convertedMessages);
     }
 
     /**
@@ -78,8 +84,12 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
         List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
 
-        return new ValidationTestContext(messages);
+        List<Message> convertedMessages = new ArrayList<Message>();
+        for(Message message : messages) {
+            convertedMessages.add(new BeanValidationResultMessage((ValidationResultMessage) message));
+        }
 
+        return new ValidationTestContext(convertedMessages);
     }
 
     /**
@@ -105,7 +115,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
      */
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
-        return new BeanValidationResultMessage(propertyName, stringResource, options);
+        return new BeanValidationResultMessage(new ValidationResultMessage(propertyName, stringResource, options));
     }
 
     /**
@@ -113,6 +123,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
      */
     @Override
     public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
-        return new MessageComparedByContent(level, stringResource, options);
+        return new MessageComparedByContent(new Message(level, stringResource, options));
     }
 }

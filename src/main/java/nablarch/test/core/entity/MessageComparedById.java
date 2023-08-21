@@ -2,7 +2,8 @@ package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
-import nablarch.core.message.StringResource;
+
+import static nablarch.core.util.Builder.concat;
 
 /**
  * {@link Message}同士の比較をメッセージIDで実行するためのクラス。
@@ -10,19 +11,39 @@ import nablarch.core.message.StringResource;
 public class MessageComparedById extends Message {
 
     /**
-     * コンストラクタ。
-     * スーパークラスのコンストラクタを呼び出すのみ。
-     * @param level          メッセージレベル
-     * @param stringResource メッセージ
-     * @param option         オプションパラメータ
+     * メッセージ
      */
-    public MessageComparedById(MessageLevel level, StringResource stringResource, Object[] option) {
-        super(level, stringResource, option);
+    private final Message message;
+
+    /**
+     * コンストラクタ。
+     * @param message メッセージ
+     */
+    public MessageComparedById(Message message) {
+        super(null, null);
+        this.message = message;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MessageLevel getLevel() {
+        return message.getLevel();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getMessageId() {
+        return message.getMessageId();
     }
 
     /**
      * このオブジェクトと等価であるかを返す。
-     * <p/>
+     *
+     * <p>
      * {@code o}が以下の条件を全て満たす場合{@code true}を返す。
      * <ul>
      *     <li>{@link Message}もしくはそれを継承した型であること</li>
@@ -42,21 +63,33 @@ public class MessageComparedById extends Message {
         }
 
         Message another = (Message) o;
-        if (this.getLevel() != another.getLevel()) {
+        if (message.getLevel() != another.getLevel()) {
             return false;   // レベルが異なる
         }
 
-        return this.getMessageId().equals(another.getMessageId());
+        return message.getMessageId().equals(another.getMessageId());
     }
 
     /**
      * このオブジェクトのハッシュコード値を返す。
-     * フィールドを保持していないので、スーパークラスのハッシュコード値を返却するのみ。
+     *
+     * <p>
+     * 委譲先のメッセージのハッシュコード値を返却するのみ。
      * @return ハッシュコード値。
      */
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return message != null ? message.hashCode() : 0;
     }
 
+    /**
+     * このオブジェクトの文字列表現を返す。
+     * @return メッセージIDとエラーレベルを記載した文字列
+     */
+    @Override
+    public String toString() {
+        return concat(
+                "messageId=[", message.getMessageId(), "] ",
+                "errorLevel=[", message.getLevel(), "]");
+    }
 }

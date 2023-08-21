@@ -263,7 +263,7 @@ public class CharsetTestVariationTest {
             target.testOverLimit(); // 期待したメッセージが出ないのでアサート失敗
             fail();
         } catch (AssertionError e) {
-            assertThat(e.getMessage(), containsString("messageId [MSG00011] is expected"));
+            assertThat(e.getMessage(), containsString("property=[zenkakuKatakana] message [messageId=[MSG00011] errorLevel=[ERROR]] is expected."));
         }
     }
 
@@ -298,7 +298,7 @@ public class CharsetTestVariationTest {
             target.testUnderLimit(); // 期待したメッセージが出ないのでアサート失敗
             fail();
         } catch (AssertionError e) {
-            assertThat(e.getMessage(), containsString("messageId [MSG00011] is expected"));
+            assertThat(e.getMessage(), containsString("property=[zenkakuKatakana] message [messageId=[MSG00011] errorLevel=[ERROR]] is expected."));
         }
     }
 
