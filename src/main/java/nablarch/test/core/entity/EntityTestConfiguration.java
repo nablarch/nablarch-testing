@@ -16,8 +16,7 @@ public class EntityTestConfiguration {
     private String maxMessageId;
 
     /**
-     * 最長最短桁範囲外のメッセージID(max > min)。
-     * 最大桁数を超過した場合。
+     * 最長最短桁範囲外のメッセージID(max > min、入力桁数 > max)。
      */
     private String maxAndMinMessageId;
 
@@ -25,8 +24,7 @@ public class EntityTestConfiguration {
     private String fixLengthMessageId;
 
     /**
-     * 最長最短桁範囲外のメッセージID(max > min)。
-     * 最小桁数より不足した場合。
+     * 最長最短桁範囲外のメッセージID(max > min、入力桁数 < min)。
      */
     private String underLimitMessageId;
 
@@ -71,7 +69,6 @@ public class EntityTestConfiguration {
     /**
      * 桁数不足テスト時に期待するメッセージIDを取得する。
      * 許容する桁数に応じて適切なメッセージIDを返却される。
-     *
      *
      * @param max 最長桁数
      * @param min 最短桁数

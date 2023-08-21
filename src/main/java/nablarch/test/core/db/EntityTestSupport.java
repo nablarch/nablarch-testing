@@ -91,6 +91,8 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     private final DbAccessTestSupport dbSupport;
 
+    private ValidationTestStrategy strategy;
+
     /**
      * コンストラクタ。<br/>
      * 本クラスを継承する場合に呼び出されることを想定している。
@@ -110,7 +112,7 @@ public class EntityTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * バリデーションテストを実行する。
+     * Nablarch Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
      *
      * @param entityClass バリデーション対象のエンティティのクラス
      * @param sheetName   シート名
@@ -123,7 +125,7 @@ public class EntityTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * バリデーションテストを実行する。
+     * Nablarch Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
      *
      * @param prefix      パラメータのMapに入ったキーのプレフィクス
      * @param entityClass バリデーション対象のエンティティのクラス
@@ -132,17 +134,16 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
-        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
-        if (!(strategy instanceof NablarchValidationTestStrategy)) {
+        if (!(getStrategy() instanceof NablarchValidationTestStrategy)) {
             throw new UnsupportedOperationException("Use method 'testBeanValidation'.");
         }
 
-        testValidateAllParameters(strategy, prefix, entityClass, sheetName, validateFor);
+        testValidateAllParameters(prefix, entityClass, sheetName, validateFor);
     }
 
     /**
-     * バリデーションテストを実行する。
+     * Bean Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
      *
      * @param entityClass バリデーション対象のエンティティのクラス
      * @param sheetName   シート名
@@ -153,7 +154,7 @@ public class EntityTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * バリデーションテストを実行する。
+     * Bean Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
      *
      * @param prefix      パラメータのMapに入ったキーのプレフィクス
      * @param entityClass バリデーション対象のエンティティのクラス
@@ -161,16 +162,15 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
      */
     public <T> void testBeanValidation(String prefix, Class<T> entityClass, String sheetName) {
-        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
-        if (!(strategy instanceof BeanValidationTestStrategy)) {
+        if (!(getStrategy() instanceof BeanValidationTestStrategy)) {
             throw new UnsupportedOperationException("Use method 'testValidateAndConvert'.");
         }
 
-        testValidateAllParameters(strategy, prefix, entityClass, sheetName, null);
+        testValidateAllParameters(prefix, entityClass, sheetName, null);
     }
 
-    private <T> void testValidateAllParameters(ValidationTestStrategy strategy, String prefix, Class<T> entityClass, String sheetName, String validateFor) {
+    private <T> void testValidateAllParameters(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         // テストケース表
         List<Map<String, String>> testCases = getTestCasesFromSheet(sheetName);
 
@@ -185,6 +185,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             Map<String, String> testCase = testCases.get(i);
 
             // Bean Validationのグループ取得
+            // 実装を共通化する目的で、Nablarch Validationでもグループ取得処理を実行する。
             Class<?> group = strategy.getGroupFromName(testCase.remove(GROUP_KEY));
 
             Map<String, String[]> httpParams = httpParamsList.get(i);
@@ -192,7 +193,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             ValidationTestContext ctx =
                     strategy.validateParameters(prefix, entityClass, httpParams, validateFor, group);
             // メッセージID確認
-            assertMessageEquals(strategy, testCase, ctx);
+            assertMessageEquals(testCase, ctx);
         }
     }
 
@@ -263,16 +264,15 @@ public class EntityTestSupport extends TestEventDispatcher {
     /**
      * メッセージが等しいことを表明する。
      *
-     * @param strategy  テスト用バリデーションストラテジ
      * @param aTestCase テストケース（テストケース表の1行）
      * @param ctx       バリデーション結果
      */
-    private void assertMessageEquals(ValidationTestStrategy strategy, Map<String, String> aTestCase, ValidationTestContext ctx) {
+    private void assertMessageEquals(Map<String, String> aTestCase, ValidationTestContext ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
         // 期待値
-        List<Message> expected = createExpectedMessages(strategy, aTestCase);
+        List<Message> expected = createExpectedMessages(aTestCase);
         // 実際の値
         List<Message> actual = ctx.getMessages();
 
@@ -289,7 +289,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param aTestCase テストケース（テストケース表の1行）
      * @return メッセージ
      */
-    private List<Message> createExpectedMessages(ValidationTestStrategy strategy, Map<String, String> aTestCase) {
+    private List<Message> createExpectedMessages(Map<String, String> aTestCase) {
         List<Message> msgs = new ArrayList<Message>();
         for (int i = 1;; i++) {
             String msgId = aTestCase.get(MSG_ID_PREFIX + i);
@@ -299,7 +299,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             }
             StringResource stringResource = MessageUtil.getStringResource(msgId);
             Message msg = StringUtil.isNullOrEmpty(prop)
-                    ? new Message(MessageLevel.ERROR, stringResource, new Object[0])
+                    ? strategy.createExpectedMessage(MessageLevel.ERROR, stringResource, new Object[0])
                     : strategy.createExpectedValidationResultMessage(prop, stringResource, null);
             msgs.add(msg);
         }
@@ -665,12 +665,12 @@ public class EntityTestSupport extends TestEventDispatcher {
     public <ENTITY> void testValidateCharsetAndLength(
             Class<ENTITY> targetClass, String sheetName, String id) {
 
-        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
-
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
         for (Map<String, String> testData : testDataList) {
 
-            Class<?> group = strategy.getGroupFromName(testData.remove(GROUP_KEY));
+            // Bean Validationのグループ取得
+            // 実装を共通化する目的で、Nablarch Validationでもグループ取得処理を実行する。
+            Class<?> group = getStrategy().getGroupFromName(testData.remove(GROUP_KEY));
             CharsetTestVariation<ENTITY> tester
                     = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
             tester.testAll();
@@ -716,14 +716,15 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 必須カラム存在チェック
         checkRequiredColumns(REQUIRED_COLUMNS_FOR_SINGLE_VALIDATION, list, sheetName, id);
 
-        ValidationTestStrategy strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
 
         // 全件実行
         for (Map<String, String> row : list) {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
-            Class<?> group = strategy.getGroupFromName(row.get(GROUP_KEY));
+            // Bean Validationのグループ取得
+            // 実装を共通化する目的で、Nablarch Validationでもグループ取得処理を実行する。
+            Class<?> group = getStrategy().getGroupFromName(row.get(GROUP_KEY));
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
                     .testSingleValidation(group, input, messageId);
         }
@@ -802,6 +803,18 @@ public class EntityTestSupport extends TestEventDispatcher {
         if (list.isEmpty()) {
             throw new IllegalArgumentException("data [" + id + "] not found in sheet [" + sheetName + "].");
         }
+    }
+
+    /**
+     * テスト用バリデーションストラテジを取得する。
+     *
+     * @return テスト用バリデーションストラテジ
+     */
+    private ValidationTestStrategy getStrategy(){
+        if(strategy == null) {
+            strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        }
+        return strategy;
     }
 }
 

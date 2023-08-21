@@ -8,7 +8,6 @@ import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.StringResource;
 import nablarch.core.util.StringUtil;
-import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.ValidatorUtil;
 
@@ -19,8 +18,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Bean Validationを使用するときの{@link ValidationTestStrategy}実装クラス。
+ */
 public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
+    /** フォームファクトリ。 */
+    private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group) {
         assert(null != group);
@@ -40,6 +48,9 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         return new ValidationTestContext(messages);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String notUse, Class<?> group) {
         assert(null != group);
@@ -91,7 +102,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     /**
      * {@inheritDoc}
-     * Bean Validationで{@link ValidationResultMessage}を検証する際は、メッセージ本文を比較する。
      */
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
@@ -100,13 +110,9 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     /**
      * {@inheritDoc}
-     * Bean Validationで{@link Message}を検証する際は、メッセージ本文を比較する。
      */
     @Override
     public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
         return new MessageComparedByContent(level, stringResource, options);
     }
-
-    /** フォームファクトリ。 */
-    private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
 }

@@ -4,7 +4,8 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * {@link CharacterGeneratorBase.RandomStringGenerator}のテストクラス
@@ -52,8 +53,7 @@ public class RandomStringGeneratorTest {
     }
 
     /**
-     * ランダムな文字列が生成できること。
-     * 文字集合にサロゲートペアが含まれていても、文字数カウントがずれないこと
+     * 生成される文字列にサロゲートペアが含まれていても、指定した桁数のランダムな文字列が生成できること。
      */
     @Test
     public void testGenerateSurrogatePairString() {

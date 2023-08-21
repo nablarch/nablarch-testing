@@ -14,8 +14,17 @@ import java.util.Map;
 
 import static nablarch.core.util.Builder.concat;
 
+/**
+ * Nablarch Validationを使用するときの{@link ValidationTestStrategy}実装クラス。
+ */
 public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
+    /** {@link ValidationManager}を取得する為のキー */
+    private static final String VALIDATION_MANAGER_NAME = "validationManager";
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> notUse) {
         // 入力値（1項目分のみ）
@@ -36,6 +45,9 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         return new ValidationTestContext(ctx.getMessages());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String validateFor, Class<?> notUse) {
             ValidationContext<?> ctx =
@@ -54,7 +66,6 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
     /**
      * {@inheritDoc}
-     * Nablarch Validationで{@link ValidationResultMessage}を検証する際は、メッセージIDを比較する。
      */
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
@@ -63,15 +74,11 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
     /**
      * {@inheritDoc}
-     * Nablarch Validationで{@link Message}を検証する際は、メッセージIDを比較する。
      */
     @Override
     public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
         return new MessageComparedById(level, stringResource, options);
     }
-
-    /** {@link ValidationManager}を取得する為のキー */
-    private static final String VALIDATION_MANAGER_NAME = "validationManager";
 
     private static ValidationManager getValidationManager() {
         ValidationManager validationManager = SystemRepository.get(VALIDATION_MANAGER_NAME);

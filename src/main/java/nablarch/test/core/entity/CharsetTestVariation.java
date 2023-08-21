@@ -61,7 +61,7 @@ public class CharsetTestVariation<ENTITY> {
     /** 最小桁数 */
     private final int min;
 
-    /** 最大桁数欄は空欄か（Bean ValidationのときのみTrueとなりうる） */
+    /** 最大桁数欄は空欄か */
     private final boolean isMaxEmpty;
 
     /** 最小桁数欄は空欄か */
@@ -170,7 +170,7 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 最長桁数のテストを行う。 */
     public void testMaxLength() {
-        // maxが空の場合はテストしない (最大値に制限が無いため)。
+        // maxが空の場合は、最大値に制限が無いことを意味するため、テストしない。
         if(isMaxEmpty) {
             return;
         }

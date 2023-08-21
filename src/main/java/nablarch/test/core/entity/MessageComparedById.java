@@ -6,7 +6,6 @@ import nablarch.core.message.StringResource;
 
 /**
  * {@link Message}同士の比較をメッセージIDで実行するためのクラス。
- * {@link Message}を継承したクラスと比較する際に、メッセージIDとエラーレベルのみで比較するために使用する。
  */
 public class MessageComparedById extends Message {
 
