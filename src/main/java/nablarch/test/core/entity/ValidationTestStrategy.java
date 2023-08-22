@@ -8,8 +8,7 @@ import nablarch.core.validation.ValidationResultMessage;
 import java.util.Map;
 
 /**
- * Form/Entityテストのストラテジ。
- * 実行するバリデーションの種類毎に実装クラスを作成する。
+ * Form/Entityテストで使用するバリデーション毎のストラテジ。
  */
 public interface ValidationTestStrategy {
 
@@ -44,6 +43,7 @@ public interface ValidationTestStrategy {
 
     /**
      * メッセージ比較用の{@link ValidationResultMessage}を生成する。
+     *
      * @param propertyName   プロパティ名
      * @param stringResource メッセージ
      * @param options        オプションパラメータ
@@ -53,6 +53,7 @@ public interface ValidationTestStrategy {
 
     /**
      * メッセージ比較用の{@link Message}を生成する。
+     *
      * @param level          メッセージレベル
      * @param stringResource メッセージ
      * @param options        オプションパラメータ

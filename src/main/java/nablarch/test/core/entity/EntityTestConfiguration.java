@@ -68,7 +68,6 @@ public class EntityTestConfiguration {
 
     /**
      * 桁数不足テスト時に期待するメッセージIDを取得する。
-     * 許容する桁数に応じて適切なメッセージIDを返却される。
      *
      * @param max 最長桁数
      * @param min 最短桁数
@@ -76,11 +75,11 @@ public class EntityTestConfiguration {
      */
     String getUnderLimitMessageId(Integer max, Integer min) {
         // 最大桁数及び桁数不足メッセージの両方が設定されていない場合はエラーとする。
-        if (null == max && null == minMessageId) {
+        if (max == null && minMessageId == null) {
             throw new IllegalArgumentException("If max is not specified, minMessageId must be specified.");
         }
 
-        if (null == max) {
+        if (max == null) {
             return minMessageId;      // 最短のみ
         } else if (max.equals(min)) {
             return fixLengthMessageId;
@@ -93,7 +92,6 @@ public class EntityTestConfiguration {
 
     /**
      * 桁数超過時のメッセージIDを取得する。
-     * 許容する桁数に応じて適切なメッセージIDを返却される。
      *
      * @param max 最大桁数
      * @param min 最小桁数

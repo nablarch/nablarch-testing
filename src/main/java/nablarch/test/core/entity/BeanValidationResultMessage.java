@@ -1,7 +1,5 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.message.Message;
-import nablarch.core.message.StringResource;
 import nablarch.core.validation.ValidationResultMessage;
 
 import static nablarch.core.util.Builder.concat;
@@ -11,6 +9,9 @@ import static nablarch.core.util.Builder.concat;
  */
 public class BeanValidationResultMessage extends ValidationResultMessage {
 
+    /**
+     * メッセージ
+     */
     private final ValidationResultMessage message;
 
     /**
@@ -62,6 +63,7 @@ public class BeanValidationResultMessage extends ValidationResultMessage {
      *
      * <p>
      * 委譲先のメッセージのハッシュコード値を返却するのみ。
+     *
      * @return ハッシュコード値。
      */
     @Override
@@ -71,6 +73,7 @@ public class BeanValidationResultMessage extends ValidationResultMessage {
 
     /**
      * このオブジェクトの文字列表現を返す。
+     *
      * @return メッセージIDとバリデーション対象プロパティを記載した文字列
      */
     @Override

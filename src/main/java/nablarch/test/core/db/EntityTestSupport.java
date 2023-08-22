@@ -23,7 +23,6 @@ import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
-import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
 import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.CharsetTestVariation;
@@ -76,6 +75,9 @@ public class EntityTestSupport extends TestEventDispatcher {
                     PROP_NAME_PREFIX + '1'
             ));
 
+    /** BeanValidationのグループが属するパッケージ名のキー */
+    private static final String GROUP_KEY = "group";
+
     /** 期待値(getterから取得される値)のキー値 */
     private static final String GET_KEY = "get";
 
@@ -118,7 +120,6 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(Class, Map, String)
      */
     public <T> void testValidateAndConvert(Class<T> entityClass, String sheetName, String validateFor) {
         testValidateAndConvert(null, entityClass, sheetName, validateFor);
@@ -170,6 +171,15 @@ public class EntityTestSupport extends TestEventDispatcher {
         testValidateAllParameters(prefix, entityClass, sheetName, null);
     }
 
+    /**
+     * バリデーションテストの共通メソッド。
+     *
+     * @param prefix      パラメータのMapに入ったキーのプレフィクス
+     * @param entityClass バリデーション対象のエンティティのクラス
+     * @param sheetName   シート名
+     * @param validateFor バリデーション対象メソッド名
+     * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     */
     private <T> void testValidateAllParameters(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         // テストケース表
         List<Map<String, String>> testCases = getTestCasesFromSheet(sheetName);
@@ -185,7 +195,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             Map<String, String> testCase = testCases.get(i);
 
             // Bean Validationのグループ取得
-            // 実装を共通化する目的で、Nablarch Validationでもグループ取得処理を実行する。
+            // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
             Class<?> group = strategy.getGroupFromName(testCase.remove(GROUP_KEY));
 
             Map<String, String[]> httpParams = httpParamsList.get(i);
@@ -669,7 +679,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         for (Map<String, String> testData : testDataList) {
 
             // Bean Validationのグループ取得
-            // 実装を共通化する目的で、Nablarch Validationでもグループ取得処理を実行する。
+            // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
             Class<?> group = getStrategy().getGroupFromName(testData.remove(GROUP_KEY));
             CharsetTestVariation<ENTITY> tester
                     = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
@@ -699,9 +709,6 @@ public class EntityTestSupport extends TestEventDispatcher {
                     MESSAGE_ID
             ));
 
-    /** BeanValidationのグループが属するパッケージ名のキー */
-    private static final String GROUP_KEY = "group";
-
     /**
      * 単項目のバリデーションテストをする。
      *
@@ -723,7 +730,7 @@ public class EntityTestSupport extends TestEventDispatcher {
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
             // Bean Validationのグループ取得
-            // 実装を共通化する目的で、Nablarch Validationでもグループ取得処理を実行する。
+            // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
             Class<?> group = getStrategy().getGroupFromName(row.get(GROUP_KEY));
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
                     .testSingleValidation(group, input, messageId);

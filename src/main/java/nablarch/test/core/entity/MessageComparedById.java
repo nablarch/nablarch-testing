@@ -24,17 +24,11 @@ public class MessageComparedById extends Message {
         this.message = message;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public MessageLevel getLevel() {
         return message.getLevel();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getMessageId() {
         return message.getMessageId();
@@ -84,6 +78,7 @@ public class MessageComparedById extends Message {
 
     /**
      * このオブジェクトの文字列表現を返す。
+     *
      * @return メッセージIDとエラーレベルを記載した文字列
      */
     @Override

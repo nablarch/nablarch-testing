@@ -28,13 +28,8 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     /** フォームファクトリ。 */
     private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group) {
-        assert(null != group);
-
         // 入力値（1項目分のみ）
         Map<String, String[]> params = new HashMap<String, String[]>(1);
         params.put(targetPropertyName, paramValues);
@@ -54,13 +49,8 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         return new ValidationTestContext(convertedMessages);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String notUse, Class<?> group) {
-        assert(null != group);
-
         // 入力値 (キーがprefixから始まるもののみ)
         Map<String, String[]> convertedParams;
 
@@ -92,9 +82,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         return new ValidationTestContext(convertedMessages);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Class<?> getGroupFromName(String groupName) {
 
@@ -110,17 +97,11 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
         return new BeanValidationResultMessage(new ValidationResultMessage(propertyName, stringResource, options));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
         return new MessageComparedByContent(new Message(level, stringResource, options));

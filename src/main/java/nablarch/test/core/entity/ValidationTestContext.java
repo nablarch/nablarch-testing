@@ -14,6 +14,7 @@ public class ValidationTestContext {
 
     /**
      * コンストラクタ。
+     *
      * @param messages バリデーションエラーのメッセージ
      */
     public ValidationTestContext(List<Message> messages) {
@@ -22,7 +23,8 @@ public class ValidationTestContext {
 
     /**
      * バリデーション結果が正当であるかを返却する。
-     * @return バリデーション結果が正当であれば、{@code true}
+     *
+     * @return {@code true} バリデーション結果が正当である場合
      */
     public boolean isValid() {
         return messages.isEmpty();
@@ -30,6 +32,7 @@ public class ValidationTestContext {
 
     /**
      * バリデーションエラーのメッセージを返却する。
+     *
      * @return バリデーションエラーのメッセージ
      */
     public List<Message> getMessages() {

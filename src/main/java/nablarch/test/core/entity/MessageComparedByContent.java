@@ -24,17 +24,11 @@ public class MessageComparedByContent extends Message {
         this.message = message;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public MessageLevel getLevel() {
         return message.getLevel();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String formatMessage() {
         return message.formatMessage();
@@ -85,6 +79,7 @@ public class MessageComparedByContent extends Message {
 
     /**
      * このオブジェクトの文字列表現を返す。
+     *
      * @return メッセージ本文とエラーレベルを記載した文字列
      */
     @Override
