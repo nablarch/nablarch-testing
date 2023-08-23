@@ -8,15 +8,27 @@ import javax.validation.Payload;
 import javax.validation.metadata.ConstraintDescriptor;
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 補完用属性を保持する{@link MessageInterpolator.Context}の実装クラス。
+ */
 public class MockMessageInterpolatorContext implements MessageInterpolator.Context {
 
+    /**
+     * 制約記述子。
+     */
     private final ConstraintDescriptor<?> constraintDescriptor;
 
-    public MockMessageInterpolatorContext(Map<String, Object> interpolateMap){
-        this.constraintDescriptor = new MockConstraintDescriptor<Annotation>(interpolateMap);
+    /**
+     * コンストラクタ。
+     *
+     * @param interpolationMap 補完用属性のマップ
+     */
+    public MockMessageInterpolatorContext(Map<String, Object> interpolationMap){
+        this.constraintDescriptor = new MockConstraintDescriptor<Annotation>(interpolationMap);
     }
 
     @Override
@@ -26,50 +38,63 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
     @Override
     public Object getValidatedValue() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("No use of this method is intended.");
     }
 
     @Override
     public <T> T unwrap(Class<T> type) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("No use of this method is intended.");
     }
 
-    private class MockConstraintDescriptor<T extends Annotation> implements ConstraintDescriptor<T> {
+    /**
+     * 補完用属性を保持する{@link ConstraintDescriptor}の実装クラス。
+     *
+     * @param <T> 制約アノテーションの型
+     */
+    private static class MockConstraintDescriptor<T extends Annotation> implements ConstraintDescriptor<T> {
 
+        /**
+         * 補完用属性のマップ。
+         */
         private final Map<String, Object> interpolateMap;
 
+        /**
+         * コンストラクタ。
+         *
+         * @param interpolateMap 補完用属性のマップ
+         */
         public MockConstraintDescriptor(Map<String, Object> interpolateMap) {
             this.interpolateMap = interpolateMap;
         }
 
         @Override
         public T getAnnotation() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
         public String getMessageTemplate() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
         public Set<Class<?>> getGroups() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
         public Set<Class<? extends Payload>> getPayload() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
         public ConstraintTarget getValidationAppliesTo() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
         public List<Class<? extends ConstraintValidator<T, ?>>> getConstraintValidatorClasses() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
@@ -79,12 +104,12 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
         @Override
         public Set<ConstraintDescriptor<?>> getComposingConstraints() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
 
         @Override
         public boolean isReportAsSingleViolation() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("No use of this method is intended.");
         }
     }
 }

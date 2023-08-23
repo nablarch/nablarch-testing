@@ -2,7 +2,6 @@ package nablarch.test.core.entity;
 
 import nablarch.common.web.validator.BeanValidationFormFactory;
 import nablarch.common.web.validator.SimpleReflectionBeanValidationFormFactory;
-import nablarch.core.ThreadContext;
 import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
@@ -139,7 +138,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
         Matcher m = MESSAGE_ID.matcher(messageString);
         if (m.matches()) {
-            messageContent = MessageUtil.getStringResource(m.group(1)).getValue(getLanguage());
+            messageContent = MessageUtil.getStringResource(m.group(1)).getValue(DEFAULT_LOCALE);
         }
 
         // オプションがMapの場合は、MessageInterpolatorによる補完を試みる。
@@ -148,7 +147,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
             Map<String, Object> interpolationMap = (Map<String, Object>) options[0];
             MessageInterpolator.Context context = new MockMessageInterpolatorContext(interpolationMap);
             MessageInterpolator interpolator = getMessageInterpolator();
-            messageContent = interpolator.interpolate(messageContent, context, getLanguage());
+            messageContent = interpolator.interpolate(messageContent, context, DEFAULT_LOCALE);
         }
 
         return new StringResourceMock(messageContent);
@@ -166,16 +165,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         }
 
         return messageInterpolator;
-    }
-
-    /**
-     * スレッドコンテキストから現在の言語を取得する。
-     *
-     * @return 現在の言語が設定された {@link Locale} 、なければシステムデフォルトの言語が設定された {@link Locale}
-     */
-    private static Locale getLanguage() {
-        final Locale language = ThreadContext.getLanguage();
-        return language != null ? language : DEFAULT_LOCALE;
     }
 
     /**

@@ -17,19 +17,19 @@ public class TestBeanTest extends EntityTestSupport {
 
     private static final String[][] MESSAGES = {
             {"MSG00010", "ja", "入力必須項目です。"},
-            {"MSG00011", "ja", "{0}は{1}桁以上{2}桁以下で入力してください。"},
-            {"MSG00012", "ja", "{0}を入力してください。"},
-            {"MSG00023", "ja", "{0}は{1}桁で入力してください。"},
-            {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
-            {"MSG00025", "ja", "{0}は{2}文字以上で入力して下さい。"},
-            {"MSG90001", "ja", "{0}が正しくありません。"},
-            {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}桁以下で入力してくださいよ。"},
-            {"nablarch.core.validation.ee.Length.min.max.message", "ja", "{0}は{1}桁以上{2}桁以下で入力してくださいよ。"},
-            {"nablarch.core.validation.ee.Length.fixed.message", "ja", "{0}は{1}桁で入力してくださいよ。"},
-            {"nablarch.core.validation.ee.Length.min.message", "ja", "{0}は{1}桁以上で入力してくださいよ。"},
-            {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須ですよ"},
-            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{0}を使用してくださいよ。"},
-            {"nablarch.core.validation.ee.Size.min.max.message", "ja", "要素の個数は{0}以上{1}以下にしてくださいよよ。"}
+            {"MSG00011", "ja", "文字列は{min}桁以上{max}桁以下で入力してください。"},
+            {"MSG00012", "ja", "{charsetDef}を入力してください。"},
+            {"MSG00023", "ja", "文字列は{max}桁で入力してください。"},
+            {"MSG00024", "ja", "文字列は{max}文字以下で入力して下さい。"},
+            {"MSG00025", "ja", "文字列は{min}文字以上で入力して下さい。"},
+            {"MSG90001", "ja", "{charsetDef}が正しくありません。"},
+            {"nablarch.core.validation.ee.Length.max.message", "ja", "文字列は{max}桁以下で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Length.min.max.message", "ja", "文字列は{min}桁以上{max}桁以下で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Length.fixed.message", "ja", "文字列は{max}桁で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Length.min.message", "ja", "文字列は{min}桁以上で入力してくださいよ。"},
+            {"nablarch.core.validation.ee.Required.message", "ja", "必須ですよ"},
+            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{charsetDef}を使用してくださいよ。"},
+            {"nablarch.core.validation.ee.Size.min.max.message", "ja", "要素の個数は{min}以上{max}以下にしてくださいよ。"}
     };
 
     @Before
