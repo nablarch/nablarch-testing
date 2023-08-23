@@ -84,8 +84,7 @@ public class SingleValidationTester<ENTITY> {
             // バリデーションが失敗していること
             assertFalse(msgOnFail, ctx.isValid());
             // メッセージが期待通りであること
-            StringResource stringResource = MessageUtil.getStringResource(expectedMessageId);
-            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, stringResource, null);
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, null);
             assertEquals(msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
@@ -113,8 +112,7 @@ public class SingleValidationTester<ENTITY> {
         if(isNullOrEmpty(expectedMessageId)) {
             expected = "no message";
         } else {
-            StringResource stringResource = MessageUtil.getStringResource(expectedMessageId);
-            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, stringResource, new Object[0]);
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, new Object[0]);
             expected = concat("message [", expectedMessage, "]");
         }
 

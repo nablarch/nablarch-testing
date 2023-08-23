@@ -39,7 +39,8 @@ public class BeanValidationTestStrategyTest {
             {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}文字以下で入力して下さい。"},
             {"nablarch.core.validation.ee.SystemChar.message", "ja", "{0}を入力してください。"},
             {"nablarch.core.validation.ee.Size.max.message", "ja", "不正なサイズです"},
-            {"MSG00024", "ja", "{0}は{2}文字以下でないとあかんで"}
+            {"MSG00024", "ja", "{0}は{2}文字以下でないとあかんで"},
+            {"MSGTEST", "ja", "message1"}
     };
 
     @Before
@@ -275,18 +276,18 @@ public class BeanValidationTestStrategyTest {
     }
 
     /**
-     * {@link BeanValidationResultMessage}を取得できること。
+     * メッセージ本文から{@link BeanValidationResultMessage}を取得できること。
      */
     @Test
-    public void createExpectedValidationResultMessage() {
+    public void createExpectedValidationResultMessageFromContent() {
 
         // setup
-        Message actual = sut.createExpectedValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
+        Message actual = sut.createExpectedValidationResultMessage("test", "message1", new Object[0]);
         Message validationResultMessage1 = new ValidationResultMessage("test", new MockStringResource("2", "message1"), new Object[0]);
         Message validationResultMessage2 = new ValidationResultMessage("test", new MockStringResource("1", "message2"), new Object[0]);
         Message validationResultMessage3 = new ValidationResultMessage("hoge", new MockStringResource("1", "message1"), new Object[0]);
         Message basicMessage = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
-        Message forCompareHashCode = new ValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
+        Message forCompareHashCode = new ValidationResultMessage("test", new MockStringResource("dummy", "message1"), new Object[0]);
 
         // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
         //noinspection SimplifiableAssertion
@@ -304,17 +305,73 @@ public class BeanValidationTestStrategyTest {
     }
 
     /**
-     * {@link MessageComparedByContent}を取得できること。
+     * メッセージIDから{@link BeanValidationResultMessage}を取得できること。
      */
     @Test
-    public void createExpectedMessage() {
+    public void createExpectedValidationResultMessageFromId() {
 
-        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        // setup
+        Message actual = sut.createExpectedValidationResultMessage("test", "{MSGTEST}", new Object[0]);
+        Message validationResultMessage1 = new ValidationResultMessage("test", new MockStringResource("2", "message1"), new Object[0]);
+        Message validationResultMessage2 = new ValidationResultMessage("test", new MockStringResource("1", "message2"), new Object[0]);
+        Message validationResultMessage3 = new ValidationResultMessage("hoge", new MockStringResource("1", "message1"), new Object[0]);
+        Message basicMessage = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        Message forCompareHashCode = new ValidationResultMessage("test", new MockStringResource("MSGTEST", "message1"), new Object[0]);
+
+        // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(validationResultMessage1));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(validationResultMessage2));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(validationResultMessage3));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(basicMessage));
+
+        assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
+
+        assertEquals("messageContent=[message1] propertyName=[test]", actual.toString());
+    }
+    /**
+     * メッセージ本文から{@link MessageComparedByContent}を取得できること。
+     */
+    @Test
+    public void createExpectedMessageFromContent() {
+
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "message1", new Object[0]);
         Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), new Object[0]);
         Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("1", "message2"), new Object[0]);
         Message message3 = new Message(MessageLevel.WARN, new MockStringResource("1", "message1"), new Object[0]);
         Message validationResultMessage = new ValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
-        Message forCompareHashCode = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        Message forCompareHashCode = new Message(MessageLevel.ERROR, new MockStringResource("dummy", "message1"), new Object[0]);
+
+        // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(message1));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(message2));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(message3));
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(validationResultMessage));
+
+        assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
+
+        assertEquals("messageContent=[message1] errorLevel=[ERROR]", actual.toString());
+    }
+
+    /**
+     * メッセージIDから{@link MessageComparedByContent}を取得できること。
+     */
+    @Test
+    public void createExpectedMessageFromId() {
+
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "{MSGTEST}", new Object[0]);
+        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), new Object[0]);
+        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("1", "message2"), new Object[0]);
+        Message message3 = new Message(MessageLevel.WARN, new MockStringResource("1", "message1"), new Object[0]);
+        Message validationResultMessage = new ValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
+        Message forCompareHashCode = new Message(MessageLevel.ERROR, new MockStringResource("MSGTEST", "message1"), new Object[0]);
 
         // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
         //noinspection SimplifiableAssertion

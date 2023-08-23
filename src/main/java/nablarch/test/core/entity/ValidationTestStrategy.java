@@ -44,20 +44,20 @@ public interface ValidationTestStrategy {
     /**
      * メッセージ比較用の{@link ValidationResultMessage}を生成する。
      *
-     * @param propertyName   プロパティ名
-     * @param stringResource メッセージ
-     * @param options        オプションパラメータ
+     * @param propertyName  プロパティ名
+     * @param messageString メッセージを特定する文字列
+     * @param options       オプションパラメータ
      * @return {@link ValidationResultMessage}
      */
-    Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options);
+    Message createExpectedValidationResultMessage(String propertyName, String messageString, Object[] options);
 
     /**
      * メッセージ比較用の{@link Message}を生成する。
      *
-     * @param level          メッセージレベル
-     * @param stringResource メッセージ
-     * @param options        オプションパラメータ
+     * @param level         メッセージレベル
+     * @param messageString メッセージを特定する文字列
+     * @param options       オプションパラメータ
      * @return {@link Message}
      */
-    Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options);
+    Message createExpectedMessage(MessageLevel level, String messageString, Object[] options);
 }

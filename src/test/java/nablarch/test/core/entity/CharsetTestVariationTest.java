@@ -474,28 +474,30 @@ public class CharsetTestVariationTest {
     public void testAsciiSuccessWithBeanValidationTestStrategy() {
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMaxMessageId("{nablarch.core.validation.ee.Length.max.message}");
 
         Map<String, String> paramsForAscii = newMap(new String[][] {
                 {"propertyName", "numberMax"},
                 {"allowEmpty", "o"},
                 {"min", ""},
-                {"max", "10"},
-                {"messageIdWhenNotApplicable", ""},
-                {"半角英字", "o"},
+                {"max", "50"},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"半角英字", "x"},
                 {"半角数字", "o"},
-                {"半角記号", "o"},
-                {"半角カナ", "o"},
-                {"全角英字", "o"},
-                {"全角数字", "o"},
-                {"全角ひらがな", "o"},
-                {"全角カタカナ", "o"},
-                {"全角漢字", "o"},
-                {"全角記号その他", "o"},
-                {"外字", "o"}
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
         });
 
         CharsetTestVariation<TestBean> target
-                = new CharsetTestVariation<TestBean>(TestBean.class, TestBean.Test1.class, paramsForAscii);
+                = new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
         target.testAllCharsetVariation();
         target.testOverLimit();  // 最大桁数超過
         target.testUnderLimit(); // 桁数不足
@@ -515,14 +517,14 @@ public class CharsetTestVariationTest {
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setMinMessageId("nablarch.core.validation.ee.Length.min.message");
+                .setMinMessageId("{nablarch.core.validation.ee.Length.min.message}");
 
         Map<String, String> paramsForAscii = newMap(new String[][] {
                 {"propertyName", "numberMin"},
                 {"allowEmpty", "o"},
                 {"min", "50"},
                 {"max", ""},
-                {"messageIdWhenNotApplicable", "nablarch.core.validation.ee.SystemChar.message"},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
                 {"半角英字", "x"},
                 {"半角数字", "o"},
                 {"半角記号", "x"},
@@ -558,14 +560,14 @@ public class CharsetTestVariationTest {
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setMinMessageId("nablarch.core.validation.ee.Length.min.message");
+                .setMinMessageId("{nablarch.core.validation.ee.Length.min.message}");
 
         Map<String, String> paramsForAscii = newMap(new String[][] {
                 {"propertyName", "numberMin"},
                 {"allowEmpty", "o"},
                 {"min", "10"},
                 {"max", ""},
-                {"messageIdWhenInvalidLength", "MSG00025"},
+                {"messageIdWhenInvalidLength", "{MSG00025}"},
                 {"messageIdWhenNotApplicable", ""},
                 {"半角英字", "o"},
                 {"半角数字", "o"},

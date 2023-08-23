@@ -37,17 +37,17 @@ public class TestBeanTest extends EntityTestSupport {
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                 .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setMaxMessageId("nablarch.core.validation.ee.Length.max.message");
+                .setMaxMessageId("{nablarch.core.validation.ee.Length.max.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setMaxAndMinMessageId("nablarch.core.validation.ee.Length.min.max.message");
+                .setMaxAndMinMessageId("{nablarch.core.validation.ee.Length.min.max.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setFixLengthMessageId("nablarch.core.validation.ee.Length.fixed.message");
+                .setFixLengthMessageId("{nablarch.core.validation.ee.Length.fixed.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setUnderLimitMessageId("nablarch.core.validation.ee.Length.min.max.message");
+                .setUnderLimitMessageId("{nablarch.core.validation.ee.Length.min.max.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setEmptyInputMessageId("nablarch.core.validation.ee.Required.message");
+                .setEmptyInputMessageId("{nablarch.core.validation.ee.Required.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
-                .setMinMessageId("nablarch.core.validation.ee.Length.min.message");
+                .setMinMessageId("{nablarch.core.validation.ee.Length.min.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
     }

@@ -12,6 +12,7 @@ import nablarch.core.validation.ValidationUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static nablarch.core.util.Builder.concat;
@@ -65,12 +66,14 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
     }
 
     @Override
-    public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
+    public Message createExpectedValidationResultMessage(String propertyName, String messageString, Object[] options) {
+        StringResource stringResource = new MockStringResource(messageString);
         return new ValidationResultMessage(propertyName, stringResource, options);
     }
 
     @Override
-    public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
+    public Message createExpectedMessage(MessageLevel level, String messageString, Object[] options) {
+        StringResource stringResource = new MockStringResource(messageString);
         return new MessageComparedById(new Message(level, stringResource, options));
     }
 
@@ -81,5 +84,24 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
                     + "check configuration. key=[" + VALIDATION_MANAGER_NAME + "]");
         }
         return validationManager;
+    }
+
+    private static class MockStringResource implements StringResource {
+
+        private final String id;
+
+        public MockStringResource(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public String getValue(Locale locale) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

@@ -6,6 +6,7 @@ import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
+import nablarch.core.message.MessageUtil;
 import nablarch.core.message.StringResource;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ValidationResultMessage;
@@ -17,8 +18,11 @@ import javax.validation.groups.Default;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Bean Validationを使用するときの{@link ValidationTestStrategy}実装クラス。
@@ -27,6 +31,11 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     /** フォームファクトリ。 */
     private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
+
+    /**
+     * メッセージIDのパターン。
+     */
+    private static final Pattern MESSAGE_ID = Pattern.compile("\\{(.+)\\}");
 
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group) {
@@ -98,12 +107,44 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
     }
 
     @Override
-    public Message createExpectedValidationResultMessage(String propertyName, StringResource stringResource, Object[] options) {
+    public Message createExpectedValidationResultMessage(String propertyName, String messageString, Object[] options) {
+        StringResource stringResource = getStringResource(messageString);
         return new BeanValidationResultMessage(new ValidationResultMessage(propertyName, stringResource, options));
     }
 
     @Override
-    public Message createExpectedMessage(MessageLevel level, StringResource stringResource, Object[] options) {
+    public Message createExpectedMessage(MessageLevel level, String messageString, Object[] options) {
+        StringResource stringResource = getStringResource(messageString);
         return new MessageComparedByContent(new Message(level, stringResource, options));
+    }
+
+    private StringResource getStringResource(String messageString) {
+        StringResource stringResource = new StringResourceMock(messageString);
+
+        Matcher m = MESSAGE_ID.matcher(messageString);
+        if (m.matches()) {
+            stringResource = MessageUtil.getStringResource(m.group(1));
+        }
+
+        return stringResource;
+    }
+
+    private static class StringResourceMock implements StringResource {
+
+        private final String value;
+
+        public StringResourceMock(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String getId() {
+            return "dummy";
+        }
+
+        @Override
+        public String getValue(Locale locale) {
+            return value;
+        }
     }
 }

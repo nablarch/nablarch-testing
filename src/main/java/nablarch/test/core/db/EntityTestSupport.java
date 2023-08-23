@@ -307,10 +307,9 @@ public class EntityTestSupport extends TestEventDispatcher {
             if (StringUtil.isNullOrEmpty(msgId)) {
                 break;
             }
-            StringResource stringResource = MessageUtil.getStringResource(msgId);
             Message msg = StringUtil.isNullOrEmpty(prop)
-                    ? strategy.createExpectedMessage(MessageLevel.ERROR, stringResource, new Object[0])
-                    : strategy.createExpectedValidationResultMessage(prop, stringResource, null);
+                    ? strategy.createExpectedMessage(MessageLevel.ERROR, msgId, new Object[0])
+                    : strategy.createExpectedValidationResultMessage(prop, msgId, null);
             msgs.add(msg);
         }
         return msgs;

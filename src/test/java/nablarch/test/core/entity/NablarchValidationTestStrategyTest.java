@@ -206,7 +206,7 @@ public class NablarchValidationTestStrategyTest {
     @Test
     public void createExpectedValidationResultMessage() {
 
-        Message actual = sut.createExpectedValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
+        Message actual = sut.createExpectedValidationResultMessage("test", "1", new Object[0]);
         Message validationResultMessage1 = new ValidationResultMessage("test", new MockStringResource("2", "message1"), new Object[0]);
         Message validationResultMessage2 = new ValidationResultMessage("test", new MockStringResource("1", "message2"), new Object[0]);
         Message validationResultMessage3 = new ValidationResultMessage("hoge", new MockStringResource("1", "message1"), new Object[0]);
@@ -229,7 +229,7 @@ public class NablarchValidationTestStrategyTest {
     @Test
     public void createExpectedMessage() {
 
-        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "1", new Object[0]);
         Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), new Object[0]);
         Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("1", "message2"), new Object[0]);
         Message message3 = new Message(MessageLevel.WARN, new MockStringResource("1", "message1"), new Object[0]);
