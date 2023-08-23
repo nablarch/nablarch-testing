@@ -77,6 +77,11 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         return new MessageComparedById(new Message(level, stringResource, options));
     }
 
+    /**
+     * {@link ValidationManager}を取得する。
+     *
+     * @return {@link ValidationManager}
+     */
     private static ValidationManager getValidationManager() {
         ValidationManager validationManager = SystemRepository.get(VALIDATION_MANAGER_NAME);
         if (validationManager == null) {
@@ -86,6 +91,9 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
         return validationManager;
     }
 
+    /**
+     * メッセージ構築用モックの{@link StringResource}。
+     */
     private static class MockStringResource implements StringResource {
 
         private final String id;

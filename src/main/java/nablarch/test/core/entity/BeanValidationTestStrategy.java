@@ -2,18 +2,22 @@ package nablarch.test.core.entity;
 
 import nablarch.common.web.validator.BeanValidationFormFactory;
 import nablarch.common.web.validator.SimpleReflectionBeanValidationFormFactory;
+import nablarch.core.ThreadContext;
 import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.MessageUtil;
 import nablarch.core.message.StringResource;
+import nablarch.core.repository.SystemRepository;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
+import nablarch.core.validation.ee.NablarchMessageInterpolator;
 import nablarch.core.validation.ee.ValidatorUtil;
 
 import javax.validation.ConstraintViolation;
+import javax.validation.MessageInterpolator;
 import javax.validation.groups.Default;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +35,11 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     /** フォームファクトリ。 */
     private final BeanValidationFormFactory formFactory = new SimpleReflectionBeanValidationFormFactory();
+
+    /**
+     * デフォルトの言語。
+     */
+    private static final Locale DEFAULT_LOCALE = new Locale(Locale.getDefault().getLanguage());
 
     /**
      * メッセージIDのパターン。
@@ -108,27 +117,70 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, String messageString, Object[] options) {
-        StringResource stringResource = getStringResource(messageString);
-        return new BeanValidationResultMessage(new ValidationResultMessage(propertyName, stringResource, options));
+        StringResource stringResource = getStringResource(messageString, options);
+        return new BeanValidationResultMessage(new ValidationResultMessage(propertyName, stringResource, null));
     }
 
     @Override
     public Message createExpectedMessage(MessageLevel level, String messageString, Object[] options) {
-        StringResource stringResource = getStringResource(messageString);
-        return new MessageComparedByContent(new Message(level, stringResource, options));
+        StringResource stringResource = getStringResource(messageString, options);
+        return new MessageComparedByContent(new Message(level, stringResource));
     }
 
-    private StringResource getStringResource(String messageString) {
-        StringResource stringResource = new StringResourceMock(messageString);
+    /**
+     * 期待するメッセージの{@link StringResource}を取得する。
+     *
+     * @param messageString メッセージを特定する文字列
+     * @param options       Bean Validationのメッセージ補完用属性のリスト
+     * @return              期待するメッセージの {@link StringResource}
+     */
+    private StringResource getStringResource(String messageString, Object[] options) {
+        String messageContent = messageString;
 
         Matcher m = MESSAGE_ID.matcher(messageString);
         if (m.matches()) {
-            stringResource = MessageUtil.getStringResource(m.group(1));
+            messageContent = MessageUtil.getStringResource(m.group(1)).getValue(getLanguage());
         }
 
-        return stringResource;
+        // オプションがMapの場合は、MessageInterpolatorによる補完を試みる。
+        if(options != null && options.length == 1 && options[0] instanceof Map) {
+            //noinspection unchecked
+            Map<String, Object> interpolationMap = (Map<String, Object>) options[0];
+            MessageInterpolator.Context context = new MockMessageInterpolatorContext(interpolationMap);
+            MessageInterpolator interpolator = getMessageInterpolator();
+            messageContent = interpolator.interpolate(messageContent, context, getLanguage());
+        }
+
+        return new StringResourceMock(messageContent);
     }
 
+    /**
+     * {@link MessageInterpolator}を取得する。
+     *
+     * @return システムリポジトリに登録された {@link MessageInterpolator} 、なければ {@link NablarchMessageInterpolator}
+     */
+    private MessageInterpolator getMessageInterpolator() {
+        MessageInterpolator messageInterpolator = SystemRepository.get("messageInterpolator");
+        if (messageInterpolator == null) {
+            messageInterpolator = new NablarchMessageInterpolator();
+        }
+
+        return messageInterpolator;
+    }
+
+    /**
+     * スレッドコンテキストから現在の言語を取得する。
+     *
+     * @return 現在の言語が設定された {@link Locale} 、なければシステムデフォルトの言語が設定された {@link Locale}
+     */
+    private static Locale getLanguage() {
+        final Locale language = ThreadContext.getLanguage();
+        return language != null ? language : DEFAULT_LOCALE;
+    }
+
+    /**
+     * メッセージ構築用モックの{@link StringResource}。
+     */
     private static class StringResourceMock implements StringResource {
 
         private final String value;

@@ -31,6 +31,10 @@ public class CharsetTestVariation<ENTITY> {
     private static final String MAX = "max";
     /** 最短桁数のカラム名 */
     private static final String MIN = "min";
+    /** Bean Validationのメッセージ補完用属性キーのカラム名 */
+    private static final String INTERPOLATE_KEY_PREFIX = "interpolateKey_";
+    /** Bean Validationのメッセージ補完用属性値のカラム名 */
+    private static final String INTERPOLATE_VALUE_PREFIX = "interpolateValue_";
 
     /** 必須カラム */
     private static final List<String> REQUIRED_COLUMNS = Arrays.asList(
@@ -66,6 +70,9 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 最小桁数欄は空欄か */
     private final boolean isMinEmpty;
+
+    /** Bean Validationのメッセージ補完用属性のマップ */
+    private final Map<String, Object> options;
 
     /** テストデータ */
     private final Map<String, String> testData;
@@ -119,6 +126,36 @@ public class CharsetTestVariation<ENTITY> {
 
         // Bean Validationのグループ
         this.group = group;
+
+        // Bean Validationのメッセージ補完用属性のマップ
+        options = new HashMap<String, Object>();
+        for(int i = 1;; i++) {
+            String keyOfInterpolateKey = INTERPOLATE_KEY_PREFIX + i;
+            String keyOfInterpolateValue = INTERPOLATE_VALUE_PREFIX + i;
+
+            // i番目の補完用属性のキーの片方が見つからない場合、不正な状態として報告する。
+            if(testData.containsKey(keyOfInterpolateKey) ^ testData.containsKey(keyOfInterpolateValue)) {
+                throw new IllegalStateException("Unexpected interpolate key or interpolate value remain.");
+            }
+
+            // i番目の補完用属性のキーが両方とも見つからない場合、i+1番目以降のキーが無いことを確認する。
+            if(!testData.containsKey(keyOfInterpolateKey) && !testData.containsKey(keyOfInterpolateValue)) {
+                for (Map.Entry<String, String> entry : testData.entrySet()) {
+                    if(entry.getKey().startsWith(INTERPOLATE_KEY_PREFIX) || entry.getValue().startsWith(INTERPOLATE_VALUE_PREFIX)) {
+                        throw new IllegalStateException("Unexpected interpolate key or interpolate value remain.");
+                    }
+                }
+                break;
+            }
+
+            String interpolateKey = testData.remove(keyOfInterpolateKey);
+            String interpolateValue = testData.remove(keyOfInterpolateValue);
+            if(StringUtil.isNullOrEmpty(interpolateKey)) {
+                continue;
+            }
+
+            options.put(interpolateKey, interpolateValue);
+        }
 
         // 残りのデータ
         this.testData = testData;
@@ -231,7 +268,7 @@ public class CharsetTestVariation<ENTITY> {
             // 入力値
             String param = generate(charsetType, isMaxEmpty ? min : max);
             // 単項目バリデーションを実行
-            tester.testSingleValidation(group, param, expectedMessageId, "charset type=[" + charsetType + "]");
+            tester.testSingleValidation(group, options, param, expectedMessageId, "charset type=[" + charsetType + "]");
         }
     }
 
@@ -258,7 +295,7 @@ public class CharsetTestVariation<ENTITY> {
 
         String charsetType = getApplicableType();       // 文字種
         String param = generate(charsetType, length);   // 入力値
-        tester.testSingleValidation(group, param, expectedMessageId, msgOnFail);
+        tester.testSingleValidation(group, options, param, expectedMessageId, msgOnFail);
     }
 
     /**

@@ -2,11 +2,10 @@ package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
-import nablarch.core.message.StringResource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static junit.framework.Assert.assertTrue;
 import static nablarch.core.util.Builder.concat;
@@ -49,22 +48,26 @@ public class SingleValidationTester<ENTITY> {
     /**
      * 単項目のバリデーションテストを行う。
      *
+     * @param group               Bean Validationのグループ
+     * @param options             Bean Validationのメッセージ補完用マップ
      * @param paramValue          パラメータとして使用する値
      * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
      * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(Class<?> group, String paramValue, String expectedMessageId, String... additionalMsgOnFail) {
-        testSingleValidation(group, new String[]{paramValue}, expectedMessageId, additionalMsgOnFail);
+    public void testSingleValidation(Class<?> group, Map<String, Object> options, String paramValue, String expectedMessageId, String... additionalMsgOnFail) {
+        testSingleValidation(group, options, new String[]{paramValue}, expectedMessageId, additionalMsgOnFail);
     }
 
     /**
      * 単項目のバリデーションテストを行う。
      *
+     * @param group               Bean Validationのグループ
+     * @param options             Bean Validationのメッセージ補完用マップ
      * @param paramValue          パラメータとして使用する値
      * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
      * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(Class<?> group, String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
+    public void testSingleValidation(Class<?> group, Map<String, Object> options, String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
         ValidationTestContext ctx = strategy.invokeValidation(entityClass, targetPropertyName, paramValue, group);
@@ -74,6 +77,7 @@ public class SingleValidationTester<ENTITY> {
         String msgOnFail = createMessageOnFailure(
                 paramValue,
                 expectedMessageId,
+                options,
                 actualMessages,
                 additionalMsgOnFail);
 
@@ -84,7 +88,7 @@ public class SingleValidationTester<ENTITY> {
             // バリデーションが失敗していること
             assertFalse(msgOnFail, ctx.isValid());
             // メッセージが期待通りであること
-            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, null);
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, new Object[]{options});
             assertEquals(msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
@@ -102,7 +106,7 @@ public class SingleValidationTester<ENTITY> {
      * @param additionalMsg     テスト失敗時の追加メッセージ文言
      * @return テスト失敗時のメッセージ文言
      */
-    private String createMessageOnFailure(String[] paramValue, String expectedMessageId,
+    private String createMessageOnFailure(String[] paramValue, String expectedMessageId, Map<String, Object> options,
                                           List<Message> actualMessages, String... additionalMsg) {
 
         // 追加の文言
@@ -112,7 +116,7 @@ public class SingleValidationTester<ENTITY> {
         if(isNullOrEmpty(expectedMessageId)) {
             expected = "no message";
         } else {
-            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, new Object[0]);
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, new Object[]{options});
             expected = concat("message [", expectedMessage, "]");
         }
 

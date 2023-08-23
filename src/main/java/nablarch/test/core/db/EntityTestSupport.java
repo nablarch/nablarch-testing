@@ -17,8 +17,6 @@ import java.util.TreeSet;
 
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
-import nablarch.core.message.StringResource;
 import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
@@ -78,6 +76,12 @@ public class EntityTestSupport extends TestEventDispatcher {
     /** BeanValidationのグループが属するパッケージ名のキー */
     private static final String GROUP_KEY = "group";
 
+    /** Bean Validationのメッセージ補完用属性キーのカラム名 */
+    private static final String INTERPOLATE_KEY_PREFIX = "interpolateKey";
+
+    /** Bean Validationのメッセージ補完用属性値のカラム名 */
+    private static final String INTERPOLATE_VALUE_PREFIX = "interpolateValue";
+
     /** 期待値(getterから取得される値)のキー値 */
     private static final String GET_KEY = "get";
 
@@ -93,6 +97,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     private final DbAccessTestSupport dbSupport;
 
+    /** テスト用バリデーションストラテジ */
     private ValidationTestStrategy strategy;
 
     /**
@@ -307,10 +312,15 @@ public class EntityTestSupport extends TestEventDispatcher {
             if (StringUtil.isNullOrEmpty(msgId)) {
                 break;
             }
+            // Bean Validation メッセージ補完用属性のマップ
+            Map<String, Object> interpolateMap = getInterpolationMap(INTERPOLATE_KEY_PREFIX + i, INTERPOLATE_VALUE_PREFIX + i, aTestCase);
+
             Message msg = StringUtil.isNullOrEmpty(prop)
-                    ? strategy.createExpectedMessage(MessageLevel.ERROR, msgId, new Object[0])
-                    : strategy.createExpectedValidationResultMessage(prop, msgId, null);
+                    ? strategy.createExpectedMessage(MessageLevel.ERROR, msgId, new Object[]{interpolateMap})
+                    : strategy.createExpectedValidationResultMessage(prop, msgId, new Object[]{interpolateMap});
             msgs.add(msg);
+
+
         }
         return msgs;
     }
@@ -731,8 +741,10 @@ public class EntityTestSupport extends TestEventDispatcher {
             // Bean Validationのグループ取得
             // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
             Class<?> group = getStrategy().getGroupFromName(row.get(GROUP_KEY));
+            // Bean Validationのメッセージ補完用属性のマップ取得
+            Map<String, Object> options = getInterpolationMap(INTERPOLATE_KEY_PREFIX, INTERPOLATE_VALUE_PREFIX, row);
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
-                    .testSingleValidation(group, input, messageId);
+                    .testSingleValidation(group, options, input, messageId);
         }
     }
 
@@ -756,11 +768,37 @@ public class EntityTestSupport extends TestEventDispatcher {
             }
             String value = row.get(key);
             if (StringUtil.isNullOrEmpty(value)) {
-                break;
+                continue;
             }
             result.add(value);
         }
         return result.toArray(new String[0]);
+    }
+
+    /**
+     * Bean Validationのメッセージ補完用属性のマップを取得する。
+     *
+     * @param row 行データ
+     * @return メッセージ補完用属性のマップ
+     */
+    private Map<String, Object> getInterpolationMap(String interpolateKeyPrefix, String interpolateValuePrefix, Map<String, String> row) {
+        Map<String, Object> interpolateMap = new HashMap<String, Object>();
+        for (int i = 1;; i++) {
+            String keyOfInterpolateKey = interpolateKeyPrefix + "_" + i;
+            String keyOfInterpolateValue = interpolateValuePrefix + "_" + i;
+            if(!row.containsKey(keyOfInterpolateKey) || !row.containsKey(keyOfInterpolateValue)) {
+                break;
+            }
+
+            String interpolateKey = row.get(keyOfInterpolateKey);
+            if (StringUtil.isNullOrEmpty(interpolateKey)) {
+                continue;
+            }
+
+            String interpolateValue = row.get(keyOfInterpolateValue);
+            interpolateMap.put(interpolateKey, interpolateValue);
+        }
+        return interpolateMap;
     }
 
     /**

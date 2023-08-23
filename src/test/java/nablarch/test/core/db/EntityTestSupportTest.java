@@ -45,7 +45,8 @@ public class EntityTestSupportTest {
             {"MSG00010", "ja", "message", "en", "message"},
             {"MSG00019", "ja", "messageAssertTrue", "en", "messageAssertTrue"},
             {"MSG90010", "ja", "messageFoo", "en", "messageBar"},
-            {"MSG90019", "ja", "messageAssertFalse", "en", "messageAssertFalse"}
+            {"MSG90019", "ja", "messageAssertFalse", "en", "messageAssertFalse"},
+            {"MSG00020", "ja", "messageLength_min={min}_max={max}", "en", "messageLength"}
     };
 
     /** {@link EntityTestSupport#testSetterAndGetter(java.lang.Class, java.lang.String, java.lang.String)}のテスト。 */
@@ -396,6 +397,7 @@ public class EntityTestSupportTest {
                 @nablarch.core.validation.ee.Required(message = "{MSG00010}"),
                 @nablarch.core.validation.ee.Required(message = "{MSG90010}", groups = Test1.class)
         })
+        @nablarch.core.validation.ee.Length(max = 10, min = 1, message = "{MSG00020}")
         private String userName;
 
         public FugaBean() {
@@ -418,7 +420,7 @@ public class EntityTestSupportTest {
             if(StringUtil.isNullOrEmpty(userName)){
                 return true;
             }
-            return "xxx".equals(userName);
+            return userName.startsWith("xxx");
         }
 
         @AssertFalse(groups = Test1.class, message = "{MSG90019}")

@@ -53,9 +53,10 @@ public class CharsetTestVariationTest {
             {"MSG20013", "ja", "{0}は{1}桁以下でなければなりません。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
             {"nablarch.core.validation.ee.Required.message", "ja", "{0}は必須ですよ。"},
+            {"nablarch.core.validation.ee.Length.min.max.message", "ja", "文字列長は{min}文字以上{max}文字以下にしてくださいよ。"},
             {"nablarch.core.validation.ee.Length.max.message", "ja", "{0}は{2}文字以下にしてくださいよ。"},
             {"nablarch.core.validation.ee.Length.min.message", "ja", "{0}は{2}文字以上にしてくださいよ。"},
-            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{0}を使用してくださいよ。"}
+            {"nablarch.core.validation.ee.SystemChar.message", "ja", "文字集合は{charsetDef}を使用してくださいよ。"}
     };
 
     @Before
@@ -466,7 +467,7 @@ public class CharsetTestVariationTest {
     }
 
     /**
-     * ASCII文字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
+     * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
      */
@@ -483,6 +484,8 @@ public class CharsetTestVariationTest {
                 {"min", ""},
                 {"max", "50"},
                 {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
                 {"半角英字", "x"},
                 {"半角数字", "o"},
                 {"半角記号", "x"},
@@ -507,6 +510,232 @@ public class CharsetTestVariationTest {
     }
 
     /**
+     * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
+     * 想定通りである場合、例外が発生しない。
+     * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
+     * 複数のメッセージ補完用属性を設定できること。
+     */
+    @Test
+    public void testNumberSuccessWithMultipleInterpolationAttributes() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMaxAndMinMessageId("{nablarch.core.validation.ee.Length.min.max.message}");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setUnderLimitMessageId("{nablarch.core.validation.ee.Length.min.max.message}");
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberMaxMin"},
+                {"allowEmpty", "o"},
+                {"min", "20"},
+                {"max", "50"},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
+                {"interpolateKey_2", ""},
+                {"interpolateValue_2", ""},
+                {"interpolateKey_3", "min"},
+                {"interpolateValue_3", "20"},
+                {"interpolateKey_4", ""},
+                {"interpolateValue_4", ""},
+                {"interpolateKey_5", "max"},
+                {"interpolateValue_5", "50"},
+                {"interpolateKey_6", ""},
+                {"interpolateValue_6", ""},
+                {"半角英字", "x"},
+                {"半角数字", "o"},
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+
+        CharsetTestVariation<TestBean> target
+                = new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
+        target.testAllCharsetVariation();
+        target.testOverLimit();  // 最大桁数超過
+        target.testUnderLimit(); // 桁数不足
+        target.testMaxLength();  // 最大桁数
+        target.testMinLength();  // 最短桁数
+        target.testEmptyInput(); // 未入力
+    }
+
+    /**
+     * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
+     * 想定通りである場合、例外が発生しない。
+     * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
+     * 指定したメッセージ本体に、複数のメッセージ補完用属性を設定できること。
+     */
+    @Test
+    public void testNumberSuccessWithRawMessageAndMultipleInterpolationAttributes() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMaxAndMinMessageId("{nablarch.core.validation.ee.Length.min.max.message}");
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setUnderLimitMessageId("{nablarch.core.validation.ee.Length.min.max.message}");
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberMaxMin"},
+                {"allowEmpty", "o"},
+                {"min", "20"},
+                {"max", "50"},
+                {"messageIdWhenInvalidLength", "文字列長は{min}文字以上{max}文字以下にしてくださいよ。"},
+                {"messageIdWhenNotApplicable", "文字集合は{charsetDef}を使用してくださいよ。"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
+                {"interpolateKey_2", ""},
+                {"interpolateValue_2", ""},
+                {"interpolateKey_3", "min"},
+                {"interpolateValue_3", "20"},
+                {"interpolateKey_4", ""},
+                {"interpolateValue_4", ""},
+                {"interpolateKey_5", "max"},
+                {"interpolateValue_5", "50"},
+                {"半角英字", "x"},
+                {"半角数字", "o"},
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+
+        CharsetTestVariation<TestBean> target
+                = new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
+        target.testAllCharsetVariation();
+        target.testOverLimit();  // 最大桁数超過
+        target.testUnderLimit(); // 桁数不足
+        target.testMaxLength();  // 最大桁数
+        target.testMinLength();  // 最短桁数
+        target.testEmptyInput(); // 未入力
+    }
+
+    /**
+     * Bean Validationのメッセージ補完用属性のキー番号に飛びがある場合、例外が発生すること。
+     */
+    @Test
+    public void testNumberFailureWithSkippingInterpolationAttributes() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberMaxMin"},
+                {"allowEmpty", "o"},
+                {"min", "20"},
+                {"max", "50"},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
+                {"interpolateKey_3", "min"},
+                {"interpolateValue_3", "20"},
+                {"interpolateKey_5", "max"},
+                {"interpolateValue_5", "50"},
+                {"半角英字", "x"},
+                {"半角数字", "o"},
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+
+        expectedException.expect(IllegalStateException.class);
+        expectedException.expectMessage("Unexpected interpolate key or interpolate value remain.");
+
+        new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
+    }
+
+    /**
+     * Bean Validationのメッセージ補完用属性のキーが欠けている場合、例外が発生すること。
+     */
+    @Test
+    public void testNumberFailureWithMissingInterpolationAttributeKey() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberMaxMin"},
+                {"allowEmpty", "o"},
+                {"min", "20"},
+                {"max", "50"},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
+                {"interpolateKey_2", "min"},
+                {"interpolateValue_2", "20"},
+                {"interpolateValue_3", "50"},
+                {"半角英字", "x"},
+                {"半角数字", "o"},
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+
+        expectedException.expect(IllegalStateException.class);
+        expectedException.expectMessage("Unexpected interpolate key or interpolate value remain.");
+
+        new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
+    }
+
+    /**
+     * Bean Validationのメッセージ補完用属性の値が欠けている場合、例外が発生すること。
+     */
+    @Test
+    public void testNumberFailureWithMissingInterpolationAttributeValue() {
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberMaxMin"},
+                {"allowEmpty", "o"},
+                {"min", "20"},
+                {"max", "50"},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
+                {"interpolateKey_2", "min"},
+                {"interpolateValue_2", "20"},
+                {"interpolateKey_3", "max"},
+                {"半角英字", "x"},
+                {"半角数字", "o"},
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+
+        expectedException.expect(IllegalStateException.class);
+        expectedException.expectMessage("Unexpected interpolate key or interpolate value remain.");
+
+        new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
+    }
+
+    /**
      * ASCII文字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
@@ -525,6 +754,8 @@ public class CharsetTestVariationTest {
                 {"min", "50"},
                 {"max", ""},
                 {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
                 {"半角英字", "x"},
                 {"半角数字", "o"},
                 {"半角記号", "x"},

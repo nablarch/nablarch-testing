@@ -53,7 +53,7 @@ public class SingleValidationTesterTest {
     @Test
     public void testTestSingleValidation1() {
         SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
-        target.testSingleValidation(null, "abc123#", "");  // OK
+        target.testSingleValidation(null, null, "abc123#", "");  // OK
     }
 
     /**
@@ -63,7 +63,7 @@ public class SingleValidationTesterTest {
     public void testTestSingleValidationFail() {
         SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
         try {
-            target.testSingleValidation(null, "abc123#", "MSG999999", "[testTestSingleValidationFail]");  // 期待したメッセージIDではない
+            target.testSingleValidation(null, null, "abc123#", "MSG999999", "[testTestSingleValidationFail]");  // 期待したメッセージIDではない
             fail();
         } catch (AssertionError e) {
             assertThat(e.getMessage(), containsString("property=[ascii] message [messageId=[MSG999999] errorLevel=[ERROR]] is expected."));
@@ -76,6 +76,6 @@ public class SingleValidationTesterTest {
     @Test
     public void testTestSingleValidation() {
         SingleValidationTester<TestEntity> target = new SingleValidationTester<TestEntity>(TestEntity.class, "ascii");
-        target.testSingleValidation(null, "漢字", "MSG00012"); // expected messageId should be returned
+        target.testSingleValidation(null, null, "漢字", "MSG00012"); // expected messageId should be returned
     }
 }

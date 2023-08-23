@@ -206,11 +206,11 @@ public class NablarchValidationTestStrategyTest {
     @Test
     public void createExpectedValidationResultMessage() {
 
-        Message actual = sut.createExpectedValidationResultMessage("test", "1", new Object[0]);
-        Message validationResultMessage1 = new ValidationResultMessage("test", new MockStringResource("2", "message1"), new Object[0]);
-        Message validationResultMessage2 = new ValidationResultMessage("test", new MockStringResource("1", "message2"), new Object[0]);
-        Message validationResultMessage3 = new ValidationResultMessage("hoge", new MockStringResource("1", "message1"), new Object[0]);
-        Message basicMessage = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        Message actual = sut.createExpectedValidationResultMessage("test", "1", null);
+        Message validationResultMessage1 = new ValidationResultMessage("test", new MockStringResource("2", "message1"), null);
+        Message validationResultMessage2 = new ValidationResultMessage("test", new MockStringResource("1", "message2"), null);
+        Message validationResultMessage3 = new ValidationResultMessage("hoge", new MockStringResource("1", "message1"), null);
+        Message basicMessage = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), null);
 
         // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
         //noinspection SimplifiableAssertion
@@ -229,12 +229,12 @@ public class NablarchValidationTestStrategyTest {
     @Test
     public void createExpectedMessage() {
 
-        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "1", new Object[0]);
-        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), new Object[0]);
-        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("1", "message2"), new Object[0]);
-        Message message3 = new Message(MessageLevel.WARN, new MockStringResource("1", "message1"), new Object[0]);
-        Message validationResultMessage = new ValidationResultMessage("test", new MockStringResource("1", "message1"), new Object[0]);
-        Message forCompareHashCode = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), new Object[0]);
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "1", null);
+        Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), null);
+        Message message2 = new Message(MessageLevel.ERROR, new MockStringResource("1", "message2"), null);
+        Message message3 = new Message(MessageLevel.WARN, new MockStringResource("1", "message1"), null);
+        Message validationResultMessage = new ValidationResultMessage("test", new MockStringResource("1", "message1"), null);
+        Message forCompareHashCode = new Message(MessageLevel.ERROR, new MockStringResource("1", "message1"), null);
 
         // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
         //noinspection SimplifiableAssertion
