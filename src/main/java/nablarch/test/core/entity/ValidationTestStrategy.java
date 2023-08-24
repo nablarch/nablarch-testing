@@ -2,7 +2,6 @@ package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
-import nablarch.core.message.StringResource;
 import nablarch.core.validation.ValidationResultMessage;
 
 import java.util.Map;

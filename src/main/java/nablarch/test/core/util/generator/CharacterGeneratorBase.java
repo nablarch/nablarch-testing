@@ -95,7 +95,7 @@ public abstract class CharacterGeneratorBase implements CharacterGenerator {
                 throw new IllegalArgumentException("argument must not be negative.");
             }
             StringBuilder result = new StringBuilder(length);
-            while (length > result.codePointCount(0, result.length())) {
+            while (result.codePointCount(0, result.length()) < length) {
                 result.append(generate());
             }
             return result.toString();
