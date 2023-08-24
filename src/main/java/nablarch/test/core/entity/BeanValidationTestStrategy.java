@@ -126,7 +126,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
      * @return              期待するメッセージの {@link StringResource}
      */
     private StringResource getStringResource(String messageString, Object[] options) {
-        // オプションがMapの場合は、MessageInterpolatorによる補完を試みる。
+        // オプションがMapの場合には、MessageInterpolatorによるパラメータ式の変換も実施する
         Map<String, Object> interpolationMap;
         if(options != null && options.length == 1 && options[0] instanceof Map) {
             //noinspection unchecked
@@ -135,6 +135,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
             interpolationMap = new HashMap<String, Object>();
         }
 
+        // MessageInterpolatorによるメッセージの変換を実施
         MessageInterpolator.Context context = new MockMessageInterpolatorContext(interpolationMap);
         MessageInterpolator interpolator = getMessageInterpolator();
         String messageContent = interpolator.interpolate(messageString, context, DEFAULT_LOCALE);
