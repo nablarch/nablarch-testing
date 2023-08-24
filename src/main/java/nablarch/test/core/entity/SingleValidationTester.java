@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.assertTrue;
 import static nablarch.core.util.Builder.concat;
 import static nablarch.core.util.Builder.join;
 import static nablarch.core.util.StringUtil.hasValue;
 import static nablarch.core.util.StringUtil.isNullOrEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 /**

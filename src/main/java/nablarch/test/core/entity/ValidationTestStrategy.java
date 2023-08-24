@@ -14,10 +14,10 @@ public interface ValidationTestStrategy {
     /**
      * 単一のプロパティについて、バリデーションを実行する。
      *
-     * @param entityClass テスト対象対象クラス名
+     * @param entityClass        テスト対象対象クラス名
      * @param targetPropertyName バリデーション対象プロパティ名
-     * @param group Bean Validationのグループ（Bean Validationを使用するときのみ有効）
-     * @param paramValues パラメータとして使用する値
+     * @param group              Bean Validationのグループ（Bean Validationを使用するときのみ有効）
+     * @param paramValues        パラメータとして使用する値
      * @return テスト用バリデーションコンテキスト
      */
     ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group);
@@ -25,9 +25,11 @@ public interface ValidationTestStrategy {
     /**
      * 入力全体のバリデーションを実行する。
      *
+     * @param prefix      入力値のマップに入ったキーのプレフィクス
      * @param entityClass テスト対象対象クラス名
-     * @param group Bean Validationのグループ（Bean Validationを使用するときのみ有効）
-     * @param params 入力値を表すマップ
+     * @param validateFor バリデーション対象メソッド名
+     * @param group       Bean Validationのグループ（Bean Validationを使用するときのみ有効）
+     * @param params      入力値を表すマップ
      * @return テスト用バリデーションコンテキスト
      */
     ValidationTestContext validateParameters(String prefix, Class<?> entityClass, Map<String, String[]> params, String validateFor, Class<?> group);

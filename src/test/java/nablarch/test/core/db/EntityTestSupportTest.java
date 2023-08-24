@@ -23,7 +23,7 @@ import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.AssertTrue;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * {@link EntityTestSupport}のテストクラス。
@@ -35,11 +35,12 @@ public class EntityTestSupportTest {
     @Rule
     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     /** テスト対象 */
-    private EntityTestSupport support = new EntityTestSupport(getClass());
+    private final EntityTestSupport support = new EntityTestSupport(getClass());
 
     private static final String[][] MESSAGES = {
             {"MSG00010", "ja", "message", "en", "message"},
@@ -431,7 +432,7 @@ public class EntityTestSupportTest {
             return "yyy".equals(userName);
         }
 
-        public interface Test1{};
+        public interface Test1{}
     }
 
     public static class HogeEntity {

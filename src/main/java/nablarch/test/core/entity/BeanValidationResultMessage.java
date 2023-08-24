@@ -16,6 +16,7 @@ public class BeanValidationResultMessage extends ValidationResultMessage {
 
     /**
      * コンストラクタ。
+     * @param message {@link ValidationResultMessage}
      */
     public BeanValidationResultMessage(ValidationResultMessage message) {
         super(null,null,null);

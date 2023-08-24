@@ -65,6 +65,4 @@ public class ValidationTestContextTest {
             return null;
         }
     }
-
-
 }

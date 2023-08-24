@@ -167,9 +167,6 @@ public class BeanValidationTestStrategyTest {
         assertFalse(context.isValid()); // バリデーションはNGのはず
     }
 
-    private final String digits50 = "01234567890123456789012345678901234567890123456789";
-    private final String digits20 = "01234567890123456789";
-    private final String digits10 = "0123456789";
 
     /**
      * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
@@ -178,6 +175,7 @@ public class BeanValidationTestStrategyTest {
     public void testAllValidateWithValidParameters() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String digits20 = "01234567890123456789";
         httpParams.put("number", new String[]{digits20});  // 半角数字, 20文字以下
         httpParams.put("ascii", new String[]{"abcdef"});   // ascii文字
 
@@ -196,6 +194,7 @@ public class BeanValidationTestStrategyTest {
     public void testAllValidateWithValidParametersAndPrefix() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String digits50 = "01234567890123456789012345678901234567890123456789";
         httpParams.put("number", new String[]{digits50});      // 不正な値だがプレフィクスがないのでBeanに設定されない
         httpParams.put("form.ascii", new String[]{"abcdef"});  // ascii文字
 
@@ -213,6 +212,7 @@ public class BeanValidationTestStrategyTest {
     public void testAllValidateWithInvalidParameters() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String digits50 = "01234567890123456789012345678901234567890123456789";
         httpParams.put("number", new String[]{digits50});  // 半角数字, 20文字以下である必要があるが50文字の値を指定
         httpParams.put("ascii", new String[]{"abcdef"});   // ascii文字
 
@@ -232,6 +232,7 @@ public class BeanValidationTestStrategyTest {
     public void testAllValidateWithInvalidValidParametersAndPrefix() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String digits50 = "01234567890123456789012345678901234567890123456789";
         httpParams.put("number", new String[]{digits50});      // 不正な値だがプレフィクスがないのでBeanに設定されない
         httpParams.put("form.ascii", new String[]{"あいうえお"});  // 不正な値（ascii文字以外）
 
@@ -251,6 +252,7 @@ public class BeanValidationTestStrategyTest {
     public void testAllValidateWithValidParametersOnTest1Group() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String digits10 = "0123456789";
         httpParams.put("number", new String[]{digits10});    // 半角数字, 10文字以下
         httpParams.put("ascii", new String[]{"abcdef"});     // 半角英字
 

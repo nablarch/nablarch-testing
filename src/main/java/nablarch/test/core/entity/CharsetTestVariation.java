@@ -88,6 +88,7 @@ public class CharsetTestVariation<ENTITY> {
      * コンストラクタ。
      *
      * @param entityClass テスト対象エンティティクラス
+     * @param group       Bean Validationのグループ
      * @param testData    テストデータ
      */
     public CharsetTestVariation(Class<ENTITY> entityClass, Class<?> group, Map<String, String> testData) {

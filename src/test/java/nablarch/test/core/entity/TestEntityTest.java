@@ -45,7 +45,7 @@ public class TestEntityTest extends EntityTestSupport {
                           .setMessages(MESSAGES);
     }
 
-    private Class<TestEntity> targetClass = TestEntity.class;
+    private final Class<TestEntity> targetClass = TestEntity.class;
 
     /**
      * 文字種と文字列長のテスト
