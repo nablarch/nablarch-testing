@@ -307,17 +307,17 @@ public class EntityTestSupport extends TestEventDispatcher {
     private List<Message> createExpectedMessages(Map<String, String> aTestCase) {
         List<Message> msgs = new ArrayList<Message>();
         for (int i = 1;; i++) {
-            String msgId = aTestCase.get(MSG_ID_PREFIX + i);
+            String messageString = aTestCase.get(MSG_ID_PREFIX + i);
             String prop = aTestCase.get(PROP_NAME_PREFIX + i);
-            if (StringUtil.isNullOrEmpty(msgId)) {
+            if (StringUtil.isNullOrEmpty(messageString)) {
                 break;
             }
             // Bean Validation メッセージ補完用属性のマップ
             Map<String, Object> interpolationMap = getInterpolationMap(INTERPOLATE_KEY_PREFIX + i, INTERPOLATE_VALUE_PREFIX + i, aTestCase);
 
             Message msg = StringUtil.isNullOrEmpty(prop)
-                    ? strategy.createExpectedMessage(MessageLevel.ERROR, msgId, new Object[]{interpolationMap})
-                    : strategy.createExpectedValidationResultMessage(prop, msgId, new Object[]{interpolationMap});
+                    ? strategy.createExpectedMessage(MessageLevel.ERROR, messageString, new Object[]{interpolationMap})
+                    : strategy.createExpectedValidationResultMessage(prop, messageString, new Object[]{interpolationMap});
             msgs.add(msg);
 
 

@@ -48,26 +48,26 @@ public class SingleValidationTester<ENTITY> {
     /**
      * 単項目のバリデーションテストを行う。
      *
-     * @param group               Bean Validationのグループ
-     * @param options             Bean Validationのメッセージ補完用マップ
-     * @param paramValue          パラメータとして使用する値
-     * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
-     * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
+     * @param group                 Bean Validationのグループ
+     * @param options               Bean Validationのメッセージ補完用マップ
+     * @param paramValue            パラメータとして使用する値
+     * @param expectedMessageString 期待するメッセージ文字列（期待しない場合はnullまたは空文字）
+     * @param additionalMsgOnFail   テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(Class<?> group, Map<String, Object> options, String paramValue, String expectedMessageId, String... additionalMsgOnFail) {
-        testSingleValidation(group, options, new String[]{paramValue}, expectedMessageId, additionalMsgOnFail);
+    public void testSingleValidation(Class<?> group, Map<String, Object> options, String paramValue, String expectedMessageString, String... additionalMsgOnFail) {
+        testSingleValidation(group, options, new String[]{paramValue}, expectedMessageString, additionalMsgOnFail);
     }
 
     /**
      * 単項目のバリデーションテストを行う。
      *
-     * @param group               Bean Validationのグループ
-     * @param options             Bean Validationのメッセージ補完用マップ
-     * @param paramValue          パラメータとして使用する値
-     * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
-     * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
+     * @param group                 Bean Validationのグループ
+     * @param options               Bean Validationのメッセージ補完用マップ
+     * @param paramValue            パラメータとして使用する値
+     * @param expectedMessageString 期待するメッセージ文字列（期待しない場合はnullまたは空文字）
+     * @param additionalMsgOnFail   テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(Class<?> group, Map<String, Object> options, String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
+    public void testSingleValidation(Class<?> group, Map<String, Object> options, String[] paramValue, String expectedMessageString, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
         ValidationTestContext ctx = strategy.invokeValidation(entityClass, targetPropertyName, paramValue, group);
@@ -76,19 +76,19 @@ public class SingleValidationTester<ENTITY> {
         // テスト失敗時のメッセージを作成
         String msgOnFail = createMessageOnFailure(
                 paramValue,
-                expectedMessageId,
+                expectedMessageString,
                 options,
                 actualMessages,
                 additionalMsgOnFail);
 
         // バリデーション結果確認
-        boolean isMessageExpected = hasValue(expectedMessageId);
+        boolean isMessageExpected = hasValue(expectedMessageString);
         if (isMessageExpected) {  // メッセージを期待するか否か
             //-- 異常系 --
             // バリデーションが失敗していること
             assertFalse(msgOnFail, ctx.isValid());
             // メッセージが期待通りであること
-            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, new Object[]{options});
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageString, new Object[]{options});
             assertEquals(msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
@@ -100,23 +100,23 @@ public class SingleValidationTester<ENTITY> {
     /**
      * テスト失敗時のメッセージ文言を作成する。
      *
-     * @param paramValue        実際のパラメータ
-     * @param actualMessages    実際のバリデーション実行後に発生したメッセージ群
-     * @param expectedMessageId 期待するメッセージID
-     * @param additionalMsg     テスト失敗時の追加メッセージ文言
+     * @param paramValue            実際のパラメータ
+     * @param actualMessages        実際のバリデーション実行後に発生したメッセージ群
+     * @param expectedMessageString 期待するメッセージ文字列
+     * @param additionalMsg         テスト失敗時の追加メッセージ文言
      * @return テスト失敗時のメッセージ文言
      */
-    private String createMessageOnFailure(String[] paramValue, String expectedMessageId, Map<String, Object> options,
+    private String createMessageOnFailure(String[] paramValue, String expectedMessageString, Map<String, Object> options,
                                           List<Message> actualMessages, String... additionalMsg) {
 
         // 追加の文言
         String additional = concat(additionalMsg);
         // 期待値
         String expected;
-        if(isNullOrEmpty(expectedMessageId)) {
+        if(isNullOrEmpty(expectedMessageString)) {
             expected = "no message";
         } else {
-            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageId, new Object[]{options});
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageString, new Object[]{options});
             expected = concat("message [", expectedMessage, "]");
         }
 

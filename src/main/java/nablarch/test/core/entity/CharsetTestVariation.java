@@ -226,10 +226,10 @@ public class CharsetTestVariation<ENTITY> {
             return;
         }
         Integer min = isMinEmpty ? null : this.min;
-        String expectedMessageId = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
+        String expectedMessageString = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
                 ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                         // テストケースで明示的に指定したメッセージを出力
-        testValidationWithValidCharset(max + 1, expectedMessageId, "over limit length test.");
+        testValidationWithValidCharset(max + 1, expectedMessageString, "over limit length test.");
     }
 
     /** 最短桁数不足のテストを行う。 */
@@ -240,20 +240,20 @@ public class CharsetTestVariation<ENTITY> {
             return;
         }
         Integer max = isMaxEmpty ? null : this.max;
-        String expectedMessageId = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
+        String expectedMessageString = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
                 ? EntityTestConfiguration.getConfig().getUnderLimitMessageId(max, min) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                          // テストケースで明示的に指定したメッセージを出力
-        testValidationWithValidCharset(min - 1, expectedMessageId, "under limit length test.");
+        testValidationWithValidCharset(min - 1, expectedMessageString, "under limit length test.");
     }
 
     /** 未入力のテストを行う。 */
     public void testEmptyInput() {
-        String expectedMessageId = (isEmptyAllowed)
+        String expectedMessageString = (isEmptyAllowed)
                 ? ""                                      // 必須項目でない場合（メッセージが出ないこと）
                 : StringUtil.isNullOrEmpty(messageIdWhenEmptyInput)            // 必須項目の場合、メッセージを出力する。
                 ? EntityTestConfiguration.getConfig().getEmptyInputMessageId() // デフォルトのメッセージを出力
                 : messageIdWhenEmptyInput;                                     // テストケースで明示的に指定したメッセージを出力
-        testValidationWithValidCharset(0, expectedMessageId, "empty input test.");
+        testValidationWithValidCharset(0, expectedMessageString, "empty input test.");
     }
 
     /** 適応可能な文字種のテストを行う。 */
@@ -262,13 +262,13 @@ public class CharsetTestVariation<ENTITY> {
             // 文字種
             String charsetType = e.getKey();
             // 期待するメッセージID
-            String expectedMessageId = e.getValue().equals(OK)
+            String expectedMessageString = e.getValue().equals(OK)
                     ? ""                              // メッセージが出ないこと
                     : messageIdWhenNotApplicable;     // 適用不可時のメッセージID
             // 入力値
             String param = generate(charsetType, isMaxEmpty ? min : max);
             // 単項目バリデーションを実行
-            tester.testSingleValidation(group, options, param, expectedMessageId, "charset type=[" + charsetType + "]");
+            tester.testSingleValidation(group, options, param, expectedMessageString, "charset type=[" + charsetType + "]");
         }
     }
 
@@ -286,16 +286,16 @@ public class CharsetTestVariation<ENTITY> {
     /**
      * 適応可能な文字でバリデーションを行う。
      *
-     * @param length            文字列長
-     * @param expectedMessageId 期待するメッセージID
-     * @param msgOnFail         テスト失敗時のメッセージ
+     * @param length                文字列長
+     * @param expectedMessageString 期待するメッセージ文字列
+     * @param msgOnFail             テスト失敗時のメッセージ
      */
-    private void testValidationWithValidCharset(int length, String expectedMessageId,
+    private void testValidationWithValidCharset(int length, String expectedMessageString,
             String... msgOnFail) {
 
         String charsetType = getApplicableType();       // 文字種
         String param = generate(charsetType, length);   // 入力値
-        tester.testSingleValidation(group, options, param, expectedMessageId, msgOnFail);
+        tester.testSingleValidation(group, options, param, expectedMessageString, msgOnFail);
     }
 
     /**
