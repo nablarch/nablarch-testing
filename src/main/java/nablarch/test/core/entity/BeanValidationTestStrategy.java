@@ -6,7 +6,6 @@ import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
-import nablarch.core.message.MessageUtil;
 import nablarch.core.message.StringResource;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.util.StringUtil;
@@ -24,8 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Bean Validationを使用するときの{@link ValidationTestStrategy}実装クラス。
@@ -39,11 +36,6 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
      * デフォルトの言語。
      */
     private static final Locale DEFAULT_LOCALE = new Locale(Locale.getDefault().getLanguage());
-
-    /**
-     * メッセージIDのパターン。
-     */
-    private static final Pattern MESSAGE_ID = Pattern.compile("\\{(.+)\\}");
 
     @Override
     public ValidationTestContext invokeValidation(Class<?> entityClass, String targetPropertyName, String[] paramValues, Class<?> group) {
@@ -134,21 +126,18 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
      * @return              期待するメッセージの {@link StringResource}
      */
     private StringResource getStringResource(String messageString, Object[] options) {
-        String messageContent = messageString;
-
-        Matcher m = MESSAGE_ID.matcher(messageString);
-        if (m.matches()) {
-            messageContent = MessageUtil.getStringResource(m.group(1)).getValue(DEFAULT_LOCALE);
-        }
-
         // オプションがMapの場合は、MessageInterpolatorによる補完を試みる。
+        Map<String, Object> interpolationMap;
         if(options != null && options.length == 1 && options[0] instanceof Map) {
             //noinspection unchecked
-            Map<String, Object> interpolationMap = (Map<String, Object>) options[0];
-            MessageInterpolator.Context context = new MockMessageInterpolatorContext(interpolationMap);
-            MessageInterpolator interpolator = getMessageInterpolator();
-            messageContent = interpolator.interpolate(messageContent, context, DEFAULT_LOCALE);
+            interpolationMap = (Map<String, Object>) options[0];
+        } else {
+            interpolationMap = new HashMap<String, Object>();
         }
+
+        MessageInterpolator.Context context = new MockMessageInterpolatorContext(interpolationMap);
+        MessageInterpolator interpolator = getMessageInterpolator();
+        String messageContent = interpolator.interpolate(messageString, context, DEFAULT_LOCALE);
 
         return new StringResourceMock(messageContent);
     }
