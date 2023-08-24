@@ -8,12 +8,11 @@ import javax.validation.Payload;
 import javax.validation.metadata.ConstraintDescriptor;
 import java.lang.annotation.Annotation;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * 補完用属性を保持する{@link MessageInterpolator.Context}の実装クラス。
+ * Bean Validationの補完用属性を保持する{@link MessageInterpolator.Context}の実装クラス。
  */
 public class MockMessageInterpolatorContext implements MessageInterpolator.Context {
 

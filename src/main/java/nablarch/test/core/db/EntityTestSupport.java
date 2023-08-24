@@ -73,7 +73,7 @@ public class EntityTestSupport extends TestEventDispatcher {
                     PROP_NAME_PREFIX + '1'
             ));
 
-    /** BeanValidationのグループが属するパッケージ名のキー */
+    /** BeanValidationのグループのキー */
     private static final String GROUP_KEY = "group";
 
     /** Bean Validationのメッセージ補完用属性キーのカラム名 */
@@ -313,11 +313,11 @@ public class EntityTestSupport extends TestEventDispatcher {
                 break;
             }
             // Bean Validation メッセージ補完用属性のマップ
-            Map<String, Object> interpolateMap = getInterpolationMap(INTERPOLATE_KEY_PREFIX + i, INTERPOLATE_VALUE_PREFIX + i, aTestCase);
+            Map<String, Object> interpolationMap = getInterpolationMap(INTERPOLATE_KEY_PREFIX + i, INTERPOLATE_VALUE_PREFIX + i, aTestCase);
 
             Message msg = StringUtil.isNullOrEmpty(prop)
-                    ? strategy.createExpectedMessage(MessageLevel.ERROR, msgId, new Object[]{interpolateMap})
-                    : strategy.createExpectedValidationResultMessage(prop, msgId, new Object[]{interpolateMap});
+                    ? strategy.createExpectedMessage(MessageLevel.ERROR, msgId, new Object[]{interpolationMap})
+                    : strategy.createExpectedValidationResultMessage(prop, msgId, new Object[]{interpolationMap});
             msgs.add(msg);
 
 
@@ -782,7 +782,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @return メッセージ補完用属性のマップ
      */
     private Map<String, Object> getInterpolationMap(String interpolateKeyPrefix, String interpolateValuePrefix, Map<String, String> row) {
-        Map<String, Object> interpolateMap = new HashMap<String, Object>();
+        Map<String, Object> interpolationMap = new HashMap<String, Object>();
         for (int i = 1;; i++) {
             String keyOfInterpolateKey = interpolateKeyPrefix + "_" + i;
             String keyOfInterpolateValue = interpolateValuePrefix + "_" + i;
@@ -796,9 +796,9 @@ public class EntityTestSupport extends TestEventDispatcher {
             }
 
             String interpolateValue = row.get(keyOfInterpolateValue);
-            interpolateMap.put(interpolateKey, interpolateValue);
+            interpolationMap.put(interpolateKey, interpolateValue);
         }
-        return interpolateMap;
+        return interpolationMap;
     }
 
     /**

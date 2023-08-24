@@ -89,7 +89,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         Set<ConstraintViolation<Object>> result =
                 ValidatorUtil.getValidator().validate(bean, group);
 
-        List<Message> messages = new ConstraintViolationConverterFactory().create().convert(result);
+        List<Message> messages = new ConstraintViolationConverterFactory().create(prefix).convert(result);
 
         List<Message> convertedMessages = new ArrayList<Message>();
         for(Message message : messages) {

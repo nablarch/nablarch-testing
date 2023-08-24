@@ -17,6 +17,7 @@ public class MessageComparedById extends Message {
 
     /**
      * コンストラクタ。
+     *
      * @param message メッセージ
      */
     public MessageComparedById(Message message) {
@@ -69,6 +70,7 @@ public class MessageComparedById extends Message {
      *
      * <p>
      * 委譲先のメッセージのハッシュコード値を返却するのみ。
+     *
      * @return ハッシュコード値。
      */
     @Override

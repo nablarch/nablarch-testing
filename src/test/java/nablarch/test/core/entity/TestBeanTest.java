@@ -64,6 +64,10 @@ public class TestBeanTest extends EntityTestSupport {
         testValidateCharsetAndLength(targetClass, sheetName, id);
     }
 
+    /**
+     * 文字種と文字列長のテスト。
+     * グループの指定及び文字列長違反・入力必須違反時のメッセージIDを指定するフォーマットで正しく動くことを確認する。
+     */
     @Test
     public void testCharsetAndLengthWithGroup() {
         String sheetName = "testCharsetAndLengthWithGroup";
@@ -71,6 +75,9 @@ public class TestBeanTest extends EntityTestSupport {
         testValidateCharsetAndLength(targetClass, sheetName, id);
     }
 
+    /**
+     * 文字種・文字列長以外の単項目精査のテスト。
+     */
     @Test
     public void testSingleValidation() {
         String sheetName = "testSingleValidation";
@@ -78,6 +85,10 @@ public class TestBeanTest extends EntityTestSupport {
         testSingleValidation(targetClass, sheetName, id);
     }
 
+    /**
+     * 文字種・文字列長以外の単項目精査のテスト。
+     * グループを明示的に指定するフォーマットで正しく動くことを確認する。
+     */
     @Test
     public void testSingleValidationWithGroup() {
         String sheetName = "testSingleValidationWithGroup";

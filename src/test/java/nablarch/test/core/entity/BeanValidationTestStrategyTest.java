@@ -226,6 +226,25 @@ public class BeanValidationTestStrategyTest {
     }
 
     /**
+     * プレフィクスを指定したパラメータが不正のとき、バリデーションに失敗すること。
+     */
+    @Test
+    public void testAllValidateWithInvalidValidParametersAndPrefix() {
+        // setup
+        Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        httpParams.put("number", new String[]{digits50});      // 不正な値だがプレフィクスがないのでBeanに設定されない
+        httpParams.put("form.ascii", new String[]{"あいうえお"});  // 不正な値（ascii文字以外）
+
+        // execute
+        ValidationTestContext context = sut.validateParameters("form", SampleBean.class, httpParams, null, Default.class);
+
+        // verify
+        assertFalse(context.isValid());
+        assertEquals(1, context.getMessages().size());
+        assertEquals("messageContent=[{0}を入力してください。] propertyName=[form.ascii]", context.getMessages().get(0).toString());
+    }
+
+    /**
      * Test1グループですべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
      */
     @Test
