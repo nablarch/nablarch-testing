@@ -108,12 +108,18 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
 
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, String messageString, Object[] options) {
+        if(StringUtil.isNullOrEmpty(messageString)) {
+            throw new IllegalArgumentException("messageString must be neither null nor empty.");
+        }
         StringResource stringResource = getStringResource(messageString, options);
         return new BeanValidationResultMessage(new ValidationResultMessage(propertyName, stringResource, null));
     }
 
     @Override
     public Message createExpectedMessage(MessageLevel level, String messageString, Object[] options) {
+        if(StringUtil.isNullOrEmpty(messageString)) {
+            throw new IllegalArgumentException("messageString must be neither null nor empty.");
+        }
         StringResource stringResource = getStringResource(messageString, options);
         return new MessageComparedByContent(new Message(level, stringResource));
     }

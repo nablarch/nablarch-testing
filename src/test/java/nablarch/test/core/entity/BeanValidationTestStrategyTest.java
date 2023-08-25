@@ -6,6 +6,7 @@ import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.message.StringResource;
 import nablarch.core.validation.ValidationResultMessage;
 import nablarch.core.validation.ee.Length;
+import nablarch.core.validation.ee.NablarchMessageInterpolator;
 import nablarch.core.validation.ee.Required;
 import nablarch.core.validation.ee.Size;
 import nablarch.core.validation.ee.SystemChar;
@@ -322,6 +323,8 @@ public class BeanValidationTestStrategyTest {
         assertFalse(actual.equals(validationResultMessage3));
         //noinspection SimplifiableAssertion
         assertFalse(actual.equals(basicMessage));
+        //noinspection SimplifiableAssertion,EqualsWithItself
+        assertTrue(actual.equals(actual));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
 
@@ -351,11 +354,26 @@ public class BeanValidationTestStrategyTest {
         assertFalse(actual.equals(validationResultMessage3));
         //noinspection SimplifiableAssertion
         assertFalse(actual.equals(basicMessage));
+        //noinspection SimplifiableAssertion,EqualsWithItself
+        assertTrue(actual.equals(actual));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
 
         assertEquals("messageContent=[message1] propertyName=[test]", actual.toString());
     }
+
+    /**
+     * 空のメッセージを渡した場合、例外が送出されること。
+     */
+    @Test
+    public void failCreateExpectedValidationResultMessage() {
+        // setup
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("messageString must be neither null nor empty.");
+
+        sut.createExpectedValidationResultMessage("test", "", null);
+    }
+
     /**
      * メッセージ本文から{@link MessageComparedByContent}を取得できること。
      */
@@ -380,11 +398,14 @@ public class BeanValidationTestStrategyTest {
         assertFalse(actual.equals(message3));
         //noinspection SimplifiableAssertion
         assertTrue(actual.equals(validationResultMessage));
+        //noinspection SimplifiableAssertion,EqualsWithItself
+        assertTrue(actual.equals(actual));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(new Object()));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
 
         assertEquals("messageContent=[message1] errorLevel=[ERROR]", actual.toString());
-
         assertEquals("messageContent=[message_test_interpolated] errorLevel=[ERROR]", actualInterpolated.toString());
     }
 
@@ -413,6 +434,10 @@ public class BeanValidationTestStrategyTest {
         assertFalse(actual.equals(message3));
         //noinspection SimplifiableAssertion
         assertTrue(actual.equals(validationResultMessage));
+        //noinspection SimplifiableAssertion,EqualsWithItself
+        assertTrue(actual.equals(actual));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(new Object()));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
 
@@ -421,6 +446,44 @@ public class BeanValidationTestStrategyTest {
         assertEquals("messageContent=[message_test_interpolated] errorLevel=[ERROR]", actualInterpolated.toString());
     }
 
+    /**
+     * 与えるオプションがMapでない時に、メッセージを取得できること。
+     */
+    @Test
+    public void createExpectedMessageFromContent2() {
+        Message actual1 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
+        Message actual2 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", new Object[]{1,2});
+        Message actual3 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", new Object[]{1});
+
+        assertTrue(actual1 instanceof MessageComparedByContent);
+        assertTrue(actual2 instanceof MessageComparedByContent);
+        assertTrue(actual3 instanceof MessageComparedByContent);
+    }
+
+    /**
+     * {@code messageInterpolator}コンポーネントが定義済みの時に、メッセージを取得できること
+     */
+    @Test
+    public void createExpectedMessageWhenMessageInterpolatorIsSet() {
+        // setup
+        repositoryResource.addComponent("messageInterpolator", new NablarchMessageInterpolator());
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
+
+        // verify
+        assertTrue(actual instanceof MessageComparedByContent);
+    }
+
+    /**
+     * 空のメッセージを渡した場合、例外が送出されること。
+     */
+    @Test
+    public void failCreateExpectedMessage() {
+        // setup
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("messageString must be neither null nor empty.");
+
+        sut.createExpectedMessage(MessageLevel.ERROR, "", null);
+    }
 
     private static class MockStringResource implements StringResource {
 

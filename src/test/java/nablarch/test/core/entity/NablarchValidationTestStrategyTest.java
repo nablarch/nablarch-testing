@@ -227,6 +227,18 @@ public class NablarchValidationTestStrategyTest {
     }
 
     /**
+     * 空のメッセージを渡した場合、例外が送出されること。
+     */
+    @Test
+    public void failCreateExpectedValidationResultMessage() {
+        // setup
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("messageString must be neither null nor empty.");
+
+        sut.createExpectedValidationResultMessage("test", "", null);
+    }
+
+    /**
      * {@link MessageComparedById}を取得できること。
      */
     @Test
@@ -248,10 +260,26 @@ public class NablarchValidationTestStrategyTest {
         assertFalse(actual.equals(message3));
         //noinspection SimplifiableAssertion
         assertTrue(actual.equals(validationResultMessage));
+        //noinspection SimplifiableAssertion,EqualsWithItself
+        assertTrue(actual.equals(actual));
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(new Object()));
 
         assertEquals(forCompareHashCode.hashCode(), actual.hashCode());
 
         assertEquals("messageId=[1] errorLevel=[ERROR]", actual.toString());
+    }
+
+    /**
+     * 空のメッセージを渡した場合、例外が送出されること。
+     */
+    @Test
+    public void failCreateExpectedMessage() {
+        // setup
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("messageString must be neither null nor empty.");
+
+        sut.createExpectedMessage(MessageLevel.ERROR, "", null);
     }
 
     private static class MockStringResource implements StringResource {

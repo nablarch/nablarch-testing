@@ -4,6 +4,7 @@ import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.StringResource;
 import nablarch.core.repository.SystemRepository;
+import nablarch.core.util.StringUtil;
 import nablarch.core.validation.ValidationContext;
 import nablarch.core.validation.ValidationManager;
 import nablarch.core.validation.ValidationResultMessage;
@@ -67,12 +68,18 @@ public class NablarchValidationTestStrategy implements ValidationTestStrategy {
 
     @Override
     public Message createExpectedValidationResultMessage(String propertyName, String messageString, Object[] options) {
+        if(StringUtil.isNullOrEmpty(messageString)) {
+            throw new IllegalArgumentException("messageString must be neither null nor empty.");
+        }
         StringResource stringResource = new MockStringResource(messageString);
         return new ValidationResultMessage(propertyName, stringResource, options);
     }
 
     @Override
     public Message createExpectedMessage(MessageLevel level, String messageString, Object[] options) {
+        if(StringUtil.isNullOrEmpty(messageString)) {
+            throw new IllegalArgumentException("messageString must be neither null nor empty.");
+        }
         StringResource stringResource = new MockStringResource(messageString);
         return new MessageComparedById(new Message(level, stringResource, options));
     }
