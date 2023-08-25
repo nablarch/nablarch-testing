@@ -76,6 +76,17 @@ public class TestBeanTest extends EntityTestSupport {
     }
 
     /**
+     * 文字種と文字列長のテスト。
+     * 入力にメッセージ補完用属性カラムが無い場合でも正しく動くことを確認する。
+     */
+    @Test
+    public void testCharsetAndLengthWithoutInterpolationMap() {
+        String sheetName = "withoutInterpolate2";
+        String id = "charsetAndLength";
+        testValidateCharsetAndLength(targetClass, sheetName, id);
+    }
+
+    /**
      * 文字種・文字列長以外の単項目精査のテスト。
      */
     @Test
@@ -92,6 +103,17 @@ public class TestBeanTest extends EntityTestSupport {
     @Test
     public void testSingleValidationWithGroup() {
         String sheetName = "testSingleValidationWithGroup";
+        String id = "singleValidation";
+        testSingleValidation(targetClass, sheetName, id);
+    }
+
+    /**
+     * 文字種・文字列長以外の単項目精査のテスト。
+     * 入力にメッセージ補完用属性カラムが無い場合でも正しく動くことを確認する。
+     */
+    @Test
+    public void testSingleValidationWithoutInterpolateMap() {
+        String sheetName = "withoutInterpolate1";
         String id = "singleValidation";
         testSingleValidation(targetClass, sheetName, id);
     }

@@ -2,6 +2,7 @@ package nablarch.test.core.entity;
 
 import nablarch.core.util.StringUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,16 @@ public class CharsetTestVariation<ENTITY> {
             MAX,
             MIN
     );
+
+    private static final List<String> COLUMNS_EXCEPT_CHARSET = new ArrayList<String>(){{
+        addAll(REQUIRED_COLUMNS);
+        add(MESSAGE_ID_WHEN_INVALID_LENGTH);
+        add(MESSAGE_ID_WHEN_EMPTY_INPUT);
+        add(INTERPOLATE_KEY_PREFIX);
+        add(INTERPOLATE_VALUE_PREFIX);
+    }};
+
+
     /** OKマーク */
     private static final String OK = "o";
 
@@ -74,8 +85,8 @@ public class CharsetTestVariation<ENTITY> {
     /** Bean Validationのメッセージ補完用属性のマップ */
     private final Map<String, Object> options;
 
-    /** テストデータ */
-    private final Map<String, String> testData;
+    /** 文字種テスト情報のマップ */
+    private final Map<String, String> charsetTestMap;
 
     /** 単項目バリデーションテスト */
     private final SingleValidationTester<ENTITY> tester;
@@ -87,30 +98,28 @@ public class CharsetTestVariation<ENTITY> {
     /**
      * コンストラクタ。
      *
-     * @param entityClass テスト対象エンティティクラス
-     * @param group       Bean Validationのグループ
-     * @param testData    テストデータ
+     * @param entityClass         テスト対象エンティティクラス
+     * @param beanValidationGroup Bean Validationのグループ
+     * @param rowData             1行分のテストデータ
      */
-    public CharsetTestVariation(Class<ENTITY> entityClass, Class<?> group, Map<String, String> testData) {
-
-        // 引数を破壊しないようにシャローコピー
-        testData = new HashMap<String, String>(testData);
+    public CharsetTestVariation(Class<ENTITY> entityClass, Class<?> beanValidationGroup, Map<String, String> rowData) {
 
         // 必須カラム存在チェック
-        checkRequiredColumns(testData);
-        // 未入力を許容するか
-        isEmptyAllowed = testData.remove(ALLOW_EMPTY).equals(OK);
-        // テスト対象プロパティ名
-        String targetPropertyName = testData.remove(PROPERTY_NAME);
-        // 桁数不正時のメッセージID
-        messageIdWhenInvalidLength = testData.remove(MESSAGE_ID_WHEN_INVALID_LENGTH);
-        // 未入力時のメッセージID
-        messageIdWhenEmptyInput = testData.remove(MESSAGE_ID_WHEN_EMPTY_INPUT);
-        // 文字種バリデーション失敗時のメッセージID
-        messageIdWhenNotApplicable = testData.remove(MESSAGE_ID_WHEN_NOT_APPLICABLE);
-        // 最長桁数（Nablarch Validationで最長桁数が指定されていない場合は実行時エラーとする）
+        checkRequiredColumns(rowData);
 
-        String maxStr = testData.remove(MAX);
+        // 最初に文字種の情報を抽出する
+        charsetTestMap = createCharsetMap(rowData);
+
+        // 未入力を許容するか
+        isEmptyAllowed = rowData.get(ALLOW_EMPTY).equals(OK);
+        // 桁数不正時のメッセージID
+        messageIdWhenInvalidLength = rowData.get(MESSAGE_ID_WHEN_INVALID_LENGTH);
+        // 未入力時のメッセージID
+        messageIdWhenEmptyInput = rowData.get(MESSAGE_ID_WHEN_EMPTY_INPUT);
+        // 文字種バリデーション失敗時のメッセージID
+        messageIdWhenNotApplicable = rowData.get(MESSAGE_ID_WHEN_NOT_APPLICABLE);
+        // 最長桁数（Nablarch Validationで最長桁数が指定されていない場合は実行時エラーとする）
+        String maxStr = rowData.get(MAX);
         isMaxEmpty = isNullOrEmpty(maxStr);
         if(isMaxEmpty &&
                 EntityTestConfiguration.getConfig().getValidationTestStrategy() instanceof NablarchValidationTestStrategy) {
@@ -119,49 +128,19 @@ public class CharsetTestVariation<ENTITY> {
         }
         max = isMaxEmpty ? Integer.MAX_VALUE : Integer.parseInt(maxStr);
         // 最短桁数
-        String minStr = testData.remove(MIN);
+        String minStr = rowData.get(MIN);
         isMinEmpty = isNullOrEmpty(minStr);
         min = isMinEmpty
                 ? (isEmptyAllowed ? 0 : 1)  // 未入力許可時は最短0桁、必須の場合は1桁
                 : Integer.parseInt(minStr);
 
         // Bean Validationのグループ
-        this.group = group;
-
+        group = beanValidationGroup;
         // Bean Validationのメッセージ補完用属性のマップ
-        options = new HashMap<String, Object>();
-        for(int i = 1;; i++) {
-            String keyOfInterpolateKey = INTERPOLATE_KEY_PREFIX + i;
-            String keyOfInterpolateValue = INTERPOLATE_VALUE_PREFIX + i;
+        options = createInterpolationMap(rowData);
 
-            // i番目の補完用属性のキーの片方が見つからない場合、不正な状態として報告する。
-            if(testData.containsKey(keyOfInterpolateKey) ^ testData.containsKey(keyOfInterpolateValue)) {
-                throw new IllegalStateException("Unexpected interpolate key or interpolate value remain.");
-            }
-
-            // i番目の補完用属性のキーが両方とも見つからない場合、i+1番目以降のキーが無いことを確認する。
-            if(!testData.containsKey(keyOfInterpolateKey) && !testData.containsKey(keyOfInterpolateValue)) {
-                for (Map.Entry<String, String> entry : testData.entrySet()) {
-                    if(entry.getKey().startsWith(INTERPOLATE_KEY_PREFIX) || entry.getValue().startsWith(INTERPOLATE_VALUE_PREFIX)) {
-                        throw new IllegalStateException("Unexpected interpolate key or interpolate value remain.");
-                    }
-                }
-                break;
-            }
-
-            String interpolateKey = testData.remove(keyOfInterpolateKey);
-            String interpolateValue = testData.remove(keyOfInterpolateValue);
-            if(StringUtil.isNullOrEmpty(interpolateKey)) {
-                continue;
-            }
-
-            options.put(interpolateKey, interpolateValue);
-        }
-
-        // 残りのデータ
-        this.testData = testData;
         // 単項目バリデーションテスト用クラス
-        tester = new SingleValidationTester<ENTITY>(entityClass, targetPropertyName);
+        tester = new SingleValidationTester<ENTITY>(entityClass, rowData.get(PROPERTY_NAME));
     }
 
     /**
@@ -182,18 +161,72 @@ public class CharsetTestVariation<ENTITY> {
         }
     }
 
+
+    /**
+     * テストデータから文字種情報を抽出する。
+     *
+     * @param rowData 1行分のテストデータ
+     * @return 文字種情報のマップ
+     */
+    private Map<String, String> createCharsetMap(Map<String, String> rowData) {
+        Map<String, String> charsetMap = new HashMap<String, String>();
+        boolean isElem = false;
+        for(Map.Entry<String, String> entry : rowData.entrySet()) {
+            for(String definedKey : COLUMNS_EXCEPT_CHARSET) {
+                String inputKey = entry.getKey();
+                if(inputKey.startsWith(definedKey)) {
+                    isElem = true;
+                    break;
+                }
+            }
+            if(!isElem) {
+                charsetMap.put(entry.getKey(), entry.getValue());
+            }
+            isElem = false;
+        }
+        return charsetMap;
+    }
+
+    /**
+     * Bean Validationのメッセージ補完用属性情報を抽出する。
+     *
+     * @param rowData 1行分のテストデータ
+     * @return メッセージ補完用属性情報のマップ
+     */
+    private Map<String, Object> createInterpolationMap(Map<String, String> rowData) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        for(int i = 1;; i++) {
+            String keyOfInterpolateKey = INTERPOLATE_KEY_PREFIX + i;
+            String keyOfInterpolateValue = INTERPOLATE_VALUE_PREFIX + i;
+
+            // i番目の補完用属性のキーがいずれか見つからない場合、その時点で抽出を終了する。
+            if(!(rowData.containsKey(keyOfInterpolateKey) && rowData.containsKey(keyOfInterpolateValue))) {
+                break;
+            }
+
+            String interpolateKey = rowData.get(keyOfInterpolateKey);
+            String interpolateValue = rowData.get(keyOfInterpolateValue);
+            if(StringUtil.isNullOrEmpty(interpolateKey)) {
+                continue;
+            }
+
+            result.put(interpolateKey, interpolateValue);
+        }
+        return result;
+    }
+
     /**
      * 適応可能なタイプを取得する。
      *
      * @return 適応可能なタイプ
      */
     private String getApplicableType() {
-        for (Map.Entry<String, String> e : testData.entrySet()) {
+        for (Map.Entry<String, String> e : charsetTestMap.entrySet()) {
             if (e.getValue().equals(OK)) {
                 return e.getKey();
             }
         }
-        throw new IllegalStateException("can't find applicable charset type in [" + testData + "]");
+        throw new IllegalStateException("can't find applicable charset type in [" + charsetTestMap + "]");
     }
 
     /** 全種類のテストを行う。 */
@@ -259,7 +292,7 @@ public class CharsetTestVariation<ENTITY> {
 
     /** 適応可能な文字種のテストを行う。 */
     public void testAllCharsetVariation() {
-        for (Map.Entry<String, String> e : testData.entrySet()) {
+        for (Map.Entry<String, String> e : charsetTestMap.entrySet()) {
             // 文字種
             String charsetType = e.getKey();
             // 期待するメッセージID

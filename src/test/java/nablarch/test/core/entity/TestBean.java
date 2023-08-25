@@ -59,6 +59,12 @@ public class TestBean {
     })
     private String ascii;
 
+    @Required.List({
+            @Required,
+            @Required(groups = Test1.class, message = "{MSG00010}")
+    })
+    private String arbitraryValue;
+
     @Size(max = 4, min = 1)
     private String[] sizedArray;
 
@@ -127,6 +133,14 @@ public class TestBean {
 
     public void setSizedList(List<String> sizedList) {
         this.sizedList = sizedList;
+    }
+
+    public String getArbitraryValue() {
+        return arbitraryValue;
+    }
+
+    public void setArbitraryValue(String arbitraryValue) {
+        this.arbitraryValue = arbitraryValue;
     }
 
     public interface Test1{}

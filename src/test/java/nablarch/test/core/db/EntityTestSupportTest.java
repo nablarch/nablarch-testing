@@ -108,6 +108,19 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(Class, String)}のテスト。
+     */
+    @Test
+    public void testTestBeanValidationWithInterpolate() {
+        repositoryResource.getComponentByType(MockStringResourceHolder.class)
+                          .setMessages(MESSAGES);
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                          .setValidationTestStrategy(new BeanValidationTestStrategy());
+
+        support.testBeanValidation(FugaBean.class, "beanValidationWithInterpolate");
+    }
+
+    /**
+     * {@link EntityTestSupport#testBeanValidation(Class, String)}のテスト。
      * {@link ValidationTestStrategy}に{@link NablarchValidationTestStrategy}を設定している場合、例外が送出されること。
      */
     @Test
