@@ -111,10 +111,6 @@ public class NablarchValidationTestStrategyTest {
         sut.invokeValidation(SampleEntity.class, "ascii", paramValues, null);
     }
 
-    private final String asciis21 = "0123456789abcdefghijk";
-    private final String asciis20 = "0123456789abcdefghij";
-    private final String digits = "0123456789";
-
     /**
      * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
      */
@@ -122,7 +118,9 @@ public class NablarchValidationTestStrategyTest {
     public void testAllValidateWithValidParameters() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String asciis20 = "0123456789abcdefghij";
         httpParams.put("ascii", new String[]{asciis20}); // ASCII文字, 20文字以下
+        String digits = "0123456789";
         httpParams.put("number", new String[]{digits});  // 半角数字, 必須
 
         // execute
@@ -141,7 +139,9 @@ public class NablarchValidationTestStrategyTest {
     public void testAllValidateWithValidParametersAndPrefix() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String asciis21 = "0123456789abcdefghijk";
         httpParams.put("ascii", new String[]{asciis21});      // 不正な値だがプレフィクスがないのでEntityに設定されない
+        String digits = "0123456789";
         httpParams.put("form.number", new String[]{digits});  // 半角数字, 必須
 
         // execute
@@ -158,7 +158,9 @@ public class NablarchValidationTestStrategyTest {
     public void testAllValidateWithInvalidParameters() {
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
+        String asciis21 = "0123456789abcdefghijk";
         httpParams.put("ascii", new String[]{asciis21}); // ascii文字, 20文字以下である必要があるが21文字の値を指定
+        String digits = "0123456789";
         httpParams.put("number", new String[]{digits});  // 半角数字, 必須
 
         // execute
