@@ -170,19 +170,19 @@ public class CharsetTestVariation<ENTITY> {
      */
     private Map<String, String> createCharsetMap(Map<String, String> rowData) {
         Map<String, String> charsetMap = new HashMap<String, String>();
-        boolean isElem = false;
+        boolean isCharset = true;
         for(Map.Entry<String, String> entry : rowData.entrySet()) {
+            String inputKey = entry.getKey();
             for(String definedKey : COLUMNS_EXCEPT_CHARSET) {
-                String inputKey = entry.getKey();
                 if(inputKey.startsWith(definedKey)) {
-                    isElem = true;
+                    isCharset = false;
                     break;
                 }
             }
-            if(!isElem) {
-                charsetMap.put(entry.getKey(), entry.getValue());
+            if(isCharset) {
+                charsetMap.put(inputKey, entry.getValue());
             }
-            isElem = false;
+            isCharset = true;
         }
         return charsetMap;
     }
