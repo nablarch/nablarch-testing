@@ -1,5 +1,6 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.ThreadContext;
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.MockStringResourceHolder;
@@ -43,7 +44,7 @@ public class BeanValidationTestStrategyTest {
             {"nablarch.core.validation.ee.SystemChar.message", "ja", "{0}を入力してください。"},
             {"nablarch.core.validation.ee.Size.max.message", "ja", "不正なサイズです"},
             {"MSG00024", "ja", "{0}は{2}文字以下でないとあかんで"},
-            {"MSGTEST", "ja", "message1"},
+            {"MSGTEST", "ja", "message1", "en", "message1_English"},
             {"MSGINTERPOLATION", "ja", "message_{interpolate}_interpolated"}
     };
 
@@ -363,6 +364,28 @@ public class BeanValidationTestStrategyTest {
     }
 
     /**
+     * スレッドコンテキストに言語が設定されている場合、対応する言語の{@link BeanValidationResultMessage}を取得できること。
+     */
+    @Test
+    public void createExpectedValidationResultMessageInEnglish() {
+
+        // setup
+        ThreadContext.setLanguage(Locale.ENGLISH);
+        Message actual = sut.createExpectedValidationResultMessage("test", "{MSGTEST}", null);
+        Message validationResultMessageJa = new ValidationResultMessage("test", new MockStringResource("2", "message1"), null);
+        Message validationResultMessageEn = new ValidationResultMessage("test", new MockStringResource("2", "message1_English"), null);
+
+        // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(validationResultMessageJa));
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(validationResultMessageEn));
+
+        // teardown
+        ThreadContext.clear();
+    }
+
+    /**
      * 空のメッセージを渡した場合、例外が送出されること。
      */
     @Test
@@ -471,6 +494,28 @@ public class BeanValidationTestStrategyTest {
 
         // verify
         assertTrue(actual instanceof MessageComparedByContent);
+    }
+
+    /**
+     * スレッドコンテキストに言語が設定されている場合、対応する言語の{@link MessageComparedByContent}を取得できること。
+     */
+    @Test
+    public void createExpectedMessageInEnglish() {
+
+        // setup
+        ThreadContext.setLanguage(Locale.ENGLISH);
+        Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "{MSGTEST}", null);
+        Message messageJa = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), null);
+        Message messageEn = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1_English"), null);
+
+        // equals()の呼び出し方も含めて検証するので、敢えてassertEqualsは使用しない
+        //noinspection SimplifiableAssertion
+        assertFalse(actual.equals(messageJa));
+        //noinspection SimplifiableAssertion
+        assertTrue(actual.equals(messageEn));
+
+        // teardown
+        ThreadContext.clear();
     }
 
     /**

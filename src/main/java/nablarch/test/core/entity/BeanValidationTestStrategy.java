@@ -2,6 +2,7 @@ package nablarch.test.core.entity;
 
 import nablarch.common.web.validator.BeanValidationFormFactory;
 import nablarch.common.web.validator.SimpleReflectionBeanValidationFormFactory;
+import nablarch.core.ThreadContext;
 import nablarch.core.beans.BeanUtil;
 import nablarch.core.beans.CopyOptions;
 import nablarch.core.message.Message;
@@ -144,7 +145,7 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         // MessageInterpolatorによるメッセージの変換を実施
         MessageInterpolator.Context context = new MockMessageInterpolatorContext(interpolationMap);
         MessageInterpolator interpolator = getMessageInterpolator();
-        String messageContent = interpolator.interpolate(messageString, context, DEFAULT_LOCALE);
+        String messageContent = interpolator.interpolate(messageString, context, getLanguage());
 
         return new StringResourceMock(messageContent);
     }
@@ -161,6 +162,20 @@ public class BeanValidationTestStrategy implements ValidationTestStrategy{
         }
 
         return messageInterpolator;
+    }
+
+    /**
+     * スレッドコンテキストから言語を取得する。
+     *
+     * <p>
+     * スレッドコンテキストに設定されていない場合は
+     * {@link Locale#getDefault()}から取得した言語を返す。
+     *
+     * @return 言語
+     */
+    private Locale getLanguage() {
+        final Locale language = ThreadContext.getLanguage();
+        return language != null ? language : DEFAULT_LOCALE;
     }
 
     /**
