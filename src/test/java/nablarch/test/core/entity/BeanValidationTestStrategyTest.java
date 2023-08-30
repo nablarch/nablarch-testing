@@ -11,6 +11,7 @@ import nablarch.core.validation.ee.NablarchMessageInterpolator;
 import nablarch.core.validation.ee.Required;
 import nablarch.core.validation.ee.Size;
 import nablarch.core.validation.ee.SystemChar;
+import nablarch.test.TestUtil;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
 import org.junit.Rule;
@@ -18,7 +19,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.validation.groups.Default;
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -62,7 +62,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithValidParam() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         String[] paramValues = new String[]{"01234567890123456789"};
@@ -81,7 +81,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithInvalidParam() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         String[] paramValues = new String[]{"あいう"}; // 半角数字ではない
@@ -101,7 +101,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithValidSizedArrayParam() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4"};
@@ -121,7 +121,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithInvalidSizedArrayParam() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4","5","6"};
@@ -141,7 +141,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithValidSizedListParam() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4"};
@@ -161,7 +161,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithInvalidSizedListParam() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4","5","6"};
@@ -180,7 +180,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testInvokeValidationWithInvalidParamOnTest1Group() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         // Defaultグループでは妥当な値だが、Test1グループでは不正な値
@@ -201,7 +201,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testAllValidateWithValidParameters() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
@@ -223,7 +223,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testAllValidateWithValidParametersAndPrefix() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
@@ -244,7 +244,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testAllValidateWithInvalidParameters() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
@@ -267,7 +267,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testAllValidateWithInvalidParametersAndPrefix() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
@@ -290,7 +290,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void testAllValidateWithValidParametersOnTest1Group() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
@@ -345,7 +345,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedValidationResultMessageFromContent() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Message actual = sut.createExpectedValidationResultMessage("test", "message1", null);
@@ -378,7 +378,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedValidationResultMessageFromId() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         Message actual = sut.createExpectedValidationResultMessage("test", "{MSGTEST}", null);
@@ -411,7 +411,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedValidationResultMessageInEnglish() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         ThreadContext.setLanguage(Locale.ENGLISH);
@@ -447,7 +447,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedMessageFromContent() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
         Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), null);
@@ -484,7 +484,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedMessageFromId() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "{MSGTEST}", null);
         Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), null);
@@ -523,7 +523,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedMessageFromContent2() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         Message actual1 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
         Message actual2 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", new Object[]{1,2});
@@ -540,7 +540,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedMessageWhenMessageInterpolatorIsSet() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         repositoryResource.addComponent("messageInterpolator", new NablarchMessageInterpolator());
@@ -556,7 +556,7 @@ public class BeanValidationTestStrategyTest {
      */
     @Test
     public void createExpectedMessageInEnglish() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         // setup
         ThreadContext.setLanguage(Locale.ENGLISH);

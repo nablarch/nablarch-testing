@@ -1,13 +1,12 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.MockStringResourceHolder;
+import nablarch.test.TestUtil;
 import nablarch.test.core.db.EntityTestSupport;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-import java.math.BigDecimal;
 
 import static org.junit.Assume.assumeTrue;
 
@@ -64,7 +63,7 @@ public class TestBeanTest extends EntityTestSupport {
      */
     @Test
     public void testCharsetAndLength() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         String sheetName = "testCharsetAndLength";
         String id = "charsetAndLength";
@@ -78,7 +77,7 @@ public class TestBeanTest extends EntityTestSupport {
      */
     @Test
     public void testCharsetAndLengthWithGroup() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         String sheetName = "testCharsetAndLengthWithGroup";
         String id = "charsetAndLength";
@@ -92,7 +91,7 @@ public class TestBeanTest extends EntityTestSupport {
      */
     @Test
     public void testCharsetAndLengthWithoutInterpolationMap() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         String sheetName = "withoutInterpolate2";
         String id = "charsetAndLength";
@@ -105,7 +104,7 @@ public class TestBeanTest extends EntityTestSupport {
      */
     @Test
     public void testSingleValidation() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         String sheetName = "testSingleValidation";
         String id = "singleValidation";
@@ -119,7 +118,7 @@ public class TestBeanTest extends EntityTestSupport {
      */
     @Test
     public void testSingleValidationWithGroup() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         String sheetName = "testSingleValidationWithGroup";
         String id = "singleValidation";
@@ -133,7 +132,7 @@ public class TestBeanTest extends EntityTestSupport {
      */
     @Test
     public void testSingleValidationWithoutInterpolateMap() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         String sheetName = "withoutInterpolate1";
         String id = "singleValidation";

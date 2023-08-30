@@ -5,11 +5,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 import nablarch.core.message.MockStringResourceHolder;
+import nablarch.test.TestUtil;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Before;
@@ -476,7 +476,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testAsciiSuccessWithBeanValidationTestStrategy() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
@@ -523,7 +523,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testNumberSuccessWithMultipleInterpolationAttributes() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
@@ -582,7 +582,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testNumberSuccessWithRawMessageAndMultipleInterpolationAttributes() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
@@ -639,7 +639,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testNumberSuccessWithMissingInterpolationAttributeKey() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
@@ -692,7 +692,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testNumberSuccessWithMissingInterpolationAttributeValue() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
@@ -746,7 +746,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testAsciiSuccessWithBeanValidationTestStrategyAndEmptyMax() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
@@ -794,7 +794,7 @@ public class CharsetTestVariationTest {
      */
     @Test
     public void testAsciiSuccessWithBeanValidationTestStrategyAndEmptyMaxAndGroup() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());

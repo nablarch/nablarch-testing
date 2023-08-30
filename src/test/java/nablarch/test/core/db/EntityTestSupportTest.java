@@ -7,6 +7,7 @@ import java.util.Map;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.validator.Required;
+import nablarch.test.TestUtil;
 import nablarch.test.Trap;
 import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.EntityTestConfiguration;
@@ -100,7 +101,7 @@ public class EntityTestSupportTest {
      */
     @Test
     public void testTestBeanValidation() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
@@ -116,7 +117,7 @@ public class EntityTestSupportTest {
      */
     @Test
     public void testTestBeanValidationWithInterpolate() {
-        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
 
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);

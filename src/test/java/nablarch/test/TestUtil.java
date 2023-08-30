@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 
 import nablarch.core.util.FileUtil;
 
@@ -134,4 +135,7 @@ public class TestUtil {
         assertFalse(msg, actualString.matches(expectedRegularExpression));
     }
 
+    public static boolean isRunningOnJava7OrHigher(){
+        return new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0;
+    }
 }
