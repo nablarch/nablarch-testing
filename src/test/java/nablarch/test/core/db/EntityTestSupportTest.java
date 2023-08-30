@@ -7,6 +7,7 @@ import java.util.Map;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.validator.Required;
+import nablarch.test.TestUtil;
 import nablarch.test.Trap;
 import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.EntityTestConfiguration;
@@ -24,6 +25,7 @@ import javax.validation.constraints.AssertTrue;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * {@link EntityTestSupport}のテストクラス。
@@ -95,9 +97,12 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(String, Class, String)}のテスト。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testTestBeanValidation() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -108,9 +113,12 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(Class, String)}のテスト。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testTestBeanValidationWithInterpolate() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)

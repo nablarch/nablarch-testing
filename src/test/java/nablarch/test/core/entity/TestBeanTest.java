@@ -1,11 +1,14 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.MockStringResourceHolder;
+import nablarch.test.TestUtil;
 import nablarch.test.core.db.EntityTestSupport;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import static org.junit.Assume.assumeTrue;
 
 /**
  * @author T.Kawasaki
@@ -56,9 +59,12 @@ public class TestBeanTest extends EntityTestSupport {
 
     /**
      * 文字種と文字列長のテスト
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testCharsetAndLength() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         String sheetName = "testCharsetAndLength";
         String id = "charsetAndLength";
         testValidateCharsetAndLength(targetClass, sheetName, id);
@@ -67,9 +73,12 @@ public class TestBeanTest extends EntityTestSupport {
     /**
      * 文字種と文字列長のテスト。
      * グループの指定及び文字列長違反・入力必須違反時のメッセージIDを指定するフォーマットで正しく動くことを確認する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testCharsetAndLengthWithGroup() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         String sheetName = "testCharsetAndLengthWithGroup";
         String id = "charsetAndLength";
         testValidateCharsetAndLength(targetClass, sheetName, id);
@@ -78,9 +87,12 @@ public class TestBeanTest extends EntityTestSupport {
     /**
      * 文字種と文字列長のテスト。
      * 入力にメッセージ補完用属性カラムが無い場合でも正しく動くことを確認する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testCharsetAndLengthWithoutInterpolationMap() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         String sheetName = "withoutInterpolate2";
         String id = "charsetAndLength";
         testValidateCharsetAndLength(targetClass, sheetName, id);
@@ -88,9 +100,12 @@ public class TestBeanTest extends EntityTestSupport {
 
     /**
      * 文字種・文字列長以外の単項目精査のテスト。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testSingleValidation() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         String sheetName = "testSingleValidation";
         String id = "singleValidation";
         testSingleValidation(targetClass, sheetName, id);
@@ -99,9 +114,12 @@ public class TestBeanTest extends EntityTestSupport {
     /**
      * 文字種・文字列長以外の単項目精査のテスト。
      * グループを明示的に指定するフォーマットで正しく動くことを確認する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testSingleValidationWithGroup() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         String sheetName = "testSingleValidationWithGroup";
         String id = "singleValidation";
         testSingleValidation(targetClass, sheetName, id);
@@ -110,9 +128,12 @@ public class TestBeanTest extends EntityTestSupport {
     /**
      * 文字種・文字列長以外の単項目精査のテスト。
      * 入力にメッセージ補完用属性カラムが無い場合でも正しく動くことを確認する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testSingleValidationWithoutInterpolateMap() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
         String sheetName = "withoutInterpolate1";
         String id = "singleValidation";
         testSingleValidation(targetClass, sheetName, id);
