@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.validation.groups.Default;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 public class BeanValidationTestStrategyTest {
 
@@ -56,9 +58,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * Defaultグループにおける妥当な値を投入した場合、バリデーションが成功すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithValidParam() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         String[] paramValues = new String[]{"01234567890123456789"};
 
@@ -72,9 +77,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * Defaultグループにおける不正な値を投入した場合、バリデーションは失敗すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithInvalidParam() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         String[] paramValues = new String[]{"あいう"}; // 半角数字ではない
 
@@ -89,9 +97,12 @@ public class BeanValidationTestStrategyTest {
     /**
      * Defaultグループにおける妥当な値を投入した場合、バリデーションが成功すること。
      * 配列の要素数が妥当な場合の検証を実施する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithValidSizedArrayParam() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4"};
 
@@ -106,9 +117,12 @@ public class BeanValidationTestStrategyTest {
     /**
      * Defaultグループにおける不正な値を投入した場合、バリデーションが失敗すること。
      * 配列の要素数が上限超過した場合を検証する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithInvalidSizedArrayParam() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4","5","6"};
 
@@ -123,9 +137,12 @@ public class BeanValidationTestStrategyTest {
     /**
      * Defaultグループにおける妥当な値を投入した場合、バリデーションが成功すること。
      * リストの要素数が妥当な場合の検証を実施する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithValidSizedListParam() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4"};
 
@@ -140,9 +157,12 @@ public class BeanValidationTestStrategyTest {
     /**
      * Defaultグループにおける不正な値を投入した場合、バリデーションが失敗すること。
      * 配列の要素数が上限超過した場合を検証する。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithInvalidSizedListParam() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         String[] paramValues = new String[]{"0","1","2","3","4","5","6"};
 
@@ -156,9 +176,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * Test1グループにおける不正な値を投入した場合、バリデーションは失敗すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testInvokeValidationWithInvalidParamOnTest1Group() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         // Defaultグループでは妥当な値だが、Test1グループでは不正な値
         String[] paramValues = new String[]{"01234567890123456789"};
@@ -174,9 +197,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAllValidateWithValidParameters() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
         String digits20 = "01234567890123456789";
@@ -193,9 +219,12 @@ public class BeanValidationTestStrategyTest {
     /**
      * すべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
      * プレフィクスを指定したパラメータのみ、Beanに設定されること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAllValidateWithValidParametersAndPrefix() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
         String digits50 = "01234567890123456789012345678901234567890123456789";
@@ -211,9 +240,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * いずれかのプロパティの値が不正であるとき、バリデーションに失敗すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAllValidateWithInvalidParameters() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
         String digits50 = "01234567890123456789012345678901234567890123456789";
@@ -231,9 +263,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * プレフィクスを指定したパラメータが不正のとき、バリデーションに失敗すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
-    public void testAllValidateWithInvalidValidParametersAndPrefix() {
+    public void testAllValidateWithInvalidParametersAndPrefix() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
         String digits50 = "01234567890123456789012345678901234567890123456789";
@@ -251,9 +286,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * Test1グループですべてのプロパティの値が妥当であるとき、バリデーションに成功すること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAllValidateWithValidParametersOnTest1Group() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         Map<String, String[]> httpParams = new HashMap<String, String[]>();
         String digits10 = "0123456789";
@@ -303,9 +341,11 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * メッセージ本文から{@link BeanValidationResultMessage}を取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedValidationResultMessageFromContent() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
 
         // setup
         Message actual = sut.createExpectedValidationResultMessage("test", "message1", null);
@@ -334,9 +374,11 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * メッセージIDから{@link BeanValidationResultMessage}を取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedValidationResultMessageFromId() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
 
         // setup
         Message actual = sut.createExpectedValidationResultMessage("test", "{MSGTEST}", null);
@@ -365,9 +407,11 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * スレッドコンテキストに言語が設定されている場合、対応する言語の{@link BeanValidationResultMessage}を取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedValidationResultMessageInEnglish() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
 
         // setup
         ThreadContext.setLanguage(Locale.ENGLISH);
@@ -399,9 +443,11 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * メッセージ本文から{@link MessageComparedByContent}を取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedMessageFromContent() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
 
         Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
         Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), null);
@@ -434,9 +480,11 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * メッセージIDから{@link MessageComparedByContent}を取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedMessageFromId() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
 
         Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "{MSGTEST}", null);
         Message message1 = new Message(MessageLevel.ERROR, new MockStringResource("2", "message1"), null);
@@ -471,9 +519,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * 与えるオプションがMapでない時に、メッセージを取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedMessageFromContent2() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         Message actual1 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
         Message actual2 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", new Object[]{1,2});
         Message actual3 = sut.createExpectedMessage(MessageLevel.ERROR, "message1", new Object[]{1});
@@ -485,9 +536,12 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * {@code messageInterpolator}コンポーネントが定義済みの時に、メッセージを取得できること
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedMessageWhenMessageInterpolatorIsSet() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         // setup
         repositoryResource.addComponent("messageInterpolator", new NablarchMessageInterpolator());
         Message actual = sut.createExpectedMessage(MessageLevel.ERROR, "message1", null);
@@ -498,9 +552,11 @@ public class BeanValidationTestStrategyTest {
 
     /**
      * スレッドコンテキストに言語が設定されている場合、対応する言語の{@link MessageComparedByContent}を取得できること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void createExpectedMessageInEnglish() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
 
         // setup
         ThreadContext.setLanguage(Locale.ENGLISH);

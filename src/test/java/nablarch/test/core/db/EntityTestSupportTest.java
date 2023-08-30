@@ -24,6 +24,7 @@ import javax.validation.constraints.AssertTrue;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * {@link EntityTestSupport}のテストクラス。
@@ -95,9 +96,12 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(String, Class, String)}のテスト。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testTestBeanValidation() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -108,9 +112,12 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(Class, String)}のテスト。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testTestBeanValidationWithInterpolate() {
+        assumeTrue(new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0);
+
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
