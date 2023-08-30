@@ -135,7 +135,16 @@ public class TestUtil {
         assertFalse(msg, actualString.matches(expectedRegularExpression));
     }
 
+    private static final BigDecimal RUNNING_JAVA_VERSION = new BigDecimal(System.getProperty("java.specification.version"));
+
+    private static final BigDecimal JAVA_VERSION_7 = new BigDecimal("1.7");
+
+    /**
+     * テスト稼働環境がJava7以上であるか返却する。
+     *
+     * @return {@code true} テスト稼働環境がJava7以上の場合。
+     */
     public static boolean isRunningOnJava7OrHigher(){
-        return new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("1.7")) >= 0;
+        return RUNNING_JAVA_VERSION.compareTo(JAVA_VERSION_7) >= 0;
     }
 }
