@@ -1,5 +1,6 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.repository.SystemRepository;
 import nablarch.test.core.util.generator.CharacterGenerator;
 
 import static nablarch.core.util.Builder.concat;
@@ -14,20 +15,47 @@ public class EntityTestConfiguration {
     /** 最長桁超過時のメッセージID */
     private String maxMessageId;
 
-    /** 最長最短桁範囲外のメッセージID(max > min) */
+    /**
+     * 最長最短桁範囲外のメッセージID(max > min、入力桁数 > max)。
+     */
     private String maxAndMinMessageId;
 
     /** 最長最短桁範囲外のメッセージID(max == min) */
     private String fixLengthMessageId;
 
-    /** 桁数不足時のメッセージID */
+    /**
+     * 最長最短桁範囲外のメッセージID(max > min、入力桁数 < min)。
+     */
     private String underLimitMessageId;
+
+    /** 桁数不足時のメッセージID */
+    private String minMessageId;
 
     /** 未入力時のメッセージID */
     private String emptyInputMessageId;
 
     /** 文字列生成クラス */
     private CharacterGenerator characterGenerator;
+
+    /** バリデーションストラテジ */
+    private ValidationTestStrategy validationTestStrategy = new NablarchValidationTestStrategy();
+
+    /** テスト設定取得用のキー */
+    private static final String CONFIG_KEY = "entityTestConfiguration";
+
+    /**
+     * テスト設定を取得する。
+     *
+     * @return テスト設定
+     */
+    public static EntityTestConfiguration getConfig() {
+        EntityTestConfiguration config = SystemRepository.get(CONFIG_KEY);
+        if (config == null) {
+            throw new IllegalStateException("can't get EntityTestConfiguration from SystemRepository."
+                    + " key=[" + CONFIG_KEY + "]");
+        }
+        return config;
+    }
 
     /**
      * 未入力時のメッセージIDを取得する。
@@ -39,15 +67,21 @@ public class EntityTestConfiguration {
     }
 
     /**
-     * 桁数超過テスト時に期待するメッセージIDを取得する。
-     * 許容する桁数に応じて適切なメッセージIDを返却される。
+     * 桁数不足テスト時に期待するメッセージIDを取得する。
      *
      * @param max 最長桁数
      * @param min 最短桁数
      * @return 桁数超過時のメッセージID
      */
     String getUnderLimitMessageId(Integer max, Integer min) {
-        if (max.equals(min)) {
+        // 最大桁数及び桁数不足メッセージの両方が設定されていない場合はエラーとする。
+        if (max == null && minMessageId == null) {
+            throw new IllegalArgumentException("If max is not specified, minMessageId must be specified.");
+        }
+
+        if (max == null) {
+            return minMessageId;      // 最短のみ
+        } else if (max.equals(min)) {
             return fixLengthMessageId;
         } else if (max > min) {
             return underLimitMessageId;
@@ -57,8 +91,7 @@ public class EntityTestConfiguration {
     }
 
     /**
-     * 桁数不足時のメッセージIDを取得する。
-     * 許容する桁数に応じて適切なメッセージIDを返却される。
+     * 桁数超過時のメッセージIDを取得する。
      *
      * @param max 最大桁数
      * @param min 最小桁数
@@ -105,6 +138,15 @@ public class EntityTestConfiguration {
     }
 
     /**
+     * 桁数の最大値が指定されない場合の、桁数不足時のメッセージIDを設定する。
+     *
+     * @param minMessageId 桁数不足時のメッセージID
+     */
+    public void setMinMessageId(String minMessageId) {
+        this.minMessageId = minMessageId;
+    }
+
+    /**
      * 桁数誤り時のメッセージIDを設定する（最大桁＝最小桁）。
      *
      * @param fixLengthMessageId 桁数誤り時のメッセージID
@@ -138,5 +180,23 @@ public class EntityTestConfiguration {
      */
     public void setCharacterGenerator(CharacterGenerator characterGenerator) {
         this.characterGenerator = characterGenerator;
+    }
+
+    /**
+     * テスト用バリデーションストラテジを取得する。
+     *
+     * @return テスト用バリデーションストラテジ
+     */
+    public ValidationTestStrategy getValidationTestStrategy(){
+        return validationTestStrategy;
+    }
+
+    /**
+     * テスト用バリデーションストラテジを設定する。
+     *
+     * @param validationTestStrategy テスト用バリデーションストラテジ
+     */
+    public void setValidationTestStrategy(ValidationTestStrategy validationTestStrategy) {
+        this.validationTestStrategy = validationTestStrategy;
     }
 }

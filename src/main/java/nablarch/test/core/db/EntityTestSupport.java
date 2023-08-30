@@ -11,24 +11,24 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
-import nablarch.core.message.StringResource;
 import nablarch.core.util.Builder;
 import nablarch.core.util.ObjectUtil;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
-import nablarch.core.validation.ValidationContext;
-import nablarch.core.validation.ValidationResultMessage;
-import nablarch.core.validation.ValidationUtil;
 import nablarch.test.Assertion;
+import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.CharsetTestVariation;
+import nablarch.test.core.entity.EntityTestConfiguration;
+import nablarch.test.core.entity.NablarchValidationTestStrategy;
 import nablarch.test.core.entity.SingleValidationTester;
+import nablarch.test.core.entity.ValidationTestContext;
+import nablarch.test.core.entity.ValidationTestStrategy;
 import nablarch.test.event.TestEventDispatcher;
 
 import static nablarch.core.util.Builder.concat;
@@ -73,6 +73,15 @@ public class EntityTestSupport extends TestEventDispatcher {
                     PROP_NAME_PREFIX + '1'
             ));
 
+    /** BeanValidationのグループのキー */
+    private static final String GROUP_KEY = "group";
+
+    /** Bean Validationのメッセージ補完用属性キーのカラム名 */
+    private static final String INTERPOLATE_KEY_PREFIX = "interpolateKey";
+
+    /** Bean Validationのメッセージ補完用属性値のカラム名 */
+    private static final String INTERPOLATE_VALUE_PREFIX = "interpolateValue";
+
     /** 期待値(getterから取得される値)のキー値 */
     private static final String GET_KEY = "get";
 
@@ -87,6 +96,9 @@ public class EntityTestSupport extends TestEventDispatcher {
      * Entityのクラス単体テストに必要な機能のみ委譲する。
      */
     private final DbAccessTestSupport dbSupport;
+
+    /** テスト用バリデーションストラテジ */
+    private ValidationTestStrategy strategy;
 
     /**
      * コンストラクタ。<br/>
@@ -107,30 +119,73 @@ public class EntityTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * バリデーションテストを実行する。
+     * Nablarch Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
      *
      * @param entityClass バリデーション対象のエンティティのクラス
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(Class, Map, String)
      */
     public <T> void testValidateAndConvert(Class<T> entityClass, String sheetName, String validateFor) {
         testValidateAndConvert(null, entityClass, sheetName, validateFor);
     }
 
     /**
-     * バリデーションテストを実行する。
+     * Nablarch Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
      *
      * @param prefix      パラメータのMapに入ったキーのプレフィクス
      * @param entityClass バリデーション対象のエンティティのクラス
      * @param sheetName   シート名
      * @param validateFor バリデーション対象メソッド名
      * @param <T>         バリデーション結果で取得できる型（エンティティ）
-     * @see ValidationUtil#validateAndConvertRequest(String, Class, Map, String)
      */
     public <T> void testValidateAndConvert(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
 
+        if (!(getStrategy() instanceof NablarchValidationTestStrategy)) {
+            throw new UnsupportedOperationException("Use method 'testBeanValidation'.");
+        }
+
+        testValidateAllParameters(prefix, entityClass, sheetName, validateFor);
+    }
+
+    /**
+     * Bean Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
+     *
+     * @param entityClass バリデーション対象のエンティティのクラス
+     * @param sheetName   シート名
+     * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     */
+    public <T> void testBeanValidation(Class<T> entityClass, String sheetName) {
+        testBeanValidation(null, entityClass, sheetName);
+    }
+
+    /**
+     * Bean Validationを設定したForm/Entityに対して、バリデーションテストを実行する。
+     *
+     * @param prefix      パラメータのMapに入ったキーのプレフィクス
+     * @param entityClass バリデーション対象のエンティティのクラス
+     * @param sheetName   シート名
+     * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     */
+    public <T> void testBeanValidation(String prefix, Class<T> entityClass, String sheetName) {
+
+        if (!(getStrategy() instanceof BeanValidationTestStrategy)) {
+            throw new UnsupportedOperationException("Use method 'testValidateAndConvert'.");
+        }
+
+        testValidateAllParameters(prefix, entityClass, sheetName, null);
+    }
+
+    /**
+     * バリデーションテストの共通メソッド。
+     *
+     * @param prefix      パラメータのMapに入ったキーのプレフィクス
+     * @param entityClass バリデーション対象のエンティティのクラス
+     * @param sheetName   シート名
+     * @param validateFor バリデーション対象メソッド名
+     * @param <T>         バリデーション結果で取得できる型（エンティティ）
+     */
+    private <T> void testValidateAllParameters(String prefix, Class<T> entityClass, String sheetName, String validateFor) {
         // テストケース表
         List<Map<String, String>> testCases = getTestCasesFromSheet(sheetName);
 
@@ -143,10 +198,15 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 全テストケース実行
         for (int i = 0; i < testCases.size(); i++) {
             Map<String, String> testCase = testCases.get(i);
+
+            // Bean Validationのグループ取得
+            // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
+            Class<?> group = strategy.getGroupFromName(testCase.remove(GROUP_KEY));
+
             Map<String, String[]> httpParams = httpParamsList.get(i);
             // バリデーション実行
-            ValidationContext<T> ctx =
-                    ValidationUtil.validateAndConvertRequest(prefix, entityClass, httpParams, validateFor);
+            ValidationTestContext ctx =
+                    strategy.validateParameters(prefix, entityClass, httpParams, validateFor, group);
             // メッセージID確認
             assertMessageEquals(testCase, ctx);
         }
@@ -222,7 +282,7 @@ public class EntityTestSupport extends TestEventDispatcher {
      * @param aTestCase テストケース（テストケース表の1行）
      * @param ctx       バリデーション結果
      */
-    private void assertMessageEquals(Map<String, String> aTestCase, ValidationContext<?> ctx) {
+    private void assertMessageEquals(Map<String, String> aTestCase, ValidationTestContext ctx) {
 
         // 比較失敗時のメッセージ
         String msg = createMessageOnFailure(aTestCase);
@@ -247,16 +307,20 @@ public class EntityTestSupport extends TestEventDispatcher {
     private List<Message> createExpectedMessages(Map<String, String> aTestCase) {
         List<Message> msgs = new ArrayList<Message>();
         for (int i = 1;; i++) {
-            String msgId = aTestCase.get(MSG_ID_PREFIX + i);
+            String messageString = aTestCase.get(MSG_ID_PREFIX + i);
             String prop = aTestCase.get(PROP_NAME_PREFIX + i);
-            if (StringUtil.isNullOrEmpty(msgId)) {
+            if (StringUtil.isNullOrEmpty(messageString)) {
                 break;
             }
-            StringResource stringResource = new StringMessageMock(msgId);
+            // Bean Validation メッセージ補完用属性のマップ
+            Map<String, Object> interpolationMap = getInterpolationMap(INTERPOLATE_KEY_PREFIX + i, INTERPOLATE_VALUE_PREFIX + i, aTestCase);
+
             Message msg = StringUtil.isNullOrEmpty(prop)
-                    ? new Message(MessageLevel.ERROR, stringResource, new Object[0])
-                    : new ValidationResultMessage(prop, stringResource, null);
+                    ? strategy.createExpectedMessage(MessageLevel.ERROR, messageString, new Object[]{interpolationMap})
+                    : strategy.createExpectedValidationResultMessage(prop, messageString, new Object[]{interpolationMap});
             msgs.add(msg);
+
+
         }
         return msgs;
     }
@@ -270,35 +334,6 @@ public class EntityTestSupport extends TestEventDispatcher {
      */
     private String createMessageOnFailure(Map<String, String> testCase) {
         return concat("Case [", testCase.get(TEST_TITLE), "]");
-    }
-
-    /** テスト用StringResource実装クラス */
-    static class StringMessageMock implements StringResource {
-
-        /** ID */
-        private final String id;
-
-        /**
-         * コンストラクタ
-         *
-         * @param id ID
-         */
-        StringMessageMock(String id) {
-            this.id = id;
-        }
-
-        /** {@inheritDoc} */
-        public String getId() {
-            return id;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 使用不可
-         */
-        public String getValue(Locale locale) {
-            throw new UnsupportedOperationException();
-        }
     }
 
 
@@ -609,7 +644,7 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 上記以外の場合は、valueOf(String)メソッドを使用して、変換
         if (clazz.isArray()) {
             // 対象が配列の場合
-            Class componentType = clazz.getComponentType();
+            Class<?> componentType = clazz.getComponentType();
             Method method = componentType.getMethod("valueOf", String.class);
             Object[] result = (Object[]) Array.newInstance(componentType, strings.length);
             for (int i = 0; i < strings.length; i++) {
@@ -651,8 +686,12 @@ public class EntityTestSupport extends TestEventDispatcher {
 
         List<Map<String, String>> testDataList = getListMapRequired(sheetName, id);
         for (Map<String, String> testData : testDataList) {
+
+            // Bean Validationのグループ取得
+            // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
+            Class<?> group = getStrategy().getGroupFromName(testData.remove(GROUP_KEY));
             CharsetTestVariation<ENTITY> tester
-                    = new CharsetTestVariation<ENTITY>(targetClass, testData);
+                    = new CharsetTestVariation<ENTITY>(targetClass, group, testData);
             tester.testAll();
         }
     }
@@ -693,13 +732,19 @@ public class EntityTestSupport extends TestEventDispatcher {
         // 必須カラム存在チェック
         checkRequiredColumns(REQUIRED_COLUMNS_FOR_SINGLE_VALIDATION, list, sheetName, id);
 
+
         // 全件実行
         for (Map<String, String> row : list) {
             String[] input = getInputParameter(row);
             String propertyName = row.get(PROPERTY_NAME);
             String messageId = row.get(MESSAGE_ID);
+            // Bean Validationのグループ取得
+            // Nablarch Validationではグループが無いが、実装を共通化するためにダミーのグループ取得処理を実行する。
+            Class<?> group = getStrategy().getGroupFromName(row.get(GROUP_KEY));
+            // Bean Validationのメッセージ補完用属性のマップ取得
+            Map<String, Object> options = getInterpolationMap(INTERPOLATE_KEY_PREFIX, INTERPOLATE_VALUE_PREFIX, row);
             new SingleValidationTester<ENTITY>(targetClass, propertyName)
-                    .testSingleValidation(input, messageId);
+                    .testSingleValidation(group, options, input, messageId);
         }
     }
 
@@ -721,9 +766,39 @@ public class EntityTestSupport extends TestEventDispatcher {
             if (!row.containsKey(key)) {
                 break;
             }
-            result.add(row.get(key));
+            String value = row.get(key);
+            if (StringUtil.isNullOrEmpty(value)) {
+                continue;
+            }
+            result.add(value);
         }
-        return result.toArray(new String[result.size()]);
+        return result.toArray(new String[0]);
+    }
+
+    /**
+     * Bean Validationのメッセージ補完用属性のマップを取得する。
+     *
+     * @param row 行データ
+     * @return メッセージ補完用属性のマップ
+     */
+    private Map<String, Object> getInterpolationMap(String interpolateKeyPrefix, String interpolateValuePrefix, Map<String, String> row) {
+        Map<String, Object> interpolationMap = new HashMap<String, Object>();
+        for (int i = 1;; i++) {
+            String keyOfInterpolateKey = interpolateKeyPrefix + "_" + i;
+            String keyOfInterpolateValue = interpolateValuePrefix + "_" + i;
+            if(!row.containsKey(keyOfInterpolateKey) || !row.containsKey(keyOfInterpolateValue)) {
+                break;
+            }
+
+            String interpolateKey = row.get(keyOfInterpolateKey);
+            if (StringUtil.isNullOrEmpty(interpolateKey)) {
+                continue;
+            }
+
+            String interpolateValue = row.get(keyOfInterpolateValue);
+            interpolationMap.put(interpolateKey, interpolateValue);
+        }
+        return interpolationMap;
     }
 
     /**
@@ -772,6 +847,18 @@ public class EntityTestSupport extends TestEventDispatcher {
         if (list.isEmpty()) {
             throw new IllegalArgumentException("data [" + id + "] not found in sheet [" + sheetName + "].");
         }
+    }
+
+    /**
+     * テスト用バリデーションストラテジを取得する。
+     *
+     * @return テスト用バリデーションストラテジ
+     */
+    private ValidationTestStrategy getStrategy(){
+        if(strategy == null) {
+            strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
+        }
+        return strategy;
     }
 }
 

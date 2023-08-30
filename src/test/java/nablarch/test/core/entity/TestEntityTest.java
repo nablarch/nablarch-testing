@@ -32,6 +32,10 @@ public class TestEntityTest extends EntityTestSupport {
             {"MSG00022", "ja", "画面遷移が不正です。"},
             {"MSG00023", "ja", "{0}は{1}桁で入力してください。"},
             {"MSG00024", "ja", "{0}は{2}文字以下で入力して下さい。"},
+            {"MSG20010", "ja", "{0}の入力は必須です。"},
+            {"MSG20011", "ja", "{0}は{1}桁以上{2}桁以下でなければなりません。"},
+            {"MSG20012", "ja", "{0}は{1}桁でなければなりません。"},
+            {"MSG20013", "ja", "{0}は{1}桁以下でなければなりません。"},
             {"MSG90001", "ja", "{0}が正しくありません。"},
     };
 
@@ -41,7 +45,7 @@ public class TestEntityTest extends EntityTestSupport {
                           .setMessages(MESSAGES);
     }
 
-    private Class<TestEntity> targetClass = TestEntity.class;
+    private final Class<TestEntity> targetClass = TestEntity.class;
 
     /**
      * 文字種と文字列長のテスト
@@ -49,6 +53,17 @@ public class TestEntityTest extends EntityTestSupport {
     @Test
     public void testCharsetAndLength() {
         String sheetName = "testCharsetAndLength";
+        String id = "charsetAndLength";
+        testValidateCharsetAndLength(targetClass, sheetName, id);
+    }
+
+    /**
+     * 文字種と文字列長のテスト
+     * テストケースに文字列長違反・入力必須違反時のメッセージIDを明示した場合。
+     */
+    @Test
+    public void testCharsetAndLengthWithMessage() {
+        String sheetName = "testCharsetAndLengthWithMessage";
         String id = "charsetAndLength";
         testValidateCharsetAndLength(targetClass, sheetName, id);
     }
