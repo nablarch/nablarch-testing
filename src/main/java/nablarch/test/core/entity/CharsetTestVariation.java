@@ -300,7 +300,7 @@ public class CharsetTestVariation<ENTITY> {
                     ? ""                              // メッセージが出ないこと
                     : messageIdWhenNotApplicable;     // 適用不可時のメッセージID
             // 入力値
-            String param = generate(charsetType, isMaxEmpty ? min : max);
+            String param = generate(charsetType, Math.max(1, isMaxEmpty ? min : max));
             // 単項目バリデーションを実行
             tester.testSingleValidation(group, options, param, expectedMessageString, "charset type=[" + charsetType + "]");
         }
