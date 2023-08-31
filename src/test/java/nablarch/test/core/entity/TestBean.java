@@ -53,6 +53,9 @@ public class TestBean {
     @SystemChar(charsetDef = "半角数字")
     private String numberProhibitEmpty;
 
+    @SystemChar(charsetDef = "半角数字")
+    private String numberAllowEmpty;
+
     @SystemChar.List({
             @SystemChar(charsetDef = "ASCII文字", message = "{MSG00012}"),
             @SystemChar(charsetDef = "半角英字", groups = Test1.class, message = "{MSG90001}")
@@ -141,6 +144,14 @@ public class TestBean {
 
     public void setArbitraryValue(String arbitraryValue) {
         this.arbitraryValue = arbitraryValue;
+    }
+
+    public String getNumberAllowEmpty() {
+        return numberAllowEmpty;
+    }
+
+    public void setNumberAllowEmpty(String numberAllowEmpty) {
+        this.numberAllowEmpty = numberAllowEmpty;
     }
 
     public interface Test1{}

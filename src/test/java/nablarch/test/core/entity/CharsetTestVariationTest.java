@@ -634,6 +634,53 @@ public class CharsetTestVariationTest {
     /**
      * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
      * 想定通りである場合、例外が発生しない。
+     * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
+     * minとmaxがいずれも空、未入力を許容する場合でも、文字種精査が実行されていること。
+     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
+     */
+    @Test
+    public void testAsciiSuccessWithAllowEmptyTrueAndEmptyMinMax() {
+        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
+
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setValidationTestStrategy(new BeanValidationTestStrategy());
+        repositoryResource.getComponentByType(EntityTestConfiguration.class)
+                .setMaxMessageId("{nablarch.core.validation.ee.Length.max.message}");
+
+        Map<String, String> paramsForAscii = newMap(new String[][] {
+                {"propertyName", "numberAllowEmpty"},
+                {"allowEmpty", "o"},
+                {"min", ""},
+                {"max", ""},
+                {"messageIdWhenNotApplicable", "{nablarch.core.validation.ee.SystemChar.message}"},
+                {"interpolateKey_1", "charsetDef"},
+                {"interpolateValue_1", "半角数字"},
+                {"半角英字", "x"},
+                {"半角数字", "o"},
+                {"半角記号", "x"},
+                {"半角カナ", "x"},
+                {"全角英字", "x"},
+                {"全角数字", "x"},
+                {"全角ひらがな", "x"},
+                {"全角カタカナ", "x"},
+                {"全角漢字", "x"},
+                {"全角記号その他", "x"},
+                {"外字", "x"}
+        });
+
+        CharsetTestVariation<TestBean> target
+                = new CharsetTestVariation<TestBean>(TestBean.class, Default.class, paramsForAscii);
+        target.testAllCharsetVariation();
+        target.testOverLimit();  // 最大桁数超過
+        target.testUnderLimit(); // 桁数不足
+        target.testMaxLength();  // 最大桁数
+        target.testMinLength();  // 最短桁数
+        target.testEmptyInput(); // 未入力
+    }
+
+    /**
+     * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
+     * 想定通りである場合、例外が発生しない。
      * Bean Validationのメッセージ補完用属性のキーが欠けている場合も例外が発生しないこと。
      * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
