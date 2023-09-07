@@ -14,6 +14,8 @@ public class MockMessageInterpolatorContextTest {
 
     private final MockMessageInterpolatorContext sut = new MockMessageInterpolatorContext(new HashMap<String, Object>());
 
+    private static final String EXPECTED_MSG = "Unsupported method was called.";
+
     /**
      * {@link UnsupportedOperationException}が送出されることを確認する。
      */
@@ -21,7 +23,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetValidatedValue(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getValidatedValue();
     }
@@ -33,7 +35,7 @@ public class MockMessageInterpolatorContextTest {
     public void testUnwrap(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.unwrap(this.getClass());
     }
@@ -45,7 +47,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetAnnotation(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getAnnotation();
     }
@@ -57,7 +59,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetMessageTemplate(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getMessageTemplate();
     }
@@ -69,7 +71,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetGroup(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getGroups();
     }
@@ -81,7 +83,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetPayload(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getPayload();
     }
@@ -93,7 +95,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetValidationAppliesTo(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getValidationAppliesTo();
     }
@@ -105,7 +107,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetConstraintValidatorClasses(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getConstraintValidatorClasses();
     }
@@ -117,7 +119,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetComposingConstraints(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().getComposingConstraints();
     }
@@ -129,7 +131,7 @@ public class MockMessageInterpolatorContextTest {
     public void testIsReportAsSingleViolation(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("Unsupported method was called.");
+        expectedException.expectMessage(EXPECTED_MSG);
 
         sut.getConstraintDescriptor().isReportAsSingleViolation();
     }
