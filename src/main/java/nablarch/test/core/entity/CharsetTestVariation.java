@@ -261,9 +261,9 @@ public class CharsetTestVariation<ENTITY> {
         if (max == Integer.MAX_VALUE) {
             return;
         }
-        Integer min = isMinEmpty ? null : this.min;
+        Integer minLocal = isMinEmpty ? null : min;
         String expectedMessageString = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
-                ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min) // デフォルトのメッセージを出力
+                ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, minLocal) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                         // テストケースで明示的に指定したメッセージを出力
         testValidationWithValidCharset(max + 1, expectedMessageString, "over limit length test.");
     }
