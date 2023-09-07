@@ -22,6 +22,11 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
     private final ConstraintDescriptor<?> constraintDescriptor;
 
     /**
+     * サポート外メソッドを呼び出したときのエラーメッセージ。
+     */
+    private static final String UNSUPPORTED_METHOD_WAS_CALLED = "Unsupported method was called.";
+
+    /**
      * コンストラクタ。
      *
      * @param interpolationMap 補完用属性のマップ
@@ -37,12 +42,12 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
     @Override
     public Object getValidatedValue() {
-        throw new UnsupportedOperationException("No use of this method is intended.");
+        throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
     }
 
     @Override
     public <T> T unwrap(Class<T> type) {
-        throw new UnsupportedOperationException("No use of this method is intended.");
+        throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
     }
 
     /**
@@ -68,32 +73,32 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
         @Override
         public T getAnnotation() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
         public String getMessageTemplate() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
         public Set<Class<?>> getGroups() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
         public Set<Class<? extends Payload>> getPayload() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
         public ConstraintTarget getValidationAppliesTo() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
         public List<Class<? extends ConstraintValidator<T, ?>>> getConstraintValidatorClasses() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
@@ -103,12 +108,12 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
         @Override
         public Set<ConstraintDescriptor<?>> getComposingConstraints() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
 
         @Override
         public boolean isReportAsSingleViolation() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
     }
 }

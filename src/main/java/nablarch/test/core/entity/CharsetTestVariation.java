@@ -46,13 +46,15 @@ public class CharsetTestVariation<ENTITY> {
             MIN
     );
 
-    private static final List<String> COLUMNS_EXCEPT_CHARSET = new ArrayList<String>(){{
-        addAll(REQUIRED_COLUMNS);
-        add(MESSAGE_ID_WHEN_INVALID_LENGTH);
-        add(MESSAGE_ID_WHEN_EMPTY_INPUT);
-        add(INTERPOLATE_KEY_PREFIX);
-        add(INTERPOLATE_VALUE_PREFIX);
-    }};
+    /** 文字種以外のカラム */
+    private static final List<String> COLUMNS_EXCEPT_CHARSET = new ArrayList<String>();
+    static {
+        COLUMNS_EXCEPT_CHARSET.addAll(REQUIRED_COLUMNS);
+        COLUMNS_EXCEPT_CHARSET.add(MESSAGE_ID_WHEN_INVALID_LENGTH);
+        COLUMNS_EXCEPT_CHARSET.add(MESSAGE_ID_WHEN_EMPTY_INPUT);
+        COLUMNS_EXCEPT_CHARSET.add(INTERPOLATE_KEY_PREFIX);
+        COLUMNS_EXCEPT_CHARSET.add(INTERPOLATE_VALUE_PREFIX);
+    }
 
 
     /** OKマーク */
@@ -259,9 +261,9 @@ public class CharsetTestVariation<ENTITY> {
         if (max == Integer.MAX_VALUE) {
             return;
         }
-        Integer min = isMinEmpty ? null : this.min;
+        Integer minLocal = isMinEmpty ? null : min;
         String expectedMessageString = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
-                ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, min) // デフォルトのメッセージを出力
+                ? EntityTestConfiguration.getConfig().getOverLimitMessageId(max, minLocal) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                         // テストケースで明示的に指定したメッセージを出力
         testValidationWithValidCharset(max + 1, expectedMessageString, "over limit length test.");
     }
@@ -273,20 +275,21 @@ public class CharsetTestVariation<ENTITY> {
         if (min <= 1) {
             return;
         }
-        Integer max = isMaxEmpty ? null : this.max;
+        Integer maxLocal = isMaxEmpty ? null : max;
         String expectedMessageString = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
-                ? EntityTestConfiguration.getConfig().getUnderLimitMessageId(max, min) // デフォルトのメッセージを出力
+                ? EntityTestConfiguration.getConfig().getUnderLimitMessageId(maxLocal, min) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                          // テストケースで明示的に指定したメッセージを出力
         testValidationWithValidCharset(min - 1, expectedMessageString, "under limit length test.");
     }
 
     /** 未入力のテストを行う。 */
     public void testEmptyInput() {
-        String expectedMessageString = (isEmptyAllowed)
-                ? ""                                      // 必須項目でない場合（メッセージが出ないこと）
-                : StringUtil.isNullOrEmpty(messageIdWhenEmptyInput)            // 必須項目の場合、メッセージを出力する。
+        String expectedRequiredMessage = StringUtil.isNullOrEmpty(messageIdWhenEmptyInput)
                 ? EntityTestConfiguration.getConfig().getEmptyInputMessageId() // デフォルトのメッセージを出力
                 : messageIdWhenEmptyInput;                                     // テストケースで明示的に指定したメッセージを出力
+        String expectedMessageString = (isEmptyAllowed)
+                ? ""                                      // 必須項目でない場合（メッセージが出ないこと）
+                : expectedRequiredMessage;                // 必須項目の場合（メッセージが出力されること）
         testValidationWithValidCharset(0, expectedMessageString, "empty input test.");
     }
 
