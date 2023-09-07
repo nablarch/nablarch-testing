@@ -275,7 +275,7 @@ public class CharsetTestVariation<ENTITY> {
         if (min <= 1) {
             return;
         }
-        Integer maxLocal = isMaxEmpty ? null : this.max;
+        Integer maxLocal = isMaxEmpty ? null : max;
         String expectedMessageString = StringUtil.isNullOrEmpty(messageIdWhenInvalidLength)
                 ? EntityTestConfiguration.getConfig().getUnderLimitMessageId(maxLocal, min) // デフォルトのメッセージを出力
                 : messageIdWhenInvalidLength;                                          // テストケースで明示的に指定したメッセージを出力
