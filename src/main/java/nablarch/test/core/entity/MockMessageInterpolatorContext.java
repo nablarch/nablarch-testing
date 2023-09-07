@@ -37,12 +37,12 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
     @Override
     public Object getValidatedValue() {
-        throw new UnsupportedOperationException("No use of this method is intended.");
+        throw new UnsupportedOperationException("Unsupported method was called.");
     }
 
     @Override
     public <T> T unwrap(Class<T> type) {
-        throw new UnsupportedOperationException("No use of this method is intended.");
+        throw new UnsupportedOperationException("Unsupported method was called.");
     }
 
     /**
@@ -68,32 +68,32 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
         @Override
         public T getAnnotation() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
         public String getMessageTemplate() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
         public Set<Class<?>> getGroups() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
         public Set<Class<? extends Payload>> getPayload() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
         public ConstraintTarget getValidationAppliesTo() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
         public List<Class<? extends ConstraintValidator<T, ?>>> getConstraintValidatorClasses() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
@@ -103,12 +103,12 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
         @Override
         public Set<ConstraintDescriptor<?>> getComposingConstraints() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
 
         @Override
         public boolean isReportAsSingleViolation() {
-            throw new UnsupportedOperationException("No use of this method is intended.");
+            throw new UnsupportedOperationException("Unsupported method was called.");
         }
     }
 }

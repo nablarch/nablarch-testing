@@ -21,7 +21,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetValidatedValue(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getValidatedValue();
     }
@@ -33,7 +33,7 @@ public class MockMessageInterpolatorContextTest {
     public void testUnwrap(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.unwrap(this.getClass());
     }
@@ -45,7 +45,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetAnnotation(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getAnnotation();
     }
@@ -57,7 +57,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetMessageTemplate(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getMessageTemplate();
     }
@@ -69,7 +69,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetGroup(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getGroups();
     }
@@ -81,7 +81,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetPayload(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getPayload();
     }
@@ -93,7 +93,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetValidationAppliesTo(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getValidationAppliesTo();
     }
@@ -105,7 +105,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetConstraintValidatorClasses(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getConstraintValidatorClasses();
     }
@@ -117,7 +117,7 @@ public class MockMessageInterpolatorContextTest {
     public void testGetComposingConstraints(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().getComposingConstraints();
     }
@@ -129,7 +129,7 @@ public class MockMessageInterpolatorContextTest {
     public void testIsReportAsSingleViolation(){
 
         expectedException.expect(UnsupportedOperationException.class);
-        expectedException.expectMessage("No use of this method is intended.");
+        expectedException.expectMessage("Unsupported method was called.");
 
         sut.getConstraintDescriptor().isReportAsSingleViolation();
     }
