@@ -54,7 +54,7 @@ public class CharsetTestVariation<ENTITY> {
         COLUMNS_EXCEPT_CHARSET.add(MESSAGE_ID_WHEN_EMPTY_INPUT);
         COLUMNS_EXCEPT_CHARSET.add(INTERPOLATE_KEY_PREFIX);
         COLUMNS_EXCEPT_CHARSET.add(INTERPOLATE_VALUE_PREFIX);
-    };
+    }
 
 
     /** OKマーク */
