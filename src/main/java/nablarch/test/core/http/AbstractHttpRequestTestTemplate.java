@@ -4,7 +4,7 @@ import static nablarch.core.util.Builder.concat;
 import static nablarch.test.Assertion.assertEqualsAsString;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,18 +77,16 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
     private static final String EXPECTED_RESPONSE_LIST_MAP = "responseResult";
 
     /** Assert対象から除外するカラム */
-    private static final List<String> ASSERT_SKIP_EXPECTED_COLUMNS = Arrays.asList("no");
+    private static final List<String> ASSERT_SKIP_EXPECTED_COLUMNS = Collections.singletonList("no");
 
     /** LIST_MAPキャッシュ */
-    private Map<String, List<Map<String, String>>> listMapCache = new HashMap<String, List<Map<String, String>>>();
+    private final Map<String, List<Map<String, String>>> listMapCache = new HashMap<String, List<Map<String, String>>>();
 
     /** 何も行わない{@link Advice}実装。 */
     private final Advice<INF> nopAdvice = new Advice<INF>() {
-        /** {@inheritDoc} */
         public void afterExecute(INF testCaseInfo, ExecutionContext context) {
         }
 
-        /** {@inheritDoc} */
         public void beforeExecute(INF testCaseInfo, ExecutionContext context) {
         }
     };
@@ -277,7 +275,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      * テストで使用するデータのキャッシュをクリアする
      * @param testCaseInfo テストケース情報
      */
-    protected void clearPreviousTestData(INF testCaseInfo) {
+    protected void clearPreviousTestData(@SuppressWarnings("unused") INF testCaseInfo) {
 
         // メッセージ同期送信を行う場合に、MockMessagingContextに必要なテストケースの情報を格納する
         RequestTestingMessagingClient.clearSendingMessageCache();
@@ -479,7 +477,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      */
     protected void assertResponse(INF testCaseInfo, HttpResponse response) {
         String message  = testCaseInfo.getTestCaseName() + "[HTTP STATUS]";
-        assertStatusCode(message, Integer.valueOf(testCaseInfo.getExpectedStatusCode()),  response);
+        assertStatusCode(message, Integer.parseInt(testCaseInfo.getExpectedStatusCode()),  response);
     }
 
     /**
@@ -636,8 +634,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
                     String prefix = assertKey.substring(0, prefixLength);
                     String key = assertKey.substring(prefixLength + 1);
                     if (context.getRequestScopeMap().containsKey(prefix)) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> varMap = (Map<String, Object>) context.getRequestScopedVar(prefix);
+                        Map<String, Object> varMap = context.getRequestScopedVar(prefix);
                         Object actValue = varMap.get(key);
                         if (actValue != null) {
                             if (actValue.getClass().isArray()) {
@@ -674,7 +671,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             return;
         }
         String key = testCaseInfo.getSearchResultKey();
-        SqlResultSet actual = (SqlResultSet) context.getRequestScopedVar(key);
+        SqlResultSet actual = context.getRequestScopedVar(key);
         assertSqlResultSetEquals(testCaseInfo.getTestCaseName(), testCaseInfo.getSheetName(),
                                  testCaseInfo.getExpectedSearchId(), actual);
 

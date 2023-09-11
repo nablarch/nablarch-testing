@@ -8,6 +8,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("NonAsciiCharacters")
 public class HttpRequestTestSupportTest {
 
     HttpRequestTestSupport sut = new HttpRequestTestSupport();
