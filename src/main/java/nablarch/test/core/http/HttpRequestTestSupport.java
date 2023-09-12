@@ -354,11 +354,6 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     @SuppressWarnings("rawtypes")
     protected void prepareHandlerQueue(List<Handler> handlerQueue) {
-
-        // セッションアクセスハンドラの準備
-        //noinspection deprecation
-        ListWrapper.wrap(handlerQueue).select(SessionConcurrentAccessHandler.class);
-
         // リクエスト単体テストに必要なハンドラをハンドラキューに挿入
         servletForwardVerifier.register(handlerQueue);
         handler.register(handlerQueue);
