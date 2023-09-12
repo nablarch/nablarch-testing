@@ -75,11 +75,10 @@ public class AbstractHttpRequestTestTemplateTest {
     private static final File workDir = new File("work");
 
     /** アップロード先ディレクトリの準備 */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void prepareUploadDir() {
-        //noinspection ResultOfMethodCallIgnored
         workDir.delete();
-        //noinspection ResultOfMethodCallIgnored
         workDir.mkdir();
     }
 
