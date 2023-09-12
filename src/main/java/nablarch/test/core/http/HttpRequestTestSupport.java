@@ -167,7 +167,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir   ダンプディレクトリ
      * @param className クラス名
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "AssignmentToStaticFieldFromInstanceMethod"})
     private void initialize(HttpTestConfiguration config, File dumpDir, String className) {
 
         if (config.isBackup()) {
@@ -178,7 +178,6 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
 
         // 内蔵サーバ生成
         createHttpServer(config);
-        //noinspection AssignmentToStaticFieldFromInstanceMethod
         initialized = true;
     }
 
