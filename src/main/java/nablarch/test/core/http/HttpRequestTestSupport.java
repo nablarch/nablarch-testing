@@ -321,22 +321,19 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param config HttpTestConfiguration
      * @return HTTPサーバ
      */
-    @SuppressWarnings("UnusedReturnValue")
+    @SuppressWarnings({"UnusedReturnValue", "AssignmentToStaticFieldFromInstanceMethod", "rawtypes"})
     protected HttpServer createHttpServer(HttpTestConfiguration config) {
         // HTTPサーバ生成
-        //noinspection AssignmentToStaticFieldFromInstanceMethod
         server = createHttpServer();
         // HttpTestConfigurationの値を設定する
         server.setTempDirectory(config.getTempDirectory());
         server.setWarBasePaths(getWarBasePaths(config));
         // サーバ起動
         server.startLocal();
-        //noinspection AssignmentToStaticFieldFromInstanceMethod
         handler = new HttpRequestTestSupportHandler(config);
 
         // ハンドラキューの準備
         WebFrontController controller = SystemRepository.get("webFrontController");
-        //noinspection rawtypes
         List<Handler> handlerQueue = controller.getHandlerQueue();
         prepareHandlerQueue(handlerQueue);
         server.setHandlerQueue(handlerQueue);
