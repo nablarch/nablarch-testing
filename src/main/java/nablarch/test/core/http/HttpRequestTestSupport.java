@@ -489,10 +489,10 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir        出力先ディレクトリ
      * @param warBaseLocator warベースのリソースロケータ
      */
+    @SuppressWarnings("AssignmentToStaticFieldFromInstanceMethod")
     protected void rewriteResourceFile(HttpTestConfiguration config, File dumpDir, ResourceLocator warBaseLocator) {
 
         if (null == jsTestResourcePath) {
-            //noinspection AssignmentToStaticFieldFromInstanceMethod
             jsTestResourcePath = new File(config.getJsTestResourceDir()).getAbsolutePath();
         }
         String realPath = warBaseLocator.getRealPath();
