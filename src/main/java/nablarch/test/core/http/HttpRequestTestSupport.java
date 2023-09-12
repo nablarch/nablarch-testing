@@ -489,7 +489,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir        出力先ディレクトリ
      * @param warBaseLocator warベースのリソースロケータ
      */
-    @SuppressWarnings("AssignmentToStaticFieldFromInstanceMethod")
+    @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod", "ResultOfMethodCallIgnored"})
     protected void rewriteResourceFile(HttpTestConfiguration config, File dumpDir, ResourceLocator warBaseLocator) {
 
         if (null == jsTestResourcePath) {
@@ -541,7 +541,6 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
                 FileUtil.closeQuietly(reader, writer);
             }
             // 出力したファイルのタイムスタンプに出力元ファイルのタイムスタンプを設定する。
-            //noinspection ResultOfMethodCallIgnored
             outputFile.setLastModified(file.lastModified());
         }
     }
