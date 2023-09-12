@@ -275,7 +275,8 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      * テストで使用するデータのキャッシュをクリアする
      * @param testCaseInfo テストケース情報
      */
-    protected void clearPreviousTestData(@SuppressWarnings("unused") INF testCaseInfo) {
+    @SuppressWarnings("unused")
+    protected void clearPreviousTestData(INF testCaseInfo) {
 
         // メッセージ同期送信を行う場合に、MockMessagingContextに必要なテストケースの情報を格納する
         RequestTestingMessagingClient.clearSendingMessageCache();
