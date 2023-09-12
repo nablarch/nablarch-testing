@@ -86,9 +86,9 @@ public class AbstractHttpRequestTestTemplateTest {
      * アップロード先ディレクトリの削除 
      * HttpRequestTestSupportをデフォルトに復元する
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @AfterClass
     public static void deleteUploadDir() {
-        //noinspection ResultOfMethodCallIgnored
         workDir.delete();
         HttpRequestTestSupport.resetHttpServer();
     }
