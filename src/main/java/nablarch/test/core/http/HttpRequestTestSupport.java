@@ -167,7 +167,8 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir   ダンプディレクトリ
      * @param className クラス名
      */
-    private void initialize(HttpTestConfiguration config, @SuppressWarnings("unused") File dumpDir, String className) {
+    @SuppressWarnings("unused")
+    private void initialize(HttpTestConfiguration config, File dumpDir, String className) {
 
         if (config.isBackup()) {
             backupDumpFile(config);
