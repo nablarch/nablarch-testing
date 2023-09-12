@@ -754,17 +754,6 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * ステータスコードがリダイレクト(302 or 303)であるかどうか判定する。
-     * 
-     * @param statusCode ステータスコード
-     * @return ステータスコードがリダイレクトであればtrue。
-     */
-    @SuppressWarnings("unused")
-    private boolean isRedirected(int statusCode) {
-        return 302 == statusCode || 303 == statusCode;
-    }
-
-    /**
      * メッセージIDのアサートを行う。<br>
      *
      * @param expectedCommaSeparated 期待するメッセージID（カンマ区切り）
