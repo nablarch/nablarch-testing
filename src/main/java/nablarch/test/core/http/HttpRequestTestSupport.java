@@ -49,7 +49,6 @@ import nablarch.fw.web.HttpServerFactory;
 import nablarch.fw.web.MockHttpCookie;
 import nablarch.fw.web.MockHttpRequest;
 import nablarch.fw.web.ResourceLocator;
-import nablarch.fw.web.handler.SessionConcurrentAccessHandler;
 import nablarch.fw.web.servlet.WebFrontController;
 import nablarch.fw.web.upload.PartInfo;
 import nablarch.fw.web.upload.PartInfoHolder;
@@ -60,7 +59,6 @@ import nablarch.test.TestSupport;
 import nablarch.test.core.db.DbAccessTestSupport;
 import nablarch.test.core.db.EntityTestSupport;
 import nablarch.test.core.util.FileUtils;
-import nablarch.test.core.util.ListWrapper;
 import nablarch.test.event.TestEventDispatcher;
 import nablarch.test.tool.htmlcheck.HtmlChecker;
 
@@ -80,7 +78,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     private static final Pattern HTML_TYPE = Pattern.compile("[^/]*/html?.*");
 
     /** ファイルセパレータ */
-    private static char fileSeparator = File.separatorChar;
+    private static final char fileSeparator = File.separatorChar;
 
     /** HttpServer */
     private static HttpServer server;
@@ -101,7 +99,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     private final DbAccessTestSupport dbSupport;
 
     /** 静的ファイルコピー時に内容を置き換える対象のファイルリスト */
-    private List<File> replaceFiles = new ArrayList<File>();
+    private final List<File> replaceFiles = new ArrayList<File>();
 
     /** 初期化完了フラグ。 */
     private static boolean initialized;
@@ -167,6 +165,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir   ダンプディレクトリ
      * @param className クラス名
      */
+    @SuppressWarnings({"unused", "AssignmentToStaticFieldFromInstanceMethod"})
     private void initialize(HttpTestConfiguration config, File dumpDir, String className) {
 
         if (config.isBackup()) {
@@ -319,6 +318,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param config HttpTestConfiguration
      * @return HTTPサーバ
      */
+    @SuppressWarnings({"UnusedReturnValue", "AssignmentToStaticFieldFromInstanceMethod", "rawtypes"})
     protected HttpServer createHttpServer(HttpTestConfiguration config) {
         // HTTPサーバ生成
         server = createHttpServer();
@@ -352,12 +352,6 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     @SuppressWarnings("rawtypes")
     protected void prepareHandlerQueue(List<Handler> handlerQueue) {
-
-        // セッションアクセスハンドラの準備
-        SessionConcurrentAccessHandler sessionHandler
-                = ListWrapper.wrap(handlerQueue)
-                             .select(SessionConcurrentAccessHandler.class);
-
         // リクエスト単体テストに必要なハンドラをハンドラキューに挿入
         servletForwardVerifier.register(handlerQueue);
         handler.register(handlerQueue);
@@ -485,6 +479,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     /**
      * HTMLリソースディレクトリ内のCSSファイルを置換する。
      *
+     * <p>
      * 出力したCSSファイルのタイムスタンプには、出力元CSSファイルのタイムスタンプを設定する。
      * 次回、出力時にはタイムスタンプに変更がない限り、出力は行わない。
      *
@@ -492,6 +487,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir        出力先ディレクトリ
      * @param warBaseLocator warベースのリソースロケータ
      */
+    @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod", "ResultOfMethodCallIgnored"})
     protected void rewriteResourceFile(HttpTestConfiguration config, File dumpDir, ResourceLocator warBaseLocator) {
 
         if (null == jsTestResourcePath) {
@@ -639,7 +635,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     protected class HtmlResourceExtensionFilter implements FileFilter {
 
         /** HttpTestConfiguration */
-        private HttpTestConfiguration configuration = null;
+        private final HttpTestConfiguration configuration;
 
         /**
          * コンストラクタ。
@@ -710,11 +706,14 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     
     /**
      * ステータスコードが想定通りであることを表明する。<br/>
+     *
+     * <p>
      * 内蔵サーバから戻り値で返却されたHTTPレスポンスがリダイレクトである場合、
      * ステータスコードが303または302であることを表明する。
      * このとき、内蔵サーバから返却されるHTTPレスポンスと比較しないのは、後方互換性を保つためである。
      * （内蔵サーバは、リダイレクト時のステータスコードに'302 FOUND'を使用する）
      *
+     * <p>
      * 上記以外の場合は、{@link HttpRequestTestSupportHandler#getStatusCode()}
      * のステータスコードを比較対象とする。
      *
@@ -746,21 +745,12 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * ステータスコードがリダイレクト(302 or 303)であるかどうか判定する。
-     * 
-     * @param statusCode ステータスコード
-     * @return ステータスコードがリダイレクトであればtrue。
-     */
-    private boolean isRedirected(int statusCode) {
-        return 302 == statusCode || 303 == statusCode;
-    }
-
-    /**
      * メッセージIDのアサートを行う。<br>
      *
      * @param expectedCommaSeparated 期待するメッセージID（カンマ区切り）
      * @param actual                 実行結果(メッセージIDをリクエストスコープにもつExecutionContext)
      */
+    @SuppressWarnings("unused")
     public void assertApplicationMessageId(String expectedCommaSeparated, ExecutionContext actual) {
         assertApplicationMessageId("", expectedCommaSeparated, actual);
     }
@@ -807,6 +797,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param expected 期待するメッセージIDの配列
      * @param actual   実行結果(メッセージIDをリクエストスコープにもつExecutionContext)
      */
+    @SuppressWarnings("unused")
     public void assertApplicationMessageId(String[] expected, ExecutionContext actual) {
         assertApplicationMessageId("", expected, actual);
     }
@@ -871,6 +862,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         }
         if (target.isDirectory()) {
             File[] files = target.listFiles();
+            assert files != null;
             for (File file : files) {
                 if (file.isDirectory()) {
                     deleteBackupFile(file);
@@ -974,7 +966,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             if (!attachedFileNames.isEmpty()) {
                 // 添付ファイルのHTTPパラメータを書き換え
                 // key = inputタグのname属性、value = アップロードされたファイル名)
-                String[] array = attachedFileNames.toArray(new String[attachedFileNames.size()]);
+                String[] array = attachedFileNames.toArray(new String[0]);
                 params.put(name, array);
             }
         }
@@ -1219,6 +1211,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        シート内のデータを特定するためのID
      * @param actual    実際の値
      */
+    @SuppressWarnings("unused")
     public void assertSqlRowEquals(String message, String sheetName, String id, SqlRow actual) {
         dbSupport.assertSqlRowEquals(message, sheetName, id, actual);
     }
@@ -1243,6 +1236,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @return List-Map<String, String[]>形式のデータ
      * @see nablarch.test.core.db.DbAccessTestSupport#getListParamMap(String, String)
      */
+    @SuppressWarnings("unused")
     public List<Map<String, String[]>> getListParamMap(String sheetName, String id) {
         return dbSupport.getListParamMap(sheetName, id);
     }
@@ -1255,6 +1249,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @return Map<String,String[]>形式のデータ
      * @see nablarch.test.core.db.DbAccessTestSupport#getParamMap(String, String)
      */
+    @SuppressWarnings("unused")
     public Map<String, String[]> getParamMap(String sheetName, String id) {
         return dbSupport.getParamMap(sheetName, id);
     }
@@ -1265,6 +1260,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param sheetName 期待値を格納したシート名
      * @see nablarch.test.core.db.DbAccessTestSupport#assertTableEquals(String)
      */
+    @SuppressWarnings("unused")
     public void assertTableEquals(String sheetName) {
         dbSupport.assertTableEquals(sheetName);
     }
@@ -1276,6 +1272,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param groupId   グループID（オプション）
      * @see nablarch.test.core.db.DbAccessTestSupport#assertTableEquals(String, String)
      */
+    @SuppressWarnings("unused")
     public void assertTableEquals(String sheetName, String groupId) {
         dbSupport.assertTableEquals(sheetName, groupId);
     }
@@ -1299,6 +1296,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        ケース表のID(LIST_MAP=testの場合は、testを指定する。)
      * @param actual    実行結果のオブジェクト(Java Beansオブジェクト)
      */
+    @SuppressWarnings("unused")
     public void assertEntity(String sheetName, String id, Object actual) {
         EntityTestSupport entityTestSupport = new EntityTestSupport(testClass);
         entityTestSupport.assertGetterMethod(sheetName, id, actual);
@@ -1313,6 +1311,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        ケース表のID(LIST_MAP=testの場合は、testを指定する。)
      * @param actual    実際の値
      */
+    @SuppressWarnings("unused")
     public void assertObjectPropertyEquals(String message, String sheetName, String id, Object actual) {
         List<Map<String, String>> list = getListMap(sheetName, id);
         if (null == list || list.isEmpty()) {
@@ -1342,6 +1341,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             Assertion.failComparing(message + "; target size does not match; ", list.size(), null);
         }
 
+        assert actual != null;
         if (actual.length != list.size()) {
             Assertion.failComparing(message + "; target size does not match; ", list.size(), actual.length);
         }
@@ -1361,6 +1361,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        ケース表のID(LIST_MAP=testの場合は、testを指定する。)
      * @param actual    実際の値
      */
+    @SuppressWarnings("unused")
     public void assertObjectListPropertyEquals(String message, String sheetName, String id, List<?> actual) {
         Object[] array = null == actual ? null : actual.toArray();
         assertObjectArrayPropertyEquals(message, sheetName, id, array);

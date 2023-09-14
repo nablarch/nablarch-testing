@@ -1,12 +1,13 @@
 package nablarch.test.core.http;
 
 import static nablarch.test.Assertion.fail;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -71,9 +72,10 @@ public class AbstractHttpRequestTestTemplateTest {
             "nablarch/test/core/http/http-test-configuration.xml");
 
     /** アップロード先ディレクトリ */
-    private static File workDir = new File("work");
+    private static final File workDir = new File("work");
 
     /** アップロード先ディレクトリの準備 */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @BeforeClass
     public static void prepareUploadDir() {
         workDir.delete();
@@ -84,6 +86,7 @@ public class AbstractHttpRequestTestTemplateTest {
      * アップロード先ディレクトリの削除 
      * HttpRequestTestSupportをデフォルトに復元する
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @AfterClass
     public static void deleteUploadDir() {
         workDir.delete();
@@ -838,7 +841,7 @@ public class AbstractHttpRequestTestTemplateTest {
             @Override
             public HttpResponse handle(HttpRequest req, ExecutionContext ctx) {
 
-                /** 全件検索を行う */
+                // 全件検索を行う
                 SqlResultSet rs = new SimpleDbTransactionExecutor<SqlResultSet>(getManager()) {
                     @Override
                     public SqlResultSet execute(AppDbConnection connection) {
@@ -907,8 +910,6 @@ public class AbstractHttpRequestTestTemplateTest {
         public SearchResultAssertTest() {
         }
 
-        ;
-
         public SearchResultAssertTest(String pkCol1) {
             this.pkCol1 = pkCol1;
         }
@@ -924,8 +925,6 @@ public class AbstractHttpRequestTestTemplateTest {
 
         public CrlfTest() {
         }
-
-        ;
 
         public CrlfTest(String pkCol1, String col2) {
             this.pkCol1 = pkCol1;
