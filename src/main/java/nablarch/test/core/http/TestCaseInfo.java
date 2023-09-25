@@ -84,19 +84,19 @@ public class TestCaseInfo {
     protected static final String EXPECTED_CONTENT_FILENAME = "expectedContentFileName";
 
     /** シート名 */
-    private String sheetName;
+    private final String sheetName;
     /** テストケース毎のパラメータ */
-    private Map<String, String> testCaseParams;
+    private final Map<String, String> testCaseParams;
     /** コンテキスト */
-    private List<Map<String, String>> context;
+    private final List<Map<String, String>> context;
     /** リクエスト */
-    private List<Map<String, String>> request;
+    private final List<Map<String, String>> request;
     /** 期待するレスポンスのパラメータ */
-    private List<Map<String, String>> expectedResponseParams;
+    private final List<Map<String, String>> expectedResponseParams;
     /** Cookie情報 */
-    private List<Map<String, String>> cookie;
+    private final List<Map<String, String>> cookie;
     /** クエリパラメータ情報 */
-    private List<Map<String, String>> queryParams;
+    private final List<Map<String, String>> queryParams;
 
     /** リクエストスコープ値アサートを行うか？（各テストケースで個別検証する場合にfalseを設定） */
     private boolean isAssertRequestScopeVar = true;
@@ -119,6 +119,7 @@ public class TestCaseInfo {
      * リクエストスコープ内に格納された検索結果を取得するためのキーを設定する。
      * @param searchResultKey キー
      */
+    @SuppressWarnings("unused")
     public void setSearchResultKey(String searchResultKey) {
         this.searchResultKey = searchResultKey;
     }
@@ -198,7 +199,7 @@ public class TestCaseInfo {
      * @return リクエストスコープに設定されるはずの期待値
      */
     public Map<String, String> getExpectedRequestScopeVar() {
-        return expectedResponseParams.get(Integer.valueOf(getTestCaseNo()) - 1);
+        return expectedResponseParams.get(Integer.parseInt(getTestCaseNo()) - 1);
     }
 
     /**
@@ -340,7 +341,7 @@ public class TestCaseInfo {
      */
     public Map<String, String> getRequestParameters() {
 
-        int caseNo = Integer.valueOf(getTestCaseNo());
+        int caseNo = Integer.parseInt(getTestCaseNo());
         if (request.size() < caseNo) {
             throw new IllegalArgumentException(Builder.concat(
                     "Request parameter is not defined or request parameter list size is invalid.",
@@ -355,6 +356,7 @@ public class TestCaseInfo {
      *
      * @return boolean
      */
+    @SuppressWarnings("unused")
     public boolean isRequestParametersSet() {
         return !request.isEmpty();
     }

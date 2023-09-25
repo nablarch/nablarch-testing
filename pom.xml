@@ -44,6 +44,27 @@
 
     <dependency>
       <groupId>com.nablarch.framework</groupId>
+      <artifactId>nablarch-core-validation-ee</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>5.3.6.Final</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.el</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+
+    <dependency>
+      <groupId>com.nablarch.framework</groupId>
       <artifactId>nablarch-fw-standalone</artifactId>
       <scope>provided</scope>
     </dependency>

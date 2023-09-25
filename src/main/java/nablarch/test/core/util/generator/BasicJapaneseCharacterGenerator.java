@@ -50,7 +50,7 @@ public class BasicJapaneseCharacterGenerator extends CharacterGeneratorBase {
             {"全角漢字", ZENKAKU_KANJI},
             {"全角記号その他", ZENKAKU_ETC},
             {"中国語", "\u4F60"},   //  你(ニーハオのニー「ｲ尓」 CJK統合漢字)
-            {"サロゲートペア", "\uD867\uDE3D"},  // 𩸽 (ホッケ「魚花」U+29E3D CJK統合漢字拡張B)
+            {"サロゲートペア", "\uD867\uDE3D\uD842\uDFB7"},  // 𩸽 (ホッケ「魚花」U+29E3D CJK統合漢字拡張B)、𠮷 (つちよし U+20BB7 CJK統合漢字拡張B)
             {"改行", "\r\n"},
             {"外字", "㈱"} // CJK統合漢字と重複しないように
     };

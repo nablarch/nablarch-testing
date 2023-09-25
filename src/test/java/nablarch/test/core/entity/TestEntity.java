@@ -92,4 +92,25 @@ public class TestEntity {
     @SystemChar(messageId = "MSG90001", allowLineSeparator = true)
     public void setSystemCharWithLS(String s) {
     }
+
+    @Length(max = 50, messageId = "MSG20013")
+    @AsciiChar
+    public void setAsciiWithMaxMessage(String s) {
+    }
+
+    @Length(max = 50, min = 10, messageId = "MSG20011")
+    @AsciiChar
+    public void setAsciiWithMaxMinMessage(String s) {
+    }
+
+    @Length(max = 20, min = 20, messageId = "MSG20012")
+    @AsciiChar
+    public void setAsciiWithFixMessage(String s) {
+    }
+
+    @Required(messageId = "MSG20010")
+    @Length(max = 20, messageId = "MSG20013")
+    @AsciiChar
+    public void setAsciiWithEmptyMessage(String s) {
+    }
 }

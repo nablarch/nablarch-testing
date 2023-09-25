@@ -1,23 +1,19 @@
 package nablarch.test.core.entity;
 
 import nablarch.core.message.Message;
-import nablarch.core.repository.SystemRepository;
-import nablarch.core.validation.ValidationContext;
-import nablarch.core.validation.ValidationManager;
-import nablarch.core.validation.ValidationUtil;
+import nablarch.core.message.MessageLevel;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 import static nablarch.core.util.Builder.concat;
 import static nablarch.core.util.Builder.join;
 import static nablarch.core.util.StringUtil.hasValue;
 import static nablarch.core.util.StringUtil.isNullOrEmpty;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -34,6 +30,9 @@ public class SingleValidationTester<ENTITY> {
     /** テスト対象プロパティ名 */
     private final String targetPropertyName;
 
+    /** バリデーションストラテジ */
+    private final ValidationTestStrategy strategy;
+
     /**
      * コンストラクタ
      *
@@ -43,47 +42,54 @@ public class SingleValidationTester<ENTITY> {
     public SingleValidationTester(Class<ENTITY> entityClass, String targetPropertyName) {
         this.entityClass = entityClass;
         this.targetPropertyName = targetPropertyName;
+        this.strategy = EntityTestConfiguration.getConfig().getValidationTestStrategy();
     }
 
     /**
      * 単項目のバリデーションテストを行う。
      *
-     * @param paramValue          パラメータとして使用する値
-     * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
-     * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
+     * @param group                 Bean Validationのグループ
+     * @param options               Bean Validationのメッセージ補完用マップ
+     * @param paramValue            パラメータとして使用する値
+     * @param expectedMessageString 期待するメッセージ文字列（期待しない場合はnullまたは空文字）
+     * @param additionalMsgOnFail   テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(String paramValue, String expectedMessageId, String... additionalMsgOnFail) {
-        testSingleValidation(new String[]{paramValue}, expectedMessageId, additionalMsgOnFail);
+    public void testSingleValidation(Class<?> group, Map<String, Object> options, String paramValue, String expectedMessageString, String... additionalMsgOnFail) {
+        testSingleValidation(group, options, new String[]{paramValue}, expectedMessageString, additionalMsgOnFail);
     }
 
     /**
      * 単項目のバリデーションテストを行う。
      *
-     * @param paramValue          パラメータとして使用する値
-     * @param expectedMessageId   期待するメッセージID（期待しない場合はnullまたは空文字）
-     * @param additionalMsgOnFail テスト失敗時の追加メッセージ文言
+     * @param group                 Bean Validationのグループ
+     * @param options               Bean Validationのメッセージ補完用マップ
+     * @param paramValue            パラメータとして使用する値
+     * @param expectedMessageString 期待するメッセージ文字列（期待しない場合はnullまたは空文字）
+     * @param additionalMsgOnFail   テスト失敗時の追加メッセージ文言
      */
-    public void testSingleValidation(String[] paramValue, String expectedMessageId, String... additionalMsgOnFail) {
+    public void testSingleValidation(Class<?> group, Map<String, Object> options, String[] paramValue, String expectedMessageString, String... additionalMsgOnFail) {
 
         // バリデーションを実行する。
-        ValidationContext<ENTITY> ctx = invokeValidation(paramValue);
+        ValidationTestContext ctx = strategy.invokeValidation(entityClass, targetPropertyName, paramValue, group);
         // 実際のメッセージ
         List<Message> actualMessages = ctx.getMessages();
         // テスト失敗時のメッセージを作成
         String msgOnFail = createMessageOnFailure(
                 paramValue,
-                expectedMessageId,
+                expectedMessageString,
+                options,
                 actualMessages,
                 additionalMsgOnFail);
 
         // バリデーション結果確認
-        boolean isMessageExpected = hasValue(expectedMessageId);
+        boolean isMessageExpected = hasValue(expectedMessageString);
         if (isMessageExpected) {  // メッセージを期待するか否か
             //-- 異常系 --
             // バリデーションが失敗していること
             assertFalse(msgOnFail, ctx.isValid());
-            // メッセージIDが期待通りであること
-            assertEquals(msgOnFail, expectedMessageId, actualMessages.get(0).getMessageId());
+            // メッセージが期待通りであること
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageString, new Object[]{options});
+            assertEquals(msgOnFail, expectedMessage, actualMessages.get(0));
         } else {
             //-- 正常系 ---
             // バリデーションが成功していること
@@ -92,62 +98,28 @@ public class SingleValidationTester<ENTITY> {
     }
 
     /**
-     * バリデーションを実行する。
-     *
-     * @param paramValue パラメータ値
-     * @return バリデーション実行後の{@link ValidationContext}
-     */
-    ValidationContext<ENTITY> invokeValidation(String paramValue) {
-        return invokeValidation(new String[]{paramValue});
-    }
-
-    /**
-     * バリデーションを実行する。
-     *
-     * @param paramValue 入力値
-     * @return バリデーション実行後の{@link ValidationContext}
-     */
-    public ValidationContext<ENTITY> invokeValidation(String[] paramValue) {
-        // 入力値（1項目分のみ）
-        Map<String, String[]> params = new HashMap<String, String[]>(1);
-        params.put(targetPropertyName, paramValue);
-        // バリデーション実行
-        ValidationContext<ENTITY> ctx
-                = getValidationManager().createValidationContext(
-                entityClass, params, "", null);
-        try {
-            ValidationUtil.validate(ctx, new String[]{targetPropertyName});
-        } catch (RuntimeException e) {
-            throw new RuntimeException(concat(
-                    "unexpected exception occurred. ", toString(),
-                    " parameter=[", paramValue, "]"), e);
-        }
-        return ctx;
-    }
-    /** {@inheritDoc} */
-    @Override
-    public String toString() {
-        return concat("target entity=[", entityClass.getName(), "] property=[", targetPropertyName, "]");
-    }
-
-    /**
      * テスト失敗時のメッセージ文言を作成する。
      *
-     * @param paramValue        実際のパラメータ
-     * @param actualMessages    実際のバリデーション実行後に発生したメッセージ群
-     * @param expectedMessageId 期待するメッセージID
-     * @param additionalMsg     テスト失敗時の追加メッセージ文言
+     * @param paramValue            実際のパラメータ
+     * @param actualMessages        実際のバリデーション実行後に発生したメッセージ群
+     * @param expectedMessageString 期待するメッセージ文字列
+     * @param additionalMsg         テスト失敗時の追加メッセージ文言
      * @return テスト失敗時のメッセージ文言
      */
-    private String createMessageOnFailure(String[] paramValue, String expectedMessageId,
+    private String createMessageOnFailure(String[] paramValue, String expectedMessageString, Map<String, Object> options,
                                           List<Message> actualMessages, String... additionalMsg) {
 
         // 追加の文言
         String additional = concat(additionalMsg);
         // 期待値
-        String expected = isNullOrEmpty(expectedMessageId)
-                ? "no message"
-                : concat("messageId [", expectedMessageId, "]");
+        String expected;
+        if(isNullOrEmpty(expectedMessageString)) {
+            expected = "no message";
+        } else {
+            Message expectedMessage = strategy.createExpectedMessage(MessageLevel.ERROR, expectedMessageString, new Object[]{options});
+            expected = concat("message [", expectedMessage, "]");
+        }
+
         // 入力パラメータ
         String inputParam = (paramValue == null) ? "null" : join(paramValue, ",");
         // 長さ
@@ -174,23 +146,5 @@ public class SingleValidationTester<ENTITY> {
             lengths.add(e.length());
         }
         return lengths;
-    }
-
-
-    /** {@link ValidationManager}を取得する為のキー */
-    private static final String VALIDATION_MANAGER_NAME = "validationManager";
-
-    /**
-     * {@link ValidationManager}を取得する。
-     *
-     * @return {@link ValidationManager}
-     */
-    private static ValidationManager getValidationManager() {
-        ValidationManager validationManager = SystemRepository.get(VALIDATION_MANAGER_NAME);
-        if (validationManager == null) {
-            throw new IllegalStateException("can't get ValidationManager instance from System Repository."
-                    + "check configuration. key=[" + VALIDATION_MANAGER_NAME + "]");
-        }
-        return validationManager;
     }
 }
