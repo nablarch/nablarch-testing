@@ -17,7 +17,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import javax.validation.groups.Default;
+import jakarta.validation.groups.Default;
 
 /**
  * {@link CharsetTestVariation}のテストクラス
