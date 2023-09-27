@@ -97,12 +97,9 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(String, Class, String)}のテスト。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testTestBeanValidation() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -113,12 +110,9 @@ public class EntityTestSupportTest {
 
     /**
      * {@link EntityTestSupport#testBeanValidation(Class, String)}のテスト。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testTestBeanValidationWithInterpolate() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)

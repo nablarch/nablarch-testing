@@ -472,12 +472,9 @@ public class CharsetTestVariationTest {
      * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAsciiSuccessWithBeanValidationTestStrategy() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -519,12 +516,9 @@ public class CharsetTestVariationTest {
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
      * 複数のメッセージ補完用属性を設定できること。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testNumberSuccessWithMultipleInterpolationAttributes() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -578,12 +572,9 @@ public class CharsetTestVariationTest {
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
      * 指定したメッセージ本体に、複数のメッセージ補完用属性を設定できること。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testNumberSuccessWithRawMessageAndMultipleInterpolationAttributes() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -636,12 +627,9 @@ public class CharsetTestVariationTest {
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
      * minとmaxがいずれも空、未入力を許容する場合でも、文字種精査が実行されていること。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAsciiSuccessWithAllowEmptyTrueAndEmptyMinMax() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -682,12 +670,9 @@ public class CharsetTestVariationTest {
      * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
      * 想定通りである場合、例外が発生しない。
      * Bean Validationのメッセージ補完用属性のキーが欠けている場合も例外が発生しないこと。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testNumberSuccessWithMissingInterpolationAttributeKey() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -735,12 +720,9 @@ public class CharsetTestVariationTest {
      * 半角数字を許容するプロパティに対して、各種文字列でバリデーション実行した結果が
      * 想定通りである場合、例外が発生しない。
      * Bean Validationのメッセージ補完用属性の値が欠けている場合も例外が発生しないこと。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testNumberSuccessWithMissingInterpolationAttributeValue() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -789,12 +771,9 @@ public class CharsetTestVariationTest {
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
      * maxが空の場合であっても、正しく検証できること。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAsciiSuccessWithBeanValidationTestStrategyAndEmptyMax() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -837,12 +816,9 @@ public class CharsetTestVariationTest {
      * 想定通りである場合、例外が発生しない。
      * テスト用バリデーションストラテジとして{@link BeanValidationTestStrategy}を使用してテストできること。
      * maxが空の場合であっても、正しく検証できること。
-     * JavaEE7の仕様上Java7以上が必要なため、JavaEE7のBeanValidationに依存する機能はJava7以上でテストする。
      */
     @Test
     public void testAsciiSuccessWithBeanValidationTestStrategyAndEmptyMaxAndGroup() {
-        assumeTrue(TestUtil.isRunningOnJava7OrHigher());
-
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
