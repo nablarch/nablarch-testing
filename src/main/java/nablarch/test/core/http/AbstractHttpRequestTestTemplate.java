@@ -4,7 +4,7 @@ import static nablarch.core.util.Builder.concat;
 import static nablarch.test.Assertion.assertEqualsAsString;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,18 +77,16 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
     private static final String EXPECTED_RESPONSE_LIST_MAP = "responseResult";
 
     /** Assert対象から除外するカラム */
-    private static final List<String> ASSERT_SKIP_EXPECTED_COLUMNS = Arrays.asList("no");
+    private static final List<String> ASSERT_SKIP_EXPECTED_COLUMNS = Collections.singletonList("no");
 
     /** LIST_MAPキャッシュ */
-    private Map<String, List<Map<String, String>>> listMapCache = new HashMap<String, List<Map<String, String>>>();
+    private final Map<String, List<Map<String, String>>> listMapCache = new HashMap<String, List<Map<String, String>>>();
 
     /** 何も行わない{@link Advice}実装。 */
     private final Advice<INF> nopAdvice = new Advice<INF>() {
-        /** {@inheritDoc} */
         public void afterExecute(INF testCaseInfo, ExecutionContext context) {
         }
 
-        /** {@inheritDoc} */
         public void beforeExecute(INF testCaseInfo, ExecutionContext context) {
         }
     };
@@ -277,6 +275,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      * テストで使用するデータのキャッシュをクリアする
      * @param testCaseInfo テストケース情報
      */
+    @SuppressWarnings("unused")
     protected void clearPreviousTestData(INF testCaseInfo) {
 
         // メッセージ同期送信を行う場合に、MockMessagingContextに必要なテストケースの情報を格納する
@@ -348,7 +347,49 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
                 throw new IllegalArgumentException("Cookie LIST_MAP was not found. name = [" + listMapName + "]");
             }
         }
-        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+
+        // クエリパラメータ(任意項目)
+        List<Map<String, String>> queryParams = null;
+        if (testCaseParams.containsKey(TestCaseInfo.QUERYPARAMS_LIST_MAP)
+                && !StringUtil.isNullOrEmpty(getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP))) {
+            String listMapName = getValue(testCaseParams, TestCaseInfo.QUERYPARAMS_LIST_MAP);
+            queryParams = getCachedListMap(sheetName, listMapName);
+            if (queryParams.isEmpty()) {
+                throw new IllegalArgumentException("Query parameter LIST_MAP was not found. name = [" + listMapName + ']');
+            }
+        }
+
+        // createTestCaseInfo()は公開APIとして定義されており、個別にオーバーライドされている可能性がある。
+        // そのため、後方互換性を考慮して場合分けを行う。
+        if (null == queryParams) {
+            return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+        }
+        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
+
+    }
+
+    /**
+     * テストケース情報を作成する。
+     *
+     *
+     * @param sheetName         シート名
+     * @param testCaseParams    テストケースパラメータ
+     * @param contexts          コンテキスト全件
+     * @param requests          リクエスト全件
+     * @param expectedResponses 期待するレスポンス全件
+     * @param cookie            本テストで使用するクッキー情報
+     * @param queryParams       本テストで使用するクエリパラメータ情報
+     * @return 作成したテストケース情報
+     */
+    @SuppressWarnings("unchecked")
+    protected INF createTestCaseInfo(String sheetName,
+            Map<String, String> testCaseParams,
+            List<Map<String, String>> contexts,
+            List<Map<String, String>> requests,
+            List<Map<String, String>> expectedResponses,
+            List<Map<String, String>> cookie,
+            List<Map<String, String>> queryParams) {
+        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, queryParams);
     }
 
     /**
@@ -363,14 +404,13 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      * @param cookie            本テストで使用するクッキー情報
      * @return 作成したテストケース情報
      */
-    @SuppressWarnings("unchecked")
     protected INF createTestCaseInfo(String sheetName,
             Map<String, String> testCaseParams,
-            List<Map<String, String>> contexts,
+                                     List<Map<String, String>> contexts,
             List<Map<String, String>> requests,
             List<Map<String, String>> expectedResponses,
             List<Map<String, String>> cookie) {
-        return (INF) new TestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie);
+        return createTestCaseInfo(sheetName, testCaseParams, contexts, requests, expectedResponses, cookie, null);
     }
 
     /**
@@ -391,7 +431,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      */
     protected HttpRequest createHttpRequest(INF testCaseInfo) {
         String uri = getBaseUri() + testCaseInfo.getRequestId();
-        return createHttpRequestWithConversion(uri, testCaseInfo.getRequestParameters(), testCaseInfo.getCookie());
+        return createHttpRequestWithConversion(uri, testCaseInfo.getHttpMethod(), testCaseInfo.getRequestParameters(), testCaseInfo.getCookie(), testCaseInfo.getQueryParams());
     }
 
     /**
@@ -438,7 +478,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
      */
     protected void assertResponse(INF testCaseInfo, HttpResponse response) {
         String message  = testCaseInfo.getTestCaseName() + "[HTTP STATUS]";
-        assertStatusCode(message, Integer.valueOf(testCaseInfo.getExpectedStatusCode()),  response);
+        assertStatusCode(message, Integer.parseInt(testCaseInfo.getExpectedStatusCode()),  response);
     }
 
     /**
@@ -595,8 +635,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
                     String prefix = assertKey.substring(0, prefixLength);
                     String key = assertKey.substring(prefixLength + 1);
                     if (context.getRequestScopeMap().containsKey(prefix)) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> varMap = (Map<String, Object>) context.getRequestScopedVar(prefix);
+                        Map<String, Object> varMap = context.getRequestScopedVar(prefix);
                         Object actValue = varMap.get(key);
                         if (actValue != null) {
                             if (actValue.getClass().isArray()) {
@@ -633,7 +672,7 @@ public abstract class AbstractHttpRequestTestTemplate<INF extends TestCaseInfo> 
             return;
         }
         String key = testCaseInfo.getSearchResultKey();
-        SqlResultSet actual = (SqlResultSet) context.getRequestScopedVar(key);
+        SqlResultSet actual = context.getRequestScopedVar(key);
         assertSqlResultSetEquals(testCaseInfo.getTestCaseName(), testCaseInfo.getSheetName(),
                                  testCaseInfo.getExpectedSearchId(), actual);
 

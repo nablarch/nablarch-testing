@@ -6,7 +6,7 @@
 
   <groupId>com.nablarch.framework</groupId>
   <artifactId>nablarch-testing</artifactId>
-  <version>1.4.1</version>
+  <version>1.5.0</version>
 
   <scm>
     <connection>scm:git:git://github.com/nablarch/${project.artifactId}.git</connection>
@@ -17,7 +17,7 @@
   <parent>
     <groupId>com.nablarch</groupId>
     <artifactId>nablarch-parent</artifactId>
-    <version>5u22</version>
+    <version>5u23</version>
     <relativePath/>
   </parent>
   
@@ -71,6 +71,27 @@
 
     <dependency>
       <groupId>com.nablarch.framework</groupId>
+      <artifactId>nablarch-core-validation-ee</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>5.3.6.Final</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.el</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+
+    <dependency>
+      <groupId>com.nablarch.framework</groupId>
       <artifactId>nablarch-fw-standalone</artifactId>
       <scope>provided</scope>
     </dependency>
@@ -114,7 +135,7 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-all</artifactId>
-      <version>5.4.2</version>
+      <version>5.10.2</version>
     </dependency>
 
     <dependency>

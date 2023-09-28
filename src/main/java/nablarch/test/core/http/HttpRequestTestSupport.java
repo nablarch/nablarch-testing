@@ -12,7 +12,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,7 +49,6 @@ import nablarch.fw.web.HttpServerFactory;
 import nablarch.fw.web.MockHttpCookie;
 import nablarch.fw.web.MockHttpRequest;
 import nablarch.fw.web.ResourceLocator;
-import nablarch.fw.web.handler.SessionConcurrentAccessHandler;
 import nablarch.fw.web.servlet.WebFrontController;
 import nablarch.fw.web.upload.PartInfo;
 import nablarch.fw.web.upload.PartInfoHolder;
@@ -58,7 +59,6 @@ import nablarch.test.TestSupport;
 import nablarch.test.core.db.DbAccessTestSupport;
 import nablarch.test.core.db.EntityTestSupport;
 import nablarch.test.core.util.FileUtils;
-import nablarch.test.core.util.ListWrapper;
 import nablarch.test.event.TestEventDispatcher;
 import nablarch.test.tool.htmlcheck.HtmlChecker;
 
@@ -78,7 +78,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     private static final Pattern HTML_TYPE = Pattern.compile("[^/]*/html?.*");
 
     /** ファイルセパレータ */
-    private static char fileSeparator = File.separatorChar;
+    private static final char fileSeparator = File.separatorChar;
 
     /** HttpServer */
     private static HttpServer server;
@@ -99,7 +99,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     private final DbAccessTestSupport dbSupport;
 
     /** 静的ファイルコピー時に内容を置き換える対象のファイルリスト */
-    private List<File> replaceFiles = new ArrayList<File>();
+    private final List<File> replaceFiles = new ArrayList<File>();
 
     /** 初期化完了フラグ。 */
     private static boolean initialized;
@@ -165,6 +165,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir   ダンプディレクトリ
      * @param className クラス名
      */
+    @SuppressWarnings({"unused", "AssignmentToStaticFieldFromInstanceMethod"})
     private void initialize(HttpTestConfiguration config, File dumpDir, String className) {
 
         if (config.isBackup()) {
@@ -259,6 +260,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         String dumpFilePath = dumpDir.getAbsolutePath() + fileSeparator + caseName
                 + '.' + config.getDumpFileExtension();
 
+        server.setHttpDumpRoot(dumpDir.getAbsolutePath());
         server.setHttpDumpFilePath(dumpFilePath);
         // ExecutionContextの設定(ハンドラ実行中にExecutionContextの移送を行う為）
         handler.setContext(ctx);
@@ -303,7 +305,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     void checkHtml(String dumpFilePath, HttpTestConfiguration config) {
         HtmlChecker checker = config.getHtmlChecker();
         
-        if (checker == null) {
+        if (null == checker) {
             // 置き換えを使わない場合のHTMLチェック(後方互換性維持のため)
             throw new RuntimeException("HtmlChecker not found. please set property htmlCheckerConfig of " + HTTP_TEST_CONFIGURATION + ".");
         }
@@ -316,6 +318,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param config HttpTestConfiguration
      * @return HTTPサーバ
      */
+    @SuppressWarnings({"UnusedReturnValue", "AssignmentToStaticFieldFromInstanceMethod", "rawtypes"})
     protected HttpServer createHttpServer(HttpTestConfiguration config) {
         // HTTPサーバ生成
         server = createHttpServer();
@@ -349,12 +352,6 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     @SuppressWarnings("rawtypes")
     protected void prepareHandlerQueue(List<Handler> handlerQueue) {
-
-        // セッションアクセスハンドラの準備
-        SessionConcurrentAccessHandler sessionHandler
-                = ListWrapper.wrap(handlerQueue)
-                             .select(SessionConcurrentAccessHandler.class);
-
         // リクエスト単体テストに必要なハンドラをハンドラキューに挿入
         servletForwardVerifier.register(handlerQueue);
         handler.register(handlerQueue);
@@ -395,7 +392,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     protected HttpServer createHttpServer() {
         HttpServerFactory factory = SystemRepository.get(HTTP_SERVER_FACTORY_KEY);
-        if (factory == null) {
+        if (null == factory) {
             throw new IllegalConfigurationException("could not find component. name=[" + HTTP_SERVER_FACTORY_KEY + "].");
         }
         return factory.create();
@@ -430,7 +427,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         FileUtils.copyDir(warDir, destDir, filter, false);
         String jsTestFileName = testClass.getSimpleName() + ".js";
         URL jsTestFilePath = testClass.getResource(jsTestFileName);
-        if (jsTestFilePath == null) {
+        if (null == jsTestFilePath) {
             return;
         }
         File jsTestCase = new File(jsTestFilePath.getPath().replaceAll("/", "\\" + fileSeparator));
@@ -448,7 +445,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     protected void deleteHtmlResourceFile(File srcDir, File destDir) {
         File[] destFiles = destDir.listFiles();
-        if (destFiles == null) {
+        if (null == destFiles) {
             return;
         }
         String dumpFileExtension = getConfig().getDumpFileExtension();
@@ -482,6 +479,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     /**
      * HTMLリソースディレクトリ内のCSSファイルを置換する。
      *
+     * <p>
      * 出力したCSSファイルのタイムスタンプには、出力元CSSファイルのタイムスタンプを設定する。
      * 次回、出力時にはタイムスタンプに変更がない限り、出力は行わない。
      *
@@ -489,9 +487,10 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param dumpDir        出力先ディレクトリ
      * @param warBaseLocator warベースのリソースロケータ
      */
+    @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod", "ResultOfMethodCallIgnored"})
     protected void rewriteResourceFile(HttpTestConfiguration config, File dumpDir, ResourceLocator warBaseLocator) {
 
-        if (jsTestResourcePath == null) {
+        if (null == jsTestResourcePath) {
             jsTestResourcePath = new File(config.getJsTestResourceDir()).getAbsolutePath();
         }
         String realPath = warBaseLocator.getRealPath();
@@ -527,7 +526,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
 
                 // 一行づつ書き出す
                 String line;
-                while ((line = reader.readLine()) != null) {
+                while (null != (line = reader.readLine())) {
                     String rewriteLine = rewritePath(line, relativePath);
                     writer.println(rewriteLine);
                 }
@@ -636,7 +635,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     protected class HtmlResourceExtensionFilter implements FileFilter {
 
         /** HttpTestConfiguration */
-        private HttpTestConfiguration configuration = null;
+        private final HttpTestConfiguration configuration;
 
         /**
          * コンストラクタ。
@@ -658,7 +657,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             if (file.isDirectory()) {
                 List<String> ignoreHtmlResourceDirectory = configuration.getIgnoreHtmlResourceDirectory();
                 // コピー対象以外のディレクトリのみをコピーするようにする。
-                return ignoreHtmlResourceDirectory == null || !ignoreHtmlResourceDirectory.contains(name);
+                return null == ignoreHtmlResourceDirectory || !ignoreHtmlResourceDirectory.contains(name);
             }
 
             for (String extension : configuration.getHtmlResourcesExtensionList()) {
@@ -688,7 +687,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         Map<String, String> configHttpHeader = config.getHttpHeader();
 
         for (Entry<String, String> stringStringEntry : configHttpHeader.entrySet()) {
-            if (headerMap.get(stringStringEntry.getKey()) == null) {
+            if (null == headerMap.get(stringStringEntry.getKey())) {
                 // 対象のキーがnullまたは、設定されていない場合のみ追加する。
                 headerMap.put(stringStringEntry.getKey(), stringStringEntry.getValue());
             }
@@ -707,11 +706,14 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     
     /**
      * ステータスコードが想定通りであることを表明する。<br/>
+     *
+     * <p>
      * 内蔵サーバから戻り値で返却されたHTTPレスポンスがリダイレクトである場合、
      * ステータスコードが303または302であることを表明する。
      * このとき、内蔵サーバから返却されるHTTPレスポンスと比較しないのは、後方互換性を保つためである。
      * （内蔵サーバは、リダイレクト時のステータスコードに'302 FOUND'を使用する）
      *
+     * <p>
      * 上記以外の場合は、{@link HttpRequestTestSupportHandler#getStatusCode()}
      * のステータスコードを比較対象とする。
      *
@@ -743,21 +745,12 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * ステータスコードがリダイレクト(302 or 303)であるかどうか判定する。
-     * 
-     * @param statusCode ステータスコード
-     * @return ステータスコードがリダイレクトであればtrue。
-     */
-    private boolean isRedirected(int statusCode) {
-        return 302 == statusCode || statusCode == 303;
-    }
-
-    /**
      * メッセージIDのアサートを行う。<br>
      *
      * @param expectedCommaSeparated 期待するメッセージID（カンマ区切り）
      * @param actual                 実行結果(メッセージIDをリクエストスコープにもつExecutionContext)
      */
+    @SuppressWarnings("unused")
     public void assertApplicationMessageId(String expectedCommaSeparated, ExecutionContext actual) {
         assertApplicationMessageId("", expectedCommaSeparated, actual);
     }
@@ -804,6 +797,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param expected 期待するメッセージIDの配列
      * @param actual   実行結果(メッセージIDをリクエストスコープにもつExecutionContext)
      */
+    @SuppressWarnings("unused")
     public void assertApplicationMessageId(String[] expected, ExecutionContext actual) {
         assertApplicationMessageId("", expected, actual);
     }
@@ -819,8 +813,8 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     public void assertApplicationMessageId(String msg, String[] expected, ExecutionContext actual) {
         HttpTestConfiguration config = getConfig();
         ApplicationException applicationError = actual.getRequestScopedVar(config.getExceptionRequestVarKey());
-        if (applicationError == null) {
-            if (expected.length != 0) {
+        if (null == applicationError) {
+            if (0 != expected.length) {
                 // 期待値のメッセージIDが設定されている場合には、fail
                 Assertion.fail("the request is normal end. message = [", msg, "]");
             }
@@ -868,6 +862,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         }
         if (target.isDirectory()) {
             File[] files = target.listFiles();
+            assert files != null;
             for (File file : files) {
                 if (file.isDirectory()) {
                     deleteBackupFile(file);
@@ -916,20 +911,32 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * リクエストパラメータを作成する。
      *
      * @param requestUri リクエストURI
+     * @param httpMethod HTTPメソッド
      * @param params     パラメータが格納されたMap
      * @return リクエストパラメータ
      */
-    public HttpRequest createHttpRequest(String requestUri, Map<String, String[]> params) {
+    public HttpRequest createHttpRequest(String requestUri, String httpMethod, Map<String, String[]> params) {
 
         MockHttpRequest httpRequest = new MockHttpRequest();
         httpRequest.setRequestUri(requestUri);    // URI設定
-        httpRequest.setMethod("POST");           // HTTPメソッド設定
+        httpRequest.setMethod(httpMethod);           // HTTPメソッド設定
 
         // マルチパート情報を抽出・作成
         PartInfoHolder parts = extractMultipart(params);
         httpRequest.setMultipart(parts);
         httpRequest.setParamMap(params);
         return httpRequest;
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+     * @param requestUri リクエストURI
+     * @param params     パラメータが格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequest(String requestUri, Map<String, String[]> params) {
+        return createHttpRequest(requestUri, "POST", params);
     }
 
     /**
@@ -959,7 +966,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             if (!attachedFileNames.isEmpty()) {
                 // 添付ファイルのHTTPパラメータを書き換え
                 // key = inputタグのname属性、value = アップロードされたファイル名)
-                String[] array = attachedFileNames.toArray(new String[attachedFileNames.size()]);
+                String[] array = attachedFileNames.toArray(new String[0]);
                 params.put(name, array);
             }
         }
@@ -1024,29 +1031,99 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * リクエストパラメータを作成する。
      *
      * @param requestUri     リクエストURI
+     * @param httpMethod     HTTPメソッド
      * @param commaSeparated パラメータが格納されたMap
      * @param cookie         Cookie情報が格納されたMap
+     * @param queryParams    クエリパラメータ情報が格納されたMap
      * @return リクエストパラメータ
      */
 
-    public HttpRequest createHttpRequestWithConversion(String requestUri,
-            Map<String, String> commaSeparated, Map<String, String> cookie) {
+    public HttpRequest createHttpRequestWithConversion(String requestUri, String httpMethod,
+            Map<String, String> commaSeparated, Map<String, String> cookie, Map<String, String> queryParams) {
         // リクエストパラメータの形式に変換
         Map<String, String[]> requestParameters = TestSupport.convert(commaSeparated);
-        HttpRequest request = createHttpRequest(requestUri, requestParameters);
+        HttpRequest request = createHttpRequest(requestUri, httpMethod, requestParameters);
 
         // Cookieが準備データで定義されている場合は、Cookieを追加する。
-        if (cookie != null && !cookie.isEmpty()) {
+        if (null != cookie && !cookie.isEmpty()) {
             HttpCookie httpCookie = new MockHttpCookie();
             httpCookie.putAll(cookie);
             ((MockHttpRequest) request).setCookie(httpCookie);
         }
+
+        // クエリパラメータが準備データで定義されている場合は、クエリパラメータを追加する。
+        if (null != queryParams && !queryParams.isEmpty()) {
+            String uri = request.getRequestUri();
+            uri = appendQueryParamsToUri(uri, queryParams);
+            request.setRequestUri(uri);
+        }
         return request;
+    }
+
+    /**
+     * クエリパラメータをURIに追加する。
+     * @param uri リクエストURI
+     * @param queryParams クエリパラメータのマップ
+     * @return クエリパラメータが追加されたURI
+     */
+    private String appendQueryParamsToUri (String uri, Map<String, String> queryParams) {
+        StringBuilder sb = new StringBuilder(uri);
+        sb.append('?');
+        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+            sb.append(encode(entry.getKey()))
+                .append('=')
+                .append(encode(entry.getValue()))
+                .append('&');
+        }
+        // 最後の&を削除
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
+    /**
+     * 文字列をパーセントエンコーディングする。
+     * @param rawString エンコード前文字列
+     * @return エンコード後文字列
+     */
+    private String encode(String rawString) {
+        try {
+            return URLEncoder.encode(rawString, "UTF-8");
+        } catch  (UnsupportedEncodingException e) {
+            // ここには来ない
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+     * @param requestUri     リクエストURI
+     * @param commaSeparated パラメータが格納されたMap
+     * @param cookie         Cookie情報が格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequestWithConversion(String requestUri,
+            Map<String, String> commaSeparated, Map<String, String> cookie) {
+        return createHttpRequestWithConversion(requestUri, "POST", commaSeparated, cookie);
+    }
+
+    /**
+     * リクエストパラメータを作成する。
+     *
+     * @param requestUri     リクエストURI
+     * @param httpMethod     HTTPメソッド
+     * @param commaSeparated パラメータが格納されたMap
+     * @param cookie         Cookie情報が格納されたMap
+     * @return リクエストパラメータ
+     */
+    public HttpRequest createHttpRequestWithConversion(String requestUri, String httpMethod,
+            Map<String, String> commaSeparated, Map<String, String> cookie) {
+        return createHttpRequestWithConversion(requestUri, httpMethod, commaSeparated, cookie, null);
     }
 
 
     /**
-     * {@link nablarch.fw.ExecutionContext}を生成する。
+     * {@link ExecutionContext}を生成する。
      *
      * @param userId セッションスコープに格納するユーザID
      * @return 生成したExecutionContext
@@ -1134,6 +1211,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        シート内のデータを特定するためのID
      * @param actual    実際の値
      */
+    @SuppressWarnings("unused")
     public void assertSqlRowEquals(String message, String sheetName, String id, SqlRow actual) {
         dbSupport.assertSqlRowEquals(message, sheetName, id, actual);
     }
@@ -1158,6 +1236,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @return List-Map<String, String[]>形式のデータ
      * @see nablarch.test.core.db.DbAccessTestSupport#getListParamMap(String, String)
      */
+    @SuppressWarnings("unused")
     public List<Map<String, String[]>> getListParamMap(String sheetName, String id) {
         return dbSupport.getListParamMap(sheetName, id);
     }
@@ -1170,6 +1249,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @return Map<String,String[]>形式のデータ
      * @see nablarch.test.core.db.DbAccessTestSupport#getParamMap(String, String)
      */
+    @SuppressWarnings("unused")
     public Map<String, String[]> getParamMap(String sheetName, String id) {
         return dbSupport.getParamMap(sheetName, id);
     }
@@ -1180,6 +1260,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param sheetName 期待値を格納したシート名
      * @see nablarch.test.core.db.DbAccessTestSupport#assertTableEquals(String)
      */
+    @SuppressWarnings("unused")
     public void assertTableEquals(String sheetName) {
         dbSupport.assertTableEquals(sheetName);
     }
@@ -1191,6 +1272,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param groupId   グループID（オプション）
      * @see nablarch.test.core.db.DbAccessTestSupport#assertTableEquals(String, String)
      */
+    @SuppressWarnings("unused")
     public void assertTableEquals(String sheetName, String groupId) {
         dbSupport.assertTableEquals(sheetName, groupId);
     }
@@ -1214,6 +1296,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        ケース表のID(LIST_MAP=testの場合は、testを指定する。)
      * @param actual    実行結果のオブジェクト(Java Beansオブジェクト)
      */
+    @SuppressWarnings("unused")
     public void assertEntity(String sheetName, String id, Object actual) {
         EntityTestSupport entityTestSupport = new EntityTestSupport(testClass);
         entityTestSupport.assertGetterMethod(sheetName, id, actual);
@@ -1228,9 +1311,10 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        ケース表のID(LIST_MAP=testの場合は、testを指定する。)
      * @param actual    実際の値
      */
+    @SuppressWarnings("unused")
     public void assertObjectPropertyEquals(String message, String sheetName, String id, Object actual) {
         List<Map<String, String>> list = getListMap(sheetName, id);
-        if (list == null || list.isEmpty()) {
+        if (null == list || list.isEmpty()) {
             throw new IllegalArgumentException("no data row. sheetName=[" + sheetName + "], id=[" + id + "]");
         }
         Assertion.assertProperties(message, list.get(0), actual);
@@ -1248,8 +1332,8 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      */
     public void assertObjectArrayPropertyEquals(String message, String sheetName, String id, Object[] actual) {
         List<Map<String, String>> list = getListMap(sheetName, id);
-        if (actual == null) {
-            if (list == null || list.isEmpty()) {
+        if (null == actual) {
+            if (null == list || list.isEmpty()) {
                 // OK
                 return;
             }
@@ -1257,6 +1341,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             Assertion.failComparing(message + "; target size does not match; ", list.size(), null);
         }
 
+        assert actual != null;
         if (actual.length != list.size()) {
             Assertion.failComparing(message + "; target size does not match; ", list.size(), actual.length);
         }
@@ -1276,8 +1361,9 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param id        ケース表のID(LIST_MAP=testの場合は、testを指定する。)
      * @param actual    実際の値
      */
+    @SuppressWarnings("unused")
     public void assertObjectListPropertyEquals(String message, String sheetName, String id, List<?> actual) {
-        Object[] array = actual == null ? null : actual.toArray();
+        Object[] array = null == actual ? null : actual.toArray();
         assertObjectArrayPropertyEquals(message, sheetName, id, array);
     }
 
