@@ -5,7 +5,10 @@ import nablarch.fw.DataReader.NoMoreRecord;
 import nablarch.fw.ExecutionContext;
 import nablarch.fw.Handler;
 import nablarch.fw.Result;
+import nablarch.fw.SynchronizedDataReaderWrapper;
 import nablarch.fw.reader.DatabaseTableQueueReader;
+
+import java.lang.reflect.Field;
 
 /**
  * データリーダで初回に取得したデータを処理するハンドラ実装クラス。
@@ -33,11 +36,20 @@ public class OneShotLoopHandler implements Handler<Object, Object> {
     @Override
     public Object handle(Object data, ExecutionContext context) {
 
+        boolean isSynchronized = false;
         DataReader<?> dataReader = context.getDataReader();
+
+        if (dataReader instanceof SynchronizedDataReaderWrapper<?>) {
+            dataReader = ((SynchronizedDataReaderWrapper<?>) dataReader).getOriginalReader();
+            isSynchronized = true;
+        }
 
         if (dataReader instanceof DatabaseTableQueueReader) {
             // DatabaseTableQueueReaderの場合には、内部で保持しているオリジナルのリーダに差し替える。
             context.setDataReader(((DatabaseTableQueueReader) dataReader).getOriginalReader());
+            if(isSynchronized) {
+                context.setDataReader(new SynchronizedDataReaderWrapper<>(((DatabaseTableQueueReader) dataReader).getOriginalReader()));
+            }
         }
 
         Result result = null;
