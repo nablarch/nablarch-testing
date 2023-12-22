@@ -1,13 +1,14 @@
 package nablarch.test.core.messaging;
 
+import jakarta.jms.Queue;
 import nablarch.core.repository.initialization.Initializable;
 import nablarch.fw.messaging.provider.JmsMessagingProvider;
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.broker.BrokerService;
-import org.apache.activemq.command.ActiveMQQueue;
+import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
+import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnector;
+import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ;
+import org.apache.activemq.artemis.jms.client.ActiveMQQueue;
 
-import javax.jms.Queue;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,12 @@ public class EmbeddedMessagingProvider extends JmsMessagingProvider implements I
         if (server == null) {
             server = new Server().start();
         }
-        setConnectionFactory(new ActiveMQConnectionFactory("vm://localhost"));
+
+        try {
+            setConnectionFactory(ActiveMQJMSClient.createConnectionFactory("vm://0", "nablarch-test"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
     
     // --------------------------------------------- Managing server instance
@@ -82,7 +88,6 @@ public class EmbeddedMessagingProvider extends JmsMessagingProvider implements I
         for (String queueName : names) {
             table.put(queueName, new ActiveMQQueue(queueName));
         }
-        server.setDestinations(table);
         setDestinations(table);
         return this;
     }
@@ -91,38 +96,25 @@ public class EmbeddedMessagingProvider extends JmsMessagingProvider implements I
      * 内蔵サーバ
      */
     private static class Server {
-        /** キューマネージャ */
-        private BrokerService broker;
+        private EmbeddedActiveMQ embedded;
         
         /** 起動待機用ラッチ */
         private static CountDownLatch startupLatch = new CountDownLatch(1);
-        
-        /**
-         * キューの論理名と実装オブジェクトの対応を設定する。
-         * @param queueTable キューの論理名と実装オブジェクトの対応
-         * @return このオブジェクト自体
-         */
-        public Server setDestinations(Map<String, Queue> queueTable) {
-            broker.setDestinations(
-                Collections.list(Collections.enumeration(queueTable.values()))
-                           .toArray(new ActiveMQQueue[]{})
-            );
-            return this;
-        }
-        
+
         /**
          * コンストラクタ
          */
         public Server() {
             try {
-                broker = new BrokerService();
-                broker.setPersistent(false);
-                broker.setUseJmx(false);
-                broker.addConnector("vm://localhost");
+                ConfigurationImpl config = new ConfigurationImpl();
+                config.setSecurityEnabled(false);
+                config.setPersistenceEnabled(false);
+                config.addAcceptorConfiguration("in-vm", "vm://0");
+
+                embedded = new EmbeddedActiveMQ();
+                embedded.setConfiguration(config);
             } catch (Exception e) {
-                throw new RuntimeException(
-                    "an Error occurred while launch the messaging broker", e
-                );
+                throw new RuntimeException("an Error occurred while launch the EmbeddedActiveMQ", e);
             }
         }
 
@@ -132,8 +124,7 @@ public class EmbeddedMessagingProvider extends JmsMessagingProvider implements I
          */
         public Server start() {
             try {
-                broker.start();
-                broker.waitUntilStarted();
+                embedded.start();
                 startupLatch.countDown();
                 
             } catch (Exception e) {
@@ -149,9 +140,9 @@ public class EmbeddedMessagingProvider extends JmsMessagingProvider implements I
          */
         public Server stop() {
             try {
-                broker.stop();
-                broker.waitUntilStopped();
-                broker = null;
+                embedded.stop();
+                // このメソッドを呼ばないと、非デーモンスレッドのスレッドプールが残り続けてVMの停止が非常に遅くなる
+                InVMConnector.resetThreadPool();
                 startupLatch = new CountDownLatch(1);
                 
             } catch (Exception e) {

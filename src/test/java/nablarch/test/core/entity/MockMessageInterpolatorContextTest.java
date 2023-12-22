@@ -135,4 +135,28 @@ public class MockMessageInterpolatorContextTest {
 
         sut.getConstraintDescriptor().isReportAsSingleViolation();
     }
+
+    /**
+     * {@link UnsupportedOperationException}が送出されることを確認する。
+     */
+    @Test
+    public void testGetValueUnwrapping(){
+
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage(EXPECTED_MSG);
+
+        sut.getConstraintDescriptor().getValueUnwrapping();
+    }
+
+    /**
+     * {@link UnsupportedOperationException}が送出されることを確認する。
+     */
+    @Test
+    public void testConstraintDescriptorUnwrap(){
+
+        expectedException.expect(UnsupportedOperationException.class);
+        expectedException.expectMessage(EXPECTED_MSG);
+
+        sut.getConstraintDescriptor().unwrap(this.getClass());
+    }
 }

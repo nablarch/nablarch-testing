@@ -1,8 +1,17 @@
 package nablarch.fw.web;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import nablarch.core.repository.SystemRepository;
+import nablarch.core.repository.di.DiContainer;
+import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
+import nablarch.fw.ExecutionContext;
+import nablarch.fw.web.upload.PartInfo;
+import nablarch.fw.web.useragent.UserAgent;
+import nablarch.fw.web.useragent.UserAgentParser;
+import nablarch.test.core.http.MockHttpServer;
+import nablarch.test.support.tool.Hereis;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.MockedStatic;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,20 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import nablarch.core.repository.SystemRepository;
-import nablarch.core.repository.di.DiContainer;
-import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
-import nablarch.fw.ExecutionContext;
-import nablarch.fw.web.upload.PartInfo;
-import nablarch.fw.web.useragent.UserAgent;
-import nablarch.fw.web.useragent.UserAgentParser;
-import nablarch.test.core.http.MockHttpServer;
-import nablarch.test.support.tool.Hereis;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import mockit.Expectations;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * {@link MockHttpRequest}のテストクラス。
@@ -176,11 +177,12 @@ public class MockHttpRequestTest {
         request.append("\r\n");
         request.append("userid=joe&password=verysecure\r\n");
 
-        new Expectations(URLDecoder.class) {{
-            URLDecoder.decode(anyString, "UTF-8");
-            result = new UnsupportedEncodingException("utf-8 error");
-        }};
-        new MockHttpRequest(request.toString());
+        try (final MockedStatic<URLDecoder> mocked = mockStatic(URLDecoder.class)) {
+            mocked.when(() -> URLDecoder.decode(anyString(), eq("UTF-8")))
+                    .thenThrow(new UnsupportedEncodingException("utf-8 error"));
+            
+            new MockHttpRequest(request.toString());
+        }
     }
 
     @Test
@@ -336,13 +338,13 @@ public class MockHttpRequestTest {
         request.append("\r\n");
         request.append("fruits=APPLE&fruits=BANANA&fruits=ORANGE\r\n");
 
-        new Expectations(URLEncoder.class) {{
-            URLEncoder.encode(anyString, "UTF-8");
-            result = new UnsupportedEncodingException("error utf-8");
-        }};
+        try (final MockedStatic<URLDecoder> mocked = mockStatic(URLDecoder.class)) {
+            mocked.when(() -> URLDecoder.decode(anyString(), eq("UTF-8")))
+                    .thenThrow(new UnsupportedEncodingException("error utf-8"));
 
-        HttpRequest req = new MockHttpRequest(request.toString());
-        req.toString();
+            HttpRequest req = new MockHttpRequest(request.toString());
+            req.toString();
+        }
     }
 
     @Test

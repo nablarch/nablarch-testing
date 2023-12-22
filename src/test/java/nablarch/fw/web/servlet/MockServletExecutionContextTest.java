@@ -1,12 +1,11 @@
 package nablarch.fw.web.servlet;
 
-import mockit.Mocked;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import nablarch.fw.ExecutionContext;
 import org.junit.Test;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,6 +14,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * {@link MockServletExecutionContext}の単体テスト。
@@ -92,9 +92,9 @@ public class MockServletExecutionContextTest {
     }
 
     @Test
-    public void getHttpRequestメソッドは_設定したhttpRequestValueの値を返すこと(
-        @Mocked final HttpRequestWrapper mockHttpRequest
-    ) {
+    public void getHttpRequestメソッドは_設定したhttpRequestValueの値を返すこと() {
+        final HttpRequestWrapper mockHttpRequest = mock(HttpRequestWrapper.class);
+        
         assertThat(sut.getHttpRequest(), is(nullValue()));
 
         sut.setHttpRequestValue(mockHttpRequest);
@@ -103,9 +103,9 @@ public class MockServletExecutionContextTest {
     }
 
     @Test
-    public void getServletRequestメソッドは_設定したServletRequestValueの値を返すこと(
-        @Mocked NablarchHttpServletRequestWrapper mockServletRequest
-    ) {
+    public void getServletRequestメソッドは_設定したServletRequestValueの値を返すこと() {
+        NablarchHttpServletRequestWrapper mockServletRequest = mock(NablarchHttpServletRequestWrapper.class);
+
         assertThat(sut.getServletRequest(), is(nullValue()));
 
         sut.setServletRequestValue(mockServletRequest);
@@ -114,9 +114,9 @@ public class MockServletExecutionContextTest {
     }
 
     @Test
-    public void getServletResponseメソッドは_設定したServletResponseValueの値を返すこと(
-        @Mocked HttpServletResponse mockServletResponse
-    ) {
+    public void getServletResponseメソッドは_設定したServletResponseValueの値を返すこと() {
+        HttpServletResponse mockServletResponse = mock(HttpServletResponse.class);
+        
         assertThat(sut.getServletResponse(), is(nullValue()));
 
         sut.setServletResponseValue(mockServletResponse);
@@ -125,9 +125,9 @@ public class MockServletExecutionContextTest {
     }
 
     @Test
-    public void getServletContextメソッドは_設定したServletContextValueの値を返すこと(
-        @Mocked ServletContext mockServletContext
-    ) {
+    public void getServletContextメソッドは_設定したServletContextValueの値を返すこと() {
+        ServletContext mockServletContext = mock(ServletContext.class);
+        
         assertThat(sut.getServletContext(), is(nullValue()));
 
         sut.setServletContextValue(mockServletContext);
@@ -136,9 +136,9 @@ public class MockServletExecutionContextTest {
     }
 
     @Test
-    public void getNativeHttpSessionメソッドは_設定したNativeHttpSessionValueの値を返すこと(
-        @Mocked HttpSession mockHttpSession
-    ) {
+    public void getNativeHttpSessionメソッドは_設定したNativeHttpSessionValueの値を返すこと() {
+        HttpSession mockHttpSession = mock(HttpSession.class);
+
         assertThat(sut.getNativeHttpSession(true), is(nullValue()));
 
         sut.setNativeHttpSessionValue(mockHttpSession);

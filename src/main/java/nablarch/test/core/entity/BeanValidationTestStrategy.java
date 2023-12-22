@@ -15,9 +15,9 @@ import nablarch.core.validation.ee.ConstraintViolationConverterFactory;
 import nablarch.core.validation.ee.NablarchMessageInterpolator;
 import nablarch.core.validation.ee.ValidatorUtil;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.MessageInterpolator;
-import javax.validation.groups.Default;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.MessageInterpolator;
+import jakarta.validation.groups.Default;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

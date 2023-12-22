@@ -1,11 +1,13 @@
 package nablarch.test.core.entity;
 
 
-import javax.validation.ConstraintTarget;
-import javax.validation.ConstraintValidator;
-import javax.validation.MessageInterpolator;
-import javax.validation.Payload;
-import javax.validation.metadata.ConstraintDescriptor;
+import jakarta.validation.ConstraintTarget;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.MessageInterpolator;
+import jakarta.validation.Payload;
+import jakarta.validation.metadata.ConstraintDescriptor;
+import jakarta.validation.metadata.ValidateUnwrappedValue;
+
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +115,16 @@ public class MockMessageInterpolatorContext implements MessageInterpolator.Conte
 
         @Override
         public boolean isReportAsSingleViolation() {
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
+        }
+
+        @Override
+        public ValidateUnwrappedValue getValueUnwrapping() {
+            throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
+        }
+
+        @Override
+        public <U> U unwrap(Class<U> aClass) {
             throw new UnsupportedOperationException(UNSUPPORTED_METHOD_WAS_CALLED);
         }
     }
