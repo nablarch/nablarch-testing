@@ -3,6 +3,7 @@ package nablarch.test;
 import nablarch.core.util.Builder;
 import nablarch.core.util.StringUtil;
 import nablarch.core.util.annotation.Published;
+import nablarch.fw.web.HttpRequest;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -495,5 +496,27 @@ public final class NablarchTestUtils {
         }
     }
 
+
+    /**
+     * {@link HttpRequest#getParamMap()}を呼び出す。</br?
+     * {@link HttpRequest#getParamMap()}はアーキテクト向けの公開APIのため、検証で利用する場合は本ユーティリティ経由でパラメータを取得する。
+     * @param request HTTPリクエスト 
+     * @return リクエストパラメータのMap
+     */
+    public static Map<String, String[]> getParamMap(HttpRequest request) {
+        return request.getParamMap();
+    }
+
+    /**
+     * {@link HttpRequest#getParam(String)}を呼び出す。<br/>
+     * {@link HttpRequest#getParam(String)}はアーキテクト向けの公開APIのため、検証で利用する場合は本ユーティリティ経由でパラメータを取得する。
+     * 
+     * @param request HTTPリクエスト
+     * @param name パラメータ名
+     * @return リクエストパラメータの値
+     */
+    public static String[] getParam(HttpRequest request, String name) {
+        return request.getParamMap().get(name);
+    }
 
 }
