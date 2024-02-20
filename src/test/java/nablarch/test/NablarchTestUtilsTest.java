@@ -474,8 +474,8 @@ public class NablarchTestUtilsTest {
     @Test
     public void testGetParam() {
         HttpRequest req = new MockHttpRequest().setParam("paramName", "param1", "param2");
-        assertThat(NablarchTestUtils.getParam(req, "paramName"), is(new String[]{"param1", "param2"}));
-        assertThat(NablarchTestUtils.getParam(req, "paramName2"), nullValue());
+        assertArrayEquals(NablarchTestUtils.getParam(req, "paramName"), new String[]{"param1", "param2"});
+        assertNull(NablarchTestUtils.getParam(req, "paramName2"));
     }
 
     /** {@link NablarchTestUtils#getParamMap(HttpRequest)} のテスト。*/
@@ -485,10 +485,10 @@ public class NablarchTestUtilsTest {
                 .setParam("paramName1", "param1-1", "param1-2")
                 .setParam("paramName2", "param2");
         Map<String, String[]> result = NablarchTestUtils.getParamMap(req);
-        assertThat(result.size(), is(2));
-        assertThat(result.get("paramName1"), is(new String[]{"param1-1", "param1-2"}));
-        assertThat(result.get("paramName2"), is(new String[]{"param2"}));
-        assertThat(result.containsKey("paramName3"), is(false));
+        assertEquals(result.size(), 2);
+        assertArrayEquals(result.get("paramName1"), new String[]{"param1-1", "param1-2"});
+        assertArrayEquals(result.get("paramName2"), new String[]{"param2"});
+        assertFalse(result.containsKey("paramName3"));
     }
 
     /** Listインスタンスを作成する。 **/
