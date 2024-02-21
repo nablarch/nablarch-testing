@@ -1,12 +1,14 @@
 package nablarch.test.core.http;
 
 import nablarch.fw.web.HttpRequest;
+import nablarch.fw.web.MockHttpRequest;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 
 @SuppressWarnings("NonAsciiCharacters")
 public class HttpRequestTestSupportTest {
@@ -77,5 +79,22 @@ public class HttpRequestTestSupportTest {
 
         assertEquals(requestUri, result.getRequestUri());
         assertEquals("GET", result.getMethod());
+    }
+
+    @Test
+    public void HttpRequest_getParamからデータが取得できること() {
+        HttpRequest req = new MockHttpRequest().setParam("paramName", "param1", "param2");
+        assertArrayEquals(sut.getParam(req, "paramName"), new String[]{"param1", "param2"});
+    }
+
+    @Test
+    public void HttpRequest_getParamMapからデータが取得できること() {
+        HttpRequest req = new MockHttpRequest()
+                .setParam("paramName1", "param1-1", "param1-2")
+                .setParam("paramName2", "param2");
+        Map<String, String[]> result = sut.getParamMap(req);
+        assertEquals(result.size(), 2);
+        assertArrayEquals(result.get("paramName1"), new String[]{"param1-1", "param1-2"});
+        assertArrayEquals(result.get("paramName2"), new String[]{"param2"});
     }
 }

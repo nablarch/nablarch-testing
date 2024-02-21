@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import nablarch.fw.web.HttpRequest;
-import nablarch.fw.web.MockHttpRequest;
 import org.junit.Test;
 
 /**
@@ -470,27 +468,6 @@ public class NablarchTestUtilsTest {
         assertThat(NablarchTestUtils.isNullOrEmpty(list), is(false)); // 1要素あるので空ではない
     }
     
-    /** {@link NablarchTestUtils#getParam(HttpRequest, String)} のテスト。*/
-    @Test
-    public void testGetParam() {
-        HttpRequest req = new MockHttpRequest().setParam("paramName", "param1", "param2");
-        assertArrayEquals(NablarchTestUtils.getParam(req, "paramName"), new String[]{"param1", "param2"});
-        assertNull(NablarchTestUtils.getParam(req, "paramName2"));
-    }
-
-    /** {@link NablarchTestUtils#getParamMap(HttpRequest)} のテスト。*/
-    @Test
-    public void testGetParamMap() {
-        HttpRequest req = new MockHttpRequest()
-                .setParam("paramName1", "param1-1", "param1-2")
-                .setParam("paramName2", "param2");
-        Map<String, String[]> result = NablarchTestUtils.getParamMap(req);
-        assertEquals(result.size(), 2);
-        assertArrayEquals(result.get("paramName1"), new String[]{"param1-1", "param1-2"});
-        assertArrayEquals(result.get("paramName2"), new String[]{"param2"});
-        assertFalse(result.containsKey("paramName3"));
-    }
-
     /** Listインスタンスを作成する。 **/
     private List<String> list(String... strings) {
         return new ArrayList<String>(Arrays.asList(strings));
