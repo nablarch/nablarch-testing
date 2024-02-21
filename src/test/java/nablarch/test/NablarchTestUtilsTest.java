@@ -467,7 +467,7 @@ public class NablarchTestUtilsTest {
         list.add(null);
         assertThat(NablarchTestUtils.isNullOrEmpty(list), is(false)); // 1要素あるので空ではない
     }
-    
+
     /** Listインスタンスを作成する。 **/
     private List<String> list(String... strings) {
         return new ArrayList<String>(Arrays.asList(strings));
