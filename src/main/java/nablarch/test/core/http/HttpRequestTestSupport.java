@@ -1376,8 +1376,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * {@link HttpRequest#getParamMap()}を呼び出す。</br?
-     * {@link HttpRequest#getParamMap()}はアーキテクト向けの公開APIのため、検証で利用する場合は本ユーティリティ経由でパラメータを取得する。
+     * {@link HttpRequest#getParamMap()}を呼び出す。
      * @param request HTTPリクエスト 
      * @return リクエストパラメータのMap
      */
@@ -1386,8 +1385,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
     }
 
     /**
-     * {@link HttpRequest#getParam(String)}を呼び出す。<br/>
-     * {@link HttpRequest#getParam(String)}はアーキテクト向けの公開APIのため、検証で利用する場合は本ユーティリティ経由でパラメータを取得する。
+     * {@link HttpRequest#getParam(String)}を呼び出す。
      *
      * @param request HTTPリクエスト
      * @param name パラメータ名
