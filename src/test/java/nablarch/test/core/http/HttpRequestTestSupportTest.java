@@ -82,13 +82,13 @@ public class HttpRequestTestSupportTest {
     }
 
     @Test
-    public void HttpRequest_getParamからデータが取得できること() {
+    public void getParamでHttpRequestのリクエストパラメータが取得できること() {
         HttpRequest req = new MockHttpRequest().setParam("paramName", "param1", "param2");
         assertArrayEquals(sut.getParam(req, "paramName"), new String[]{"param1", "param2"});
     }
 
     @Test
-    public void HttpRequest_getParamMapからデータが取得できること() {
+    public void getParamMapでHttpRequestのリクエストパラメータが取得できること() {
         HttpRequest req = new MockHttpRequest()
                 .setParam("paramName1", "param1-1", "param1-2")
                 .setParam("paramName2", "param2");
