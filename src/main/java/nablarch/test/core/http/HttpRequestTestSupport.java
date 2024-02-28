@@ -1374,4 +1374,24 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
         servletForwardVerifier = new ServletForwardVerifier();
         initialized = false;
     }
+
+    /**
+     * {@link HttpRequest#getParamMap()}を呼び出す。
+     * @param request HTTPリクエスト 
+     * @return リクエストパラメータのMap
+     */
+    public Map<String, String[]> getParamMap(HttpRequest request) {
+        return request.getParamMap();
+    }
+
+    /**
+     * {@link HttpRequest#getParam(String)}を呼び出す。
+     *
+     * @param request HTTPリクエスト
+     * @param name パラメータ名
+     * @return リクエストパラメータの値
+     */
+    public String[] getParam(HttpRequest request, String name) {
+        return request.getParamMap().get(name);
+    }
 }
