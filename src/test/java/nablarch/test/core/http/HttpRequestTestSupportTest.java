@@ -93,7 +93,7 @@ public class HttpRequestTestSupportTest {
                 .setParam("paramName1", "param1-1", "param1-2")
                 .setParam("paramName2", "param2");
         Map<String, String[]> result = sut.getParamMap(req);
-        assertEquals(result.size(), 2);
+        assertEquals(2, result.size());
         assertArrayEquals(result.get("paramName1"), new String[]{"param1-1", "param1-2"});
         assertArrayEquals(result.get("paramName2"), new String[]{"param2"});
     }
