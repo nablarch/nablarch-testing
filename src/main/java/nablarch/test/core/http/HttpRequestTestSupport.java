@@ -420,7 +420,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
      * @param warBaseLocator warベースディレクトリのリソースロケータ
      */
     protected void copyHtmlResourceToDumpDir(HttpTestConfiguration config, File destDir, ResourceLocator warBaseLocator) {
-        File warDir = new File(warBaseLocator.getRealPath());
+        @SuppressWarnings("DataFlowIssue") File warDir = new File(warBaseLocator.getRealPath());
         // 既に存在する場合は、一度削除する。
         deleteHtmlResourceFile(warDir, destDir);
         FileFilter filter = getFileFilter(config);
@@ -504,6 +504,7 @@ public class HttpRequestTestSupport extends TestEventDispatcher {
             try {
                 // 出力先のファイルのwriterを生成
                 String path = file.getAbsolutePath();
+                //noinspection DataFlowIssue
                 if (path.startsWith(realPath)) {
                     path = path.substring(realPath.length());
                 } else if (path.startsWith(jsTestResourcePath)) {
