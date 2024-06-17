@@ -62,7 +62,7 @@ public abstract class TestEventDispatcher {
      * （{@link #checkErrorInStaticInitializer()}）。
      * </p>
      *
-     * @see <a href="http://java.sun.com/docs/books/jls/third_edition/html/execution.html#12.4.2">
+     * @see <a href="https://docs.oracle.com/javase/specs/jls/se6/html/execution.html#12.4.2">
      *      Java Language Specification Third Edition 12.4.2 Detailed Initialization Procedure</a>
      */
     private static void initializeDefaultRepository() {
