@@ -58,7 +58,7 @@ public class JspParserTest {
             Tag tag = tags.get(1);
             assertThat(tag.getType(), is(TagType.DIRECTIVE));
             assertThat(tag.getPosition(), is(1));
-            assertThat(tag.getCloseTagPosition(), is(64));
+            assertThat(tag.getCloseTagPosition(), is(48));
             assertThat(tag.getLineNo(), is(2));
             assertThat(tag.isSuppressJspCheck(), is(false));
             Directive directive = (Directive) tag;
@@ -69,13 +69,13 @@ public class JspParserTest {
             assertThat(attributes.get(0).getName(), is("prefix"));
             assertThat(attributes.get(0).getValue(), is("\"c\""));
             assertThat(attributes.get(1).getName(), is("uri"));
-            assertThat(attributes.get(1).getValue(), is("\"http://java.sun.com/jsp/jstl/core\""));
+            assertThat(attributes.get(1).getValue(), is("\"jakarta.tags.core\""));
         }
         みっつめ: {
             Tag tag = tags.get(2);
             assertThat(tag.getType(), is(TagType.DIRECTIVE));
-            assertThat(tag.getPosition(), is(66));
-            assertThat(tag.getCloseTagPosition(), is(51));
+            assertThat(tag.getPosition(), is(50));
+            assertThat(tag.getCloseTagPosition(), is(35));
             assertThat(tag.getLineNo(), is(2));
             assertThat(tag.isSuppressJspCheck(), is(false));
             Directive directive = (Directive) tag;
@@ -85,7 +85,7 @@ public class JspParserTest {
             assertThat(attributes.get(0).getName(), is("prefix"));
             assertThat(attributes.get(0).getValue(), is("\"f\""));
             assertThat(attributes.get(1).getName(), is("uri"));
-            assertThat(attributes.get(1).getValue(), is("\"http://java.sun.com/jsp/jstl/functions\""));
+            assertThat(attributes.get(1).getValue(), is("\"jakarta.tags.functions\""));
         }
 
         // 複数行にまたがって記述されているディレクティブ
