@@ -241,7 +241,6 @@ public class JspParserTest {
         assertThat(tags.size(), is(7));
 
         // ディレクティブ部分の確認
-        // ディレクティブの確認
         {
             assertThat(tags.get(0).getType(), is(TagType.DIRECTIVE));
             assertThat(tags.get(1).getType(), is(TagType.DIRECTIVE));
