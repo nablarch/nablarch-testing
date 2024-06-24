@@ -84,7 +84,7 @@ public abstract class TestEventDispatcher {
                 (List<TestEventListener>)
                         SystemRepository.getObject(TEST_EVENT_LISTENERS_KEY);
         return (registeredListeners == null)
-                ? Collections.<TestEventListener>emptyList()
+                ? Collections.emptyList()
                 : registeredListeners;
 
     }
