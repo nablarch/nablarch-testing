@@ -3,13 +3,11 @@ package nablarch.test.core.entity;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import nablarch.core.message.MockStringResourceHolder;
-import nablarch.test.TestUtil;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Before;

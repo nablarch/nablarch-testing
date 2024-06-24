@@ -2,9 +2,10 @@ package nablarch.test.tool.sanitizingcheck;
 
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import nablarch.test.tool.sanitizingcheck.tag.Directive;
@@ -23,18 +24,19 @@ public class JspParserTest {
 
     /**
      * ディレクティブタグのパーステスト。
-     *
+     * <p>
      * ディレクティブタグの内容が正しく解析できることを確認する。
      */
     @Test
     public void directiveTag() throws Exception {
-        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/directive.jsp", Charset.forName("utf-8"));
+        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/directive.jsp", StandardCharsets.UTF_8);
         List<? extends Tag> tags = parser.parse();
 
         assertThat(tags.size(), is(5));
 
         // 行内にはこのディレクティブのみが存在する。
-        ひとつめ: {
+        // ひとつめ
+        {
             Tag tag = tags.get(0);
             assertThat(tag.getType(), is(TagType.DIRECTIVE));
             assertThat(tag.getPosition(), is(1));
@@ -54,7 +56,8 @@ public class JspParserTest {
         }
 
         // 行内に複数のディレクティブが存在する。
-        ふたつめ: {
+        // ふたつめ
+        {
             Tag tag = tags.get(1);
             assertThat(tag.getType(), is(TagType.DIRECTIVE));
             assertThat(tag.getPosition(), is(1));
@@ -71,7 +74,8 @@ public class JspParserTest {
             assertThat(attributes.get(1).getName(), is("uri"));
             assertThat(attributes.get(1).getValue(), is("\"jakarta.tags.core\""));
         }
-        みっつめ: {
+        // みっつめ
+        {
             Tag tag = tags.get(2);
             assertThat(tag.getType(), is(TagType.DIRECTIVE));
             assertThat(tag.getPosition(), is(50));
@@ -89,7 +93,8 @@ public class JspParserTest {
         }
 
         // 複数行にまたがって記述されているディレクティブ
-        よっつめ: {
+        // よっつめ
+        {
             Tag tag = tags.get(3);
             assertThat(tag.getType(), is(TagType.DIRECTIVE));
             assertThat(tag.getPosition(), is(2));
@@ -113,17 +118,18 @@ public class JspParserTest {
 
     /**
      * HTMLコメントのパーステスト。
-     *
+     * <p>
      * HTMLコメントの内容が正しくパースできていること。
      */
     @Test
     public void htmlComment() throws Exception {
-        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/htmlComment.jsp", Charset.forName("utf-8"));
+        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/htmlComment.jsp", StandardCharsets.UTF_8);
         List<? extends Tag> tags = parser.parse();
 
         assertThat(tags.size(), is(8));
 
-        コメントだけの行 : {
+        // コメントだけの行
+        {
             Tag tag = tags.get(0);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -134,7 +140,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        いち行に複数のコメントのひとつめ :  {
+        // いち行に複数のコメントのひとつめ
+        {
             Tag tag = tags.get(1);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -144,7 +151,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        いち行に複数のコメントのふたつめ :  {
+        // いち行に複数のコメントのふたつめ
+        {
             Tag tag = tags.get(2);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -154,7 +162,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        複数行に跨るコメント :  {
+        // 複数行に跨るコメント
+        {
             Tag tag = tags.get(3);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -164,7 +173,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        チェック対象外コメントその１ : {
+        // チェック対象外コメントその１
+        {
             Tag tag = tags.get(4);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -174,7 +184,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(true));
         }
 
-        チェック対象外コメントその２ : {
+        // チェック対象外コメントその２
+        {
             Tag tag = tags.get(5);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -184,7 +195,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(true));
         }
 
-        チェック対象外の次の行でもチェック対象になること : {
+        // チェック対象外の次の行でもチェック対象になること
+        {
             Tag tag = tags.get(6);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -195,7 +207,8 @@ public class JspParserTest {
         }
 
 
-        閉じられていないファイル末尾のコメント : {
+        // 閉じられていないファイル末尾のコメント
+        {
             Tag tag = tags.get(7);
             assertThat(tag.getName(), is("<!--"));
             assertThat(tag.getType(), is(TagType.HTML_COMMENT));
@@ -211,7 +224,7 @@ public class JspParserTest {
      */
     @Test
     public void htmlCommentCode() {
-        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/htmlCommentTag.jsp", Charset.forName("utf-8"));
+        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/htmlCommentTag.jsp", StandardCharsets.UTF_8);
         List<? extends Tag> tags = parser.parse();
 
         assertThat(tags.size(), is(2));
@@ -228,13 +241,14 @@ public class JspParserTest {
         assertThat(tags.size(), is(7));
 
         // ディレクティブ部分の確認
-        ディレクティブの確認 : {
+        {
             assertThat(tags.get(0).getType(), is(TagType.DIRECTIVE));
             assertThat(tags.get(1).getType(), is(TagType.DIRECTIVE));
             assertThat(tags.get(2).getType(), is(TagType.DIRECTIVE));
         }
 
-        タグリブだけが存在している行 : {
+        // タグリブだけが存在している行
+        {
             Tag tag = tags.get(3);
             assertThat(tag.getName(), is("<c:set"));
             assertThat(tag.getLineNo(), is(5));
@@ -251,7 +265,8 @@ public class JspParserTest {
             assertThat(tag.toString(), is("Custom Tag: <c:set> (at line=5 column=1)"));
         }
 
-        要素のあるタグ : {
+        // 要素のあるタグ
+        {
             Tag tag = tags.get(4);
             assertThat(tag.getName(), is("<n:form"));
             assertThat(tag.getLineNo(), is(6));
@@ -263,7 +278,8 @@ public class JspParserTest {
             assertThat(attributes.size(), is(0));
         }
 
-        子要素でさらに要素を持つタグで属性も持つ : {
+        // 子要素でさらに要素を持つタグで属性も持つ
+        {
             Tag tag = tags.get(5);
             assertThat(tag.getName(), is("<c:if"));
             assertThat(tag.getLineNo(), is(7));
@@ -288,7 +304,8 @@ public class JspParserTest {
             assertThat(attributes.get(2).getPosition(), is(40));
         }
 
-        子要素で属性だけをもつタグ : {
+        // 子要素で属性だけをもつタグ
+        {
             Tag tag = tags.get(6);
             assertThat(tag.getName(), is("<n:checkbox"));
             assertThat(tag.getLineNo(), is(11));
@@ -333,7 +350,8 @@ public class JspParserTest {
 
         assertThat(tags.size(), is(8));
 
-        コメント : {
+        // コメント
+        {
             Tag tag = tags.get(0);
 
             assertThat(tag.getName(), is("<%--"));
@@ -346,7 +364,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        宣言 : {
+        // 宣言
+        {
             Tag tag = tags.get(1);
             assertThat(tag.getName(), is("<%!"));
             assertThat(tag.getLineNo(), is(2));
@@ -358,7 +377,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        スクリプトレット : {
+        // スクリプトレット
+        {
             Tag tag = tags.get(2);
             assertThat(tag.getName(), is("<%"));
             assertThat(tag.getLineNo(), is(9));
@@ -370,7 +390,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        JSP式 : {
+        // JSP式
+        {
             Tag tag = tags.get(3);
             assertThat(tag.getName(), is("<%="));
             assertThat(tag.getLineNo(), is(17));
@@ -382,7 +403,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-       チェック対象外 : {
+        // チェック対象外
+        {
            Tag tag = tags.get(4);
            assertThat(tag.getName(), is("<%="));
            assertThat(tag.getLineNo(), is(20));
@@ -393,7 +415,8 @@ public class JspParserTest {
            assertThat(tag.isSuppressJspCheck(), is(true));
        }
 
-        不完全なチェック対象外コメントはチェック対象となる: {
+        // 不完全なチェック対象外コメントはチェック対象となる
+       {
             Tag tag = tags.get(5);
             assertThat(tag.getName(), is("<%--"));
             assertThat(tag.getLineNo(), is(22));
@@ -404,7 +427,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        不完全なチェック対象外コメントはチェック対象となるその２: {
+        // 不完全なチェック対象外コメントはチェック対象となるその２
+        {
             Tag tag = tags.get(6);
             assertThat(tag.getName(), is("<%--"));
             assertThat(tag.getLineNo(), is(24));
@@ -415,7 +439,8 @@ public class JspParserTest {
             assertThat(tag.isSuppressJspCheck(), is(false));
         }
 
-        不完全なチェック対象外コメントはチェック対象となるその３: {
+        // 不完全なチェック対象外コメントはチェック対象となるその３
+        {
             Tag tag = tags.get(7);
             assertThat(tag.getName(), is("<%--"));
             assertThat(tag.getLineNo(), is(29));
@@ -433,18 +458,20 @@ public class JspParserTest {
     @Test
     public void el() {
 
-        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/el.jsp", Charset.forName("utf-8"));
+        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/el.jsp", StandardCharsets.UTF_8);
         List<? extends Tag> tags = parser.parse();
 
         assertThat(tags.size(), is(7));
 
-        EL式以外: {
+        // EL式以外
+        {
             assertThat(tags.get(0).getType(), is(TagType.DIRECTIVE));
             assertThat(tags.get(2).getType(), is(TagType.TAGLIB));
             assertThat(tags.get(3).getType(), is(TagType.TAGLIB));
         }
 
-        EL式だけの行 : {
+        // EL式だけの行
+        {
             Tag tag = tags.get(1);
             assertThat(tag.getName(), is("${"));
             assertThat(tag.getLineNo(), is(3));
@@ -454,7 +481,8 @@ public class JspParserTest {
             assertThat(tag.toString(), is("JSP EL Element: ${ xxx } (at line=3 column=1)"));
         }
 
-        複数行に跨るEL式: {
+        // 複数行に跨るEL式
+        {
             Tag tag = tags.get(4);
             assertThat(tag.getName(), is("${"));
             assertThat(tag.getLineNo(), is(8));
@@ -463,7 +491,8 @@ public class JspParserTest {
             assertThat(tag.getType(), is(TagType.EL));
         }
 
-        リテラルの確認: {
+        // リテラルの確認
+        {
             Tag tag = tags.get(5);
             assertThat(tag.getName(), is("${"));
             assertThat(tag.getLineNo(), is(14));
@@ -485,7 +514,7 @@ public class JspParserTest {
      */
     @Test
     public void multiTag() {
-        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/MultiTag.jsp", Charset.forName("utf-8"));
+        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/MultiTag.jsp", StandardCharsets.UTF_8);
         List<? extends Tag> tags = parser.parse();
 
         assertThat(tags.size(), is(18));
@@ -522,7 +551,7 @@ public class JspParserTest {
      */
     @Test
     public void invalidJsp() {
-        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/invalid.jsp", Charset.forName("utf-8"));
+        JspParser parser = new JspParser("src/test/java/nablarch/test/tool/sanitizingcheck/data/invalid.jsp", StandardCharsets.UTF_8);
         List<? extends Tag> tags = parser.parse();
         assertThat(tags.size(), is(3));
 
