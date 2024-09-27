@@ -14,7 +14,7 @@
   <n:button uri="hoge" name="${userName}" />
   ${user.Name}
 </n:form>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:if test="true">
   <!-- <n:set value="hoge" var="fuga" />-->
 </c:if>

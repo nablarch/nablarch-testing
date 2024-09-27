@@ -62,8 +62,8 @@ public abstract class TestEventDispatcher {
      * （{@link #checkErrorInStaticInitializer()}）。
      * </p>
      *
-     * @see <a href="http://java.sun.com/docs/books/jls/third_edition/html/execution.html#12.4.2">
-     *      Java Language Specification Third Edition 12.4.2 Detailed Initialization Procedure</a>
+     * @see <a href="https://docs.oracle.com/javase/specs/jls/se17/html/jls-12.html#jls-12.4.2">
+     *      The Java® Language Specification Java SE 17 Edition 12.4.2. Detailed Initialization Procedure</a>
      */
     private static void initializeDefaultRepository() {
         try {
@@ -84,7 +84,7 @@ public abstract class TestEventDispatcher {
                 (List<TestEventListener>)
                         SystemRepository.getObject(TEST_EVENT_LISTENERS_KEY);
         return (registeredListeners == null)
-                ? Collections.<TestEventListener>emptyList()
+                ? Collections.emptyList()
                 : registeredListeners;
 
     }

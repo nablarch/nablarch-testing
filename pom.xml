@@ -6,7 +6,7 @@
 
   <groupId>com.nablarch.framework</groupId>
   <artifactId>nablarch-testing</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
 
   <scm>
     <connection>scm:git:git://github.com/nablarch/${project.artifactId}.git</connection>
@@ -17,13 +17,9 @@
   <parent>
     <groupId>com.nablarch</groupId>
     <artifactId>nablarch-parent</artifactId>
-    <version>6u1</version>
+    <version>6u2</version>
     <relativePath/>
   </parent>
-  
-  <properties>
-    <ecj.version>4.6.1</ecj.version>
-  </properties>
   
   <dependencies>
     <dependency>
@@ -49,7 +45,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hibernate</groupId>
+      <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
       <version>8.0.0.Final</version>
       <scope>provided</scope>
@@ -156,12 +152,6 @@
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
       <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.eclipse.jdt.core.compiler</groupId>
-      <artifactId>ecj</artifactId>
-      <version>${ecj.version}</version>
     </dependency>
 
     <dependency>

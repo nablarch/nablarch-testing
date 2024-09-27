@@ -7,7 +7,6 @@ import java.util.Map;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.core.util.StringUtil;
 import nablarch.core.validation.validator.Required;
-import nablarch.test.TestUtil;
 import nablarch.test.Trap;
 import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.EntityTestConfiguration;
@@ -25,7 +24,6 @@ import jakarta.validation.constraints.AssertTrue;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * {@link EntityTestSupport}のテストクラス。
