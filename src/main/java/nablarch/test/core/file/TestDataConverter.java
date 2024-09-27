@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.LayoutDefinition;
+import nablarch.core.util.annotation.Published;
 
 /**
  * テストデータコンバータ<br>
@@ -12,6 +13,7 @@ import nablarch.core.dataformat.LayoutDefinition;
  * 
  * @author TIS
  */
+@Published
 public interface TestDataConverter {
     
     /**
