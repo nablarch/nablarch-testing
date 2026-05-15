@@ -1,0 +1,232 @@
+# NTF テストデータ YAML 記述例
+# スキーマ: ntf-testdata-yaml-schema.json
+# 特殊値変換ルール: ntf-testdata-structure.md §4 参照
+
+# ============================================================
+# setup_tables / expected_tables / expected_complete_tables
+# ============================================================
+# Excel: SETUP_TABLE=TABLE_NAME（グループIDなし）
+setup_tables:
+  - table: USER
+    rows:
+      - USER_ID: "001"
+        USER_NAME: 山田太郎
+        AGE: "30"
+        CREATED_AT: "20240101120000000"  # yyyyMMddHHmmssSSS 形式
+        MEMO: null                        # DBにnull（NullInterpreter: "null"相当）
+
+  # Excel: SETUP_TABLE[case1]=ORDER（グループID付き）
+  - group_id: case1
+    table: ORDER
+    rows:
+      - ORDER_ID: "1001"
+        USER_ID: "001"
+        AMOUNT: "5000"
+        STATUS: ""          # 空文字（QuotationTrimmer: '""' 相当）
+        [MARKER_COL]: X     # マーカーカラム（HeaderLine: DB操作から除外）
+
+  - group_id: case2
+    table: ORDER
+    rows:
+      - ORDER_ID: "2001"
+        USER_ID: "002"
+        AMOUNT: "9800"
+        STATUS: "1"
+        [MARKER_COL]: Y
+
+# Excel: EXPECTED_COMPLETE_TABLE=USER（省略カラムにデフォルト値補完）
+expected_complete_tables:
+  - table: USER
+    rows:
+      - USER_ID: "001"
+        USER_NAME: 山田太郎
+        # AGE・MEMO 等省略カラムは fillDefaultValues() でデフォルト値が補完される
+
+# ============================================================
+# list_maps
+# ============================================================
+# Excel: LIST_MAP=searchResult
+list_maps:
+  - id: searchResult
+    rows:
+      - USER_ID: "001"
+        USER_NAME: 山田太郎
+        AGE: "30"
+      - USER_ID: "002"
+        USER_NAME: 鈴木花子
+        AGE: "25"
+
+# ============================================================
+# setup_files（固定長 / 可変長）
+# ============================================================
+# Excel: SETUP_FIXED[grp1]=input/data.dat
+setup_files:
+  - group_id: grp1
+    path: input/data.dat
+    type: fixed
+    directives:
+      text-encoding: MS932
+      record-separator: "\\r\\n"
+      record-length: 40
+    records:
+      - record_type: DATA
+        fields:
+          - name: USER_ID
+            type: X
+            length: 10
+          - name: USER_NAME
+            type: N
+            length: 20
+          - name: AMOUNT
+            type: Z
+            length: 10
+        rows:
+          - ["001       ", "山田太郎            ", "0000005000"]
+          - ["002       ", "鈴木花子            ", "0000009800"]
+
+  # Excel: SETUP_VARIABLE=input/csv_data.csv
+  - path: input/csv_data.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+    records:
+      - record_type: HEADER
+        fields:
+          - name: FILE_TYPE
+            type: X
+          - name: CREATE_DATE
+            type: X
+        rows:
+          - ["HDR", "20240101"]
+      - record_type: DATA
+        fields:
+          - name: ID
+            type: X
+          - name: NAME
+            type: N
+          - name: VALUE
+            type: X
+        rows:
+          - ["001", "テストデータ", "100"]
+          - ["002", "サンプル", "200"]
+
+# ============================================================
+# expected_files
+# ============================================================
+# Excel: EXPECTED_FIXED=output/result.dat
+expected_files:
+  - path: output/result.dat
+    type: fixed
+    directives:
+      text-encoding: MS932
+    records:
+      - record_type: RESULT
+        fields:
+          - name: RESULT_CODE
+            type: X
+            length: 4
+          - name: MESSAGE
+            type: N
+            length: 20
+          - name: DETAIL
+            type: X
+            length: "-"   # "-" はオンデマンド計算（FixedLengthFileParser）
+        rows:
+          - ["0000", "処理成功            ", "normal"]
+
+# ============================================================
+# messages（MESSAGE: 要求電文）
+# ============================================================
+# Excel: MESSAGE=requestId001
+# FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は
+# fwHeader Map に分離される（MessageParser の規則）
+messages:
+  - id: requestId001
+    directives:
+      text-encoding: MS932
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: N
+            length: 20
+        rows:
+          - ["検索キー値          "]
+
+# Excel: EXPECTED_REQUEST_BODY_MESSAGES=requestId001
+expected_request_body_messages:
+  - id: requestId001
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_COUNT
+            type: Z
+            length: 5
+          - name: DATA
+            type: N
+            length: 40
+        rows:
+          - ["00003", "期待される応答データ                    "]
+
+# ============================================================
+# response_header_messages / response_body_messages（GroupData系）
+# ============================================================
+# Excel: RESPONSE_HEADER_MESSAGES[grp1]=responseId001
+response_header_messages:
+  - group_id: grp1
+    id: responseId001
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "0000"]
+
+response_body_messages:
+  - group_id: grp1
+    id: responseId001
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_COUNT
+            type: Z
+            length: 5
+          - name: DATA
+            type: N
+            length: 40
+        rows:
+          - ["00001", "応答データ                              "]
+
+# ============================================================
+# 特殊値の記述例まとめ
+# ============================================================
+# null:              null          （NullInterpreter: "null" 相当）
+# 空文字:            ""            （QuotationTrimmer: '""' 相当）
+# システム日時:       "${systemTime}"
+# セットアップ時刻:   "${setUpTime}"
+# 更新時刻:          "${updateTime}"
+# 文字種生成:        "${全角英字, 10}"
+# バイナリファイル:   "${binaryFile:path/to/file.bin}"
+# CR文字:            "\\r"          （LineSeparatorInterpreter: 0x0D に変換）
+# 複合式:            "${半角数字,4}-${半角数字,4}"  （CompositeInterpreter）

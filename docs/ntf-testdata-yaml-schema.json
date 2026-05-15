@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ntf-test-data.schema.json",
+  "title": "NTF Test Data",
+  "description": "Nablarch Testing Framework のテストデータ YAML 表現スキーマ。根拠: DataType.java、TestDataParsingTemplate.java 等",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+
+    "setup_tables": {
+      "type": "array",
+      "description": "SETUP_TABLE: DB事前準備用テーブルデータ（GroupData系）",
+      "items": { "$ref": "#/$defs/table_data" }
+    },
+    "expected_tables": {
+      "type": "array",
+      "description": "EXPECTED_TABLE: 期待値テーブルデータ（GroupData系）",
+      "items": { "$ref": "#/$defs/table_data" }
+    },
+    "expected_complete_tables": {
+      "type": "array",
+      "description": "EXPECTED_COMPLETE_TABLE: 省略カラムにデフォルト値を補完する期待値テーブル（GroupData系）",
+      "items": { "$ref": "#/$defs/table_data" }
+    },
+    "list_maps": {
+      "type": "array",
+      "description": "LIST_MAP: List<Map<String,String>> 形式データ（SingleData系、ID一致で最初の1件のみ取得）",
+      "items": { "$ref": "#/$defs/list_map_data" }
+    },
+    "setup_files": {
+      "type": "array",
+      "description": "SETUP_FIXED / SETUP_VARIABLE を統合。type フィールドで区別。getSetupFile() が両者をまとめて返す",
+      "items": { "$ref": "#/$defs/file_data" }
+    },
+    "expected_files": {
+      "type": "array",
+      "description": "EXPECTED_FIXED / EXPECTED_VARIABLE を統合。getExpectedFile() が両者をまとめて返す",
+      "items": { "$ref": "#/$defs/file_data" }
+    },
+    "messages": {
+      "type": "array",
+      "description": "MESSAGE: 要求電文。内部は固定長ファイルと同構造（SingleData系）",
+      "items": { "$ref": "#/$defs/message_data" }
+    },
+    "expected_request_header_messages": {
+      "type": "array",
+      "description": "EXPECTED_REQUEST_HEADER_MESSAGES（SingleData系）",
+      "items": { "$ref": "#/$defs/message_data" }
+    },
+    "expected_request_body_messages": {
+      "type": "array",
+      "description": "EXPECTED_REQUEST_BODY_MESSAGES（SingleData系）",
+      "items": { "$ref": "#/$defs/message_data" }
+    },
+    "response_header_messages": {
+      "type": "array",
+      "description": "RESPONSE_HEADER_MESSAGES（GroupData系、GroupMessageParser が処理）",
+      "items": { "$ref": "#/$defs/group_message_data" }
+    },
+    "response_body_messages": {
+      "type": "array",
+      "description": "RESPONSE_BODY_MESSAGES（GroupData系、GroupMessageParser が処理）",
+      "items": { "$ref": "#/$defs/group_message_data" }
+    }
+
+  },
+
+  "$defs": {
+
+    "table_data": {
+      "type": "object",
+      "required": ["table", "rows"],
+      "additionalProperties": false,
+      "description": "テーブルデータ1ブロック。Excel では SETUP_TABLE[groupId]=TABLE_NAME から始まる行群に対応",
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "description": "グループID。Excel: SETUP_TABLE[groupId]=... の括弧内の値。省略時はグループIDなし扱い"
+        },
+        "table": {
+          "type": "string",
+          "description": "テーブル名。TableData#setTableName() で trim().toUpperCase() される"
+        },
+        "rows": {
+          "type": "array",
+          "description": "データ行。各要素がレコード1件。キー=カラム名、値=セル値",
+          "items": {
+            "type": "object",
+            "description": "カラム名をキー、値を文字列または null とする Map。マーカーカラムは '[COLNAME]' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）",
+            "additionalProperties": {
+              "type": ["string", "null"]
+            }
+          }
+        }
+      }
+    },
+
+    "list_map_data": {
+      "type": "object",
+      "required": ["id", "rows"],
+      "additionalProperties": false,
+      "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "識別ID。Excel: LIST_MAP=ID の '=' 以降の文字列（getTypeValue()）"
+        },
+        "rows": {
+          "type": "array",
+          "description": "データ行。各要素が Map<String,String> の1件。マーカーカラム除外後のキーと値のペア",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["string", "null"]
+            }
+          }
+        }
+      }
+    },
+
+    "file_data": {
+      "type": "object",
+      "required": ["path", "type", "records"],
+      "additionalProperties": false,
+      "description": "ファイルデータ1ブロック。DataFile（1ファイル）+ 複数の DataFileFragment（1レコード種別）に対応",
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "description": "グループID。Excel: SETUP_FIXED[groupId]=path の括弧内の値"
+        },
+        "path": {
+          "type": "string",
+          "description": "ファイルパス。Excel: SETUP_FIXED[groupId]=path の '=' 以降"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["fixed", "variable"],
+          "description": "fixed = 固定長（SETUP_FIXED/EXPECTED_FIXED）、variable = 可変長（SETUP_VARIABLE/EXPECTED_VARIABLE）"
+        },
+        "directives": { "$ref": "#/$defs/directives" },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "description": "レコード種別ごとのブロック。DataFileFragment の配列",
+          "items": { "$ref": "#/$defs/record_fragment" }
+        }
+      }
+    },
+
+    "message_data": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "description": "メッセージデータ（SingleData系）。内部構造は固定長ファイルと同一",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降"
+        },
+        "directives": { "$ref": "#/$defs/directives" },
+        "records": {
+          "type": "array",
+          "description": "レコード種別ごとのブロック。FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は fwHeader Map に分離される",
+          "items": { "$ref": "#/$defs/record_fragment" }
+        }
+      }
+    },
+
+    "group_message_data": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "description": "グループメッセージデータ（GroupData系）。GroupMessageParser が処理",
+      "properties": {
+        "group_id": {
+          "type": "string",
+          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値"
+        },
+        "id": {
+          "type": "string",
+          "description": "識別ID"
+        },
+        "directives": { "$ref": "#/$defs/directives" },
+        "records": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/record_fragment" }
+        }
+      }
+    },
+
+    "directives": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "ファイルディレクティブ。FixedLengthDirective に定義されたキーのみ有効",
+      "properties": {
+        "text-encoding": {
+          "type": "string",
+          "description": "文字エンコーディング（例: UTF-8, Shift_JIS）"
+        },
+        "record-separator": {
+          "type": "string",
+          "description": "レコード区切り文字"
+        },
+        "record-length": {
+          "type": "integer",
+          "description": "レコード長（バイト数）"
+        },
+        "file-type": {
+          "type": "string",
+          "description": "ファイル種別"
+        }
+      }
+    },
+
+    "record_fragment": {
+      "type": "object",
+      "required": ["record_type", "fields", "rows"],
+      "additionalProperties": false,
+      "description": "レコード種別1ブロック。DataFileFragment に対応。Excel の『先頭セルが種別名の行』から始まる行群",
+      "properties": {
+        "record_type": {
+          "type": "string",
+          "description": "レコード種別名。Excel のフィールド名行の先頭セル値"
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行に対応",
+          "items": { "$ref": "#/$defs/field_def" }
+        },
+        "rows": {
+          "type": "array",
+          "description": "データ行リスト。各要素は fields と同順の値配列",
+          "items": {
+            "type": "array",
+            "items": { "type": ["string", "null"] },
+            "description": "フィールド値のリスト。fields の順序に対応"
+          }
+        }
+      }
+    },
+
+    "field_def": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "description": "フィールド定義1件。Excel のフィールド名・データ型・フィールド長の3行に対応",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "フィールド名。Excel のフィールド名行の各セル値"
+        },
+        "type": {
+          "type": "string",
+          "description": "データ型記号（BasicDataTypeMapping 参照）: X, N, XN, Z, SZ, P, SP, X9, SX9, B 等"
+        },
+        "length": {
+          "description": "フィールド長（固定長ファイルのみ必須。可変長ファイルは不要）。\"-\" はオンデマンド計算（FixedLengthFileParser の規則）",
+          "oneOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "const": "-" }
+          ]
+        }
+      }
+    }
+
+  }
+}
