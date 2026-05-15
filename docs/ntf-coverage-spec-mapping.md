@@ -276,6 +276,145 @@
 
 ---
 
+## 8. P4-3 テストコード調査で補完された仕様
+
+### 8.1 TableDataTest から
+
+| 仕様 | 根拠（テストメソッド） | 判定 |
+|---|---|---|
+| BLOB フィールドで空文字 `""` を指定すると SQL NULL として格納される（Java null と同じ扱い） | `testSetValueBlobNull` / `testSetValueBlobEmpty` | **未反映** → D-4 に追記 |
+| 数値列に指数表記 `"1.E-1"` を指定可能 → `BigDecimal("0.1")` として格納される | `testPutLargeScaleDecimalValue` | **未反映** → examples.yaml コメントへ |
+| タイムスタンプ短縮形式: `"yyyyMMdd HHmmss"`（14文字、スペース区切り）および `"yyyyMMddHHmmssS"`（15文字、ミリ秒1桁）も有効 | `testTimestamp` | **未反映** → D-3 精度向上 |
+| `BasicDefaultValues` の DATE/TIMESTAMP デフォルト値は JST エポック `"1970-01-01 09:00:00.0"`（UTC ではない） | `testFillDefaultValues` | **未反映** → D-4 に追記 |
+| 数値文字列 `"01"` は Long 型として `1L` に変換されて格納される（ゼロパディング文字列は数値として解釈） | `testGetSetupTableData` | **未反映** → design.md 注意事項 |
+
+### 8.2 BasicDefaultValuesTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| `CHAR`/`NCHAR` のデフォルト値はカラム長分のスペース（n文字）; `VARCHAR`/`NVARCHAR` のデフォルトは常に1文字スペース（長さによらず固定） | `testGetDefault_charType` | **未反映** → D-4 を精緻化 |
+| サポート外 SQL 型（`ARRAY`, `DATALINK`, `DISTINCT`, `JAVA_OBJECT`, `NULL`, `OTHER`, `REF`, `STRUCT`）は `UnsupportedOperationException` | `testUnsupportedTypes` | **未反映**（参考情報） |
+| `setCharValue` は正確に1文字のみ有効（0文字・2文字以上・null はいずれも `IllegalArgumentException`） | `testSetCharValue_*` | **未反映** → schema.json description |
+
+### 8.3 QuotationTrimmerTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| クォート除去は「先頭と末尾が同じクォート文字である場合のみ」適用される（片側のみはスルー） | `testInterpret_noQuotation_*` | **未反映** → D-2 に追記 |
+| `""abc""` → `"abc"`（最外側の1層のみ除去、二重クォートは1回で解消） | `testInterpret_doubleQuoted` | **未反映** → examples.yaml NG/OK例 |
+
+### 8.4 BasicDataTypeMappingTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| `"半角数字"` は `X`（バイナリ/文字型）にマッピングされる（`Z`＝ゾーン10進数ではない） | `testConvertToFrameworkExpression` | **未反映** → D-4 マッピング表に注記 |
+| `convertToFrameworkExpression(null)` → `IllegalArgumentException` | `testConvertToFrameworkExpression_null` | **未反映** → schema/design 参考情報 |
+
+### 8.5 BasicJapaneseCharacterInterpreterTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| 書式 `${...,...}` にマッチしない入力（例: `"解釈できない形式"`）はスルーされる（例外なし）。一方、書式はマッチするが文字種が未知（例: `${不明,10}`）は `IllegalArgumentException` | `testInterpret_*` | **未反映** → D-6 の修正文に「書式不一致はスルー、型ミスは例外」として追記 |
+
+### 8.6 DateTimeInterpreterTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| `setSetUpDateTime()` に受け付けるフォーマットは `"yyyy-MM-dd HH:mm:ss.S"`（例: `"2010-12-13 12:34:56.0"`） | `testSetSetUpDateTime` | **未反映** → design.md §7 に補足 |
+| `setSetUpDateTime("invalid argument")` → `IllegalArgumentException` | `testSetSetUpDateTime_invalid` | **未反映**（参考情報） |
+| `FixedSystemTimeProvider` への日時指定フォーマットは `"yyyyMMddHHmmss"`（14文字） | テスト初期化部分 | **未反映**（参考情報） |
+| 不明な `${...}` トークン（例: `${hoge}`）はそのままスルーされる（例外なし） | `testInterpret_unknown` | 反映済み（design.md §7） |
+
+### 8.7 TestDataParsingTemplateTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| `getDataType(null)` は `DataType.DEFAULT` を返す（null はデフォルト扱い） | `testGetDataType_null` | **未反映**（YAML移行では不要） |
+| `NullInterpreter` が先頭セルを null に変換した行は**コメント行として扱われない**（`isCommentRow()` は null セルを無視） | `testIsCommentRow_null` | **未反映** → design.md 注意事項 |
+| `NullInterpreter` が先頭セルを null に変換したグループID行は `TableDataParser` で黙って捨てられる（0件返却） | `testTableDataParser_nullGroupId` | **未反映** → design.md 注意事項 |
+
+### 8.8 VariableLengthFileParserTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| 可変長ファイルの空行は**スキップされない**。全フィールドが `""` のレコードとして保持される | `testReadEmpty*` | **未反映** → design.md §ファイル系 注意事項 |
+
+### 8.9 SingleDataParsingTemplateTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| 同一シート内に同じ `LIST_MAP=id` セクションが複数存在する場合、**最初の1つのみ**が読まれる（後続は黙って無視） | `testParse_duplicate` | **未反映** → design.md §LIST_MAP の注意事項 |
+
+### 8.10 BasicTestDataParserTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| `formatGroupId` には 0 または 1 個の引数のみ有効（2個以上で `IllegalArgumentException`） | `testFormatGroupId_*` | **未反映**（スキーマ利用者には直接影響なし） |
+| 存在しない groupId を指定すると空リストが返る（例外なし） | `testGetTableData_notExist` | **未反映** → design.md §9 に補足 |
+
+### 8.11 FileSupportTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| 固定長ファイルの空行はスペースパディングされた定長レコードとして書き出される（0バイト行にはならない） | `testSetUpFixedFile_emptyRow` | **未反映** → design.md §ファイル系 注意事項 |
+| `DataRecord` のエントリが0件のレコードは「空ファイル」とみなされる（空リストと同等） | `testIsEmptyFile_*` | **未反映** → design.md §ファイル系 参考情報 |
+
+### 8.12 RequestTestingMessagingClientTest から
+
+| 仕様 | 根拠 | 判定 |
+|---|---|---|
+| テストデータにステータスコード列がない場合、デフォルトで `"200"` が使用される | `testSendLessStatusCode` | **未反映** → design.md §11 messaging |
+| EXPECTED_REQUEST_HEADER_MESSAGES と EXPECTED_REQUEST_BODY_MESSAGES の行数は一致が必須（不一致で `IllegalStateException`） | `testAssertSendingMessage_countMismatch` | **未反映** → design.md §11 注意事項 |
+
+### 8.13 E-2: `"?"` プレフィックス記法の調査結果
+
+`src/test/` 配下の全 Java/Excel/YAML/CSV ファイルを調査した結果、`"?"` プレフィックスのフィールド名は**一切存在しない**。
+
+**結論**: `"?"` プレフィックス記法は `nablarch-testing` リポジトリには存在せず、実装例リポジトリ（`nablarch-example-batch-ntf-yaml` 等）固有の慣習と推定される。`nablarch-testing` の YAML スキーマには影響しない。E-2 タスクは「本リポジトリのスキーマへの反映不要」として完了とする。
+
+---
+
+## 6. 未反映仕様まとめ（P4-3 追記版）
+
+### 6.1 schema.json への追加
+
+| # | 追加箇所 | 追加内容 |
+|---|---|---|
+| S-1 | `$defs.directives.properties.record-length` description | `record-length` は固定長ファイルのフィールド長合計から自動計算されるため**通常は記述不要** |
+| S-2 | `$defs.directives.properties.field-separator` description | `"\\t"` を指定するとタブ文字（U+0009）に変換される。値は1文字のみ有効（`"\\t"` 変換後1文字のため有効）。空文字・2文字以上は `IllegalArgumentException` |
+| S-3 | `$defs.record_fragment.properties.fields` description | 同一レコード種別内のフィールド名は重複不可 |
+| S-4 | `$defs.field_def.properties.length` description（const:"-" の説明部分） | `"-"` を指定したフィールドの値は格納時に改行コードと前後空白が除去される |
+| S-5 | `$defs.table_data.properties.rows` description | `SETUP_TABLE` / `EXPECTED_TABLE` でも省略カラムには `DefaultValues` によるデフォルト値が INSERT 時に補完される |
+
+### 6.2 design.md への追加
+
+| # | 追加箇所 | 追加内容 |
+|---|---|---|
+| D-1 | §7 特殊値 null テーブル | `NullInterpreter` は大文字小文字不問（`"NULL"`, `"Null"` も null になる） |
+| D-2 | §7 特殊値 QuotationTrimmer | 全角ダブルクォート（`"..."` U+201C/U+201D）での囲みでも外側クォートが除去される。クォート除去は先頭・末尾の両方が同じクォート文字の場合のみ適用（片側のみはスルー）。`""abc""` → `"abc"` |
+| D-3 | §7 または §4 | 日付型カラムは 17 文字未満でも後置 0 埋めで処理される（例: `"20240101"` も有効）。JDBC タイムスタンプエスケープ形式（`"2024-01-01"` 等）も受け付ける。さらに `"yyyyMMdd HHmmss"`（スペース区切り14文字）および `"yyyyMMddHHmmssS"`（ミリ秒1桁15文字）も有効 |
+| D-4 | §4 `expected_complete_tables` の説明 | `BasicDefaultValues` のデフォルト値一覧を表形式で追記。DATE のデフォルトは JST エポック `"1970-01-01 09:00:00.0"`（UTC ではない）。`CHAR`/`NCHAR` はカラム長分スペース、`VARCHAR`/`NVARCHAR` は常に1スペース。BLOB は 10 ゼロバイト HEX 固定。`"半角数字"` → `X`（Z ではない）を注記 |
+| D-5 | §11 MESSAGE系 record_type 説明の近くに追記 | Excel 上の FW 制御ヘッダは「フィールド名\|値」の 2 列ディレクティブ行形式だったが YAML では通常の `fields` に統合される |
+| D-6 | AI向けプロンプト §BasicJapaneseCharacterInterpreter | 「スペルミスは素通り」→「書式 `${...,...}` にマッチしない場合はスルー。書式はマッチするが文字種が未知の場合は `IllegalArgumentException` がスローされる」に**修正** |
+| D-7 | AI向けプロンプト §文字種トークン | `${半角記号}` 生成では `"`, `#`, `,`, `\` は含まれない |
+| D-8 | AI向けプロンプト §field-separator 追加 | `"\\t"` でタブ区切りを指定できる |
+| D-9 | 新節「デフォルトディレクティブの DI」 | SystemRepository キー `defaultDirectives`（全共通）、`fixedLengthDirectives`（固定長専用）、`variableLengthDirectives`（可変長専用）でデフォルトディレクティブを一括設定できる |
+| D-10 | §ファイル系 注意事項（新規追加） | 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される。固定長ファイルの空行はスペースパディングされた定長レコードとして書き出される |
+| D-11 | §LIST_MAP 注意事項 | 同一シート内に同じ `LIST_MAP=id` セクションが複数存在する場合、**最初の1つのみ**が読まれる（後続は黙って無視） |
+| D-12 | §9 group_id の説明に補足 | 存在しない groupId を指定した場合は例外でなく空リストが返る |
+| D-13 | §11 messaging に追補 | テストデータにステータスコード列がない場合デフォルト `"200"` が使用される。ヘッダ行数とボディ行数は一致が必須 |
+
+### 6.3 examples.yaml への追加
+
+| # | 追加内容 |
+|---|---|
+| E-1 | `field-separator: "\\t"` を使ったタブ区切りファイルの directives 例 |
+| E-2 | `type: B`（バイナリ型）の `field_def` 使用例（`${binaryFile:...}` との組み合わせ） |
+| E-3 | JDBC タイムスタンプ形式の日付値の例（`"2024-01-01"` など） |
+| E-4 | `response_*_messages` の通常データ行（errorMode なし）の例 |
+
+---
+
 ## 7. 影響度別優先度
 
 | 優先度 | 未反映仕様 | 理由 |

@@ -149,9 +149,11 @@ Excelでは別のデータ種別だが、`BasicTestDataParser#getSetupFile()` �
 | 数値型（`java.lang.Number` のサブクラス） | `"0"` |
 | 固定長文字列型（`CHAR`, `NCHAR` 等） | 半角スペース × カラム長 |
 | 可変長文字列型（`VARCHAR` 等） | `" "`（半角スペース1文字） |
-| 日付型（`java.sql.Date` 等） | `"1970-01-01 00:00:00.0"`（epoch） |
+| 日付型（`java.sql.Date` 等） | `"1970-01-01 09:00:00.0"`（epoch、JST） |
 | バイナリ型 | 10バイトのゼロバイト列の HexString |
 | Boolean型 | `"false"` |
+
+**注意**: `BasicDataTypeMapping` では「`半角数字`」は `X`（文字型）にマッピングされる（`Z`＝ゾーン10進数ではない）。設計書の「半角数字」フィールドを YAML に変換する際は `type: X` と書く。
 
 なお、`SETUP_TABLE` / `EXPECTED_TABLE` でも各 `rows` オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に `DefaultValues` によるデフォルト値が補完される（`TableData#convert()` の動作）。省略カラムの補完は `EXPECTED_COMPLETE_TABLE` 専用ではない。
 
@@ -186,7 +188,7 @@ YAMLでは `"[COLNAME]"` のようにダブルクォートで囲む必要があ�
 
 **NullInterpreter は大文字小文字を区別しない**（`equalsIgnoreCase`）。`"NULL"`, `"Null"`, `"null"` のいずれも Java null に変換される。
 
-**QuotationTrimmer は全角ダブルクォートにも対応**。半角ダブルクォート（`"..."` U+0022）だけでなく全角ダブルクォート（`"..."` U+201C/U+201D）で囲んだ値も前後1文字が除去される。
+**QuotationTrimmer は全角ダブルクォートにも対応**。半角ダブルクォート（`"..."` U+0022）だけでなく全角ダブルクォート（`"..."` U+201C/U+201D）で囲んだ値も前後1文字が除去される。クォート除去は**先頭と末尾の両方が同じクォート文字の場合のみ**適用される（片側のみはスルー）。`""abc""` → `"abc"`（最外側の1層のみ除去）。
 
 **すべての値は文字列（クォート付き）で記述すること。** YAMLパーサが数値・真偽値として解釈するとスキーマバリデーション違反になる。
 
@@ -198,6 +200,8 @@ YAMLでは `"[COLNAME]"` のようにダブルクォートで囲む必要があ�
 |---|---|---|
 | `yyyyMMddHHmmssSSS`（17文字） | `"20240101120000000"` | 標準形式 |
 | 17文字未満（後置0埋め） | `"20240101"` | 後ろに `"00000000000000000"` を付加して前17文字を使用。`"20240101"` → `"20240101000000000"` |
+| `yyyyMMdd HHmmss`（スペース区切り14文字） | `"20240101 120000"` | スペースを含む14文字形式 |
+| `yyyyMMddHHmmssS`（ミリ秒1桁15文字） | `"200001011234560"` | ミリ秒が1桁の15文字形式 |
 | JDBCタイムスタンプエスケープ（5文字目が `-`） | `"2024-01-01"`, `"2024-01-01 12:00:00.000"` | `isJdbcTimestampFormat()` で判定 |
 
 ```yaml
@@ -219,7 +223,9 @@ YAMLでは `group_id:` フィールドを省略することで表現する。
 ### 9. SingleData系（LIST_MAP、MESSAGE）の制約
 
 SingleData系は同一ファイル内でIDが一致した最初の1ブロックのみ取得する（`SingleDataParsingTemplate` の規則）。  
-`id:` はファイル内でユニークにすることを推奨。
+`id:` はファイル内でユニークにすることを推奨。同一 `id` の重複エントリはエラーにならず後続が黙って無視される。
+
+また、存在しない `group_id` を `getTableData()` 等に指定した場合も例外はスローされず空リストが返る。groupId のタイプミスはランタイムエラーにならないため注意。
 
 ### 10. RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES の2つのアクセスパス
 
@@ -236,7 +242,12 @@ Excel形式でいうと、経路Aは `RESPONSE_HEADER_MESSAGES[grp1]=id`、経�
 
 YAMLでは `group_id` フィールドを省略した場合が経路B相当となる。
 
-### 11. MESSAGE系の record_type は装飾的（MessageParser の仕様）
+### 11. messaging テストデータの制約（RequestTestingMessagingClient）
+
+- テストデータにステータスコード列がない場合、デフォルト `"200"` が自動使用される（明示的に記述しなくてよい）。
+- `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数（records 配下の rows 合計数）は一致が必須。不一致は `IllegalStateException: "number of lines of header and body does not match."` が発生する。
+
+### 12. MESSAGE系の record_type は装飾的（MessageParser の仕様）
 
 `MessageParser` は内部で `FixedLengthFileParser#onReadingNames()` をオーバーライドし、先頭セル（レコード種別名）を常に固定文字列 `"default"` に置き換える（`MessageParser.java` 匿名クラス内）。  
 このため `messages` / `expected_request_*_messages` の `record_type` 値（`"FW_HEADER"`, `"BODY"` 等）は識別・可読性のためだけであり、パーサの動作に影響しない。  
@@ -246,13 +257,13 @@ YAMLでは可読性のため任意の名前を書いてよいが、実行時に�
 
 **`response_*_messages` での FW制御ヘッダ分離なし:** `SendSyncMessageParser`（`MockMessagingContext` / `MockMessagingClient` 経路）は `getFwHeader()` が `UnsupportedOperationException` を投げるため、FW制御ヘッダの分離は行われない。`response_*_messages` では FW_HEADER ブロックを `directives` ではなく `fields` として記述すること（`MessageParser` 経路と同一の構造にしてよい）。
 
-### 12. Excel → YAML の行処理ルール（TestDataParsingTemplate）
+### 13. Excel → YAML の行処理ルール（TestDataParsingTemplate）
 
 - **コメント行**: 先頭セルが `//` で始まる行を行ごとスキップ（YAML では `#` コメントが同等）
 - **行内コメント**: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て（`cutComment()`）。YAML では列の途中に `#` コメントを置くことで表現できる
 - **空行スキップ**: 全セルが空（null または空文字）の行は読み飛ばされる（`isBlankLine()`）
 
-### 13. デフォルトディレクティブの DI（拡張ポイント）
+### 14. デフォルトディレクティブの DI（拡張ポイント）
 
 `SystemRepository` への DI でファイル種別ごとにデフォルトディレクティブを一括設定できる:
 
@@ -264,7 +275,7 @@ YAMLでは可読性のため任意の名前を書いてよいが、実行時に�
 
 値は `Map<String, String>` で登録する。個別ファイルの `directives:` 指定がある場合はその値が優先される。
 
-### 14. DataTypeMapping の優先検索順（拡張ポイント）
+### 15. DataTypeMapping の優先検索順（拡張ポイント）
 
 `DataFileFragment#setTypes()` は以下の優先順でマッピングを取得する:
 
@@ -274,15 +285,15 @@ YAMLでは可読性のため任意の名前を書いてよいが、実行時に�
 
 YAML アダプタ実装時は、フレームワーク型記号（`X`, `N` 等）を直接渡す identity mapping を `"dataTypeMapping"` キーで登録するか、パーサ側で `setTypes()` を迂回する（§5 参照）。未知の型記号は `BasicDataTypeMapping` が `IllegalArgumentException` をスローするため、identity mapping が必須。
 
-### 15. TEST_ プレフィクス型の自動昇格
+### 16. TEST_ プレフィクス型の自動昇格
 
 `"TEST_X9"` のように `TEST_` プレフィクスのデータ型が `ConvertorFactory` に登録されている場合、YAML に `type: X9` と書いてもパーサが `getTypeForTest()` で `TEST_X9` を自動優先選択する（`DataFileFragment`）。テスト専用の型シンボルを使いたい場合は `TEST_` プレフィクスで登録すると既存の type 記述を変えずに切り替えできる。
 
-### 16. TestDataConverter 拡張点
+### 17. TestDataConverter 拡張点
 
 `SystemRepository["TestDataConverter_" + file-type]`（例: `"TestDataConverter_Fixed"`）に `TestDataConverter` 実装を登録することで、レイアウト定義の生成（`createDefinition()`）とデータレコードの変換（`convertData()`）をカスタマイズできる（`FixedLengthFile` / `VariableLengthFile`）。
 
-### 17. SendSyncSupport のテストデータ配置規則
+### 18. SendSyncSupport のテストデータ配置規則
 
 `MockMessagingContext` / `MockMessagingClient` 経由の同期送信テスト（`SendSyncSupport`）では、以下の規則でデータファイルを配置する:
 
@@ -292,11 +303,11 @@ YAML アダプタ実装時は、フレームワーク型記号（`X`, `N` 等）
 
 呼び出し毎にレコードを順番に消費するキャッシュ機構がある（ファイルのタイムスタンプが変わらない限りキャッシュを使いまわし、内部カウンタで次レコードを返す）。
 
-### 18. messaging.assertAsMapFileType によるアサート方式切り替え
+### 19. messaging.assertAsMapFileType によるアサート方式切り替え
 
 `RequestTestingMessagingClient` は `SystemRepository["messaging.assertAsMapFileType"]`（デフォルト: `"Fixed"`）の値と一致するファイルタイプのメッセージを DataRecord 単位で検証する。一致しないファイルタイプは電文バイト列を文字列全体で比較する。
 
-### 19. メッセージフォーマット定義ファイルの命名規則（RequestTestingMessagingClient）
+### 20. メッセージフォーマット定義ファイルの命名規則（RequestTestingMessagingClient）
 
 HTTP系リクエスト単体テストでは、以下の規則でフォーマット定義ファイルを検索する:
 
@@ -305,17 +316,17 @@ HTTP系リクエスト単体テストでは、以下の規則でフォーマッ�
 
 これらのファイルは `FilePathSetting["format"]` ベースパス配下に配置する。
 
-### 20. BinaryFileInterpreter のパス基準
+### 21. BinaryFileInterpreter のパス基準
 
 `${binaryFile:相対パス}` のファイルパスは、Excel ファイルのディレクトリを基準とした相対パスで解決される（`BinaryFileInterpreter` コンストラクタの `path` 引数）。YAML 移行後は YAML ファイルのディレクトリを基準とするか、絶対パスで解決するかをアダプタ実装時に統一すること。
 
-### 21. DateTimeInterpreter の完全一致制約
+### 22. DateTimeInterpreter の完全一致制約
 
 `DateTimeInterpreter` は値が `${systemTime}`, `${setUpTime}`, `${updateTime}` と**完全一致**する場合のみ変換する（Map lookup）。`"${systemTime}_suffix"` のような部分文字列が含まれる複合式は、`CompositeInterpreter` の `${...}` セグメントとして分解してから渡す必要がある。
 
 `${setUpTime}` の変換後の値は JDBC タイムスタンプ書式（`yyyy-MM-dd HH:mm:ss.SSS`）形式で設定する必要がある（`DateTimeInterpreter#setSetUpDateTime()` のバリデーション）。
 
-### 22. CompositeInterpreter の DI 設定
+### 23. CompositeInterpreter の DI 設定
 
 `CompositeInterpreter` は `interpreters` プロパティに `TestDataInterpreter` のリストを DI しないと機能しない（デフォルトは空リスト）。`DateTimeInterpreter`, `BasicJapaneseCharacterInterpreter`, `BinaryFileInterpreter` 等を登録することで各 `${...}` セグメントの解釈が有効になる。
 
@@ -446,8 +457,27 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 半角英字 / 半角数字 / 半角記号 / 半角カナ /
 全角英字 / 全角数字 / 全角ひらがな / 全角カタカナ / 全角漢字 / 全角記号その他 /
 中国語 / サロゲートペア / 改行 / 外字
-（スペルミスは BasicJapaneseCharacterGenerator が IllegalArgumentException をスローする。スキーマでは検出できないが実行時にエラーになる）
-（${半角記号} の生成には ", #, ,, \ は含まれない — JapaneseCharacterSet.ASCII_SYMBOL の除外リスト）
+- 書式 ${文字種,文字数} にマッチしない入力はスルーされる（例外なし）
+- 書式はマッチするが文字種が未知の場合は IllegalArgumentException がスローされる（スキーマでは検出できないが実行時にエラー）
+- ${半角記号} の生成には ", #, ,, \ は含まれない（JapaneseCharacterSet.ASCII_SYMBOL の除外リスト）
+
+## ファイル系の空行動作
+- 可変長ファイルの空行はスキップされない。全フィールドが "" のレコードとして保持される
+  （ignore-blank-lines ディレクティブを true にすると空行をスキップできる）
+- 固定長ファイルの空行はスペースパディングされた定長レコードとして書き出される（0バイト行にはならない）
+
+## LIST_MAP 重複セクションの先着一致
+- 同一 YAML ファイル内に同じ id を持つ list_maps エントリが複数存在する場合、最初の1件のみ読まれる
+- 後続の同 id エントリは黙って無視される（エラーにはならない）
+
+## group_id が存在しない場合の挙動
+- 存在しない group_id を指定した場合、例外はスローされず空リストが返る
+- テストが意図せず group_id をタイプミスした場合も例外で検出されないため注意
+
+## messaging（RequestTestingMessagingClient）の注意事項
+- テストデータにステータスコード列（_nbctlhdr.statusCode 等）がない場合、デフォルト "200" が自動使用される
+- EXPECTED_REQUEST_HEADER_MESSAGES と EXPECTED_REQUEST_BODY_MESSAGES の行数（records 内の rows 数）は一致が必須
+  行数不一致は IllegalStateException: "number of lines of header and body does not match." が発生する
 
 ## messages / expected_request_*_messages の record_type に注意
 - MessageParser は record_type の値を無視し、内部的に "default" という固定名に置き換える
