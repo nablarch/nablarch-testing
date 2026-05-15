@@ -92,6 +92,12 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   - examples.yaml: E-1〜E-4 反映済み（タブ区切り、type:B、JDBC日付、response通常行）
   - 出力: 各成果物ファイルの更新
 
+- [ ] D-5: 公式解説書（nablarch-document）との照合チェック
+  - 対象: `ja/development_tools/testing_framework/guide/development_guide/` 配下の RST ファイル
+  - 解説書に記載のテストデータ仕様をスキーマ設計文書（schema.json / design.md / examples.yaml）と照合
+  - 未反映仕様があれば洗い出して成果物に反映する
+  - 出力: `docs/ntf-coverage-doc-check.md`（解説書 × スキーマ 照合チェックリスト）
+
 - [x] P4-4: JavaエキスパートとQAエキスパートによるレビュー（サブエージェント並列）
   - Javaエキスパート: P4-1/P4-2 の分類・マッピングの正確性をコードと照合
   - QAエキスパート: 未カバー仕様の洗い出し・テスト観点の欠落確認
@@ -162,6 +168,7 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   3. ~~P4-3（再）~~ **完了**（schema.json S-1〜S-5、design.md D-1〜D-16、examples.yaml E-1〜E-4 を反映）
   4. ~~E-1~~ **完了**（選択肢A: 1シート1ファイル分割を採用）
   5. ~~P4-4~~ **完了**（Java/QA 両レビュー実施。軽微修正済み。本質的な問題なし）
+  6. D-5: 公式解説書（nablarch-document）との照合チェック（実施中）
 
 ---
 
@@ -177,6 +184,7 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 | `docs/ntf-coverage-class-list.md` | 完成（P4-0 前置セクション + P4-1 クラス一覧） |
 | `docs/ntf-coverage-spec-mapping.md` | 完成（P4-2 仕様マッピング、全未反映仕様を反映済み） |
 | `docs/ntf-yaml-impl-evaluation.md` | 完成（実装例リポジトリ評価レポート） |
+| `docs/ntf-coverage-doc-check.md` | 作成中（D-5: 公式解説書 × スキーマ 照合チェック） |
 
 ---
 
