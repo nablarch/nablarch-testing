@@ -330,6 +330,49 @@ HTTP系リクエスト単体テストでは、以下の規則でフォーマッ�
 
 `CompositeInterpreter` は `interpreters` プロパティに `TestDataInterpreter` のリストを DI しないと機能しない（デフォルトは空リスト）。`DateTimeInterpreter`, `BasicJapaneseCharacterInterpreter`, `BinaryFileInterpreter` 等を登録することで各 `${...}` セグメントの解釈が有効になる。
 
+### 24. 1ファイルセクション内の複数レコードレイアウト（DataFileParser の状態機械）
+
+1つの `record_fragment` ブロック（`records:` の1要素）がレコード種別1つに対応する。  
+1つのファイルセクション（`file_data` 1件）内に複数の `record_fragment` を並べることで、複数レコードレイアウトを持つファイルを表現できる。
+
+```yaml
+setup_files:
+  - path: input/multi_layout.dat
+    type: fixed
+    directives:
+      text-encoding: MS932
+    records:
+      - record_type: HEADER        # レコード種別1
+        fields:
+          - {name: TYPE,    type: X, length: 4}
+          - {name: DATE,    type: X, length: 8}
+        rows:
+          - ["HDR", "20240101"]
+      - record_type: DATA          # レコード種別2（連続して記述）
+        fields:
+          - {name: ID,      type: X, length: 10}
+          - {name: VALUE,   type: Z, length: 10}
+        rows:
+          - ["0000000001", "5000"]
+          - ["0000000002", "9800"]
+      - record_type: TRAILER       # レコード種別3
+        fields:
+          - {name: TYPE,    type: X, length: 4}
+          - {name: COUNT,   type: Z, length: 6}
+        rows:
+          - ["TRL", "2"]
+```
+
+`DataFileParser` の状態機械は `READING_DIRECTIVES_AND_NAMES` → `READING_TYPES` → `READING_LENGTHS`（固定長のみ）→ `READING_VALUES` の順序を繰り返す。  
+フィールド名行（先頭セルが非空・非ディレクティブ）を読むと `READING_TYPES` に遷移し、型行・長さ行・データ行を読んだ後、再びフィールド名行（= 次のレコード種別の先頭）が来ると次のブロックとして扱う。
+
+### 25. `"-"` 長フィールドの最終サイズ決定ルール
+
+`DataFileFragment` でフィールド長に `"-"` を指定した場合（`ONDEMAND_CALC_FIELD_SIZE`）、そのフィールドの最終的なバイト長は **そのフィールドに追加された全レコード中の最大バイト長** となる。
+
+具体的には `addValue()` が呼ばれるたびに現在の最大バイト長と比較更新され、すべてのレコードが追加し終わった時点の最大値が使用される。  
+また、`"-"` フィールドへ格納される値は `removeLineSeparatorWithTrim()` により**改行コードと前後空白が除去**されてから長さが計算される。
+
 ---
 
 ## 段階的移行戦略
