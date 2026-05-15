@@ -41,6 +41,13 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 - [x] P3-6: `examples.yaml` の `record-separator` エスケープ仕様をコメント明記
 - [x] P3-7: `group_message_data.id` の description を改善（GroupDataはgroupIdでフィルタする旨を明記）
 
+### 実装例リポジトリ評価
+
+- [x] 実装例リポジトリ vs 現行スキーマ設計 評価
+  - 対象: nablarch-example-{batch,web,rest}-ntf-yaml（javajavawhale）
+  - 出力: `docs/ntf-yaml-impl-evaluation.md`
+  - 主な知見: フラット変換方式 vs 構造化方式の差異、複数シート対応が現行スキーマに未定義、`"?"` プレフィックス記法の要確認
+
 ### P4（仕様網羅性の根拠確立）
 
 テストデータ仕様の「塗りつぶし」 — 「レビューした」ではなく「全クラスを確認済み」という根拠を作る。
