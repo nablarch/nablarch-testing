@@ -159,13 +159,23 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   - ntf-testdata-structure.md §3.3: FixedLengthDirective を 11 キーに拡充
 - [x] 最終コミット・プッシュ
 
+### C-1（比較・差分調査）
+
+- [ ] C-1: `nablarch-test-data-converter`（社内 GitLab）との比較調査
+  - URL: http://26.111.128.4/gitlab/aicd-internal/aws-poc/nablarch-test-data-converter
+  - **位置づけ**: 間に合わせで作られた実装であり「正」ではない。合わせるかどうかは差分を見てから判断する
+  - 調査内容:
+    - 本スキーマ設計と実装の YAML 構造・フィールド名・セクションキーの差異を洗い出す
+    - 差異ごとに「本スキーマに合わせるべきか」「実装側を正とするべきか」「どちらでもよいか」を判断
+  - 出力: `docs/ntf-converter-comparison.md`（差分リスト + 採用方針）
+
 ---
 
 ## 現在の状態（2026-05-15時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`
 - **完了済み**: P0〜P3 すべて、レビューループ第1〜5回、P4-0〜P4-4（再）、E-1、E-2、実装例評価、D-5
-- **未完了タスク**: **なし（全タスク完了）**
+- **未完了タスク**: C-1（nablarch-test-data-converter との比較）
 - **未完了タスク（着手順、参考）**:
   1. ~~P4-1（再）~~ **完了**
   2. ~~P4-2（再）~~ **完了**（S-1〜S-5、D-1〜D-16、E-1〜E-4 の未反映仕様を洗い出し）
@@ -173,6 +183,7 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   4. ~~E-1~~ **完了**（選択肢A: 1シート1ファイル分割を採用）
   5. ~~P4-4~~ **完了**（Java/QA 両レビュー実施。軽微修正済み。本質的な問題なし）
   6. ~~D-5~~ **完了**（公式解説書 13ファイル照合・Doc-1〜17 全件反映）
+  7. C-1: `nablarch-test-data-converter` との比較調査（未着手）
 
 ---
 
@@ -189,6 +200,8 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 | `docs/ntf-coverage-spec-mapping.md` | 完成（P4-2 仕様マッピング、全未反映仕様を反映済み） |
 | `docs/ntf-yaml-impl-evaluation.md` | 完成（実装例リポジトリ評価レポート） |
 | `docs/ntf-coverage-doc-check.md` | 完成（D-5: 公式解説書 × スキーマ 照合チェック・17件反映済み） |
+| `docs/ntf-schema-accuracy-basis.md` | 完成（スキーマ正確性の根拠資料） |
+| `docs/ntf-converter-comparison.md` | 未作成（C-1: nablarch-test-data-converter 比較） |
 
 ---
 
