@@ -57,8 +57,16 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   - design.md に変換ビフォーアフター（グループIDなし例）を追加
   - design.md にExcelとYAMLの並存説明・数値セル注意・複数シート方針を追加
   - AI向けプロンプト補助情報にboolean値クォート不要・record-separator罠・列順ミス検出タイミング・SingleData id一意制約を追記
-- [ ] 第3回専門家レビュー（4名並列）実施
-- [ ] 第3回指摘に基づく修正（本質的指摘がなくなるまで繰り返す）
+- [x] 第3回専門家レビュー（4名並列）実施
+- [x] 第3回指摘に基づく修正
+  - design.md: 固定長ビフォーアフター例のパディングを除去（examples.yamlとの矛盾解消）
+  - design.md: 「ExcelとYAMLの並存」重複セクションを統合・削除
+  - examples.yaml: 残存パディングを全て除去（SEARCH_KEY, RESULT_COUNT/DATA 等）
+  - schema.json: field_def.type の pattern を ^[A-Z][A-Z0-9_]*$ に緩和（TEST_ プレフィクス型対応）
+  - schema.json: record_fragment.rows の minItems: 1 を削除（空ファイル検証ユースケース対応）
+  - design.md §AI向け: expected_complete_tables 使い分け・quoting-delimiter 記述例を追記
+- [ ] 第4回専門家レビュー（4名並列）実施
+- [ ] 第4回指摘に基づく修正（本質的指摘がなくなるまで繰り返す）
 - [ ] 最終コミット・プッシュ
 
 ---

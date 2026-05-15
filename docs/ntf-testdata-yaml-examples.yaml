@@ -264,7 +264,7 @@ messages:
             type: N
             length: 20
         rows:
-          - ["検索キー値          "]
+          - ["検索キー値"]
 
 # Excel: EXPECTED_REQUEST_BODY_MESSAGES=requestId001
 expected_request_body_messages:
@@ -279,7 +279,7 @@ expected_request_body_messages:
             type: N
             length: 40
         rows:
-          - ["00003", "期待される応答データ                    "]
+          - ["00003", "期待される応答データ"]
 
 # ============================================================
 # response_header_messages / response_body_messages（GroupData系）
@@ -314,7 +314,7 @@ response_body_messages:
             type: N
             length: 40
         rows:
-          - ["00001", "応答データ                              "]
+          - ["00001", "応答データ"]
 
 # ============================================================
 # 特殊値一覧（パーサへの入力文字列として記述する）

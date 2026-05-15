@@ -93,7 +93,7 @@ setup_files:
           - {name: USER_NAME, type: N, length: 20}
           - {name: AMOUNT,    type: Z, length: 10}
         rows:
-          - ["001       ", "山田太郎            ", "0000005000"]
+          - ["001", "山田太郎", "5000"]  # パディングは自動付与されるため不要
 ```
 
 **変換のポイント:**
@@ -192,15 +192,16 @@ SingleData系は同一ファイル内でIDが一致した最初の1ブロック�
 
 ### ExcelとYAMLの並存
 
-現状のNTFパーサ（`PoiXlsReader` + `BasicTestDataParser`）はExcelのみを読み込む実装になっている。  
-YAML対応のパーサを実装する際は、以下の段階的移行が可能な設計を推奨する。
+現状のNTFパーサ（`PoiXlsReader` + `BasicTestDataParser`）はExcelのみを読み込む実装になっている。
+YAML対応のパーサを追加実装する際は、`TestDataReader` インタフェースを実装したYAMLパーサを作成し、`BasicTestDataParser`（あるいはそのファクトリ）でファイル拡張子（`.yaml`/`.yml`）により `PoiXlsReader` と切り替えるロジックを追加する。NTF が Reader を DI で差し込む構造の場合は、コンポーネント設定ファイルの変更も必要。
+
+段階的な移行手順:
 
 1. **段階1: YAMLパーサの追加実装**  
-   `TestDataReader` インタフェースを実装したYAMLパーサを新規作成。  
-   既存の `PoiXlsReader` と共存させ、ファイル拡張子（`.yaml`/`.yml`）で切り替え。
+   拡張子切り替えロジックを含め、既存 `PoiXlsReader` と共存させる。
 
 2. **段階2: テストクラス単位での移行**  
-   各テストクラスが参照するテストデータファイルをExcel→YAMLに1ファイルずつ変換。  
+   各テストクラスが参照するファイルをExcel→YAMLに1ファイルずつ変換する。  
    変換ツール（Excel→YAML変換スクリプト）を整備して機械的に移行。
 
 3. **段階3: Excelの廃止**  
@@ -226,10 +227,6 @@ YAML対応のパーサを実装する際は、以下の段階的移行が可能�
 - **Excelのセルが数値型で保存されている場合**（例: `001` が整数 `1` として格納）は、POI の `cell.setCellType(STRING)` で文字列化してから取得する方法を推奨（先頭ゼロが消えるのを防ぐ）
 - **複数シートのExcelファイル**はシートごとにYAMLを分割するか、1ファイルに全セクションをまとめるかをプロジェクトルールで事前に決定すること
 
-### ExcelとYAMLの並存について
-
-現状のNTFパーサ（`PoiXlsReader` + `BasicTestDataParser`）はExcelのみを読み込む実装になっている。
-YAML対応のパーサを追加実装する際は、`TestDataReader` インタフェースを実装したYAMLパーサを作成し、`BasicTestDataParser`（あるいはそのファクトリ）でファイル拡張子（`.yaml`/`.yml`）により `PoiXlsReader` と切り替えるロジックを追加する。NTF が Reader を DI で差し込む構造の場合は、コンポーネント設定ファイルの変更も必要。
 
 ---
 
@@ -243,8 +240,15 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 ## rows の形式の区別
 - テーブル系（setup_tables / expected_tables / expected_complete_tables / list_maps）の rows は
   オブジェクト配列: [{COL: "val"}, ...]
-- ファイル系（setup_files / expected_files / messages 等）の record_fragment の rows は
+- ファイル系（setup_files / expected_files / messages /
+  expected_request_header_messages / expected_request_body_messages /
+  response_header_messages / response_body_messages）の record_fragment の rows は
   配列の配列: [["val1", "val2"], ...]
+
+## expected_tables と expected_complete_tables の使い分け
+- expected_tables: 記述したカラムのみを比較する
+- expected_complete_tables: 記述していないカラムにも BasicTestDataParser#fillDefaultValues() で
+  デフォルト値が補完され、全カラムを比較する。省略カラムが多い場合に使う
 
 ## 値の型ルール
 - すべての値は文字列型（ダブルクォート）で記述すること
@@ -263,6 +267,10 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 - list_maps / messages / expected_request_header_messages / expected_request_body_messages は
   ファイル内で id がユニークでなければならない（重複時は最初の1件のみ取得）
 - 同一テストシナリオで複数バリエーションが必要な場合は別の id を使うこと
+
+## ディレクティブの quoting-delimiter
+- ダブルクォート1文字を指定する場合: quoting-delimiter: '"'  （シングルクォートで囲む）
+- "\""（バックスラッシュエスケープ）でも同じ結果だが '"' の方が可読性が高い
 
 ## ディレクティブの boolean 値はクォート不要
 - required-decimal-point / fixed-sign-position / required-plus-sign /
