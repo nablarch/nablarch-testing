@@ -1,19 +1,40 @@
 # NTF テストデータ YAML 記述例
 # スキーマ: ntf-testdata-yaml-schema.json
 # 特殊値変換ルール: ntf-testdata-structure.md §4 参照
+#
+# ================================================================
+# 【重要】rows の形式が2種類ある
+#
+#   テーブル系（setup_tables / expected_tables / list_maps）:
+#     rows はオブジェクト配列 → [{COL: "val"}, ...]
+#
+#   ファイル系（setup_files / expected_files / messages 等）:
+#     rows は配列の配列 → [["val1", "val2"], ...]
+#
+# 【重要】値は必ず文字列（ダブルクォート）で記述すること
+#   NG: AGE: 30    ← YAMLパーサが integer として解釈しスキーマ違反
+#   OK: AGE: "30"
+#
+# 【重要】null と空文字の表現
+#   DBに NULL を入れたい  → null （YAMLネイティブ null）
+#   DBに空文字を入れたい  → ""  （ダブルクォート2つ）
+#   ※文字列 "null" をそのまま格納したい場合は '"null"' と記述
+#     （QuotationTrimmer が外側クォートを除去して "null" を格納）
+# ================================================================
 
 # ============================================================
 # setup_tables / expected_tables / expected_complete_tables
 # ============================================================
-# Excel: SETUP_TABLE=TABLE_NAME（グループIDなし）
+
+# Excel: SETUP_TABLE=USER（グループIDなし）
 setup_tables:
   - table: USER
     rows:
       - USER_ID: "001"
-        USER_NAME: 山田太郎
+        USER_NAME: "山田太郎"
         AGE: "30"
         CREATED_AT: "20240101120000000"  # yyyyMMddHHmmssSSS 形式
-        MEMO: null                        # DBにnull（NullInterpreter: "null"相当）
+        MEMO: null                        # DBにNULL（YAMLネイティブnull）
 
   # Excel: SETUP_TABLE[case1]=ORDER（グループID付き）
   - group_id: case1
@@ -22,8 +43,8 @@ setup_tables:
       - ORDER_ID: "1001"
         USER_ID: "001"
         AMOUNT: "5000"
-        STATUS: ""          # 空文字（QuotationTrimmer: '""' 相当）
-        [MARKER_COL]: X     # マーカーカラム（HeaderLine: DB操作から除外）
+        STATUS: ""              # DBに空文字（ダブルクォート2つ）
+        "[MARKER_COL]": "X"     # マーカーカラム（"[COL]" 形式。HeaderLine: DB操作から除外）
 
   - group_id: case2
     table: ORDER
@@ -32,33 +53,81 @@ setup_tables:
         USER_ID: "002"
         AMOUNT: "9800"
         STATUS: "1"
-        [MARKER_COL]: Y
+        "[MARKER_COL]": "Y"
+
+# Excel: EXPECTED_TABLE[case1]=USER（expected_tables の例）
+expected_tables:
+  - group_id: case1
+    table: USER
+    rows:
+      - USER_ID: "001"
+        USER_NAME: "山田太郎"
+        STATUS: "1"
 
 # Excel: EXPECTED_COMPLETE_TABLE=USER（省略カラムにデフォルト値補完）
 expected_complete_tables:
   - table: USER
     rows:
       - USER_ID: "001"
-        USER_NAME: 山田太郎
-        # AGE・MEMO 等省略カラムは fillDefaultValues() でデフォルト値が補完される
+        USER_NAME: "山田太郎"
+        # AGE・MEMO 等省略カラムは BasicTestDataParser#fillDefaultValues() でデフォルト値が補完される
+
+# ============================================================
+# 特殊値インライン例（テーブルデータ）
+# ============================================================
+# 各種 Interpreter が変換する特殊値を実際のフィールドに埋め込んだ例
+#
+# setup_tables:
+#   - table: EVENT_LOG
+#     rows:
+#       - EVENT_ID: "001"
+#         CREATED_AT: "${systemTime}"              # DateTimeInterpreter: システム日時
+#         UPDATED_AT: "${updateTime}"              # DateTimeInterpreter: 更新時刻（systemTime と同値）
+#         SETUP_AT:   "${setUpTime}"               # DateTimeInterpreter: DBセットアップ時刻
+#         CODE:       "${半角数字,4}-${半角数字,4}" # CompositeInterpreter + BasicJapaneseCharacterInterpreter
+#         NOTE:       "${全角英字, 10}"             # BasicJapaneseCharacterInterpreter
+#         BINARY_HASH: "${binaryFile:data/sample.bin}"  # BinaryFileInterpreter: HexString に変換
+
+# ============================================================
+# NG アンチパターン（バリデーションエラーになる記法）
+# ============================================================
+# 以下は YAMLパーサが想定外の型で解釈するため、スキーマ違反になる
+#
+# NG例（数値・真偽値をアンクォートで書いた場合）:
+#   rows:
+#     - USER_ID: 001    # NG: integer として解釈される
+#       AGE: 30         # NG: integer として解釈される
+#       ACTIVE: true    # NG: boolean として解釈される
+#       SCORE: 3.14     # NG: float として解釈される
+#
+# OK例（すべて文字列として書く）:
+#   rows:
+#     - USER_ID: "001"
+#       AGE: "30"
+#       ACTIVE: "true"
+#       SCORE: "3.14"
 
 # ============================================================
 # list_maps
 # ============================================================
 # Excel: LIST_MAP=searchResult
+# SingleData系: id が重複した場合は最初の1件のみ取得される
 list_maps:
   - id: searchResult
     rows:
       - USER_ID: "001"
-        USER_NAME: 山田太郎
+        USER_NAME: "山田太郎"
         AGE: "30"
       - USER_ID: "002"
-        USER_NAME: 鈴木花子
+        USER_NAME: "鈴木花子"
         AGE: "25"
 
 # ============================================================
 # setup_files（固定長 / 可変長）
 # ============================================================
+# 【ファイル系の rows は配列の配列】
+# records[].rows の各配列は fields 配列と完全に同じ順序・同じ件数で値を並べること
+
 # Excel: SETUP_FIXED[grp1]=input/data.dat
 setup_files:
   - group_id: grp1
@@ -66,7 +135,11 @@ setup_files:
     type: fixed
     directives:
       text-encoding: MS932
-      record-separator: "\\r\\n"
+      # record-separator: レコード区切り文字は "\r\n"（CRLF）や "\n"（LF）のように
+      # YAML ダブルクォート文字列内で Java エスケープ記法を使う。
+      # "\r\n" → CR+LF バイト列（0x0D 0x0A）
+      # "\\r\\n" はバックスラッシュ+r+バックスラッシュ+n の4文字になるので注意。
+      record-separator: "\r\n"
       record-length: 40
     records:
       - record_type: DATA
@@ -84,11 +157,29 @@ setup_files:
           - ["001       ", "山田太郎            ", "0000005000"]
           - ["002       ", "鈴木花子            ", "0000009800"]
 
+  # 固定長: 符号・ニブル関連ディレクティブの例
+  # - group_id: grp2
+  #   path: input/packed.dat
+  #   type: fixed
+  #   directives:
+  #     text-encoding: MS932
+  #     positive-zone-sign-nibble: "C"    # [固定長専用] ゾーン正符号ニブル
+  #     negative-zone-sign-nibble: "D"    # [固定長専用] ゾーン負符号ニブル
+  #     positive-pack-sign-nibble: "C"    # [固定長専用] パック正符号ニブル
+  #     negative-pack-sign-nibble: "D"    # [固定長専用] パック負符号ニブル
+  #     required-decimal-point: false     # [固定長専用] boolean値
+  #     fixed-sign-position: true         # [固定長専用] boolean値
+  #     required-plus-sign: false         # [固定長専用] boolean値
+
   # Excel: SETUP_VARIABLE=input/csv_data.csv
   - path: input/csv_data.csv
     type: variable
     directives:
       text-encoding: UTF-8
+      field-separator: ","         # [可変長専用] フィールド区切り文字（省略時も","）
+      quoting-delimiter: "\""      # [可変長専用] クォート文字
+      ignore-blank-lines: true     # [可変長専用] 空行を無視
+      requires-title: false        # [可変長専用] タイトル行の要否
     records:
       - record_type: HEADER
         fields:
@@ -130,7 +221,7 @@ expected_files:
             length: 20
           - name: DETAIL
             type: X
-            length: "-"   # "-" はオンデマンド計算（FixedLengthFileParser）
+            length: "-"   # "-" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）
         rows:
           - ["0000", "処理成功            ", "normal"]
 
@@ -139,7 +230,8 @@ expected_files:
 # ============================================================
 # Excel: MESSAGE=requestId001
 # FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は
-# fwHeader Map に分離される（MessageParser の規則）
+# MessageParser により fwHeader Map に分離される
+# （SystemRepository の reader.fwHeaderfields キーで変更可能）
 messages:
   - id: requestId001
     directives:
@@ -188,6 +280,7 @@ expected_request_body_messages:
 # response_header_messages / response_body_messages（GroupData系）
 # ============================================================
 # Excel: RESPONSE_HEADER_MESSAGES[grp1]=responseId001
+# GroupData系: group_id でフィルタリングされる。id は識別子として記録されるがフィルタには使われない
 response_header_messages:
   - group_id: grp1
     id: responseId001
@@ -219,14 +312,20 @@ response_body_messages:
           - ["00001", "応答データ                              "]
 
 # ============================================================
-# 特殊値の記述例まとめ
+# 特殊値一覧（パーサへの入力文字列として記述する）
 # ============================================================
-# null:              null          （NullInterpreter: "null" 相当）
-# 空文字:            ""            （QuotationTrimmer: '""' 相当）
-# システム日時:       "${systemTime}"
-# セットアップ時刻:   "${setUpTime}"
-# 更新時刻:          "${updateTime}"
-# 文字種生成:        "${全角英字, 10}"
-# バイナリファイル:   "${binaryFile:path/to/file.bin}"
-# CR文字:            "\\r"          （LineSeparatorInterpreter: 0x0D に変換）
-# 複合式:            "${半角数字,4}-${半角数字,4}"  （CompositeInterpreter）
+#
+# | YAML記述              | 変換クラス                           | 変換後の値             |
+# |-----------------------|--------------------------------------|------------------------|
+# | null                  | (YAMLパーサがJava nullとして渡す)    | Java null / DB NULL    |
+# | ""                    | (空文字のまま渡す)                   | 空文字列               |
+# | "${systemTime}"       | DateTimeInterpreter                  | システム日時           |
+# | "${updateTime}"       | DateTimeInterpreter                  | システム日時（同値）   |
+# | "${setUpTime}"        | DateTimeInterpreter                  | DBセットアップ時刻     |
+# | "${全角英字, 10}"     | BasicJapaneseCharacterInterpreter    | 全角英字10文字         |
+# | "${半角数字,4}-${半角数字,4}" | CompositeInterpreter          | 例: "1234-5678"        |
+# | "${binaryFile:path}"  | BinaryFileInterpreter                | HexString              |
+# | "\r"                  | LineSeparatorInterpreter             | CR（0x0D）             |
+#
+# ※ 文字列 "null" をそのままDBに格納したい場合（NullInterpreter 迂回）:
+#    '"null"' と記述する（QuotationTrimmer が外側クォートを除去して "null" を格納）

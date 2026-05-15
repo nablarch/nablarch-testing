@@ -83,10 +83,9 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素がレコード1件。キー=カラム名、値=セル値",
+          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラムは '\"[COLNAME]\"' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。",
           "items": {
             "type": "object",
-            "description": "カラム名をキー、値を文字列または null とする Map。マーカーカラムは '[COLNAME]' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）",
             "additionalProperties": {
               "type": ["string", "null"]
             }
@@ -99,15 +98,15 @@
       "type": "object",
       "required": ["id", "rows"],
       "additionalProperties": false,
-      "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群",
+      "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群。SingleData系のため id が重複した場合は最初の1件のみ取得される",
       "properties": {
         "id": {
           "type": "string",
-          "description": "識別ID。Excel: LIST_MAP=ID の '=' 以降の文字列（getTypeValue()）"
+          "description": "識別ID。Excel: LIST_MAP=ID の '=' 以降の文字列（getTypeValue()）。ファイル内でユニークにすること"
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素が Map<String,String> の1件。マーカーカラム除外後のキーと値のペア",
+          "description": "データ行。各要素が Map<String,String> の1件。マーカーカラム除外後のキーと値のペア。\n数値・真偽値も必ず文字列（クォート付き）で記述すること。",
           "items": {
             "type": "object",
             "additionalProperties": {
@@ -149,18 +148,19 @@
 
     "message_data": {
       "type": "object",
-      "required": ["id"],
+      "required": ["id", "records"],
       "additionalProperties": false,
-      "description": "メッセージデータ（SingleData系）。内部構造は固定長ファイルと同一",
+      "description": "メッセージデータ（SingleData系）。内部構造は固定長ファイルと同一。id が重複した場合は最初の1件のみ取得される",
       "properties": {
         "id": {
           "type": "string",
-          "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降"
+          "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降。ファイル内でユニークにすること"
         },
         "directives": { "$ref": "#/$defs/directives" },
         "records": {
           "type": "array",
-          "description": "レコード種別ごとのブロック。FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は fwHeader Map に分離される",
+          "minItems": 1,
+          "description": "レコード種別ごとのブロック。FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は MessageParser により fwHeader Map に分離される（SystemRepository の reader.fwHeaderfields キーで変更可能）",
           "items": { "$ref": "#/$defs/record_fragment" }
         }
       }
@@ -168,21 +168,22 @@
 
     "group_message_data": {
       "type": "object",
-      "required": ["id"],
+      "required": ["id", "records"],
       "additionalProperties": false,
-      "description": "グループメッセージデータ（GroupData系）。GroupMessageParser が処理",
+      "description": "グループメッセージデータ（GroupData系）。GroupMessageParser が処理。GroupDataParsingTemplate#isTargetType() は group_id でフィルタリングする。id（'=' 以降の値）はフィルタリングには使われず識別子として記録される",
       "properties": {
         "group_id": {
           "type": "string",
-          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値"
+          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。GroupDataParsingTemplate がこの値でフィルタリングする"
         },
         "id": {
           "type": "string",
-          "description": "識別ID"
+          "description": "Excel の '=' 以降の値（識別子として記録されるが GroupData のフィルタリングには使われない）"
         },
         "directives": { "$ref": "#/$defs/directives" },
         "records": {
           "type": "array",
+          "minItems": 1,
           "items": { "$ref": "#/$defs/record_fragment" }
         }
       }
@@ -191,23 +192,75 @@
     "directives": {
       "type": "object",
       "additionalProperties": false,
-      "description": "ファイルディレクティブ。FixedLengthDirective に定義されたキーのみ有効",
+      "description": "ファイルディレクティブ。固定長（FixedLengthDirective）と可変長（VariableLengthDirective）で有効なキーが異なる。根拠: nablarch-core-dataformat の DataRecordFormatterSupport$Directive、FixedLengthDataRecordFormatter$FixedLengthDirective、VariableLengthDataRecordFormatter$VariableLengthDirective",
       "properties": {
         "text-encoding": {
           "type": "string",
-          "description": "文字エンコーディング（例: UTF-8, Shift_JIS）"
+          "description": "[共通] 文字エンコーディング（例: UTF-8, MS932）。DataRecordFormatterSupport$Directive#TEXT_ENCODING"
         },
         "record-separator": {
           "type": "string",
-          "description": "レコード区切り文字"
-        },
-        "record-length": {
-          "type": "integer",
-          "description": "レコード長（バイト数）"
+          "description": "[共通] レコード区切り文字。YAMLでは \"\\r\\n\"（CRLF）、\"\\n\"（LF）のようにJavaエスケープ記法で記述する。DataRecordFormatterSupport$Directive#RECORD_SEPARATOR"
         },
         "file-type": {
           "type": "string",
-          "description": "ファイル種別"
+          "description": "[共通] ファイル種別。DataRecordFormatterSupport$Directive#FILE_TYPE"
+        },
+        "record-length": {
+          "type": "integer",
+          "description": "[固定長専用] レコード長（バイト数）。FixedLengthDataRecordFormatter$FixedLengthDirective#RECORD_LENGTH"
+        },
+        "positive-zone-sign-nibble": {
+          "type": "string",
+          "description": "[固定長専用] ゾーン数値の正符号ニブル。FixedLengthDirective#POSITIVE_ZONE_SIGN_NIBBLE"
+        },
+        "negative-zone-sign-nibble": {
+          "type": "string",
+          "description": "[固定長専用] ゾーン数値の負符号ニブル。FixedLengthDirective#NEGATIVE_ZONE_SIGN_NIBBLE"
+        },
+        "positive-pack-sign-nibble": {
+          "type": "string",
+          "description": "[固定長専用] パック数値の正符号ニブル。FixedLengthDirective#POSITIVE_PACK_SIGN_NIBBLE"
+        },
+        "negative-pack-sign-nibble": {
+          "type": "string",
+          "description": "[固定長専用] パック数値の負符号ニブル。FixedLengthDirective#NEGATIVE_PACK_SIGN_NIBBLE"
+        },
+        "required-decimal-point": {
+          "type": "boolean",
+          "description": "[固定長専用] 小数点の要否。FixedLengthDirective#REQUIRED_DECIMAL_POINT"
+        },
+        "fixed-sign-position": {
+          "type": "boolean",
+          "description": "[固定長専用] 符号位置固定の要否。FixedLengthDirective#FIXED_SIGN_POSITION"
+        },
+        "required-plus-sign": {
+          "type": "boolean",
+          "description": "[固定長専用] 正符号出力の要否。FixedLengthDirective#REQUIRED_PLUS_SIGN"
+        },
+        "field-separator": {
+          "type": "string",
+          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。VariableLengthDirective#FIELD_SEPARATOR"
+        },
+        "quoting-delimiter": {
+          "type": "string",
+          "description": "[可変長専用] クォート区切り文字。VariableLengthDirective#QUOTING_DELIMITER"
+        },
+        "ignore-blank-lines": {
+          "type": "boolean",
+          "description": "[可変長専用] 空行を無視するか否か。VariableLengthDirective#IGNORE_BLANK_LINES"
+        },
+        "requires-title": {
+          "type": "boolean",
+          "description": "[可変長専用] タイトル行の要否。VariableLengthDirective#REQUIRES_TITLE"
+        },
+        "max-record-length": {
+          "type": "integer",
+          "description": "[可変長専用] 最大レコード長（バイト数）。VariableLengthDirective#MAX_RECORD_LENGTH"
+        },
+        "title-record-type-name": {
+          "type": "string",
+          "description": "[可変長専用] タイトルレコード種別名。VariableLengthDirective#TITLE_RECORD_TYPE_NAME"
         }
       }
     },
@@ -216,7 +269,7 @@
       "type": "object",
       "required": ["record_type", "fields", "rows"],
       "additionalProperties": false,
-      "description": "レコード種別1ブロック。DataFileFragment に対応。Excel の『先頭セルが種別名の行』から始まる行群",
+      "description": "レコード種別1ブロック。DataFileFragment に対応。Excel の『先頭セルが種別名の行』から始まる行群。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。\nrows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（パーサが列順で対応付ける）。",
       "properties": {
         "record_type": {
           "type": "string",
@@ -225,16 +278,16 @@
         "fields": {
           "type": "array",
           "minItems": 1,
-          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行に対応",
+          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合",
           "items": { "$ref": "#/$defs/field_def" }
         },
         "rows": {
           "type": "array",
-          "description": "データ行リスト。各要素は fields と同順の値配列",
+          "description": "データ行リスト。各要素は fields と同順・同件数の値配列",
           "items": {
             "type": "array",
             "items": { "type": ["string", "null"] },
-            "description": "フィールド値のリスト。fields の順序に対応"
+            "description": "フィールド値のリスト。fields の順序に完全対応。数値・真偽値も文字列（クォート付き）で記述すること"
           }
         }
       }
@@ -244,7 +297,7 @@
       "type": "object",
       "required": ["name", "type"],
       "additionalProperties": false,
-      "description": "フィールド定義1件。Excel のフィールド名・データ型・フィールド長の3行に対応",
+      "description": "フィールド定義1件。Excel のフィールド名・データ型・フィールド長の3行に対応。固定長ファイル（type=fixed）では length が実質必須（省略するとパーサが record-length を計算できない）",
       "properties": {
         "name": {
           "type": "string",
@@ -252,11 +305,12 @@
         },
         "type": {
           "type": "string",
-          "description": "データ型記号（BasicDataTypeMapping 参照）: X, N, XN, Z, SZ, P, SP, X9, SX9, B 等"
+          "enum": ["X", "N", "XN", "Z", "SZ", "P", "SP", "X9", "SX9", "B"],
+          "description": "データ型記号（BasicDataTypeMapping 参照）。X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ"
         },
         "length": {
-          "description": "フィールド長（固定長ファイルのみ必須。可変長ファイルは不要）。\"-\" はオンデマンド計算（FixedLengthFileParser の規則）",
-          "oneOf": [
+          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）",
+          "anyOf": [
             { "type": "integer", "minimum": 1 },
             { "type": "string", "const": "-" }
           ]
