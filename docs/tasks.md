@@ -65,7 +65,29 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   - schema.json: field_def.type の pattern を ^[A-Z][A-Z0-9_]*$ に緩和（TEST_ プレフィクス型対応）
   - schema.json: record_fragment.rows の minItems: 1 を削除（空ファイル検証ユースケース対応）
   - design.md §AI向け: expected_complete_tables 使い分け・quoting-delimiter 記述例を追記
-- [x] 第4回専門家レビュー（4名並列）実施 → 全員「合格」。本質的な問題なし
+- [x] 第4回専門家レビュー（4名並列）実施 → 全員「合格」。本質的な問題なし（後に問題発覚）
+- [x] 独立再レビュー実施 → group_message_data.group_id が必須設定されている重大バグを発見
+- [x] 第5回修正
+  - schema.json: group_message_data の required から group_id を削除（MockMessagingContext/Client 経路は group_id 不要）
+  - schema.json: group_message_data.description に2つのアクセスパス（A/B）を詳述
+  - schema.json: table_data.rows の description に rows:[] 全件削除セマンティクスを追記
+  - design.md: §9 を「2つのアクセスパス」として書き直し
+  - examples.yaml: 特殊値インライン例をコメントアウトから有効 YAML に昇格
+  - examples.yaml: NG コメントに YAML 1.1/1.2 バージョン依存性を明記
+- [x] 第5回専門家レビュー（4名並列）実施
+- [x] 第5回フォローアップ修正
+  - examples.yaml: expected_request_header_messages の例を追加（13 DataType 全網羅）
+  - examples.yaml: BasicJapaneseCharacterInterpreter の 14 文字種トークン一覧を追加
+  - examples.yaml: SendSyncMessageParser の errorMode（timeout/msgException）説明・例示
+  - examples.yaml: "null" クォート付き NG 例の注記を追加
+  - design.md: §5 に field_def.type と BasicDataTypeMapping の関係（identity mapping 要件）を追記
+  - design.md: §11 に MessageParser が record_type を "default" に置換する仕様を記録
+  - design.md: null テーブルに "null"（クォート付き）NG 例の行を追加
+  - design.md: AI向けプロンプト補助情報に 14 文字種トークン・record_type 注意・errorMode を追記
+  - design.md: setCellType(STRING) を DataFormatter API に訂正（POI 4.x 以降）
+  - design.md: dataName/resourceName のシート概念消滅に関する注意事項を追記
+  - schema.json: group_id に minLength: 1 を追加（空文字による誤マッチ防止）
+  - ntf-testdata-structure.md §3.3: FixedLengthDirective を 11 キーに拡充
 - [x] 最終コミット・プッシュ
 
 ---
@@ -75,9 +97,9 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 | ファイル | 状態 |
 |---|---|
 | `docs/ntf-testdata-structure.md` | 完成（調査報告） |
-| `docs/ntf-testdata-yaml-schema.json` | 修正中 |
-| `docs/ntf-testdata-yaml-examples.yaml` | 修正中 |
-| `docs/ntf-testdata-yaml-design.md` | 修正中 |
+| `docs/ntf-testdata-yaml-schema.json` | 完成 |
+| `docs/ntf-testdata-yaml-examples.yaml` | 完成 |
+| `docs/ntf-testdata-yaml-design.md` | 完成 |
 | `docs/tasks.md` | 本ファイル |
 
 ---
