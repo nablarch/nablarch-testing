@@ -65,9 +65,8 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   - schema.json: field_def.type の pattern を ^[A-Z][A-Z0-9_]*$ に緩和（TEST_ プレフィクス型対応）
   - schema.json: record_fragment.rows の minItems: 1 を削除（空ファイル検証ユースケース対応）
   - design.md §AI向け: expected_complete_tables 使い分け・quoting-delimiter 記述例を追記
-- [ ] 第4回専門家レビュー（4名並列）実施
-- [ ] 第4回指摘に基づく修正（本質的指摘がなくなるまで繰り返す）
-- [ ] 最終コミット・プッシュ
+- [x] 第4回専門家レビュー（4名並列）実施 → 全員「合格」。本質的な問題なし
+- [x] 最終コミット・プッシュ
 
 ---
 
