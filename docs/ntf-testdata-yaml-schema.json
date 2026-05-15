@@ -141,8 +141,8 @@
         "directives": { "$ref": "#/$defs/directives" },
         "records": {
           "type": "array",
-          "minItems": 1,
-          "description": "レコード種別ごとのブロック。DataFileFragment の配列",
+          "minItems": 0,
+          "description": "レコード種別ごとのブロック。DataFileFragment の配列。空ファイル（0バイト）を定義する場合は空配列 [] を指定し、directives のみ記述してレコード定義を省略する（公式解説書: 03_Tips.rst）",
           "items": { "$ref": "#/$defs/record_fragment" }
         }
       }

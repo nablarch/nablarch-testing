@@ -92,10 +92,13 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
   - examples.yaml: E-1〜E-4 反映済み（タブ区切り、type:B、JDBC日付、response通常行）
   - 出力: 各成果物ファイルの更新
 
-- [ ] D-5: 公式解説書（nablarch-document）との照合チェック
-  - 対象: `ja/development_tools/testing_framework/guide/development_guide/` 配下の RST ファイル
+- [x] D-5: 公式解説書（nablarch-document）との照合チェック
+  - 対象: `ja/development_tools/testing_framework/guide/development_guide/` 配下の RST ファイル（13ファイル）
   - 解説書に記載のテストデータ仕様をスキーマ設計文書（schema.json / design.md / examples.yaml）と照合
-  - 未反映仕様があれば洗い出して成果物に反映する
+  - **17件の未反映仕様（Doc-1〜Doc-17）を洗い出し、全件を成果物に反映完了**
+    - schema.json: Doc-10（file_data.records を minItems: 0 に変更、空ファイル表現を可能に）
+    - design.md: Doc-1〜9/12〜17（主キー省略不可・Timestamp末尾.0・混在禁止・default groupId・日付形式・QuotationTrimmer記法・フィールド名重複許容・空ファイル表現・X9/SX9記述方法・ヘッダ繰り返し・no列複数回送信・HTTP行長制約・testShots予約ID・文字種数差異注記）
+    - examples.yaml: Doc-7（`\\n`→LF）/ Doc-8（QuotationTrimmerスペース/`"""`記法）/ Doc-11（0xバイナリ直接記述）/ Doc-14（no列と複数回送信例）
   - 出力: `docs/ntf-coverage-doc-check.md`（解説書 × スキーマ 照合チェックリスト）
 
 - [x] P4-4: JavaエキスパートとQAエキスパートによるレビュー（サブエージェント並列）
@@ -160,15 +163,16 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 
 ## 現在の状態（2026-05-15時点）
 
-- **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
-- **完了済み**: P0〜P3 すべて、レビューループ第1〜5回、P4-0〜P4-4（再）、E-1、E-2、実装例評価
-- **未完了タスク（着手順）**:
+- **ブランチ**: `convert-testdata-excel-to-text`
+- **完了済み**: P0〜P3 すべて、レビューループ第1〜5回、P4-0〜P4-4（再）、E-1、E-2、実装例評価、D-5
+- **未完了タスク**: **なし（全タスク完了）**
+- **未完了タスク（着手順、参考）**:
   1. ~~P4-1（再）~~ **完了**
   2. ~~P4-2（再）~~ **完了**（S-1〜S-5、D-1〜D-16、E-1〜E-4 の未反映仕様を洗い出し）
   3. ~~P4-3（再）~~ **完了**（schema.json S-1〜S-5、design.md D-1〜D-16、examples.yaml E-1〜E-4 を反映）
   4. ~~E-1~~ **完了**（選択肢A: 1シート1ファイル分割を採用）
   5. ~~P4-4~~ **完了**（Java/QA 両レビュー実施。軽微修正済み。本質的な問題なし）
-  6. D-5: 公式解説書（nablarch-document）との照合チェック（実施中）
+  6. ~~D-5~~ **完了**（公式解説書 13ファイル照合・Doc-1〜17 全件反映）
 
 ---
 
@@ -184,7 +188,7 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 | `docs/ntf-coverage-class-list.md` | 完成（P4-0 前置セクション + P4-1 クラス一覧） |
 | `docs/ntf-coverage-spec-mapping.md` | 完成（P4-2 仕様マッピング、全未反映仕様を反映済み） |
 | `docs/ntf-yaml-impl-evaluation.md` | 完成（実装例リポジトリ評価レポート） |
-| `docs/ntf-coverage-doc-check.md` | 作成中（D-5: 公式解説書 × スキーマ 照合チェック） |
+| `docs/ntf-coverage-doc-check.md` | 完成（D-5: 公式解説書 × スキーマ 照合チェック・17件反映済み） |
 
 ---
 

@@ -358,6 +358,11 @@ response_body_messages:
 # | "${半角数字,4}-${半角数字,4}" | CompositeInterpreter          | 例: "1234-5678"        |
 # | "${binaryFile:path}"  | BinaryFileInterpreter                | HexString              |
 # | "\r"                  | LineSeparatorInterpreter             | CR（0x0D）※ファイル系  |
+# | "\n"                  | LineSeparatorInterpreter             | LF（0x0A）※ファイル系  |
+# | '"⊔"'                 | QuotationTrimmer                     | 半角スペース1文字の明示 |
+# | '"△"'                 | QuotationTrimmer                     | 全角スペース1文字の明示 |
+# | '"""'                 | QuotationTrimmer                     | ダブルクォート1文字 "   |
+# | "0x4AD"               | （バイナリ型フィールド直接記述）      | 16進バイナリ値          |
 #
 # ※ 文字列 "null" をそのままDBに格納したい場合（NullInterpreter 迂回）:
 #    '"null"' と記述する（QuotationTrimmer が外側クォートを除去して "null" を格納）
@@ -441,6 +446,8 @@ response_body_messages:
 # type: B のフィールドにはバイナリデータを HexString で記述する。
 # ${binaryFile:相対パス} を使うとファイルの内容を HexString に変換して挿入できる。
 # パスは Excel ファイル（または YAML ファイル）のディレクトリからの相対パス。
+# また 0x プレフィクス付き16進数（例: "0x4AD"）でバイナリ値を直接記述することも可能。
+# "0x" がない場合は文字列としてエンコードされる（Doc-11）。
 #
 # setup_files:
 #   - path: input/binary_data.dat
@@ -453,8 +460,12 @@ response_body_messages:
 #           - name: HASH
 #             type: B
 #             length: 16
+#           - name: FLAG
+#             type: B
+#             length: 2
 #         rows:
-#           - ["${binaryFile:data/expected.bin}"]  # BinaryFileInterpreter が HexString に変換
+#           - ["${binaryFile:data/expected.bin}", "0x4AD"]  # BinaryFileInterpreter / 16進直接記述
+#           # ↑ "0x4AD" は 0x04, 0xAD の2バイトとして格納される（"0x" なしは文字列扱い）
 
 # ============================================================
 # 日付型カラムの記述形式（TableData の受付形式）
@@ -490,3 +501,45 @@ response_body_messages:
 #             length: 40
 #         rows:
 #           - ["0000", "正常応答データ"]   # NO 列なし。fields と同順で値を並べる
+
+# ============================================================
+# no 列と複数回送信の対応例（Doc-14）
+# ============================================================
+# 同一リクエストIDで複数回送信するテストでは、no の値を変えて連続記述する。
+# ヘッダ rows の行数 = ボディ rows の行数 = 送信回数 となるようにすること（Doc-13）。
+#
+# Excel では no 列が先頭にあり、YAML でも no フィールドを先頭に定義する。
+# SendSyncMessageParser は no 列を除去してデータを格納するため、rows には no 値を含める。
+#
+# expected_request_header_messages:
+#   - id: multiSendRequest
+#     records:
+#       - record_type: FW_HEADER
+#         fields:
+#           - name: no
+#             type: X
+#             length: 2
+#           - name: requestId
+#             type: X
+#             length: 10
+#           - name: userId
+#             type: X
+#             length: 10
+#         rows:
+#           - ["1", "0000000001", "user01"]   # 1回目送信
+#           - ["2", "0000000001", "user01"]   # 2回目送信（同じリクエストID、no値を変える）
+#
+# expected_request_body_messages:
+#   - id: multiSendRequest
+#     records:
+#       - record_type: BODY
+#         fields:
+#           - name: no
+#             type: X
+#             length: 2
+#           - name: DATA
+#             type: N
+#             length: 20
+#         rows:
+#           - ["1", "送信データ1回目"]    # ヘッダ行数と一致させること
+#           - ["2", "送信データ2回目"]
