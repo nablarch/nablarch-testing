@@ -1,5 +1,10 @@
 # NTF テストデータ YAML スキーマ — 正確性の根拠
 
+**対象成果物**:
+- スキーマ定義 → [`ntf-testdata-yaml-schema.json`](ntf-testdata-yaml-schema.json)
+- スキーマ設計・判断根拠 → [`ntf-testdata-yaml-design.md`](ntf-testdata-yaml-design.md)
+- 記述例 → [`ntf-testdata-yaml-examples.yaml`](ntf-testdata-yaml-examples.yaml)
+
 ---
 
 ## 論点
