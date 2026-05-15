@@ -83,7 +83,7 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラムは '\"[COLNAME]\"' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。",
+          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラムは '\"[COLNAME]\"' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する（BasicTestDataParser が全件DELETE を実行）。",
           "items": {
             "type": "object",
             "additionalProperties": {
@@ -168,17 +168,17 @@
 
     "group_message_data": {
       "type": "object",
-      "required": ["group_id", "id", "records"],
+      "required": ["id", "records"],
       "additionalProperties": false,
-      "description": "グループメッセージデータ（GroupData系）。GroupMessageParser が処理。GroupDataParsingTemplate#isTargetType() は group_id でフィルタリングする。id（'=' 以降の値）はフィルタリングには使われず識別子として記録される",
+      "description": "RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES のデータブロック。アクセスパスが2つある:\n(A) RequestTestingSendSyncSupport → GroupMessageParser（GroupDataParsingTemplate）: group_id でフィルタリング。group_id 必須\n(B) MockMessagingContext / MockMessagingClient → SendSyncMessageParser（SingleDataParsingTemplate）: id で照合。group_id 不要（RESPONSE_HEADER_MESSAGES=id 形式）\ngroup_id を省略した場合はパスB（SingleData形式）として扱われる。",
       "properties": {
         "group_id": {
           "type": "string",
-          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。GroupDataParsingTemplate がこの値でフィルタリングする"
+          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。GroupDataParsingTemplate（RequestTestingSendSyncSupport 経路）がこの値でフィルタリングする。MockMessagingContext / MockMessagingClient 経路では不要のため省略可"
         },
         "id": {
           "type": "string",
-          "description": "Excel の '=' 以降の値（識別子として記録されるが GroupData のフィルタリングには使われない）"
+          "description": "Excel の '=' 以降の値。GroupData経路ではフィルタリングに使われず識別子として記録。SingleData経路（MockMessagingContext/Client）ではこの値で照合される"
         },
         "directives": { "$ref": "#/$defs/directives" },
         "records": {

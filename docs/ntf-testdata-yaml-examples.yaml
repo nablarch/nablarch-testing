@@ -58,6 +58,17 @@ setup_tables:
         STATUS: "1"
         "[MARKER_COL]": "Y"
 
+  # 特殊値インライン例: 各種 Interpreter が変換する特殊値を実際のフィールドに埋め込んだ例
+  # BINARY_HASH のような外部ファイル依存特殊値: "${binaryFile:data/sample.bin}"（BinaryFileInterpreter: HexString に変換）
+  - table: EVENT_LOG
+    rows:
+      - EVENT_ID: "001"
+        CREATED_AT: "${systemTime}"              # DateTimeInterpreter: システム日時
+        UPDATED_AT: "${updateTime}"              # DateTimeInterpreter: 更新時刻（systemTime と同値）
+        SETUP_AT:   "${setUpTime}"               # DateTimeInterpreter: DBセットアップ時刻
+        CODE:       "${半角数字,4}-${半角数字,4}" # CompositeInterpreter + BasicJapaneseCharacterInterpreter
+        NOTE:       "${全角英字, 10}"             # BasicJapaneseCharacterInterpreter
+
 # Excel: EXPECTED_TABLE[case1]=USER（expected_tables の例）
 expected_tables:
   - group_id: case1
@@ -76,30 +87,16 @@ expected_complete_tables:
         # AGE・MEMO 等省略カラムは BasicTestDataParser#fillDefaultValues() でデフォルト値が補完される
 
 # ============================================================
-# 特殊値インライン例（テーブルデータ）
-# ============================================================
-# 各種 Interpreter が変換する特殊値を実際のフィールドに埋め込んだ例
-#
-# setup_tables:
-#   - table: EVENT_LOG
-#     rows:
-#       - EVENT_ID: "001"
-#         CREATED_AT: "${systemTime}"              # DateTimeInterpreter: システム日時
-#         UPDATED_AT: "${updateTime}"              # DateTimeInterpreter: 更新時刻（systemTime と同値）
-#         SETUP_AT:   "${setUpTime}"               # DateTimeInterpreter: DBセットアップ時刻
-#         CODE:       "${半角数字,4}-${半角数字,4}" # CompositeInterpreter + BasicJapaneseCharacterInterpreter
-#         NOTE:       "${全角英字, 10}"             # BasicJapaneseCharacterInterpreter
-#         BINARY_HASH: "${binaryFile:data/sample.bin}"  # BinaryFileInterpreter: HexString に変換
-
-# ============================================================
 # NG アンチパターン（バリデーションエラーになる記法）
 # ============================================================
 # 以下は YAMLパーサが想定外の型で解釈するため、スキーマ違反になる
 #
 # NG例（数値・真偽値をアンクォートで書いた場合）:
 #   rows:
-#     - USER_ID: 001    # NG: integer として解釈される
-#       AGE: 30         # NG: integer として解釈される
+#     - USER_ID: 001    # NG: YAML 1.1（SnakeYAML 1.x）ではオクタル integer 1 として解釈される
+#                       #     YAML 1.2（SnakeYAML 2.x）では string "001" だが先頭ゼロが残り意図不明
+#                       #     どちらの場合も "001" と明示クォートすること
+#       AGE: 30         # NG: integer として解釈される（YAML 1.1/1.2 共通）
 #       ACTIVE: true    # NG: boolean として解釈される
 #       SCORE: 3.14     # NG: float として解釈される
 #

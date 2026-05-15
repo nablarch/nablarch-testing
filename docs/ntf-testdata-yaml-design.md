@@ -180,11 +180,20 @@ YAMLでは `group_id:` フィールドを省略することで表現する。
 SingleData系は同一ファイル内でIDが一致した最初の1ブロックのみ取得する（`SingleDataParsingTemplate` の規則）。  
 `id:` はファイル内でユニークにすることを推奨。
 
-### 9. GroupData系（RESPONSE_HEADER_MESSAGES 等）の id と group_id の区別
+### 9. RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES の2つのアクセスパス
 
-`GroupDataParsingTemplate#isTargetType()` は **`group_id`** でフィルタリングする。  
-`id`（`=` 以降の値）はフィルタリングには使われず、識別子として記録されるのみ。  
-`id` は `required` だが、GroupDataのフィルタリングには影響しない。
+`RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` には**2つの異なるアクセス経路**がある。
+
+| 経路 | 呼び出し元 | パーサ | group_id |
+|---|---|---|---|
+| A | `RequestTestingSendSyncSupport` | `GroupMessageParser`（GroupData系） | **必須** |
+| B | `MockMessagingContext` / `MockMessagingClient` | `SendSyncMessageParser`（SingleData系） | 不要 |
+
+経路Aでは `GroupDataParsingTemplate#isTargetType()` が `group_id` でフィルタリングする。  
+経路Bでは `SingleDataParsingTemplate#isTargetType()` が `id`（`=`以降の値）で照合する。  
+Excel形式でいうと、経路Aは `RESPONSE_HEADER_MESSAGES[grp1]=id`、経路Bは `RESPONSE_HEADER_MESSAGES=id`。
+
+YAMLでは `group_id` フィールドを省略した場合が経路B相当となる。
 
 ---
 
