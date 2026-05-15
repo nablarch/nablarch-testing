@@ -128,7 +128,7 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `FixedLengthFileFragment` | class | 参照情報 | 固定長レコード種別実体。バイナリ型フィールドのゼロ埋め処理の根拠 |
 | `VariableLengthFile` | class | **直接影響** | 可変長ファイル実体。デフォルトフィールド区切り `,`。`\\t` → タブ文字変換を実装 |
 | `VariableLengthFileFragment` | class | 参照情報 | 可変長レコード種別実体。長さ行不要の実装上の根拠 |
-| `BasicDataTypeMapping` | class | **直接影響** | 設計書データ型記法→フレームワークシンボル変換のデフォルト実装。有効な設計書記法17種を定義（`半角英字`→`X`, `全角`→`N`, `数値`→`Z`, `符号付パック10進数`→`SP`, `バイナリ`→`B` 等） |
+| `BasicDataTypeMapping` | class | **直接影響** | 設計書データ型記法→フレームワークシンボル変換のデフォルト実装。有効な設計書記法**22種**を定義（`半角英字`→`X`, `全角`→`N`, `数値`→`Z`, `符号付パック10進数`→`SP`, `バイナリ`→`B` 等） |
 | `DataTypeMapping` | interface | 参照情報 | カスタムデータ型マッピングの拡張ポイント |
 | `LineSeparator` | enum | **直接影響** | `record-separator` ディレクティブの有効値。`NONE` / `CR` / `LF` / `CRLF` のほか列挙名以外の文字列もリテラルとして使用可能 |
 | `MockMessages` | class | 参照情報 | `FixedLengthFile` の同期送信テスト用サブクラス。`errorMode:*` 特殊値がパディング処理を受けない実装根拠 |
