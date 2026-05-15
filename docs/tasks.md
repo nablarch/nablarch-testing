@@ -145,17 +145,13 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 
 ## 現在の状態（2026-05-15時点）
 
-- **ブランチ**: `convert-testdata-excel-to-text`（ローカルに未プッシュのコミットあり）
-- **完了済み**: P0〜P3 すべて、レビューループ第1〜5回、P4-0/P4-1/P4-2
-- **次のタスク**: P4-3（テストコードから仕様を補完）→ P4-4（サブエージェント並列レビュー）
-
-**P4-2 完了時点の状態**:
-- `docs/ntf-coverage-class-list.md`: P4-0（前置セクション）+ P4-1（クラス一覧）完成
-- `docs/ntf-coverage-spec-mapping.md`: P4-2 完成（29クラス × 仕様 × 反映状況マッピング）
-- 未反映仕様をすべてスキーマ・design.md・examples.yaml に反映済み
-  - schema.json: record-length 自動計算、field-separator \\t変換・1文字制約、fields 重複不可、length "-" の副作用、rows 省略カラム補完
-  - design.md: §7 NullInterpreter 大文字小文字無視・QT全角対応・日付短縮形/JDBC形式、§4 BasicDefaultValues 一覧、§11 FWヘッダYAML統合・response系FWヘッダ非分離、§12〜22 新規セクション11件、AI向け BasicJapaneseCharacterInterpreter 修正・半角記号除外文字追記・field-separator \\t追記
-  - examples.yaml: コメント行/空行スキップ説明、record-length コメント、文字種トークン表修正、タブ区切り例・バイナリ型例・JDBC日付例・通常データ行例（コメント）追加
+- **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
+- **完了済み**: P0〜P3 すべて、レビューループ第1〜5回、P4-0/P4-1/P4-2、実装例評価
+- **未完了タスク（着手順）**:
+  1. P4-3: テストコードから仕様を補完（`src/test/` 調査）
+  2. E-2: `"?"` プレフィックス記法の仕様確認（P4-3 と並行または先に実施）
+  3. E-1: 複数シート格納方針の決定（方針決定後 design.md に反映）
+  4. P4-4: Java エキスパート + QA エキスパートによるレビュー（サブエージェント並列）
 
 ---
 
@@ -168,18 +164,21 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 | `docs/ntf-testdata-yaml-examples.yaml` | 完成（第5回レビュー対応済み） |
 | `docs/ntf-testdata-yaml-design.md` | 完成（第5回レビュー対応済み） |
 | `docs/tasks.md` | 本ファイル |
-| `docs/ntf-coverage-class-list.md` | **未作成**（P4-0/P4-1 で作成予定） |
-| `docs/ntf-coverage-spec-mapping.md` | **未作成**（P4-2/P4-3 で作成予定） |
+| `docs/ntf-coverage-class-list.md` | 完成（P4-0 前置セクション + P4-1 クラス一覧） |
+| `docs/ntf-coverage-spec-mapping.md` | 完成（P4-2 仕様マッピング、全未反映仕様を反映済み） |
+| `docs/ntf-yaml-impl-evaluation.md` | 完成（実装例リポジトリ評価レポート） |
 
 ---
 
 ## 再開手順
 
 1. ブランチをチェックアウト: `git checkout convert-testdata-excel-to-text`
-2. 本ファイルで「現在の状態」と未完了タスク（P4-0〜）を確認
-3. P4-0 から順に着手:
-   - pom.xml の外部依存を確認し、テストデータ仕様に関わるリポジトリ外の仕様範囲を特定
-   - 「このリポジトリだけ見ればよいか」を明文化してから P4-1 へ進む
+2. 本ファイルで「現在の状態」の未完了タスクを確認
+3. 次の着手タスクは **P4-3**（テストコードから仕様を補完）:
+   - `src/test/` 配下のテストコードを調査し、ソースコードだけでは読み取れない境界値・エラーケースを抜き出す
+   - `docs/ntf-coverage-spec-mapping.md` に追記する
+   - 調査中に `"?"` プレフィックス記法（E-2）を見かけた場合は同時に確認する
+4. P4-3 完了後、E-1（複数シート格納方針）と E-2（`"?"` 記法）を処理してから P4-4 レビューへ進む
 
 ---
 
