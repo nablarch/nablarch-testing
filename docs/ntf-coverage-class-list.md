@@ -198,7 +198,7 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 
 ---
 
-### 1.7 対象外パッケージ（全クラス）
+### 1.7 対象外パッケージ（全クラス） — `src/main/java`
 
 以下のパッケージはテストデータ構造定義とは無関係なため P4-2 の対象外とする:
 
@@ -219,7 +219,7 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 
 ---
 
-### 1.8 直接影響クラス 集計
+### 1.8 直接影響クラス 集計 — `src/main/java`
 
 | パッケージ | 直接影響クラス数 | 主要な仕様 |
 |---|---|---|
@@ -230,3 +230,162 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `interpreter` | 7 | null/クォート/日時/改行/バイナリ/文字生成の特殊値記法 |
 | `generator` | 2 | 文字種トークン完全一覧 |
 | **合計** | **29** | |
+
+---
+
+## 2. `src/test/java` クラス一覧（P4-1 追補）
+
+### 2.1 `src/test/java` の分類方針
+
+テストクラスはスキーマ仕様の根拠にはならない（テストは実装の動作確認であり、仕様定義は `src/main/java` 側にある）。  
+ただし、仕様上の挙動が `src/main/java` コードだけでは読み取りにくい場合に、テストコードが補助的な証拠になりうる。
+
+**凡例（`src/test/java` 向け）**
+- **参照情報**: テストケースが仕様の境界値・特殊ケースを明示しており、`src/main/java` 仕様確認の補助に使える
+- **対象外**: テストデータ構造定義と直接無関係。P4-2 の全行走査対象にしない
+
+P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス（29クラス）のみ** とする。
+
+---
+
+### 2.2 `nablarch.test.core.reader` テストクラス（11クラス）
+
+| クラス | 関連度 | 備考 |
+|---|---|---|
+| `BasicTestDataParserTest` | 参照情報 | 914行。各セクション識別・パース動作の網羅的テスト。未明確な仕様確認の補助に使える |
+| `DataTypeTest` | 対象外 | `DataType.getName()`/`getType()` の基本動作確認のみ |
+| `DbLessTestDataParserTest` | 対象外 | DBなしパーサのテスト。スキーマ構造に影響なし |
+| `FixedLengthFileParserTest` | 参照情報 | 固定長パーサの境界値テスト。ディレクティブ処理の補助確認に使える |
+| `HeaderLineTest` | 参照情報 | `[MARKER_COL]` 処理の境界値テスト。マーカーカラム仕様確認に使える |
+| `MockTestDataReader` | 対象外 | テスト用スタブ実装 |
+| `PoiXlsReaderTest` | 対象外 | Excel読み込みテスト。YAML スキーマと無関係 |
+| `SendSyncMessageParserTest` | 対象外 | `getFwHeader()` の例外確認のみ（17行） |
+| `SingleDataParsingTemplateTest` | 対象外 | 単一IDパースの動作テスト |
+| `TestDataParsingTemplateTest` | 参照情報 | コメント行スキップ・セクション先頭一致の境界値テスト |
+| `VariableLengthFileParserTest` | 参照情報 | 可変長パーサの長さ行スキップ動作確認に使える |
+
+---
+
+### 2.3 `nablarch.test.core.file` テストクラス（9クラス）
+
+| クラス | 関連度 | 備考 |
+|---|---|---|
+| `BasicDataTypeMappingTest` | 参照情報 | データ型マッピング17種の境界値テスト。有効型記法確認に使える |
+| `DataFileTest` | 参照情報 | 共通ディレクティブ（`file-type`, `text-encoding` 等）の動作テスト |
+| `FileSupportTest` | 対象外 | テスト実行サポートのテスト |
+| `FileSupportWithDbLessTestDataParserTest` | 対象外 | DBなし用ファイルサポートのテスト |
+| `FixedLengthFileFragmentTest` | 参照情報 | バイナリ型ゼロ埋め・パディングの境界値確認に使える |
+| `FixedLengthFileTest` | 参照情報 | 固定長ファイル書き込み動作の網羅的テスト（241行）。ディレクティブ動作確認に使える |
+| `LineSeparatorTest` | 対象外 | `LineSeparator` enum の基本確認のみ |
+| `SimpleWriter` | 対象外 | テスト用ヘルパークラス（スタブ） |
+| `VariableLengthFileTest` | 参照情報 | 可変長ファイルのデフォルト区切り・`\\t` → タブ変換等の確認に使える |
+
+---
+
+### 2.4 `nablarch.test.core.messaging` テストクラス（15クラス + サンプル21クラス）
+
+| クラス | 関連度 | 備考 |
+|---|---|---|
+| `MessageParserTest` | 参照情報 | `record_type` 強制置換・FWヘッダフィールド名の境界値確認に使える |
+| `MessagePoolTest` | 対象外 | メッセージプール管理テスト |
+| `MockMessagingClientTest` | 参照情報 | `statusCode` デフォルト `200`・アクセスパスBの確認に使える |
+| `MockMessagingContextTest` | 参照情報 | `requestId` 必須・アクセスパスAの確認に使える |
+| `RequestTestingMessagingClientTest` | 参照情報 | 4セクション使用動作の確認に使える |
+| `RequestTestingSendSyncSupportTest` | 参照情報 | テストデータ配置規則の確認に使える |
+| `AsyncMessageSendActionForUtTest` | 対象外 | スキーマ構造に影響なし |
+| `EmbeddedMessagingProviderTest` | 対象外 | スキーマ構造に影響なし |
+| `MessagingReceiveTestSupportTest` | 対象外 | スキーマ構造に影響なし |
+| `MessagingRequestTestSupportTest` | 対象外 | スキーマ構造に影響なし |
+| `MockMessagingProviderTest` | 対象外 | スキーマ構造に影響なし |
+| `RequestTestingMessagingContextTest` | 対象外 | スキーマ構造に影響なし |
+| `RequestTestingMessagingProviderTest` | 対象外 | スキーマ構造に影響なし |
+| `RequestTestingSendSyncBatchTest` | 対象外 | スキーマ構造に影響なし |
+| `HttpStatusSyncMessagingEventHook` | 対象外 | テスト用フッククラス |
+| `sample/` 配下（21クラス） | 対象外 | テスト用サンプルアクション・フォームクラス群。スキーマ構造に影響なし |
+| `receive/form/RM11AC0001Form` | 対象外 | テスト用フォームクラス |
+
+---
+
+### 2.5 `nablarch.test.core.db` テストクラス（38クラス）
+
+| クラス群 | 関連度 | 備考 |
+|---|---|---|
+| `TableDataTest` | 参照情報 | 日付フォーマット・`rows:[]` 全件削除・`EXPECTED_COMPLETE_TABLE` デフォルト補完の境界値確認に使える |
+| `TableDataTestForPostgreAndDB2` | 参照情報 | DB依存動作の補助確認（PostgreSQL/DB2向け） |
+| `BasicDefaultValuesTest` | 対象外 | デフォルト値設定のテスト |
+| `DbAccessTestSupportTest` | 対象外 | テスト実行サポートのテスト |
+| `EntityDependencyParserTest` | 対象外 | エンティティ依存パーサのテスト |
+| `EntityTestSupportTest` | 対象外 | エンティティテストサポートのテスト |
+| `GenericJdbcDbInfo*` 系 | 対象外 | JDBC DB情報テスト群 |
+| `MasterDataRestorer/SetUpperTest` | 対象外 | マスタデータ管理テスト |
+| `MessageComparatorTest` | 対象外 | メッセージ比較テスト |
+| `MockConnection`, `MockDefaultValues` | 対象外 | テスト用スタブクラス |
+| `SqlLogWatchingFormatterTest` | 対象外 | SQLログフォーマッタのテスト |
+| `TableDataSorterTest` | 対象外 | テーブルデータソートのテスト |
+| `TransactionTemplateTest` | 対象外 | トランザクションテンプレートのテスト |
+| `TableRestorerTest` | 対象外 | テーブルリストアのテスト |
+| `*Table`, `*SsdMaster`, `Father`, `Son`, `Daughter` 等のエンティティクラス群 | 対象外 | テスト用エンティティ定義クラス（18クラス） |
+
+---
+
+### 2.6 `nablarch.test.core.util.interpreter` テストクラス（8クラス）
+
+| クラス | 関連度 | 備考 |
+|---|---|---|
+| `NullInterpreterTest` | 参照情報 | 大文字小文字不問の `"null"` → `null` 変換境界値の確認に使える |
+| `QuotationTrimmerTest` | 参照情報 | 半角/全角ダブルクォート除去の境界値確認に使える |
+| `DateTimeInterpreterTest` | 参照情報 | `${systemTime}` 等の記法変換の境界値確認に使える |
+| `LineSeparatorInterpreterTest` | 参照情報 | `\\r` → CR 変換の境界値確認に使える |
+| `BinaryFileInterpreterTest` | 参照情報 | `${binaryFile:...}` 記法の境界値確認に使える |
+| `BasicJapaneseCharacterInterpreterTest` | 参照情報 | 文字種記法の境界値・エラーケース確認に使える |
+| `CompositeInterpreterTest` | 参照情報 | 複合 `${...}` 記法の境界値確認に使える |
+| `InterpretationContextTest` | 対象外 | 内部実装クラスのテスト |
+
+---
+
+### 2.7 `nablarch.test.core.util.generator` テストクラス（2クラス）
+
+| クラス | 関連度 | 備考 |
+|---|---|---|
+| `BasicJapaneseCharacterGeneratorTest` | 参照情報 | 文字種トークン一覧の境界値・エラーケース確認に使える |
+| `RandomStringGeneratorTest` | 対象外 | スキーマ構造に影響なし |
+
+---
+
+### 2.8 `src/test/java` の残パッケージ（全クラス対象外）
+
+| パッケージ | クラス数 | 理由 |
+|---|---|---|
+| `nablarch.test.core.http` + サブパッケージ | 10 + 12 | HTTPリクエストテスト実行サポート・HTMLパーサ実装 |
+| `nablarch.test.core.batch` | 8 | バッチリクエストテスト実行サポート |
+| `nablarch.test.core.entity` | 14 | エンティティバリデーションテストサポート |
+| `nablarch.test.core.log` | 4 | ログ検証サポート |
+| `nablarch.test.core.standalone` | 1 | スタンドアロンテストサポート |
+| `nablarch.test.core.util` | 4 | 汎用ユーティリティテスト（ByteArrayAwareMap等） |
+| `nablarch.test.event` | 2 | テストイベントリスナ |
+| `nablarch.test` | 17 | テスト基底ユーティリティのテスト群 |
+| `nablarch.test.tool.htmlcheck` | 4 + 1 | HTML構文チェックツールのテスト |
+| `nablarch.test.tool.sanitizingcheck` + サブパッケージ | 6 + 2 | サニタイズチェックツールのテスト |
+| `nablarch.fw.web` + サブパッケージ | 2 + 2 | HTTPモック実装のテスト |
+| `nablarch.core.validation.*` | 8 + 17 + 1 | バリデーション実装のテスト（テストデータ構造と無関係） |
+| `nablarch.common.validation` | 5 | バリデーション実装のテスト |
+| `nablarch.core.message` | 1 | メッセージリソーステスト用スタブ |
+| `nablarch.test.core` （ルート1クラス） | 1 | `MultiResourceDataSetUpTest`（マルチリソーステスト） |
+
+---
+
+### 2.9 `src/test/java` 集計
+
+| パッケージ | 参照情報クラス数 | 対象外クラス数 | 合計 |
+|---|---|---|---|
+| `reader` | 5 | 6 | 11 |
+| `file` | 5 | 4 | 9 |
+| `messaging`（サンプル含む） | 6 | 30 | 36 |
+| `db` | 2 | 36 | 38 |
+| `interpreter` | 7 | 1 | 8 |
+| `generator` | 1 | 1 | 2 |
+| その他（http/batch/entity/log/tool/fw 等） | 0 | 129 | 129 |
+| **合計** | **26** | **207** | **233** |
+
+**P4-2 の全行走査対象外**: `src/test/java` 全 233 クラス  
+（仕様根拠は `src/main/java` の「直接影響」29クラスにある。テストコードは必要に応じて参照情報として参照する）
