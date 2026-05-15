@@ -83,14 +83,23 @@
 行6:                | val1   | val2    ← データ行（先頭空）
 ```
 
-有効なディレクティブ（`FixedLengthDirective`）:
+有効なディレクティブ（共通3キー + 固定長専用8キー）:
 
-| キー | 意味 |
-|---|---|
-| `text-encoding` | 文字エンコーディング |
-| `record-separator` | レコード区切り文字 |
-| `record-length` | レコード長 |
-| `file-type` | ファイル種別 |
+| キー | 意味 | 適用範囲 |
+|---|---|---|
+| `text-encoding` | 文字エンコーディング | 共通 |
+| `record-separator` | レコード区切り文字 | 共通 |
+| `file-type` | ファイル種別（通常は自動設定） | 共通 |
+| `record-length` | レコード長（バイト数） | 固定長専用 |
+| `positive-zone-sign-nibble` | ゾーン正符号ニブル | 固定長専用 |
+| `negative-zone-sign-nibble` | ゾーン負符号ニブル | 固定長専用 |
+| `positive-pack-sign-nibble` | パック正符号ニブル | 固定長専用 |
+| `negative-pack-sign-nibble` | パック負符号ニブル | 固定長専用 |
+| `required-decimal-point` | 小数点の要否（boolean） | 固定長専用 |
+| `fixed-sign-position` | 符号位置の固定（boolean） | 固定長専用 |
+| `required-plus-sign` | 正符号の要否（boolean） | 固定長専用 |
+
+根拠: `nablarch-core-dataformat` の `DataRecordFormatterSupport$Directive`（共通3キー）・`FixedLengthDataRecordFormatter$FixedLengthDirective`（固定長専用8キー）
 
 ### 3.4 可変長ファイル（SETUP_VARIABLE / EXPECTED_VARIABLE）
 

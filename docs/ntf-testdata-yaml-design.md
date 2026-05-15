@@ -140,21 +140,33 @@ Excelでは別のデータ種別だが、`BasicTestDataParser#getSetupFile()` �
 
 両者は `getExpectedTableData()` でマージされて返されるが、`EXPECTED_COMPLETE_TABLE` が `fillDefaultValues()` を呼ぶかどうかの違いがある。YAMLでは `expected_tables` と `expected_complete_tables` を分けて保持し、変換時に呼び分けられるようにした。
 
-### 5. マーカーカラムのキー名表現
+### 5. field_def.type と BasicDataTypeMapping の関係
+
+**採用: YAMLにはフレームワーク型記号（`X`, `N`, `Z` 等）を記述する。**
+
+`DataFileFragment#setTypes()` は内部で `DataTypeMapping#convertToFrameworkExpression()` を呼ぶ。  
+デフォルトの `BasicDataTypeMapping` のキーは日本語設計表記（`"半角英字"`, `"全角"` 等）であるため、
+YAMLパーサが `type: X` を直接 `setTypes()` に渡すと `IllegalArgumentException` が発生する。
+
+YAML対応パーサの実装時は、`type` 値をそのままフレームワーク型記号として使用する独自の `DataTypeMapping`（identity mapping）を `SystemRepository` の `"dataTypeMapping"` キーで登録するか、パーサ側で `setTypes()` を迂回してフレームワーク型記号を直接設定する必要がある。  
+この実装判断はスキーマ定義の範囲外だが、YAMLアダプタ実装時に必須の考慮事項として記録する。
+
+### 6. マーカーカラムのキー名表現
 
 Excel では `[COLNAME]` 形式のカラム名がマーカーとして扱われる（`HeaderLine` の規則）。  
 YAMLでは `"[COLNAME]"` のようにダブルクォートで囲む必要がある。  
 （クォートなしの `[COLNAME]: val` はYAMLパーサがフロー配列として誤解釈する）
 
-### 6. 特殊値の表現と null の仕様
+### 7. 特殊値の表現と null の仕様
 
 **null の仕様（確定）:** YAMLネイティブ `null`（アンクォート）を正式採用。
 
 | 意図 | YAML記述 | 動作 |
 |---|---|---|
 | DBにNULL | `null` | YAMLパーサがJava nullとして渡す |
+| DBにNULL（**NG例**） | `"null"` | QuotationTrimmerが外側クォートを除去し文字列 `null` を格納 ← 意図と逆 |
 | DBに空文字 | `""` | 空文字列として渡す |
-| 文字列 "null" をDBに格納 | `'"null"'` | QuotationTrimmerが外側クォートを除去して "null" を格納 |
+| 文字列 "null" をDBに格納（意図的） | `'"null"'` | QuotationTrimmerが外側クォートを除去して "null" を格納 |
 | システム日時 | `"${systemTime}"` | DateTimeInterpreter が変換 |
 
 **すべての値は文字列（クォート付き）で記述すること。** YAMLパーサが数値・真偽値として解釈するとスキーマバリデーション違反になる。
@@ -170,17 +182,17 @@ rows:
     ACTIVE: "true"
 ```
 
-### 7. グループIDなしの場合
+### 8. グループIDなしの場合
 
 Excel では `SETUP_TABLE=TABLE_NAME`（角括弧なし）がグループIDなしを意味する。  
 YAMLでは `group_id:` フィールドを省略することで表現する。
 
-### 8. SingleData系（LIST_MAP、MESSAGE）の制約
+### 9. SingleData系（LIST_MAP、MESSAGE）の制約
 
 SingleData系は同一ファイル内でIDが一致した最初の1ブロックのみ取得する（`SingleDataParsingTemplate` の規則）。  
 `id:` はファイル内でユニークにすることを推奨。
 
-### 9. RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES の2つのアクセスパス
+### 10. RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES の2つのアクセスパス
 
 `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` には**2つの異なるアクセス経路**がある。
 
@@ -194,6 +206,12 @@ SingleData系は同一ファイル内でIDが一致した最初の1ブロック�
 Excel形式でいうと、経路Aは `RESPONSE_HEADER_MESSAGES[grp1]=id`、経路Bは `RESPONSE_HEADER_MESSAGES=id`。
 
 YAMLでは `group_id` フィールドを省略した場合が経路B相当となる。
+
+### 11. MESSAGE系の record_type は装飾的（MessageParser の仕様）
+
+`MessageParser` は内部で `FixedLengthFileParser#onReadingNames()` をオーバーライドし、先頭セル（レコード種別名）を常に固定文字列 `"default"` に置き換える（`MessageParser.java` 匿名クラス内）。  
+このため `messages` / `expected_request_*_messages` の `record_type` 値（`"FW_HEADER"`, `"BODY"` 等）は識別・可読性のためだけであり、パーサの動作に影響しない。  
+YAMLでは可読性のため任意の名前を書いてよいが、実行時に無視されることを認識すること。
 
 ---
 
@@ -233,8 +251,9 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 - マーカーカラム（`[COLNAME]`）はYAMLキーとして `"[COLNAME]"` にクォートする
 - Excel のセル値が空（`""`）でも意図的に空文字として出力する（省略しない）
 - `null` セルは `null` として出力する
-- **Excelのセルが数値型で保存されている場合**（例: `001` が整数 `1` として格納）は、POI の `cell.setCellType(STRING)` で文字列化してから取得する方法を推奨（先頭ゼロが消えるのを防ぐ）
+- **Excelのセルが数値型で保存されている場合**（例: `001` が整数 `1` として格納）は、POI の `DataFormatter#formatCellValue(cell)` で文字列化してから取得する（`cell.setCellType(STRING)` は POI 4.x 以降で削除されたため使用不可）
 - **複数シートのExcelファイル**はシートごとにYAMLを分割するか、1ファイルに全セクションをまとめるかをプロジェクトルールで事前に決定すること
+- **`dataName`（リソース名）の形式変更に注意**: 既存テストでは `PoiXlsReader` が `"ファイル名/シート名"` 形式のキーでデータをキャッシュする。YAML移行後はシートの概念がなくなるため、YAMLパーサのキャッシュキー形式をプロジェクトルールで統一すること（例: `"ファイル名"` のみ、または `"ファイル名/default"` など）。テストクラスが参照するリソース名もあわせて変更が必要
 
 
 ---
@@ -304,13 +323,30 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 - 値は任意の文字列（マーキング用途。DB操作から除外される）
 
 ## 特殊値
-- null（DB NULL）: null
+- null（DB NULL）: null  ← クォートなしの YAML キーワード。"null" と書くと文字列 null が格納される（意図と逆）
 - 空文字: ""
 - システム日時: "${systemTime}"
 - セットアップ時刻: "${setUpTime}"
-- 文字種生成（例）: "${全角英字, 10}"
+- 文字種生成（例）: "${全角英字, 10}"  ← BasicJapaneseCharacterInterpreter（14種のトークンが有効）
 - バイナリファイル: "${binaryFile:path/to/file.bin}"
-- CR文字: "\r"
+- CR文字: "\r"  ← ファイル系レコード値のみ有効
+- 複合式: "${半角数字,4}-${半角数字,4}" は CompositeInterpreter が各 ${} を個別解釈して結合
+
+## BasicJapaneseCharacterInterpreter の有効トークン（14種）
+半角英字 / 半角数字 / 半角記号 / 半角カナ /
+全角英字 / 全角数字 / 全角ひらがな / 全角カタカナ / 全角漢字 / 全角記号その他 /
+中国語 / サロゲートペア / 改行 / 外字
+（スペルミスは interpreter が素通りさせるためスキーマでは検出できない）
+
+## messages / expected_request_*_messages の record_type に注意
+- MessageParser は record_type の値を無視し、内部的に "default" という固定名に置き換える
+- record_type は識別用途のみ（FW_HEADER, BODY 等の名前を書いても動作に影響しない）
+- フィールド定義（fields）の内容のみが実際の解析に使われる
+
+## response_*_messages の errorMode（MockMessagingContext/Client 経路のみ）
+- SendSyncMessageParser は rows 先頭値が "errorMode:timeout" または "errorMode:msgException"
+  の場合、そのレコードをエラーモードマーカーとして扱い送受信エラーをシミュレートする
+- RequestTestingSendSyncSupport 経路（GroupMessageParser）では errorMode は未使用
 ```
 
 ---

@@ -263,6 +263,28 @@ messages:
         rows:
           - ["検索キー値"]
 
+# Excel: EXPECTED_REQUEST_HEADER_MESSAGES=requestId001
+# MessageParser は record_type の値を内部的に "default" に置き換えるため、record_type は識別用途のみ（動作に影響しない）
+expected_request_header_messages:
+  - id: requestId001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+
 # Excel: EXPECTED_REQUEST_BODY_MESSAGES=requestId001
 expected_request_body_messages:
   - id: requestId001
@@ -327,7 +349,59 @@ response_body_messages:
 # | "${全角英字, 10}"     | BasicJapaneseCharacterInterpreter    | 全角英字10文字         |
 # | "${半角数字,4}-${半角数字,4}" | CompositeInterpreter          | 例: "1234-5678"        |
 # | "${binaryFile:path}"  | BinaryFileInterpreter                | HexString              |
-# | "\r"                  | LineSeparatorInterpreter             | CR（0x0D）             |
+# | "\r"                  | LineSeparatorInterpreter             | CR（0x0D）※ファイル系  |
 #
 # ※ 文字列 "null" をそのままDBに格納したい場合（NullInterpreter 迂回）:
 #    '"null"' と記述する（QuotationTrimmer が外側クォートを除去して "null" を格納）
+# ※ "null"（ダブルクォート付き）と書くと QuotationTrimmer が外側クォートを除去して文字列 null が格納される。
+#   DB NULL にしたい場合は必ずクォートなしの null と書くこと。
+
+# ============================================================
+# BasicJapaneseCharacterInterpreter 文字種トークン一覧
+# ============================================================
+# ${文字種, 文字数} 形式で使用。文字種は以下の14種のみ有効。
+# スペルミスは interpreter が素通りさせるためスキーマでは検出できない。
+#
+# | トークン       | 生成文字              |
+# |----------------|-----------------------|
+# | 半角英字       | a-z, A-Z              |
+# | 半角数字       | 0-9                   |
+# | 半角記号       | ASCII 記号            |
+# | 半角カナ       | 半角カタカナ          |
+# | 全角英字       | Ａ-Ｚ, ａ-ｚ          |
+# | 全角数字       | ０-９                 |
+# | 全角ひらがな   | ぁ-ん                 |
+# | 全角カタカナ   | ァ-ン                 |
+# | 全角漢字       | JIS X0213 漢字        |
+# | 全角記号その他 | 全角記号              |
+# | 中国語         | JIS X0213 外 CJK 統合 |
+# | サロゲートペア | CJK 拡張-B            |
+# | 改行           | \r\n                  |
+# | 外字           | 私用領域文字（例: ㈱）|
+#
+# 根拠: BasicJapaneseCharacterGenerator#TYPE_CHARS_PAIRS
+
+# ============================================================
+# SendSyncMessageParser の errorMode（モックエラー制御）
+# ============================================================
+# MockMessagingContext / MockMessagingClient 経由の response_*_messages では
+# データ行の1列目（フィールド値の先頭要素）に特殊値を書くことでエラーモードを指定できる。
+#
+# | 値                        | 効果                                      |
+# |---------------------------|-------------------------------------------|
+# | "errorMode:timeout"       | 送受信タイムアウトをシミュレート          |
+# | "errorMode:msgException"  | メッセージング例外をシミュレート          |
+#
+# 例（errorMode を含む response_body_messages）:
+# response_body_messages:
+#   - id: timeoutCase
+#     records:
+#       - record_type: BODY
+#         fields:
+#           - name: DATA
+#             type: X
+#             length: 1
+#         rows:
+#           - ["errorMode:timeout"]  # この行全体がエラーモードマーカー
+#
+# 根拠: SendSyncMessageParser.java（定数 ERROR_MODE_TIMEOUT / ERROR_MODE_MSG_EXCEPTION）

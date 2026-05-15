@@ -75,7 +75,8 @@
       "properties": {
         "group_id": {
           "type": "string",
-          "description": "グループID。Excel: SETUP_TABLE[groupId]=... の括弧内の値。省略時はグループIDなし扱い"
+          "minLength": 1,
+          "description": "グループID。Excel: SETUP_TABLE[groupId]=... の括弧内の値。省略時はグループIDなし扱い。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "table": {
           "type": "string",
@@ -125,7 +126,8 @@
       "properties": {
         "group_id": {
           "type": "string",
-          "description": "グループID。Excel: SETUP_FIXED[groupId]=path の括弧内の値"
+          "minLength": 1,
+          "description": "グループID。Excel: SETUP_FIXED[groupId]=path の括弧内の値。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "path": {
           "type": "string",
@@ -174,7 +176,8 @@
       "properties": {
         "group_id": {
           "type": "string",
-          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。GroupDataParsingTemplate（RequestTestingSendSyncSupport 経路）がこの値でフィルタリングする。MockMessagingContext / MockMessagingClient 経路では不要のため省略可"
+          "minLength": 1,
+          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。GroupDataParsingTemplate（RequestTestingSendSyncSupport 経路）がこの値でフィルタリングする。MockMessagingContext / MockMessagingClient 経路では不要のため省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "id": {
           "type": "string",
