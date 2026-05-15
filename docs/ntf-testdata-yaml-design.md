@@ -140,6 +140,21 @@ Excelでは別のデータ種別だが、`BasicTestDataParser#getSetupFile()` �
 
 両者は `getExpectedTableData()` でマージされて返されるが、`EXPECTED_COMPLETE_TABLE` が `fillDefaultValues()` を呼ぶかどうかの違いがある。YAMLでは `expected_tables` と `expected_complete_tables` を分けて保持し、変換時に呼び分けられるようにした。
 
+#### BasicDefaultValues のデフォルト値一覧
+
+`expected_complete_tables` で省略カラムに補完されるデフォルト値（`BasicDefaultValues` の実装）:
+
+| カラム型 | デフォルト値 |
+|---|---|
+| 数値型（`java.lang.Number` のサブクラス） | `"0"` |
+| 固定長文字列型（`CHAR`, `NCHAR` 等） | 半角スペース × カラム長 |
+| 可変長文字列型（`VARCHAR` 等） | `" "`（半角スペース1文字） |
+| 日付型（`java.sql.Date` 等） | `"1970-01-01 00:00:00.0"`（epoch） |
+| バイナリ型 | 10バイトのゼロバイト列の HexString |
+| Boolean型 | `"false"` |
+
+なお、`SETUP_TABLE` / `EXPECTED_TABLE` でも各 `rows` オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に `DefaultValues` によるデフォルト値が補完される（`TableData#convert()` の動作）。省略カラムの補完は `EXPECTED_COMPLETE_TABLE` 専用ではない。
+
 ### 5. field_def.type と BasicDataTypeMapping の関係
 
 **採用: YAMLにはフレームワーク型記号（`X`, `N`, `Z` 等）を記述する。**
@@ -169,7 +184,21 @@ YAMLでは `"[COLNAME]"` のようにダブルクォートで囲む必要があ�
 | 文字列 "null" をDBに格納（意図的） | `'"null"'` | QuotationTrimmerが外側クォートを除去して "null" を格納 |
 | システム日時 | `"${systemTime}"` | DateTimeInterpreter が変換 |
 
+**NullInterpreter は大文字小文字を区別しない**（`equalsIgnoreCase`）。`"NULL"`, `"Null"`, `"null"` のいずれも Java null に変換される。
+
+**QuotationTrimmer は全角ダブルクォートにも対応**。半角ダブルクォート（`"..."` U+0022）だけでなく全角ダブルクォート（`"..."` U+201C/U+201D）で囲んだ値も前後1文字が除去される。
+
 **すべての値は文字列（クォート付き）で記述すること。** YAMLパーサが数値・真偽値として解釈するとスキーマバリデーション違反になる。
+
+#### 日付型カラムの記述形式
+
+テーブルデータの日付型カラムは以下の形式を受け付ける（`TableData#asYyyyMMddHHmmssSSS()`）。
+
+| 形式 | 例 | 備考 |
+|---|---|---|
+| `yyyyMMddHHmmssSSS`（17文字） | `"20240101120000000"` | 標準形式 |
+| 17文字未満（後置0埋め） | `"20240101"` | 後ろに `"00000000000000000"` を付加して前17文字を使用。`"20240101"` → `"20240101000000000"` |
+| JDBCタイムスタンプエスケープ（5文字目が `-`） | `"2024-01-01"`, `"2024-01-01 12:00:00.000"` | `isJdbcTimestampFormat()` で判定 |
 
 ```yaml
 # NG
@@ -212,6 +241,83 @@ YAMLでは `group_id` フィールドを省略した場合が経路B相当とな
 `MessageParser` は内部で `FixedLengthFileParser#onReadingNames()` をオーバーライドし、先頭セル（レコード種別名）を常に固定文字列 `"default"` に置き換える（`MessageParser.java` 匿名クラス内）。  
 このため `messages` / `expected_request_*_messages` の `record_type` 値（`"FW_HEADER"`, `"BODY"` 等）は識別・可読性のためだけであり、パーサの動作に影響しない。  
 YAMLでは可読性のため任意の名前を書いてよいが、実行時に無視されることを認識すること。
+
+**Excel との相違点（YAMLアダプタ実装時の注意）:** Excel では FW制御ヘッダフィールド（`requestId`, `userId` 等）は「フィールド名 | 値」の 2列ディレクティブ行形式で書かれ、`MessageParser#processDirectives()` が `isFrameworkHeader()` で判定して `fwHeader` Map に分離していた。YAMLでは通常の `fields` 配列の要素として記述し、YAMLアダプタ実装側でフィールド名を参照して `fwHeader` 分離を行う必要がある。
+
+**`response_*_messages` での FW制御ヘッダ分離なし:** `SendSyncMessageParser`（`MockMessagingContext` / `MockMessagingClient` 経路）は `getFwHeader()` が `UnsupportedOperationException` を投げるため、FW制御ヘッダの分離は行われない。`response_*_messages` では FW_HEADER ブロックを `directives` ではなく `fields` として記述すること（`MessageParser` 経路と同一の構造にしてよい）。
+
+### 12. Excel → YAML の行処理ルール（TestDataParsingTemplate）
+
+- **コメント行**: 先頭セルが `//` で始まる行を行ごとスキップ（YAML では `#` コメントが同等）
+- **行内コメント**: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て（`cutComment()`）。YAML では列の途中に `#` コメントを置くことで表現できる
+- **空行スキップ**: 全セルが空（null または空文字）の行は読み飛ばされる（`isBlankLine()`）
+
+### 13. デフォルトディレクティブの DI（拡張ポイント）
+
+`SystemRepository` への DI でファイル種別ごとにデフォルトディレクティブを一括設定できる:
+
+| SystemRepository キー | 適用範囲 | 根拠 |
+|---|---|---|
+| `"defaultDirectives"` | 全ファイル（固定長・可変長共通） | `DataFile` コンストラクタ |
+| `"fixedLengthDirectives"` | 固定長ファイル専用 | `FixedLengthFile` コンストラクタ |
+| `"variableLengthDirectives"` | 可変長ファイル専用 | `VariableLengthFile` コンストラクタ |
+
+値は `Map<String, String>` で登録する。個別ファイルの `directives:` 指定がある場合はその値が優先される。
+
+### 14. DataTypeMapping の優先検索順（拡張ポイント）
+
+`DataFileFragment#setTypes()` は以下の優先順でマッピングを取得する:
+
+1. `SystemRepository["dataTypeMapping_{エンコーディング名}"]`（例: `"dataTypeMapping_MS932"`）
+2. `SystemRepository["dataTypeMapping"]`
+3. `BasicDataTypeMapping`（デフォルト）
+
+YAML アダプタ実装時は、フレームワーク型記号（`X`, `N` 等）を直接渡す identity mapping を `"dataTypeMapping"` キーで登録するか、パーサ側で `setTypes()` を迂回する（§5 参照）。未知の型記号は `BasicDataTypeMapping` が `IllegalArgumentException` をスローするため、identity mapping が必須。
+
+### 15. TEST_ プレフィクス型の自動昇格
+
+`"TEST_X9"` のように `TEST_` プレフィクスのデータ型が `ConvertorFactory` に登録されている場合、YAML に `type: X9` と書いてもパーサが `getTypeForTest()` で `TEST_X9` を自動優先選択する（`DataFileFragment`）。テスト専用の型シンボルを使いたい場合は `TEST_` プレフィクスで登録すると既存の type 記述を変えずに切り替えできる。
+
+### 16. TestDataConverter 拡張点
+
+`SystemRepository["TestDataConverter_" + file-type]`（例: `"TestDataConverter_Fixed"`）に `TestDataConverter` 実装を登録することで、レイアウト定義の生成（`createDefinition()`）とデータレコードの変換（`convertData()`）をカスタマイズできる（`FixedLengthFile` / `VariableLengthFile`）。
+
+### 17. SendSyncSupport のテストデータ配置規則
+
+`MockMessagingContext` / `MockMessagingClient` 経由の同期送信テスト（`SendSyncSupport`）では、以下の規則でデータファイルを配置する:
+
+- ベースパス: `FilePathSetting["sendSyncTestData"]` で設定されるディレクトリ
+- ファイル配置: `{ベースパス}/{requestId}/message.xlsx`（Excel時）→ YAML 移行後は `{ベースパス}/{requestId}/message.yaml` 等
+- シート名（Excel）: `"message"` 固定（`SendSyncSupport.RESPONSE_MESSAGES_SHEET_NAME = "message"`）
+
+呼び出し毎にレコードを順番に消費するキャッシュ機構がある（ファイルのタイムスタンプが変わらない限りキャッシュを使いまわし、内部カウンタで次レコードを返す）。
+
+### 18. messaging.assertAsMapFileType によるアサート方式切り替え
+
+`RequestTestingMessagingClient` は `SystemRepository["messaging.assertAsMapFileType"]`（デフォルト: `"Fixed"`）の値と一致するファイルタイプのメッセージを DataRecord 単位で検証する。一致しないファイルタイプは電文バイト列を文字列全体で比較する。
+
+### 19. メッセージフォーマット定義ファイルの命名規則（RequestTestingMessagingClient）
+
+HTTP系リクエスト単体テストでは、以下の規則でフォーマット定義ファイルを検索する:
+
+- 送信電文フォーマット: `{requestId}_SEND`（`requestMessageFormatFileNamePattern`）
+- 応答電文フォーマット: `{requestId}_RECEIVE`（`responseMessageFormatFileNamePattern`）
+
+これらのファイルは `FilePathSetting["format"]` ベースパス配下に配置する。
+
+### 20. BinaryFileInterpreter のパス基準
+
+`${binaryFile:相対パス}` のファイルパスは、Excel ファイルのディレクトリを基準とした相対パスで解決される（`BinaryFileInterpreter` コンストラクタの `path` 引数）。YAML 移行後は YAML ファイルのディレクトリを基準とするか、絶対パスで解決するかをアダプタ実装時に統一すること。
+
+### 21. DateTimeInterpreter の完全一致制約
+
+`DateTimeInterpreter` は値が `${systemTime}`, `${setUpTime}`, `${updateTime}` と**完全一致**する場合のみ変換する（Map lookup）。`"${systemTime}_suffix"` のような部分文字列が含まれる複合式は、`CompositeInterpreter` の `${...}` セグメントとして分解してから渡す必要がある。
+
+`${setUpTime}` の変換後の値は JDBC タイムスタンプ書式（`yyyy-MM-dd HH:mm:ss.SSS`）形式で設定する必要がある（`DateTimeInterpreter#setSetUpDateTime()` のバリデーション）。
+
+### 22. CompositeInterpreter の DI 設定
+
+`CompositeInterpreter` は `interpreters` プロパティに `TestDataInterpreter` のリストを DI しないと機能しない（デフォルトは空リスト）。`DateTimeInterpreter`, `BasicJapaneseCharacterInterpreter`, `BinaryFileInterpreter` 等を登録することで各 `${...}` セグメントの解釈が有効になる。
 
 ---
 
@@ -296,6 +402,10 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
   ファイル内で id がユニークでなければならない（重複時は最初の1件のみ取得）
 - 同一テストシナリオで複数バリエーションが必要な場合は別の id を使うこと
 
+## ディレクティブの field-separator
+- タブ区切りを指定する場合: field-separator: "\\t"  （バックスラッシュ+t の2文字文字列。VariableLengthFile がタブ文字 U+0009 に変換する）
+- field-separator は1文字のみ有効（"\\t" 変換後は1文字となるため "\\t" も有効）
+
 ## ディレクティブの quoting-delimiter
 - ダブルクォート1文字を指定する場合: quoting-delimiter: '"'  （シングルクォートで囲む）
 - "\""（バックスラッシュエスケープ）でも同じ結果だが '"' の方が可読性が高い
@@ -336,7 +446,8 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 半角英字 / 半角数字 / 半角記号 / 半角カナ /
 全角英字 / 全角数字 / 全角ひらがな / 全角カタカナ / 全角漢字 / 全角記号その他 /
 中国語 / サロゲートペア / 改行 / 外字
-（スペルミスは interpreter が素通りさせるためスキーマでは検出できない）
+（スペルミスは BasicJapaneseCharacterGenerator が IllegalArgumentException をスローする。スキーマでは検出できないが実行時にエラーになる）
+（${半角記号} の生成には ", #, ,, \ は含まれない — JapaneseCharacterSet.ASCII_SYMBOL の除外リスト）
 
 ## messages / expected_request_*_messages の record_type に注意
 - MessageParser は record_type の値を無視し、内部的に "default" という固定名に置き換える

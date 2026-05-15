@@ -84,7 +84,7 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラムは '\"[COLNAME]\"' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する（BasicTestDataParser が全件DELETE を実行）。",
+          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラムは '\"[COLNAME]\"' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する（BasicTestDataParser が全件DELETE を実行）。\n各オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に DefaultValues によるデフォルト値が補完される（SETUP_TABLE / EXPECTED_TABLE どちらでも同様）。EXPECTED_COMPLETE_TABLE では省略カラムに BasicDefaultValues で全件補完したうえで比較される。",
           "items": {
             "type": "object",
             "additionalProperties": {
@@ -211,7 +211,7 @@
         },
         "record-length": {
           "type": "integer",
-          "description": "[固定長専用] レコード長（バイト数）。FixedLengthDataRecordFormatter$FixedLengthDirective#RECORD_LENGTH"
+          "description": "[固定長専用] レコード長（バイト数）。FixedLengthFile#createLayout() が全フィールド長の合計から自動計算するため通常は記述不要。明示した場合は自動計算値を上書きする。FixedLengthDataRecordFormatter$FixedLengthDirective#RECORD_LENGTH"
         },
         "positive-zone-sign-nibble": {
           "type": "string",
@@ -243,7 +243,7 @@
         },
         "field-separator": {
           "type": "string",
-          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。VariableLengthDirective#FIELD_SEPARATOR"
+          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。1文字のみ有効。\"\\\\t\" を指定するとタブ文字（U+0009）に変換される（VariableLengthFile#convertDirectiveValue()）。VariableLengthDirective#FIELD_SEPARATOR"
         },
         "quoting-delimiter": {
           "type": "string",
@@ -281,7 +281,7 @@
         "fields": {
           "type": "array",
           "minItems": 1,
-          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合",
+          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合。同一レコード種別内のフィールド名は重複不可（DataFileFragment#setNames() が重複チェックし重複時は IllegalArgumentException）",
           "items": { "$ref": "#/$defs/field_def" }
         },
         "rows": {
@@ -312,7 +312,7 @@
           "description": "データ型記号（BasicDataTypeMapping 参照）。標準値: X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ。BasicDataTypeMapping#setMappingTable() または DataTypeMapping インタフェース実装によりカスタム型記号も使用可能（TEST_X9 等アンダースコアを含む型も許容）"
         },
         "length": {
-          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）",
+          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される（DataFileFragment#removeLineSeparatorWithTrim()）",
           "anyOf": [
             { "type": "integer", "minimum": 1 },
             { "type": "string", "const": "-" }

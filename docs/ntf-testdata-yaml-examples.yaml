@@ -3,6 +3,13 @@
 # 特殊値変換ルール: ntf-testdata-structure.md §4 参照
 #
 # ================================================================
+# 【重要】コメント・空行の扱い
+#
+#   先頭セルが // で始まる行はコメント行としてスキップ（YAML の # コメントが同等）
+#   行内コメント: 列の途中に # を置くとそれ以降が無視される（Excel では // 以降の列が切り捨てられる動作と同等）
+#   全要素が空の行は読み飛ばされる
+#
+# ================================================================
 # 【重要】rows の形式が2種類ある
 #
 #   テーブル系（setup_tables / expected_tables / expected_complete_tables / list_maps）:
@@ -140,6 +147,7 @@ setup_files:
       # "\r\n" → CR+LF バイト列（0x0D 0x0A）
       # "\\r\\n" はバックスラッシュ+r+バックスラッシュ+n の4文字になるので注意。
       record-separator: "\r\n"
+      # record-length は FixedLengthFile#createLayout() が全フィールド長合計から自動計算するため通常は記述不要
       record-length: 40
     records:
       - record_type: DATA
@@ -360,13 +368,14 @@ response_body_messages:
 # BasicJapaneseCharacterInterpreter 文字種トークン一覧
 # ============================================================
 # ${文字種, 文字数} 形式で使用。文字種は以下の14種のみ有効。
-# スペルミスは interpreter が素通りさせるためスキーマでは検出できない。
+# スペルミスは BasicJapaneseCharacterGenerator が IllegalArgumentException をスローする（スキーマでは検出できないが実行時にエラーになる）。
+# ${半角記号} の生成には ", #, ,, \ は含まれない（JapaneseCharacterSet.ASCII_SYMBOL の除外リスト）。
 #
 # | トークン       | 生成文字              |
 # |----------------|-----------------------|
 # | 半角英字       | a-z, A-Z              |
 # | 半角数字       | 0-9                   |
-# | 半角記号       | ASCII 記号            |
+# | 半角記号       | ASCII 記号（",#,,,\ を除く）|
 # | 半角カナ       | 半角カタカナ          |
 # | 全角英字       | Ａ-Ｚ, ａ-ｚ          |
 # | 全角数字       | ０-９                 |
@@ -405,3 +414,79 @@ response_body_messages:
 #           - ["errorMode:timeout"]  # この行全体がエラーモードマーカー
 #
 # 根拠: SendSyncMessageParser.java（定数 ERROR_MODE_TIMEOUT / ERROR_MODE_MSG_EXCEPTION）
+
+# ============================================================
+# タブ区切りファイル（field-separator: "\\t"）の例
+# ============================================================
+# field-separator に "\\t" を指定するとタブ文字（U+0009）に変換される（VariableLengthFile#convertDirectiveValue()）
+# setup_files:
+#   - path: input/tsv_data.tsv
+#     type: variable
+#     directives:
+#       text-encoding: UTF-8
+#       field-separator: "\\t"    # タブ区切り（バックスラッシュ+t の2文字文字列 → タブ文字に変換）
+#     records:
+#       - record_type: DATA
+#         fields:
+#           - name: ID
+#             type: X
+#           - name: NAME
+#             type: N
+#         rows:
+#           - ["001", "山田太郎"]
+
+# ============================================================
+# バイナリ型フィールド（type: B）と BinaryFileInterpreter の例
+# ============================================================
+# type: B のフィールドにはバイナリデータを HexString で記述する。
+# ${binaryFile:相対パス} を使うとファイルの内容を HexString に変換して挿入できる。
+# パスは Excel ファイル（または YAML ファイル）のディレクトリからの相対パス。
+#
+# setup_files:
+#   - path: input/binary_data.dat
+#     type: fixed
+#     directives:
+#       text-encoding: MS932
+#     records:
+#       - record_type: DATA
+#         fields:
+#           - name: HASH
+#             type: B
+#             length: 16
+#         rows:
+#           - ["${binaryFile:data/expected.bin}"]  # BinaryFileInterpreter が HexString に変換
+
+# ============================================================
+# 日付型カラムの記述形式（TableData の受付形式）
+# ============================================================
+# setup_tables:
+#   - table: DATE_SAMPLE
+#     rows:
+#       - ID: "001"
+#         CREATED_AT: "20240101120000000"     # 標準形式: yyyyMMddHHmmssSSS（17文字）
+#       - ID: "002"
+#         CREATED_AT: "20240101"              # 短縮形: 17文字未満は後置0埋め → "20240101000000000"
+#       - ID: "003"
+#         CREATED_AT: "2024-01-01"            # JDBC タイムスタンプエスケープ形式（5文字目が "-"）
+#       - ID: "004"
+#         CREATED_AT: "2024-01-01 12:00:00.000"  # JDBC タイムスタンプエスケープ形式（詳細版）
+
+# ============================================================
+# response_*_messages の通常データ行例（errorMode なし）
+# ============================================================
+# SendSyncMessageParser 経由（MockMessagingContext / MockMessagingClient）の通常応答例。
+# rows の各配列には NO 列（先頭の通し番号）を含めない（SendSyncMessageParser が除去済みの形で格納する）。
+#
+# response_body_messages:
+#   - id: normalCase
+#     records:
+#       - record_type: BODY
+#         fields:
+#           - name: RESULT_CODE
+#             type: X
+#             length: 4
+#           - name: RESULT_DATA
+#             type: N
+#             length: 40
+#         rows:
+#           - ["0000", "正常応答データ"]   # NO 列なし。fields と同順で値を並べる
