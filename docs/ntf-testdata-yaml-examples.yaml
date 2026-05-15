@@ -5,11 +5,14 @@
 # ================================================================
 # 【重要】rows の形式が2種類ある
 #
-#   テーブル系（setup_tables / expected_tables / list_maps）:
+#   テーブル系（setup_tables / expected_tables / expected_complete_tables / list_maps）:
 #     rows はオブジェクト配列 → [{COL: "val"}, ...]
 #
-#   ファイル系（setup_files / expected_files / messages 等）:
+#   ファイル系（setup_files / expected_files / messages /
+#              expected_request_header_messages / expected_request_body_messages /
+#              response_header_messages / response_body_messages）:
 #     rows は配列の配列 → [["val1", "val2"], ...]
+#     ※ records[] を持つすべてのデータ種別が「ファイル系」に該当する
 #
 # 【重要】値は必ず文字列（ダブルクォート）で記述すること
 #   NG: AGE: 30    ← YAMLパーサが integer として解釈しスキーマ違反
@@ -154,8 +157,10 @@ setup_files:
             type: Z
             length: 10
         rows:
-          - ["001       ", "山田太郎            ", "0000005000"]
-          - ["002       ", "鈴木花子            ", "0000009800"]
+          # 固定長ファイルのパディングは FixedLengthDataRecordFormatter が自動付与するため
+          # セル値はパディングなしで記述してよい（PoiXlsReader の動作と同様）
+          - ["001", "山田太郎", "5000"]
+          - ["002", "鈴木花子", "9800"]
 
   # 固定長: 符号・ニブル関連ディレクティブの例
   # - group_id: grp2
@@ -177,7 +182,7 @@ setup_files:
     directives:
       text-encoding: UTF-8
       field-separator: ","         # [可変長専用] フィールド区切り文字（省略時も","）
-      quoting-delimiter: "\""      # [可変長専用] クォート文字
+      quoting-delimiter: '"'       # [可変長専用] クォート文字（ダブルクォート1文字）
       ignore-blank-lines: true     # [可変長専用] 空行を無視
       requires-title: false        # [可変長専用] タイトル行の要否
     records:
@@ -223,7 +228,7 @@ expected_files:
             type: X
             length: "-"   # "-" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）
         rows:
-          - ["0000", "処理成功            ", "normal"]
+          - ["0000", "処理成功", "normal"]
 
 # ============================================================
 # messages（MESSAGE: 要求電文）

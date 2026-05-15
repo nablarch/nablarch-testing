@@ -20,7 +20,27 @@
 
 ## 変換ビフォーアフター（Excel → YAML）
 
-### テーブルデータ
+> **注意**: Excel の `|` はセル境界を模した擬似表記です。実際のExcelでは各セルが独立しています。
+
+### テーブルデータ（グループIDなし）
+
+**Excel（シート上の表示）:**
+```
+行1: SETUP_TABLE=USER_TABLE
+行2: USER_ID | USER_NAME
+行3: 001     | 山田太郎
+```
+
+**YAML（変換後）:**
+```yaml
+setup_tables:
+  - table: USER_TABLE       # group_id フィールドは省略
+    rows:
+      - USER_ID: "001"
+        USER_NAME: "山田太郎"
+```
+
+### テーブルデータ（グループID付き）
 
 **Excel（シート上の表示）:**
 ```
@@ -78,7 +98,8 @@ setup_files:
 
 **変換のポイント:**
 - Excel の3行（フィールド名・型・長さ）が `fields:` の1要素に横方向統合される
-- `rows:` の各配列は `fields` と完全に同じ順序・件数で値を並べること（列順ミスはパーサがランタイムエラーで検出）
+- `rows:` の各配列は `fields` と完全に同じ順序・件数で値を並べること（列順ミスはパーサがランタイムエラーで検出。JSONスキーマでは検出できない）
+- **固定長ファイルの rows 値はパディング不要**: `FixedLengthDataRecordFormatter` がフィールド長に合わせて自動パディングを付与する（Excel セルに `001` と書くのと同様、YAML でも `"001"` と書けばよい）
 
 ---
 
@@ -202,6 +223,13 @@ YAML対応のパーサを実装する際は、以下の段階的移行が可能�
 - マーカーカラム（`[COLNAME]`）はYAMLキーとして `"[COLNAME]"` にクォートする
 - Excel のセル値が空（`""`）でも意図的に空文字として出力する（省略しない）
 - `null` セルは `null` として出力する
+- **Excelのセルが数値型で保存されている場合**（例: `001` が整数 `1` として格納）は、POI の `cell.setCellType(STRING)` で文字列化してから取得する方法を推奨（先頭ゼロが消えるのを防ぐ）
+- **複数シートのExcelファイル**はシートごとにYAMLを分割するか、1ファイルに全セクションをまとめるかをプロジェクトルールで事前に決定すること
+
+### ExcelとYAMLの並存について
+
+現状のNTFパーサ（`PoiXlsReader` + `BasicTestDataParser`）はExcelのみを読み込む実装になっている。
+YAML対応のパーサを追加実装する際は、`TestDataReader` インタフェースを実装したYAMLパーサを作成し、`BasicTestDataParser`（あるいはそのファクトリ）でファイル拡張子（`.yaml`/`.yml`）により `PoiXlsReader` と切り替えるロジックを追加する。NTF が Reader を DI で差し込む構造の場合は、コンポーネント設定ファイルの変更も必要。
 
 ---
 
@@ -229,6 +257,30 @@ YAML対応のパーサを実装する際は、以下の段階的移行が可能�
 
 ## group_id の省略ルール
 - グループIDがない場合は group_id フィールド自体を省略すること（null や "" は不可）
+- group_id に null や "" を指定すると空文字列のグループIDとして扱われ誤マッチが起きる
+
+## SingleData 系の id 一意制約
+- list_maps / messages / expected_request_header_messages / expected_request_body_messages は
+  ファイル内で id がユニークでなければならない（重複時は最初の1件のみ取得）
+- 同一テストシナリオで複数バリエーションが必要な場合は別の id を使うこと
+
+## ディレクティブの boolean 値はクォート不要
+- required-decimal-point / fixed-sign-position / required-plus-sign /
+  ignore-blank-lines / requires-title はスキーマで boolean 型として定義
+- rows フィールドの値と異なり、true / false とクォートなしで記述すること
+  （"true" や "false" ではなく true / false）
+
+## ディレクティブの record-separator
+- record-separator の値は YAML ダブルクォート文字列内でエスケープシーケンスを使う
+- CRLF: "\r\n" （正しい）
+- LF:   "\n"   （正しい）
+- "\\r\\n" はバックスラッシュ+r+バックスラッシュ+n の4文字になるため誤り
+- シンボル形式（"CRLF" / "LF" / "CR" / "NONE"）も有効
+
+## 列順ミスはスキーマでは検出されない
+- record_fragment の rows は fields の順序に対応するが、列ズレは JSON Schema で検出できない
+- fields に定義した順序と rows の値の順序を必ず目視で確認すること
+- 列順ミスはパーサのランタイムエラーまで発覚しない
 
 ## マーカーカラム
 - キー名を "[COLNAME]" と角括弧で囲みダブルクォートする

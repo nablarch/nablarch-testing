@@ -168,7 +168,7 @@
 
     "group_message_data": {
       "type": "object",
-      "required": ["id", "records"],
+      "required": ["group_id", "id", "records"],
       "additionalProperties": false,
       "description": "グループメッセージデータ（GroupData系）。GroupMessageParser が処理。GroupDataParsingTemplate#isTargetType() は group_id でフィルタリングする。id（'=' 以降の値）はフィルタリングには使われず識別子として記録される",
       "properties": {
@@ -200,11 +200,11 @@
         },
         "record-separator": {
           "type": "string",
-          "description": "[共通] レコード区切り文字。YAMLでは \"\\r\\n\"（CRLF）、\"\\n\"（LF）のようにJavaエスケープ記法で記述する。DataRecordFormatterSupport$Directive#RECORD_SEPARATOR"
+          "description": "[共通] レコード区切り文字。YAMLダブルクォート文字列内でエスケープシーケンスを使う（例: \"\\r\\n\" = CRLF、\"\\n\" = LF）。シンボル形式（\"CRLF\" / \"LF\" / \"CR\" / \"NONE\"）も有効（LineSeparator.evaluate() が解釈）。DataRecordFormatterSupport$Directive#RECORD_SEPARATOR"
         },
         "file-type": {
           "type": "string",
-          "description": "[共通] ファイル種別。DataRecordFormatterSupport$Directive#FILE_TYPE"
+          "description": "[共通] ファイル種別。FixedLengthFile / VariableLengthFile のコンストラクタが自動設定するため通常は記述不要（固定長=Fixed、可変長=Variable）。DataRecordFormatterSupport$Directive#FILE_TYPE"
         },
         "record-length": {
           "type": "integer",
@@ -283,6 +283,7 @@
         },
         "rows": {
           "type": "array",
+          "minItems": 1,
           "description": "データ行リスト。各要素は fields と同順・同件数の値配列",
           "items": {
             "type": "array",
@@ -305,8 +306,8 @@
         },
         "type": {
           "type": "string",
-          "enum": ["X", "N", "XN", "Z", "SZ", "P", "SP", "X9", "SX9", "B"],
-          "description": "データ型記号（BasicDataTypeMapping 参照）。X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ"
+          "pattern": "^[A-Z][A-Z0-9]*$",
+          "description": "データ型記号（BasicDataTypeMapping 参照）。標準値: X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ。BasicDataTypeMapping#setMappingTable() または DataTypeMapping インタフェース実装によりカスタム型記号も使用可能"
         },
         "length": {
           "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）",

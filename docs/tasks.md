@@ -45,8 +45,20 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 
 - [x] 第1回専門家レビュー（4名並列）実施済み
 - [x] 第1回指摘を修正（P0〜P3）
-- [ ] 第2回専門家レビュー（4名並列）実施
-- [ ] 第2回指摘に基づく修正（本質的指摘がなくなるまで繰り返す）
+- [x] 第2回専門家レビュー（4名並列）実施
+- [x] 第2回指摘に基づく修正
+  - field_def.type を enum → pattern: "^[A-Z][A-Z0-9]*$" に変更（カスタム型拡張対応）
+  - record_fragment.rows に minItems: 1 を追加
+  - group_message_data.group_id を required に追加
+  - record-separator description にシンボル形式（CRLF/LF等）を追記
+  - file-type description に「通常は記述不要（自動設定）」を追記
+  - examples.yaml の固定長ファイル rows からパディング除去（自動付与される仕様）
+  - examples.yaml の冒頭コメントにメッセージ系・expected_complete_tables を追記
+  - design.md に変換ビフォーアフター（グループIDなし例）を追加
+  - design.md にExcelとYAMLの並存説明・数値セル注意・複数シート方針を追加
+  - AI向けプロンプト補助情報にboolean値クォート不要・record-separator罠・列順ミス検出タイミング・SingleData id一意制約を追記
+- [ ] 第3回専門家レビュー（4名並列）実施
+- [ ] 第3回指摘に基づく修正（本質的指摘がなくなるまで繰り返す）
 - [ ] 最終コミット・プッシュ
 
 ---
