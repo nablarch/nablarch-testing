@@ -1,5 +1,8 @@
 # NTF テストデータ YAML スキーマ設計メモ
 
+> **スコープ**: このスキーマは **NTF（Nablarch Testing Framework）が読み込むテストデータ構造のみ**を対象とする。  
+> セルの色・コメント・シート保護・マーカーカラムの値などの「NTF が参照しない付加情報」は変換対象外とする。
+
 ## Excel概念 → YAML構造 対応表
 
 | Excel概念 | YAML構造 | 備考 |
@@ -176,11 +179,11 @@ YAMLパーサが `type: X` を直接 `setTypes()` に渡すと `IllegalArgumentE
 YAML対応パーサの実装時は、`type` 値をそのままフレームワーク型記号として使用する独自の `DataTypeMapping`（identity mapping）を `SystemRepository` の `"dataTypeMapping"` キーで登録するか、パーサ側で `setTypes()` を迂回してフレームワーク型記号を直接設定する必要がある。  
 この実装判断はスキーマ定義の範囲外だが、YAMLアダプタ実装時に必須の考慮事項として記録する。
 
-### 6. マーカーカラムのキー名表現
+### 6. マーカーカラムの扱い
 
 Excel では `[COLNAME]` 形式のカラム名がマーカーとして扱われる（`HeaderLine` の規則）。  
-YAMLでは `"[COLNAME]"` のようにダブルクォートで囲む必要がある。  
-（クォートなしの `[COLNAME]: val` はYAMLパーサがフロー配列として誤解釈する）
+マーカーカラムの値は NTF が DB 操作から除外するため、**YAML には出力しない**。  
+変換ツールは `HeaderLine#getEffectiveColumnNames()` と同様にマーカーカラムを除外してから `rows` を生成すること。
 
 ### 7. 特殊値の表現と null の仕様
 
@@ -532,8 +535,8 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 - 列順ミスはパーサのランタイムエラーまで発覚しない
 
 ## マーカーカラム
-- キー名を "[COLNAME]" と角括弧で囲みダブルクォートする
-- 値は任意の文字列（マーキング用途。DB操作から除外される）
+- NTF が DB 操作から除外する付加情報であるため、YAML には出力しない
+- Excel → YAML 変換時に HeaderLine#getEffectiveColumnNames() と同様に除外すること
 
 ## 特殊値
 - null（DB NULL）: null  ← クォートなしの YAML キーワード。"null" と書くと文字列 null が格納される（意図と逆）

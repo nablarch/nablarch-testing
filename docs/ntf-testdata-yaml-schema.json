@@ -84,7 +84,7 @@
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラムは '\"[COLNAME]\"' 形式のキーで表現（HeaderLine の規則に従い DB 操作から除外される）。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する（BasicTestDataParser が全件DELETE を実行）。\n各オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に DefaultValues によるデフォルト値が補完される（SETUP_TABLE / EXPECTED_TABLE どちらでも同様）。EXPECTED_COMPLETE_TABLE では省略カラムに BasicDefaultValues で全件補完したうえで比較される。",
+          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラム（[COLNAME] 形式）は NTF が除外するため YAML には出力しない。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する（BasicTestDataParser が全件DELETE を実行）。\n各オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に DefaultValues によるデフォルト値が補完される（SETUP_TABLE / EXPECTED_TABLE どちらでも同様）。EXPECTED_COMPLETE_TABLE では省略カラムに BasicDefaultValues で全件補完したうえで比較される。",
           "items": {
             "type": "object",
             "additionalProperties": {

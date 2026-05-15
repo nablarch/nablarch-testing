@@ -54,7 +54,7 @@ setup_tables:
         USER_ID: "001"
         AMOUNT: "5000"
         STATUS: ""              # DBに空文字（ダブルクォート2つ）
-        "[MARKER_COL]": "X"     # マーカーカラム（"[COL]" 形式。HeaderLine: DB操作から除外）
+        # ※ マーカーカラム（[COLNAME] 形式）は NTF が除外するため YAML には出力しない
 
   - group_id: case2
     table: ORDER
@@ -63,7 +63,6 @@ setup_tables:
         USER_ID: "002"
         AMOUNT: "9800"
         STATUS: "1"
-        "[MARKER_COL]": "Y"
 
   # 特殊値インライン例: 各種 Interpreter が変換する特殊値を実際のフィールドに埋め込んだ例
   # BINARY_HASH のような外部ファイル依存特殊値: "${binaryFile:data/sample.bin}"（BinaryFileInterpreter: HexString に変換）
