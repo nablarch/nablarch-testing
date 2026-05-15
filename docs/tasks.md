@@ -124,23 +124,40 @@ NTFのテストデータをExcelからYAMLに移行するためのスキーマ�
 
 ---
 
+## 現在の状態（2026-05-15時点）
+
+- **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
+- **完了済み**: P0〜P3 すべて、レビューループ第1〜5回
+- **次のタスク**: P4-0（調査リポジトリの範囲確認）から順に着手
+
+**P4 着手前の注意**:
+- P4-1/P4-2 の調査はセッション内で試行したが、結果はコミットされていない（作業ログのみ）
+- P4-0 の pom.xml 確認 → P4-1 クラス一覧作成 → P4-2 仕様マッピングの順で進めること
+- P4 の出力ファイル（`docs/ntf-coverage-class-list.md`、`docs/ntf-coverage-spec-mapping.md`）はまだ存在しない
+
+---
+
 ## 成果物ファイル
 
 | ファイル | 状態 |
 |---|---|
-| `docs/ntf-testdata-structure.md` | 完成（調査報告） |
-| `docs/ntf-testdata-yaml-schema.json` | 完成 |
-| `docs/ntf-testdata-yaml-examples.yaml` | 完成 |
-| `docs/ntf-testdata-yaml-design.md` | 完成 |
+| `docs/ntf-testdata-structure.md` | 完成（コード調査報告） |
+| `docs/ntf-testdata-yaml-schema.json` | 完成（第5回レビュー対応済み） |
+| `docs/ntf-testdata-yaml-examples.yaml` | 完成（第5回レビュー対応済み） |
+| `docs/ntf-testdata-yaml-design.md` | 完成（第5回レビュー対応済み） |
 | `docs/tasks.md` | 本ファイル |
+| `docs/ntf-coverage-class-list.md` | **未作成**（P4-0/P4-1 で作成予定） |
+| `docs/ntf-coverage-spec-mapping.md` | **未作成**（P4-2/P4-3 で作成予定） |
 
 ---
 
 ## 再開手順
 
-1. このブランチをチェックアウト: `git checkout convert-testdata-excel-to-text`
-2. 本ファイル (`docs/tasks.md`) でチェック済み/未着手タスクを確認
-3. 未完了タスクから作業を再開する
+1. ブランチをチェックアウト: `git checkout convert-testdata-excel-to-text`
+2. 本ファイルで「現在の状態」と未完了タスク（P4-0〜）を確認
+3. P4-0 から順に着手:
+   - pom.xml の外部依存を確認し、テストデータ仕様に関わるリポジトリ外の仕様範囲を特定
+   - 「このリポジトリだけ見ればよいか」を明文化してから P4-1 へ進む
 
 ---
 
