@@ -1,237 +1,239 @@
-# NTF テストデータ YAML スキーマ設計 タスクリスト
+# NTF テストデータ YAML 実装フェーズ
 
 ブランチ: `convert-testdata-excel-to-text`
 
 ## 目的
 
-NTFのテストデータをExcelからYAMLに移行するためのスキーマ設計・ドキュメント整備。
-専門家レビューで本質的な指摘がなくなるまで、修正→レビューを繰り返す。
+YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを実際に動かす。
+目的は2つ。
+
+1. 設計したYAMLスキーマがNTF仕様を満たしていることを検証する
+2. YAMLスキーマでNTFを動かす（TDDベース）
+
+「実装した」「テストが通った」だけでは不十分。
+「NTF仕様の全IDに対してテストが1対1で対応しており、カバー漏れゼロである」ことを第三者に根拠で説明できる状態を目指す。
 
 ---
 
-## タスク一覧
+## フェーズ概要
 
-### P0（バグ・即修正）
-
-- [x] P0-1: `ntf-testdata-yaml-schema.json` のディレクティブキー大量欠落を修正
-  - 固定長用: `positive-zone-sign-nibble`, `negative-zone-sign-nibble`, `positive-pack-sign-nibble`, `negative-pack-sign-nibble`, `required-decimal-point`, `fixed-sign-position`, `required-plus-sign`
-  - 可変長用: `field-separator`, `quoting-delimiter`, `ignore-blank-lines`, `requires-title`, `max-record-length`, `title-record-type-name`
-- [x] P0-2: `ntf-testdata-yaml-examples.yaml` のマーカーカラム構文バグ修正
-  - `[MARKER_COL]: X` → `"[MARKER_COL]": X`
-
-### P1（仕様曖昧・要確定）
-
-- [x] P1-1: `null` 表現の仕様を確定してスキーマ・examples・design.md に統一明記
-  - 方針: YAMLネイティブ `null` を正式採用（パーサがnullとして受け取る）
-  - 文字列 `"null"` は NullInterpreter 経由（後方互換）として明記
-
-### P2（整合性修正）
-
-- [x] P2-1: `message_data` / `group_message_data` の `records` を `required` に追加、`minItems: 1` を設定
-- [x] P2-2: `field_def.type` を `enum` で制約（`X`,`N`,`XN`,`Z`,`SZ`,`P`,`SP`,`X9`,`SX9`,`B`）
-- [x] P2-3: `field_def.length` の `oneOf` → `anyOf` に変更
-
-### P3（ドキュメント補強）
-
-- [x] P3-1: `design.md` に Excel→YAML 変換ビフォーアフター例を追加
-- [x] P3-2: `design.md` に段階的移行戦略セクションを追加
-- [x] P3-3: `design.md` に AI向けプロンプト補助情報セクションを追加
-- [x] P3-4: `examples.yaml` に特殊値インライン例を追加
-- [x] P3-5: `examples.yaml` に数値クォートのNG/OKアンチパターン例を追加
-- [x] P3-6: `examples.yaml` の `record-separator` エスケープ仕様をコメント明記
-- [x] P3-7: `group_message_data.id` の description を改善（GroupDataはgroupIdでフィルタする旨を明記）
-
-### 実装例リポジトリ評価
-
-- [x] 実装例リポジトリ vs 現行スキーマ設計 評価
-  - 対象: nablarch-example-{batch,web,rest}-ntf-yaml（javajavawhale）
-  - 出力: `docs/ntf-yaml-impl-evaluation.md`
-  - 主な知見: フラット変換方式 vs 構造化方式の差異、複数シート対応が現行スキーマに未定義、`"?"` プレフィックス記法の要確認
-
-- [x] E-1: 複数シート格納方針の決定と design.md への反映
-  - **採用: 選択肢A（1シート1ファイル分割）**。`FooTest.setUpDb.yaml`, `FooTest.testMethod1.yaml` 等に分割
-  - 選択肢B（スキーマにシート名キー追加）は既存スキーマの破壊的変更になるため不採用
-  - 先行実装例（nablarch-example-*-ntf-yaml）もフラット変換方式で整合
-  - design.md §変換ツール方針 に追記
-
-- [x] E-2: `"?"` プレフィックス記法（ワイルドカード）の仕様確認と反映
-  - `src/test/` 全体を調査した結果、`"?"` プレフィックス記法は nablarch-testing には存在しないことを確認
-  - 実装例リポジトリ固有の慣習と推定。本リポジトリのスキーマへの反映不要として完了
-
-### P4（仕様網羅性の根拠確立）
-
-テストデータ仕様の「塗りつぶし」 — 「レビューした」ではなく「全クラスを確認済み」という根拠を作る。
-
-- [x] P4-0: 調査リポジトリの範囲確認（前提検証）
-  - 「このリポジトリだけ見ればよい」という前提自体を検証する
-  - pom.xml の依存ライブラリを確認し、テストデータ仕様に関わる外部依存（nablarch-core-dataformat 等）を特定
-  - 各外部依存について「どの仕様がこのリポジトリ外で定義されているか」を整理
-  - 外部依存の仕様をどこで・どうやって確認するかの方針を決める
-  - 出力: `docs/ntf-coverage-class-list.md` の前置セクションとして記載
-
-- [x] P4-1（再）: 対象クラス一覧の再作成
-  - `src/main/java` + `src/test/java` 両方の全クラスを列挙
-  - 各クラスについて「対象（スキーマに影響する）」「対象外（理由付き）」を分類
-  - 旧 P4-1 は `src/main/java` のみを対象にしており不完全だったため再実施
-  - 出力: `docs/ntf-coverage-class-list.md`（上書き）
-  - `src/test/java` 233クラスを §2 として追補。P4-2の全行走査対象は `src/main/java` 直接影響29クラスのみとする方針を明記
-
-- [x] P4-2（再）: 対象クラス毎の全行仕様抽出
-  - 対象クラスの**全行**を走査し、各行・分岐をどう判断したかを記録
-  - 形式: クラスごとに行番号付きで「仕様あり / 対象外（理由）」を列挙
-  - YAMLスキーマ・design.md・examples.yaml のどの記述が対応するかをマッピング
-  - 未反映仕様があれば記録
-  - 旧 P4-2/P4-3 は目立つメソッドのみ拾っており全行走査の証明がなかったため再実施
-  - 出力: `docs/ntf-coverage-spec-mapping.md`（上書き）
-  - 29クラスを全行走査。未反映仕様: schema.json S-1〜S-5、design.md D-1〜D-16、examples.yaml E-1〜E-4
-
-- [x] P4-3（再）: 未反映仕様をスキーマ・設計文書・examples に反映
-  - P4-2（再）で洗い出した未反映仕様を schema.json / design.md / examples.yaml に反映
-  - schema.json: S-1〜S-5 反映済み（record-length 自動計算、field-separator タブ変換、フィールド名重複禁止、"-" フィールドのtrim、DefaultValues 補完）
-  - design.md: D-1〜D-16 反映済み（§24 複数レコードレイアウト、§25 "-" 長フィールドの最大バイト長を新規追加）
-  - examples.yaml: E-1〜E-4 反映済み（タブ区切り、type:B、JDBC日付、response通常行）
-  - 出力: 各成果物ファイルの更新
-
-- [x] D-5: 公式解説書（nablarch-document）との照合チェック
-  - 対象: `ja/development_tools/testing_framework/guide/development_guide/` 配下の RST ファイル（13ファイル）
-  - 解説書に記載のテストデータ仕様をスキーマ設計文書（schema.json / design.md / examples.yaml）と照合
-  - **17件の未反映仕様（Doc-1〜Doc-17）を洗い出し、全件を成果物に反映完了**
-    - schema.json: Doc-10（file_data.records を minItems: 0 に変更、空ファイル表現を可能に）
-    - design.md: Doc-1〜9/12〜17（主キー省略不可・Timestamp末尾.0・混在禁止・default groupId・日付形式・QuotationTrimmer記法・フィールド名重複許容・空ファイル表現・X9/SX9記述方法・ヘッダ繰り返し・no列複数回送信・HTTP行長制約・testShots予約ID・文字種数差異注記）
-    - examples.yaml: Doc-7（`\\n`→LF）/ Doc-8（QuotationTrimmerスペース/`"""`記法）/ Doc-11（0xバイナリ直接記述）/ Doc-14（no列と複数回送信例）
-  - 出力: `docs/ntf-coverage-doc-check.md`（解説書 × スキーマ 照合チェックリスト）
-
-- [x] P4-4: JavaエキスパートとQAエキスパートによるレビュー（サブエージェント並列）
-  - Javaエキスパート: P4-1/P4-2 の分類・マッピングの正確性をコードと照合
-  - QAエキスパート: 未カバー仕様の洗い出し・テスト観点の欠落確認
-  - 本質的な指摘がなくなるまで P4-2 修正→レビューを繰り返す
-  - **レビュー結果**:
-    - Java Expert 「要修正（軽微）」→ QuotationTrimmer 全角判定説明の誤りと BasicDefaultValues 日付タイムゾーン依存の修正を実施
-    - QA Expert 「合格」→ S-1〜S-5/D-1〜D-16/E-1〜E-4 全反映確認。group_message_data required 指摘は誤検知（既存定義で反映済み）
-    - 両レビュー修正完了。本質的な問題なし
-
-### レビューループ
-
-- [x] 第1回専門家レビュー（4名並列）実施済み
-- [x] 第1回指摘を修正（P0〜P3）
-- [x] 第2回専門家レビュー（4名並列）実施
-- [x] 第2回指摘に基づく修正
-  - field_def.type を enum → pattern: "^[A-Z][A-Z0-9]*$" に変更（カスタム型拡張対応）
-  - record_fragment.rows に minItems: 1 を追加
-  - group_message_data.group_id を required に追加
-  - record-separator description にシンボル形式（CRLF/LF等）を追記
-  - file-type description に「通常は記述不要（自動設定）」を追記
-  - examples.yaml の固定長ファイル rows からパディング除去（自動付与される仕様）
-  - examples.yaml の冒頭コメントにメッセージ系・expected_complete_tables を追記
-  - design.md に変換ビフォーアフター（グループIDなし例）を追加
-  - design.md にExcelとYAMLの並存説明・数値セル注意・複数シート方針を追加
-  - AI向けプロンプト補助情報にboolean値クォート不要・record-separator罠・列順ミス検出タイミング・SingleData id一意制約を追記
-- [x] 第3回専門家レビュー（4名並列）実施
-- [x] 第3回指摘に基づく修正
-  - design.md: 固定長ビフォーアフター例のパディングを除去（examples.yamlとの矛盾解消）
-  - design.md: 「ExcelとYAMLの並存」重複セクションを統合・削除
-  - examples.yaml: 残存パディングを全て除去（SEARCH_KEY, RESULT_COUNT/DATA 等）
-  - schema.json: field_def.type の pattern を ^[A-Z][A-Z0-9_]*$ に緩和（TEST_ プレフィクス型対応）
-  - schema.json: record_fragment.rows の minItems: 1 を削除（空ファイル検証ユースケース対応）
-  - design.md §AI向け: expected_complete_tables 使い分け・quoting-delimiter 記述例を追記
-- [x] 第4回専門家レビュー（4名並列）実施 → 全員「合格」。本質的な問題なし（後に問題発覚）
-- [x] 独立再レビュー実施 → group_message_data.group_id が必須設定されている重大バグを発見
-- [x] 第5回修正
-  - schema.json: group_message_data の required から group_id を削除（MockMessagingContext/Client 経路は group_id 不要）
-  - schema.json: group_message_data.description に2つのアクセスパス（A/B）を詳述
-  - schema.json: table_data.rows の description に rows:[] 全件削除セマンティクスを追記
-  - design.md: §9 を「2つのアクセスパス」として書き直し
-  - examples.yaml: 特殊値インライン例をコメントアウトから有効 YAML に昇格
-  - examples.yaml: NG コメントに YAML 1.1/1.2 バージョン依存性を明記
-- [x] 第5回専門家レビュー（4名並列）実施
-- [x] 第5回フォローアップ修正
-  - examples.yaml: expected_request_header_messages の例を追加（13 DataType 全網羅）
-  - examples.yaml: BasicJapaneseCharacterInterpreter の 14 文字種トークン一覧を追加
-  - examples.yaml: SendSyncMessageParser の errorMode（timeout/msgException）説明・例示
-  - examples.yaml: "null" クォート付き NG 例の注記を追加
-  - design.md: §5 に field_def.type と BasicDataTypeMapping の関係（identity mapping 要件）を追記
-  - design.md: §11 に MessageParser が record_type を "default" に置換する仕様を記録
-  - design.md: null テーブルに "null"（クォート付き）NG 例の行を追加
-  - design.md: AI向けプロンプト補助情報に 14 文字種トークン・record_type 注意・errorMode を追記
-  - design.md: setCellType(STRING) を DataFormatter API に訂正（POI 4.x 以降）
-  - design.md: dataName/resourceName のシート概念消滅に関する注意事項を追記
-  - schema.json: group_id に minLength: 1 を追加（空文字による誤マッチ防止）
-  - ntf-testdata-structure.md §3.3: FixedLengthDirective を 11 キーに拡充
-- [x] 最終コミット・プッシュ
-
-### C-1（比較・差分調査）
-
-- [x] C-1: `nablarch-test-data-converter`（社内 GitLab）との比較調査
-  - URL: http://26.111.128.4/gitlab/aicd-internal/aws-poc/nablarch-test-data-converter
-  - **位置づけ**: 間に合わせ実装であり「正」ではない
-  - **結果**: 16件の差分を調査。取り込み1件（マーカーカラム除外）、その他は取り込まず
-    - `design.md` §6・スコープ宣言・`schema.json`・`examples.yaml` に反映済み
-  - 出力: `docs/ntf-converter-comparison.md`
+| フェーズ | 目的 | 前提 | 完了条件 |
+|---|---|---|---|
+| Ph-1 | NTF仕様一覧 × 既存テスト × YAMLスキーマの三角マッピング確立 | なし | I-1/I-2/I-3 全完了。`ntf-impl-spec-list.md` の全仕様IDに「分類・スキーマ根拠またはスキーマ外理由・既存テストメソッドまたはテスト追加必要」が記載されること |
+| Ph-2 | YAMLリーダー実装（TDDベース） | Ph-1 完了 | 全仕様IDに対応するテストがグリーンであること |
+| Ph-3 | 既存Excelテストの YAML版並走と差分ゼロ確認 | Ph-2（R-1）完了 | ExcelリーダーとYAMLリーダーで全テストが同一結果でグリーンであること |
+| Ph-4 | 仕様カバレッジ根拠文書の作成 | Ph-2/Ph-3 完了 | 全仕様IDのカバー状況が「済」または「意図的除外（理由付き）」で埋まること |
 
 ---
 
-## 現在の状態（2026-05-15時点）
+## Ph-1: 三角マッピング確立
 
-- **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
-- **完了済み**: P0〜P3、レビューループ第1〜5回、P4-0〜P4-4（再）、E-1、E-2、実装例評価、D-5、C-1
-- **未完了タスク**: **なし（全タスク完了）**
+### I-1: 仕様ID一覧の確定と棚卸し
+
+**目的**: 後続タスク全体の基準となる「NTFテストデータ仕様ID一覧」を確定する。
+
+**作業内容**:
+- `docs/ntf-coverage-spec-mapping.md` の仕様ID（DT-xx, SS-xx, RS-xx, HC-xx, IV-xx, DR-xx, MS-xx）を全件棚卸し
+- 調査で判明したギャップ E-1〜E-9 について、仕様IDとして昇格するか否かを判断し文書に明記する。昇格しない場合は除外理由を記載する
+  - E-1: YAML ネイティブ型→文字列化の変換漏れリスク
+  - E-2: 末尾空要素の扱い（Excel は null→"" 補完、YAML は末尾省略されやすい）
+  - E-3: `readLine() == null` 終了判定タイミングのずれによる最終セクションデータ欠落リスク
+  - E-4: `startsWith` 前方一致マッチングの挙動（YAML schema validation とは独立）
+  - E-5: sendSyncTestData のディレクトリ配置規則はYAMLスキーマ外
+  - E-6: `defaultDirectives` のDI設定は SystemRepository XML の問題でありYAMLファイルとは独立
+  - E-7: `EXPECTED_REQUEST_HEADER/BODY_MESSAGES` の行数一致チェックはランタイムのみ
+  - E-8: `BasicDefaultValues` の DATE カラムのTZハザード（JSTとUTCで値が変わる）
+  - E-9: `BasicJapaneseCharacterInterpreter` の「スルー vs 例外」条件の誤記（design.md D-6）
+- 仕様を2つに分類する
+  - **テストデータ構造**: YAMLファイルの書き方に直接影響する仕様（スキーマ設計の対象）
+  - **実装内部ロジック**: パーサ・コンバータ内部の挙動であり、テストデータ構造に影響しない仕様
+- 出力: `docs/ntf-impl-spec-list.md`（仕様ID / 概要 / 分類 の3列）
+
+**完了条件**:
+- 全仕様IDに分類が付いていること
+- E-1〜E-9 について「仕様IDとして昇格」または「除外・理由付き」がそれぞれ記載されていること
+- 抜け漏れがないことを確認した旨が記載されていること
 
 ---
 
-## 成果物ファイル
+### I-2: 仕様ID × 既存テストメソッドのマッピング
 
-| ファイル | 状態 |
+**目的**: 既存テストのどのメソッドがどの仕様IDを検証しているかを明示し、カバーゼロの仕様IDを特定する。
+
+**前提**: I-1 完了
+
+**作業内容**:
+- I-1 の仕様ID一覧に対して、以下のテストクラスのテストメソッドをマッピングする
+  - `BasicTestDataParserTest`（16メソッド確認済み）
+  - `MessageParserTest`
+  - `FileSupportTest`
+  - `SendSyncMessageParserTest`（現状17行のみ、MS-04〜MS-07 は実質未テスト）
+  - reader/ パッケージのその他テストクラス
+- マッピングされない仕様ID（カバーゼロ）を「テスト追加必要」として明記する
+- 特記すべき既知のカバーゼロ仕様:
+  - D-14（複数レコードレイアウトの連続記述）: `BasicTestDataParserTest` に専用テストなし
+  - MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParserTest` が17行しかない
+- 出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
+
+**完了条件**: 全仕様IDに「対応テストメソッド名」または「テスト追加必要（理由付き）」が記載されること。
+
+---
+
+### I-3: 仕様ID × YAMLスキーマ記述のマッピング
+
+**目的**: YAMLスキーマのどのキー/定義が、どの仕様IDを表現しているかを明示する。
+
+**前提**: I-1 完了
+
+**作業内容**:
+- I-1 の**全仕様ID**（分類問わず）に対して以下のいずれかを記載する
+  - 「テストデータ構造」分類: `ntf-testdata-yaml-schema.json` / `ntf-testdata-yaml-design.md` のどのセクション/キーが対応するかを記載
+  - 「実装内部ロジック」分類: 「スキーマ外・パーサ実装で担保」と明記
+  - スキーマで表現できない仕様（E-4の前方一致、E-5の配置規則、E-7の行数一致チェック等）: 「スキーマ外仕様・テストで担保する方針」と明記し、後続 R-3 でテスト作成することを記載
+- 出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
+
+**完了条件**: 全仕様IDに対して「スキーマ根拠箇所」または「スキーマ外理由」が記載されること（分類を問わず全件）。
+
+---
+
+## Ph-2: YAMLリーダー実装（TDDベース）
+
+**前提**: Ph-1（I-1/I-2/I-3）全完了
+
+### R-1: `TestDataReader` インタフェースの YAML実装クラス作成
+
+**目的**: `PoiXlsReader` と同一インタフェースで YAML を読む `YamlTestDataReader` を実装する。
+
+**作業内容**:
+- `TestDataReader` インタフェースを実装
+- `open(path, dataName)` の呼び出し規約: `dataName` = `"ファイル名（拡張子なし）"` → `{dataName}.yaml` を探す
+- `readLine()` の返却仕様（全てExcelの挙動に合わせる）:
+  - YAML ネイティブ `null` → 文字列 `"null"` として返す（E-1）
+  - YAML ネイティブ boolean (`true`/`false`) → 文字列 `"true"/"false"` として返す（E-1）
+  - YAML ネイティブ integer/float → 数字文字列として返す（E-1）
+  - 末尾空要素は `""` として補完する（E-2）
+  - 文書終端で `null` を返す。`null` を返した直前のセクションデータが欠落しないことを保証する（E-3）
+- `isDataExisting` / `isResourceExisting` を実装
+- TDD: テストを先に書いてから実装する
+- テストクラス: `YamlTestDataReaderTest`
+
+**完了条件**:
+- `YamlTestDataReaderTest` が全グリーン
+- YAML ネイティブ型の文字列化（E-1）の境界値テスト（null/true/false/integer/float各型）が含まれること
+- 末尾空要素補完（E-2）のテストが含まれること
+- `readLine()` が `null` を返した後、直前のセクションデータが欠落しないことを検証するテストが含まれること（E-3）
+
+---
+
+### R-2: 既存テスト（BasicTestDataParserTest）のYAMLリーダー版作成
+
+**目的**: 既存のExcelベーステストと同一結果をYAMLリーダーで再現し、「ExcelとYAMLが等価である」ことを証明する。
+
+**前提**: R-1 完了
+
+**作業内容**:
+- `BasicTestDataParserTest.xls` の内容を YAML に変換し `BasicTestDataParserTest.yaml` として配置
+- `BasicTestDataParserTestYaml` を作成し、`TestDataParser` に `YamlTestDataReader` を差し込んで同一アサーションを実行
+- 対象: 既存16テストメソッド全件
+
+**完了条件**:
+- `BasicTestDataParserTestYaml` の16メソッド全グリーン
+- `BasicTestDataParserTest`（Excel版）と `BasicTestDataParserTestYaml`（YAML版）の対応するメソッドが、同一入力データ・同一アサーション内容でグリーンになること
+- 差異が生じた場合は原因を文書に明記すること（差異の存在自体は許容するが、隠蔽は不可）
+
+---
+
+### R-3: カバーゼロ仕様の新規テスト作成
+
+**目的**: I-2 で「テスト追加必要」とされた仕様IDと、スキーマ外仕様（E-4/E-5/E-7）のランタイム担保テストを作成し、カバーゼロを解消する。
+
+**前提**: R-1 完了、I-2/I-3 完了
+
+**作業内容**:
+- D-14（複数レコードレイアウト）: `DataFileParser` に対して複数 record fragment を持つ YAML テストデータを使ったシナリオテストを追加する（`BasicTestDataParserTest` ではなく `DataFileParser` 直接テスト）
+- MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParser` / `GroupMessageParser` に対して YAML テストデータを使ったテストを追加する
+- E-4（startsWith 前方一致）: `DataType` 名の前方一致マッチングが YAML セクションキーで正しく機能することを検証するテストを追加する
+- E-5（sendSyncTestData 配置規則）: `sendSyncTestData/{requestId}/message` の配置規則が YAML でも機能することを確認するテストを追加する
+- E-7（行数一致チェック）: `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数不一致時に `IllegalStateException` が発生することを YAML テストデータで確認するテストを追加する
+- E-6（defaultDirectives の DI）: SystemRepository の `defaultDirectives` キーで設定されたデフォルトディレクティブが YAML テストデータにも正しく適用されることを確認するテストを追加する。ただし「DI設定はYAMLファイル外の問題」であるため、テスト対象は「DI設定済みの状態で YAML テストデータが正しく動作すること」に限定し、XML設定の正しさはテスト対象外と明記する
+- E-8（DATE型TZハザード）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境と同一TZ（JST前提か否か）で動作することを確認する。TZ依存が解消できない場合は制約事項として D-1 に明記する
+- E-9（BasicJapaneseCharacterInterpreter誤記）: `design.md` D-6 の「スルー vs 例外」条件の誤記を修正する（テスト実装ではなくドキュメント修正）
+
+**完了条件**:
+- D-14/MS-04〜MS-07/E-4/E-5/E-7/E-6/E-8 に対応するテストが全グリーン
+- E-9 の `design.md` 誤記が修正されていること
+- E-8 について「TZ依存解消済み」または「制約事項として D-1 に記載済み」のいずれかが確認できること
+
+---
+
+## Ph-3: 既存ExcelテストのYAML版並走と差分ゼロ確認
+
+**前提**: R-1 完了
+
+### V-1: 全Excelテストファイルの YAML変換と並走実行
+
+**目的**: リポジトリ内の全59 Excelファイルに対してYAML版を作成し、ExcelリーダーとYAMLリーダーの等価性を確認する。
+
+**作業内容**:
+- 変換方針を先に決定する: `nablarch-test-data-converter` を使用するか手動変換するかを明記する
+- 全59の `.xls`/`.xlsx` ファイルを `.yaml` に変換する
+- 各テストクラスに YAML版テストを作成する（またはリーダーを差し替えて実行する方式でも可）
+- 差分が生じた場合の対処方針を明記する: 修正して差分解消するのか、除外して理由を記録するのか
+
+**完了条件**:
+- 全テストが Excel/YAML どちらでも同一結果でグリーンであること
+- 差分が生じたファイルがある場合、ファイル名・差分内容・原因・対処（修正 or 除外理由）を一覧で記録すること
+
+---
+
+## Ph-4: 仕様カバレッジ根拠文書
+
+**前提**: Ph-2/Ph-3 完了
+
+### D-1: カバレッジマトリクスの完成
+
+**目的**: 「YAMLスキーマがNTF仕様を100%カバーする」ことを第三者に説明できる根拠ドキュメントを完成させる。
+
+**作業内容**:
+- `docs/ntf-impl-spec-list.md`（Ph-1 で作成）に以下の列を追加して完成させる:
+  - 仕様ID / 概要 / 分類 / スキーマ根拠 or スキーマ外理由 / 既存テストメソッド / 追加テストメソッド / カバー状況
+- E-6/E-8 について「TZ依存」「DI設定はXML外」の制約事項欄を設ける
+- 出力: `docs/ntf-impl-coverage-matrix.md`
+
+**完了条件（主完了条件）**: 全仕様IDのカバー状況が「済」であること。
+**完了条件（許容除外）**: 意図的に除外した仕様IDがある場合は除外理由が明記されていること。
+「除外理由なし・カバー状況空欄」は完了とみなさない。
+
+---
+
+## 現在の状態（2026-05-20時点）
+
+- **完了済みフェーズ**: スキーマ設計フェーズ全完了
+- **次の着手**: I-1（仕様ID一覧の確定）
+
+---
+
+## 完了済みタスク要約（スキーマ設計フェーズ）
+
+| 完了タスク群 | 概要 |
 |---|---|
-| `docs/ntf-testdata-structure.md` | 完成（コード調査報告） |
-| `docs/ntf-testdata-yaml-schema.json` | 完成（第5回レビュー対応済み） |
-| `docs/ntf-testdata-yaml-examples.yaml` | 完成（第5回レビュー対応済み） |
-| `docs/ntf-testdata-yaml-design.md` | 完成（第5回レビュー対応済み） |
-| `docs/tasks.md` | 本ファイル |
-| `docs/ntf-coverage-class-list.md` | 完成（P4-0 前置セクション + P4-1 クラス一覧） |
-| `docs/ntf-coverage-spec-mapping.md` | 完成（P4-2 仕様マッピング、全未反映仕様を反映済み） |
-| `docs/ntf-yaml-impl-evaluation.md` | 完成（実装例リポジトリ評価レポート） |
-| `docs/ntf-coverage-doc-check.md` | 完成（D-5: 公式解説書 × スキーマ 照合チェック・17件反映済み） |
-| `docs/ntf-schema-accuracy-basis.md` | 完成（スキーマ正確性の根拠資料） |
-| `docs/ntf-converter-comparison.md` | 完成（C-1: nablarch-test-data-converter 比較・16件調査・1件反映済み） |
+| P0〜P3 + レビュー5回 | スキーマバグ修正・仕様曖昧箇所確定・ドキュメント補強。専門家4名×5回レビューで全員合格 |
+| P4-0〜P4-4 | 仕様網羅性の根拠確立。src/main/java 29クラスを全行走査。未反映仕様 S-1〜S-5 / D-1〜D-16 / E-1〜E-4 を全反映 |
+| D-5 | 公式解説書（nablarch-document）との照合。17件の未反映仕様を全反映 |
+| E-1, E-2 + 実装例評価 | 実装例リポジトリ評価。複数シート方針を1シート1ファイル分割に確定。`"?"` プレフィックス記法は本リポジトリ外の慣習と確認 |
+| C-1 | nablarch-test-data-converter との比較。16件調査・1件（マーカーカラム除外）反映 |
 
----
+**設計フェーズ成果物（全て完成）**:
 
-## 再開手順
-
-1. ブランチをチェックアウト: `git checkout convert-testdata-excel-to-text`
-2. 本ファイルで「現在の状態」の未完了タスクを確認
-3. 次の着手タスクは **P4-1（再）**:
-   - `src/main/java` + `src/test/java` 両方の全クラスを列挙し対象/対象外を分類
-   - `docs/ntf-coverage-class-list.md` を上書き更新
-4. P4-1（再）完了後、P4-2（再）→ P4-3（再）→ E-1 → P4-4 の順で進める
-
----
-
-## 第1回レビュー指摘サマリー（根拠）
-
-### 重大
-
-| ID | 指摘 | レビュアー |
-|---|---|---|
-| R1-1 | `directives` に固定長用7キー・可変長用6キーが欠落。`additionalProperties: false` のためバリデーションエラー | 実装整合性 |
-| R1-2 | `[MARKER_COL]: X` がYAMLフロー配列として誤解釈される | JSON Schema品質 |
-
-### 軽微
-
-| ID | 指摘 | レビュアー |
-|---|---|---|
-| R2-1 | `message_data`・`group_message_data` の `records` が `required` に未含有 | 実装整合性・JSON Schema品質 |
-| R2-2 | `field_def.type` を `enum` で制約可能 | JSON Schema品質 |
-| R2-3 | `oneOf` → `anyOf`（意味論的正確性） | JSON Schema品質 |
-| R2-4 | `group_message_data.id` の description が GroupData のフィルタ動作を未記載 | 実装整合性 |
-
-### 設計・ドキュメント
-
-| ID | 指摘 | レビュアー |
-|---|---|---|
-| R3-1 | `null` 表現の未確定（ネイティブ vs 文字列） | 全員 |
-| R3-2 | テーブル系とファイル系で `rows` の形式が異なる点を強調すべき | AI可読性 |
-| R3-3 | 段階的移行戦略の記載なし | 開発者UX |
-| R3-4 | 変換ビフォーアフター例なし | 開発者UX |
-| R3-5 | 特殊値インライン例・NGアンチパターン例が不足 | AI可読性 |
-| R3-6 | `record-separator` エスケープ仕様が不明確 | JSON Schema品質・開発者UX |
+| ファイル | 内容 |
+|---|---|
+| `docs/ntf-testdata-yaml-schema.json` | JSON Schema（第5回レビュー対応済み） |
+| `docs/ntf-testdata-yaml-design.md` | 設計解説ドキュメント（第5回レビュー対応済み） |
+| `docs/ntf-testdata-yaml-examples.yaml` | 使用例（第5回レビュー対応済み） |
+| `docs/ntf-testdata-structure.md` | コード調査報告 |
+| `docs/ntf-coverage-class-list.md` | 対象クラス一覧（src/main + src/test 両方） |
+| `docs/ntf-coverage-spec-mapping.md` | 仕様マッピング（29クラス全行走査済み） |
+| `docs/ntf-yaml-impl-evaluation.md` | 実装例リポジトリ評価レポート |
+| `docs/ntf-coverage-doc-check.md` | 公式解説書 × スキーマ 照合チェック（17件反映済み） |
+| `docs/ntf-schema-accuracy-basis.md` | スキーマ正確性の根拠資料 |
+| `docs/ntf-converter-comparison.md` | nablarch-test-data-converter 比較（16件調査・1件反映済み） |
