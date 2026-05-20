@@ -63,8 +63,8 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **目的**: 後続タスク全体の基準となる「NTFテストデータ仕様ID一覧」を確定する。
 
 **作業内容**:
-- `docs/ntf-coverage-spec-mapping.md` の仕様ID（DT-xx, SS-xx, RS-xx, HC-xx, IV-xx, DR-xx, MS-xx）を全件棚卸し
-- 調査で判明したギャップ E-1〜E-9 について、仕様IDとして昇格するか否かを判断し文書に明記する。昇格しない場合は除外理由を記載する
+- [ ] `docs/ntf-coverage-spec-mapping.md` の仕様ID（DT-xx, SS-xx, RS-xx, HC-xx, IV-xx, DR-xx, MS-xx）を全件棚卸し
+- [ ] 調査で判明したギャップ E-1〜E-9 について、仕様IDとして昇格するか否かを判断し文書に明記する。昇格しない場合は除外理由を記載する
   - E-1: YAML ネイティブ型→文字列化の変換漏れリスク
   - E-2: 末尾空要素の扱い（Excel は null→"" 補完、YAML は末尾省略されやすい）
   - E-3: `readLine() == null` 終了判定タイミングのずれによる最終セクションデータ欠落リスク
@@ -74,11 +74,11 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
   - E-7: `EXPECTED_REQUEST_HEADER/BODY_MESSAGES` の行数一致チェックはランタイムのみ
   - E-8: `BasicDefaultValues` の DATE カラムのTZハザード（JSTとUTCで値が変わる）
   - E-9: `BasicJapaneseCharacterInterpreter` の「スルー vs 例外」条件の誤記（design.md D-6）
-- 仕様を2つに分類する
-  - **テストデータ構造**: YAMLファイルの書き方に直接影響する仕様（スキーマ設計の対象）
-  - **実装内部ロジック**: パーサ・コンバータ内部の挙動であり、テストデータ構造に影響しない仕様
-- 出力: `docs/ntf-impl-spec-list.md`（仕様ID / 概要 / 分類 の3列）
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/I-1.md`）
+- [ ] 仕様を2つに分類する（テストデータ構造 / 実装内部ロジック）
+- [ ] 出力: `docs/ntf-impl-spec-list.md`（仕様ID / 概要 / 分類 の3列）
+- [ ] セルフチェック（チェック結果: `docs/checks/I-1.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
 - 全仕様IDに分類が付いていること
@@ -94,18 +94,19 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **前提**: I-1 完了
 
 **作業内容**:
-- I-1 の仕様ID一覧に対して、以下のテストクラスのテストメソッドをマッピングする
+- [ ] I-1 の仕様ID一覧に対して、以下のテストクラスのテストメソッドをマッピングする
   - `BasicTestDataParserTest`（16メソッド確認済み）
   - `MessageParserTest`
   - `FileSupportTest`
   - `SendSyncMessageParserTest`（現状17行のみ、MS-04〜MS-07 は実質未テスト）
   - reader/ パッケージのその他テストクラス
-- マッピングされない仕様ID（カバーゼロ）を「テスト追加必要」として明記する
-- 特記すべき既知のカバーゼロ仕様:
+- [ ] マッピングされない仕様ID（カバーゼロ）を「テスト追加必要」として明記する
   - D-14（複数レコードレイアウトの連続記述）: `BasicTestDataParserTest` に専用テストなし
   - MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParserTest` が17行しかない
-- 出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/I-2.md`）
+- [ ] 出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
+- [ ] セルフチェック（チェック結果: `docs/checks/I-2.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**: 全仕様IDに「対応テストメソッド名」または「テスト追加必要（理由付き）」が記載されること。
 
@@ -118,12 +119,14 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **前提**: I-1 完了
 
 **作業内容**:
-- I-1 の**全仕様ID**（分類問わず）に対して以下のいずれかを記載する
+- [ ] I-1 の**全仕様ID**（分類問わず）に対して以下のいずれかを記載する
   - 「テストデータ構造」分類: `ntf-testdata-yaml-schema.json` / `ntf-testdata-yaml-design.md` のどのセクション/キーが対応するかを記載
   - 「実装内部ロジック」分類: 「スキーマ外・パーサ実装で担保」と明記
   - スキーマで表現できない仕様（E-4の前方一致、E-5の配置規則、E-7の行数一致チェック等）: 「スキーマ外仕様・テストで担保する方針」と明記し、後続 R-3 でテスト作成することを記載
-- 出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/I-3.md`）
+- [ ] 出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
+- [ ] セルフチェック（チェック結果: `docs/checks/I-3.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**: 全仕様IDに対して「スキーマ根拠箇所」または「スキーマ外理由」が記載されること（分類を問わず全件）。
 
@@ -138,18 +141,19 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **目的**: `PoiXlsReader` と同一インタフェースで YAML を読む `YamlTestDataReader` を実装する。
 
 **作業内容**:
-- `TestDataReader` インタフェースを実装
-- `open(path, dataName)` の呼び出し規約: `dataName` = `"ファイル名（拡張子なし）"` → `{dataName}.yaml` を探す
-- `readLine()` の返却仕様（全てExcelの挙動に合わせる）:
+- [ ] `TestDataReader` インタフェースを実装
+- [ ] `open(path, dataName)` の呼び出し規約を実装: `dataName` = `"ファイル名（拡張子なし）"` → `{dataName}.yaml` を探す
+- [ ] `readLine()` の返却仕様を実装（全てExcelの挙動に合わせる）
   - YAML ネイティブ `null` → 文字列 `"null"` として返す（E-1）
   - YAML ネイティブ boolean (`true`/`false`) → 文字列 `"true"/"false"` として返す（E-1）
   - YAML ネイティブ integer/float → 数字文字列として返す（E-1）
   - 末尾空要素は `""` として補完する（E-2）
   - 文書終端で `null` を返す。`null` を返した直前のセクションデータが欠落しないことを保証する（E-3）
-- `isDataExisting` / `isResourceExisting` を実装
-- TDD: テストを先に書いてから実装する
-- テストクラス: `YamlTestDataReaderTest`
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/R-1.md`）
+- [ ] `isDataExisting` / `isResourceExisting` を実装
+- [ ] TDD: テストクラス `YamlTestDataReaderTest` を先に書いてから実装する
+- [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
 - `YamlTestDataReaderTest` が全グリーン
@@ -166,10 +170,12 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **前提**: R-1 完了
 
 **作業内容**:
-- `BasicTestDataParserTest.xls` の内容を YAML に変換し `BasicTestDataParserTest.yaml` として配置
-- `BasicTestDataParserTestYaml` を作成し、`TestDataParser` に `YamlTestDataReader` を差し込んで同一アサーションを実行
-- 対象: 既存16テストメソッド全件
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/R-2.md`）
+- [ ] `BasicTestDataParserTest.xls` の内容を YAML に変換し `BasicTestDataParserTest.yaml` として配置
+- [ ] `BasicTestDataParserTestYaml` を作成し、`TestDataParser` に `YamlTestDataReader` を差し込んで同一アサーションを実行
+- [ ] 既存16テストメソッド全件をYAML版で実行し、差異がある場合は原因を文書に明記する
+- [ ] セルフチェック（チェック結果: `docs/checks/R-2.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
 - `BasicTestDataParserTestYaml` の16メソッド全グリーン
@@ -185,15 +191,17 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **前提**: R-1 完了、I-2/I-3 完了
 
 **作業内容**:
-- D-14（複数レコードレイアウト）: `DataFileParser` に対して複数 record fragment を持つ YAML テストデータを使ったシナリオテストを追加する（`BasicTestDataParserTest` ではなく `DataFileParser` 直接テスト）
-- MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParser` / `GroupMessageParser` に対して YAML テストデータを使ったテストを追加する
-- E-4（startsWith 前方一致）: `DataType` 名の前方一致マッチングが YAML セクションキーで正しく機能することを検証するテストを追加する
-- E-5（sendSyncTestData 配置規則）: `sendSyncTestData/{requestId}/message` の配置規則が YAML でも機能することを確認するテストを追加する
-- E-7（行数一致チェック）: `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数不一致時に `IllegalStateException` が発生することを YAML テストデータで確認するテストを追加する
-- E-6（defaultDirectives の DI）: SystemRepository の `defaultDirectives` キーで設定されたデフォルトディレクティブが YAML テストデータにも正しく適用されることを確認するテストを追加する。ただし「DI設定はYAMLファイル外の問題」であるため、テスト対象は「DI設定済みの状態で YAML テストデータが正しく動作すること」に限定し、XML設定の正しさはテスト対象外と明記する
-- E-8（DATE型TZハザード）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境と同一TZ（JST前提か否か）で動作することを確認する。TZ依存が解消できない場合は制約事項として D-1 に明記する
-- E-9（BasicJapaneseCharacterInterpreter誤記）: `design.md` D-6 の「スルー vs 例外」条件の誤記を修正する（テスト実装ではなくドキュメント修正）
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/R-3.md`）
+- [ ] D-14（複数レコードレイアウト）: `DataFileParser` に対して複数 record fragment を持つ YAML テストデータを使ったシナリオテストを追加する（`BasicTestDataParserTest` ではなく `DataFileParser` 直接テスト）
+- [ ] MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParser` / `GroupMessageParser` に対して YAML テストデータを使ったテストを追加する
+- [ ] E-4（startsWith 前方一致）: `DataType` 名の前方一致マッチングが YAML セクションキーで正しく機能することを検証するテストを追加する
+- [ ] E-5（sendSyncTestData 配置規則）: `sendSyncTestData/{requestId}/message` の配置規則が YAML でも機能することを確認するテストを追加する
+- [ ] E-7（行数一致チェック）: `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数不一致時に `IllegalStateException` が発生することを YAML テストデータで確認するテストを追加する
+- [ ] E-6（defaultDirectives の DI）: SystemRepository の `defaultDirectives` キーで設定されたデフォルトディレクティブが YAML テストデータにも正しく適用されることを確認するテストを追加する。テスト対象は「DI設定済みの状態で YAML テストデータが正しく動作すること」に限定し、XML設定の正しさはテスト対象外と明記する
+- [ ] E-8（DATE型TZハザード）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境と同一TZ（JST前提か否か）で動作することを確認する。TZ依存が解消できない場合は制約事項として D-1 に明記する
+- [ ] E-9（BasicJapaneseCharacterInterpreter誤記）: `design.md` D-6 の「スルー vs 例外」条件の誤記を修正する（ドキュメント修正）
+- [ ] セルフチェック（チェック結果: `docs/checks/R-3.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
 - D-14/MS-04〜MS-07/E-4/E-5/E-7/E-6/E-8 に対応するテストが全グリーン
@@ -211,11 +219,13 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **目的**: リポジトリ内の全59 Excelファイルに対してYAML版を作成し、ExcelリーダーとYAMLリーダーの等価性を確認する。
 
 **作業内容**:
-- 変換方針を先に決定する: `nablarch-test-data-converter` を使用するか手動変換するかを明記する
-- 全59の `.xls`/`.xlsx` ファイルを `.yaml` に変換する
-- 各テストクラスに YAML版テストを作成する（またはリーダーを差し替えて実行する方式でも可）
-- 差分が生じた場合の対処方針を明記する: 修正して差分解消するのか、除外して理由を記録するのか
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/V-1.md`）
+- [ ] 変換方針を決定する: `nablarch-test-data-converter` を使用するか手動変換するかを明記する
+- [ ] 全59の `.xls`/`.xlsx` ファイルを `.yaml` に変換する
+- [ ] 各テストクラスに YAML版テストを作成する（またはリーダーを差し替えて実行する方式でも可）
+- [ ] 差分が生じた場合の対処方針を明記する: 修正して差分解消するのか、除外して理由を記録するのか
+- [ ] セルフチェック（チェック結果: `docs/checks/V-1.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
 - 全テストが Excel/YAML どちらでも同一結果でグリーンであること
@@ -232,11 +242,13 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **目的**: 「YAMLスキーマがNTF仕様を100%カバーする」ことを第三者に説明できる根拠ドキュメントを完成させる。
 
 **作業内容**:
-- `docs/ntf-impl-spec-list.md`（Ph-1 で作成）に以下の列を追加して完成させる:
+- [ ] `docs/ntf-impl-spec-list.md`（Ph-1 で作成）に以下の列を追加して完成させる
   - 仕様ID / 概要 / 分類 / スキーマ根拠 or スキーマ外理由 / 既存テストメソッド / 追加テストメソッド / カバー状況
-- E-6/E-8 について「TZ依存」「DI設定はXML外」の制約事項欄を設ける
-- 出力: `docs/ntf-impl-coverage-matrix.md`
-- セルフチェック → QAレビュー → ユーザーレビュー（チェック結果: `docs/checks/D-1.md`）
+- [ ] E-6/E-8 について「TZ依存」「DI設定はXML外」の制約事項欄を設ける
+- [ ] 出力: `docs/ntf-impl-coverage-matrix.md`
+- [ ] セルフチェック（チェック結果: `docs/checks/D-1.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件（主完了条件）**: 全仕様IDのカバー状況が「済」であること。
 **完了条件（許容除外）**: 意図的に除外した仕様IDがある場合は除外理由が明記されていること。
