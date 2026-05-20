@@ -1,0 +1,11 @@
+# RS-06 末尾空要素補完テスト用データ
+# 1行目は全列あり、2行目は末尾の COL_C を省略 → 読み込み時に "" で補完されること
+
+setup_tables:
+  - table: TRAILING
+    rows:
+      - COL_A: "val_a"
+        COL_B: "val_b"
+        COL_C: "val_c"
+      - COL_A: "val_a2"
+        COL_B: "val_b2"
