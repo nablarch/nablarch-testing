@@ -1,11 +1,5 @@
 package nablarch.test.core.reader;
 
-import nablarch.core.util.StringUtil;
-import nablarch.test.core.reader.yaml.YamlRowBuilder;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,6 +9,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import nablarch.core.util.StringUtil;
+import nablarch.test.core.reader.yaml.YamlRowBuilder;
+
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * YAMLファイルからテストデータを読み込む {@link TestDataReader} 実装。
@@ -40,10 +41,10 @@ public class YamlTestDataReader implements TestDataReader {
     private final YamlRowBuilder rowBuilder = new YamlRowBuilder();
 
     /** 読み込んだ行シーケンス */
-    private List<List<String>> rows;
+    private List<List<String>> rows = null;
 
     /** 現在の読み込み位置 */
-    private int index;
+    private int index = 0;
 
     /** {@inheritDoc} */
     @Override
@@ -98,7 +99,8 @@ public class YamlTestDataReader implements TestDataReader {
     private Map<String, Object> loadYaml(File file) {
         LoaderOptions options = new LoaderOptions();
         Yaml yaml = new Yaml(new SafeConstructor(options));
-        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
+        try (FileInputStream fis = new FileInputStream(file);
+             Reader reader = new InputStreamReader(fis, StandardCharsets.UTF_8)) {
             Object result = yaml.load(reader);
             if (result instanceof Map) {
                 return (Map<String, Object>) result;
