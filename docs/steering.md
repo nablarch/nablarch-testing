@@ -179,8 +179,8 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - [x] **テスト実行・グリーン確認**
 - [x] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [ ] Javaエキスパートレビュー（既存スタイル準拠・ベストプラクティス確認）
-- [ ] テストコードレビュー（GWT構造・仕様IDリンク・エッジケース網羅）
+- [x] Javaエキスパートレビュー（既存スタイル準拠・ベストプラクティス確認）
+- [x] テストコードレビュー（GWT構造・仕様IDリンク・エッジケース網羅）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
@@ -317,18 +317,18 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 ## 現在の状態（2026-05-20時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
-- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
-- **進行中フェーズ**: Ph-2 R-1（設計待ち・現行実装は破棄して再設計・再実装が必要）
-- **次の着手**: R-1 の `YamlTestDataReader` クラス設計→実装→レビュー
-- **未着手タスク**: R-1 完了 → R-2/R-3（並行可） → V-1 → D-1
+- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了、Ph-2 R-1（ユーザーレビュー待ち）
+- **進行中フェーズ**: Ph-2 R-1 ユーザーレビュー待ち
+- **次の着手**: R-1 ユーザーレビュー OK 取得 → R-2 と R-3 を並行着手
+- **未着手タスク**: R-2/R-3（並行可） → V-1 → D-1
 
 ### 環境情報
 
 - **Java**: Eclipse Temurin 17（`update-alternatives` で切り替え済み）
 - **Maven settings**: `~/.m2/settings.xml` に社内 Nexus リポジトリ設定済み（`nablarch-parent:6-NEXT-SNAPSHOT` 解決済み）
-- **ビルド確認**: `mvn test -Dtest=YamlTestDataReaderTest` でグリーン確認済み
+- **ビルド確認**: `mvn test -Dtest="YamlTestDataReaderTest,YamlValueConverterTest,RecordRowBuilderTest,TableSectionConverterTest,ListMapSectionConverterTest,FileSectionConverterTest,MessageSectionConverterTest,GroupMessageSectionConverterTest,YamlRowBuilderTest"` で63件グリーン確認済み
 
-### Ph-1 完了状況（2026-05-20）
+### Ph-1 完了状況
 
 **I-1:**
 - **成果物**: `docs/ntf-impl-spec-list.md`（仕様ID 80件: DT-01〜DT-07 / SS-01〜SS-20 / RS-01〜RS-08 / HC-01〜HC-07 / IV-01〜IV-15 / DR-01〜DR-10 / MS-01〜MS-13）
@@ -336,7 +336,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 **I-2:**
 - **成果物**: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」追加（80件全件）
-- 既存テストあり 45件 / テスト追加必要 35件（RS 全8件は YamlTestDataReader 未実装）
+- 既存テストあり 45件 / テスト追加必要 35件（RS 全8件は YamlTestDataReader 未実装として記録済み）
 - **チェック結果**: `docs/checks/I-2.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
 **I-3:**
@@ -344,59 +344,28 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - スキーマ根拠あり 43件 / スキーマ外 37件
 - **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
-### Ph-2 R-1 進捗（2026-05-20）
+### Ph-2 R-1 完了状況（ユーザーレビュー待ち）
 
-**実施済み（設計前に暫定実装したもの）:**
-- `pom.xml` に `org.yaml:snakeyaml:2.6` を追加（compile スコープ。ADR-001/ADR-002 参照）
-- `docs/adrs/ADR-001-yaml-library.md`、`docs/adrs/ADR-002-yaml-dependency-scope.md` を作成
-- `YamlTestDataReader.java` を `src/main/java/nablarch/test/core/reader/` に暫定実装（521行・設計なし）
-- `YamlTestDataReaderTest.java` を `src/test/java/nablarch/test/core/reader/` に作成（17件グリーン）
-- テストデータ YAML 3件を作成:
-  - `YamlTestDataReaderTestData.yaml`（setup_tables・list_maps・setup_files の総合テスト用）
-  - `YamlNativeTypesTestData.yaml`（RS-03〜RS-05: ネイティブ型変換・科学表記テスト用）
-  - `YamlTrailingNullTestData.yaml`（RS-06: 末尾省略・中間省略補完テスト用）
-- セルフチェック・QAレビュー完了（`docs/checks/R-1.md`）
+**成果物:**
+- `src/main/java/nablarch/test/core/reader/YamlTestDataReader.java`（ファイルI/O・委譲のみ）
+- `src/main/java/nablarch/test/core/reader/yaml/` パッケージ（10クラス）:
+  - `YamlRowBuilder`（public）、`SectionConverter`（interface）、`TableSectionConverter`、`ListMapSectionConverter`、`FileSectionConverter`、`MessageSectionConverter`、`GroupMessageSectionConverter`、`RecordRowBuilder`、`YamlValueConverter`、`package-info`
+- `src/test/java/nablarch/test/core/reader/YamlTestDataReaderTest.java`（17件・RS-01〜RS-08 全網羅）
+- `src/test/java/nablarch/test/core/reader/yaml/` テスト8クラス（46件・各クラス単体検証）
+- テストデータ YAML 3件（`YamlTestDataReaderTestData.yaml`・`YamlNativeTypesTestData.yaml`・`YamlTrailingNullTestData.yaml`）
+- **チェック結果**: `docs/checks/R-1.md`（担当者 OK・Javaエキスパート OK・QA OK・ユーザーレビュー待ち）
 
-**次の着手: `YamlTestDataReader` を設計から作り直す**
-
-現行の `YamlTestDataReader.java`（521行）は設計なしで実装したため、以下の問題がある:
-- 全責務が1クラスに集中（変換ロジック5種・ユーティリティ・YAML I/O）
-- inner class がすべて private でユニットテスト不可
-- 既存コードのスタイル（Javadoc・`/** {@inheritDoc} */`）未準拠
-- テストに GWT コメント・仕様IDリンクなし
-
-### 設計方針: `nablarch.test.core.reader.yaml` パッケージへの分割
-
-現行の1クラス521行を以下に分割する。
-
-| クラス/インタフェース | 公開範囲 | 責務 |
-|---|---|---|
-| `YamlTestDataReader` | `public` | `TestDataReader` 実装。ファイルI/O・`YamlRowBuilder` への委譲のみ |
-| `YamlRowBuilder` | package-private | 全セクションタイプを束ねて行シーケンスを組み立てるディスパッチャ |
-| `SectionConverter` | package-private（interface） | 各セクション変換の共通インタフェース |
-| `TableSectionConverter` | package-private | `setup_tables` / `expected_tables` / `expected_complete_tables` の変換 |
-| `ListMapSectionConverter` | package-private | `list_maps` の変換 |
-| `FileSectionConverter` | package-private | `setup_files` / `expected_files` の変換（固定長・可変長） |
-| `MessageSectionConverter` | package-private | `messages` / `expected_request_*_messages` の変換 |
-| `GroupMessageSectionConverter` | package-private | `response_*_messages` の変換 |
-| `RecordRowBuilder` | package-private | フィールド名行・型行・長さ行・値行の生成（複数コンバータで共用） |
-| `YamlValueConverter` | package-private | `toCell` / `asMap` / `asList` / `asString` 等のYAML値変換ユーティリティ |
-
-各 package-private クラスに対してユニットテストを個別に作成する。
+**ADR（設計判断記録）:**
+- `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
+- `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認
 2. `git status` でクリーンであることを確認
-3. 上記設計方針に従い `nablarch.test.core.reader.yaml` パッケージを新設して実装する
-4. 各クラスのユニットテストを作成する（GWT コメント・仕様IDリンク必須）
-5. `mvn test -Dtest=YamlTestDataReaderTest` でグリーンを確認する
-6. Java エキスパートレビュー → QA レビュー → ユーザーレビューを実施する
-
-### ADR（設計判断記録）
-
-- `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
-- `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
+3. R-1 ユーザーレビューの結果を確認する
+   - OK → R-2 と R-3 を並行着手
+   - NG → 指摘事項を修正して再レビュー依頼
 
 ---
 
