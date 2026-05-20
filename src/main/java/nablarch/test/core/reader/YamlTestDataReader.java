@@ -95,6 +95,13 @@ public class YamlTestDataReader implements TestDataReader {
     // YAML ロード
     // -----------------------------------------------------------------------
 
+    /**
+     * YAML ファイルをロードしてトップレベルマップを返す。
+     *
+     * @param file 読み込む YAML ファイル
+     * @return YAML トップレベルマップ。マップ形式でない場合は空マップ
+     * @throws RuntimeException ファイル読み込みに失敗した場合
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> loadYaml(File file) {
         LoaderOptions options = new LoaderOptions();
