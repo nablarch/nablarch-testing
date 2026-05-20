@@ -150,16 +150,17 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **目的**: `PoiXlsReader` と同一インタフェースで YAML を読む `YamlTestDataReader` を実装する。
 
 **作業内容**:
-- [ ] `TestDataReader` インタフェースを実装
-- [ ] `open(path, dataName)` の呼び出し規約を実装: `dataName` = `"ファイル名（拡張子なし）"` → `{dataName}.yaml` を探す
-- [ ] `readLine()` の返却仕様を実装（全てExcelの挙動に合わせる）
+- [x] `TestDataReader` インタフェースを実装
+- [x] `open(path, dataName)` の呼び出し規約を実装: `dataName` = `"ファイル名（拡張子なし）"` → `{dataName}.yaml` を探す
+- [x] `readLine()` の返却仕様を実装（全てExcelの挙動に合わせる）
   - YAML ネイティブ `null` → 文字列 `"null"` として返す（E-1）
   - YAML ネイティブ boolean (`true`/`false`) → 文字列 `"true"/"false"` として返す（E-1）
   - YAML ネイティブ integer/float → 数字文字列として返す（E-1）
   - 末尾空要素は `""` として補完する（E-2）
   - 文書終端で `null` を返す。`null` を返した直前のセクションデータが欠落しないことを保証する（E-3）
-- [ ] `isDataExisting` / `isResourceExisting` を実装
-- [ ] TDD: テストクラス `YamlTestDataReaderTest` を先に書いてから実装する
+- [x] `isDataExisting` / `isResourceExisting` を実装
+- [x] TDD: テストクラス `YamlTestDataReaderTest` を先に書いてから実装する
+- [ ] **テスト実行・グリーン確認**（ブロッカー: ビルド環境未確認。`nablarch-parent:6-NEXT-SNAPSHOT` が必要）
 - [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
@@ -295,9 +296,9 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
-- **進行中フェーズ**: Ph-1 完了 → Ph-2 着手準備
-- **次の着手**: R-1（`YamlTestDataReader` 実装・TDD）
-- **未着手タスク**: R-1 → R-2/R-3（並行可） → V-1 → D-1
+- **進行中フェーズ**: Ph-2 R-1（実装・テスト作成済み、テスト未検証）
+- **次の着手**: R-1 のテスト検証（`mvn test` を通す）
+- **未着手タスク**: R-1 完了 → R-2/R-3（並行可） → V-1 → D-1
 
 ### Ph-1 完了状況（2026-05-20）
 
@@ -315,17 +316,35 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - スキーマ根拠あり 43件 / スキーマ外 37件
 - **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
-### R-1 着手にあたっての注意事項
+### Ph-2 R-1 進捗（2026-05-20）
 
-- **R-1** は TDD ベース: `YamlTestDataReaderTest` を先に書いてから実装する
-- R-3 の作業対象（27件）は I-2 完了で確定済み。R-1 完了後に並行着手可
+**実施済み:**
+- `pom.xml` に `org.yaml:snakeyaml:2.6` を追加（compile スコープ。ADR-001/ADR-002 参照）
+- `docs/adrs/ADR-001-yaml-library.md`、`docs/adrs/ADR-002-yaml-dependency-scope.md` を作成
+- `YamlTestDataReader.java` を `src/main/java/nablarch/test/core/reader/` に作成（TDD の実装）
+- `YamlTestDataReaderTest.java` を `src/test/java/nablarch/test/core/reader/` に作成（RS-01〜RS-08 を網羅）
+- テストデータ YAML 3件を作成:
+  - `YamlTestDataReaderTestData.yaml`（setup_tables・list_maps・setup_files の総合テスト用）
+  - `YamlNativeTypesTestData.yaml`（RS-03〜RS-05: ネイティブ型変換テスト用）
+  - `YamlTrailingNullTestData.yaml`（RS-06: 末尾空要素補完テスト用）
+
+**未実施（ブロッカー）:**
+- `mvn test` でテストを実行してグリーンを確認する
+- ブロッカー: `nablarch-parent:6-NEXT-SNAPSHOT` がローカル Maven リポジトリにないため `mvn` が親 POM を解決できずビルド自体が起動しない
+- **再開時は最初にビルド方法を確認すること**（`nablarch-parent:6-NEXT-SNAPSHOT` のインストール方法、または代替ビルドコマンド）
+
+### ADR（設計判断記録）
+
+- `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
+- `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認
 2. `git status` でクリーンであることを確認
-3. 本ファイルの「次の着手」タスクから作業開始
-4. 各タスクは作業内容の `- [ ]` を上から順に消化し、最後にセルフチェック → QAレビュー → ユーザーレビューを実施する
+3. ビルド方法を確認し `mvn test -Dtest=YamlTestDataReaderTest` を通す
+4. テストがグリーンになったら R-1 のセルフチェック → QAレビュー → ユーザーレビューを実施する
+5. R-1 完了後は R-2/R-3 に並行着手可
 
 ---
 
