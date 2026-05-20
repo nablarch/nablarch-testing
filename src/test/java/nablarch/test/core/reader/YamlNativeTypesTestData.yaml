@@ -9,4 +9,5 @@ setup_tables:
         COL_BOOL_FALSE: false
         COL_INT: 42
         COL_FLOAT: 3.14
+        COL_FLOAT_SCI: 1.0e10
         COL_STRING: "hello"

@@ -9,3 +9,5 @@ setup_tables:
         COL_C: "val_c"
       - COL_A: "val_a2"
         COL_B: "val_b2"
+      - COL_A: "val_a3"
+        COL_C: "val_c3"

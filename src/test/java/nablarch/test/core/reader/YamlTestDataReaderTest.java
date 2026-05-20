@@ -85,19 +85,21 @@ public class YamlTestDataReaderTest {
         List<String> dataRow = sut.readLine();
         assertThat("先頭セルは空", dataRow.get(0), is(""));
 
-        int nullIdx   = colHeader.indexOf("COL_NULL");
-        int trueIdx   = colHeader.indexOf("COL_BOOL_TRUE");
-        int falseIdx  = colHeader.indexOf("COL_BOOL_FALSE");
-        int intIdx    = colHeader.indexOf("COL_INT");
-        int floatIdx  = colHeader.indexOf("COL_FLOAT");
-        int strIdx    = colHeader.indexOf("COL_STRING");
+        int nullIdx     = colHeader.indexOf("COL_NULL");
+        int trueIdx     = colHeader.indexOf("COL_BOOL_TRUE");
+        int falseIdx    = colHeader.indexOf("COL_BOOL_FALSE");
+        int intIdx      = colHeader.indexOf("COL_INT");
+        int floatIdx    = colHeader.indexOf("COL_FLOAT");
+        int floatSciIdx = colHeader.indexOf("COL_FLOAT_SCI");
+        int strIdx      = colHeader.indexOf("COL_STRING");
 
-        assertThat("null → \"null\"",    dataRow.get(nullIdx),  is("null"));   // RS-03
-        assertThat("true → \"true\"",    dataRow.get(trueIdx),  is("true"));   // RS-04
-        assertThat("false → \"false\"",  dataRow.get(falseIdx), is("false"));  // RS-04
-        assertThat("int → \"42\"",       dataRow.get(intIdx),   is("42"));     // RS-05
-        assertThat("float → \"3.14\"",   dataRow.get(floatIdx), is("3.14"));   // RS-05
-        assertThat("string → \"hello\"", dataRow.get(strIdx),   is("hello"));
+        assertThat("null → \"null\"",          dataRow.get(nullIdx),     is("null"));    // RS-03
+        assertThat("true → \"true\"",          dataRow.get(trueIdx),     is("true"));    // RS-04
+        assertThat("false → \"false\"",        dataRow.get(falseIdx),    is("false"));   // RS-04
+        assertThat("int → \"42\"",             dataRow.get(intIdx),      is("42"));      // RS-05
+        assertThat("float → \"3.14\"",         dataRow.get(floatIdx),    is("3.14"));    // RS-05
+        assertThat("科学表記 float → \"1.0E10\"", dataRow.get(floatSciIdx), is("1.0E10")); // RS-05 境界値
+        assertThat("string → \"hello\"",       dataRow.get(strIdx),      is("hello"));
     }
 
     // -------------------------------------------------------------------
@@ -124,11 +126,20 @@ public class YamlTestDataReaderTest {
         List<String> row1 = sut.readLine();
         assertThat("1行目の列数", row1.size(), is(colCount));
 
-        // 2行目: COL_C 省略 → 末尾が "" で補完される
+        // 2行目: COL_C 省略（末尾省略）→ "" で補完される
         List<String> row2 = sut.readLine();
         assertThat("2行目の列数がヘッダと同じであること", row2.size(), is(colCount));
         int colCIdx = colHeader.indexOf("COL_C");
         assertThat("省略された末尾列は空文字", row2.get(colCIdx), is(""));  // RS-06
+
+        // 3行目: COL_B 省略（中間省略）→ "" で補完される
+        List<String> row3 = sut.readLine();
+        assertThat("3行目の列数がヘッダと同じであること", row3.size(), is(colCount));
+        int colAIdx = colHeader.indexOf("COL_A");
+        int colBIdx = colHeader.indexOf("COL_B");
+        assertThat("中間省略列は空文字", row3.get(colBIdx), is(""));         // RS-06
+        assertThat("中間省略以外の列は正しく取得", row3.get(colAIdx), is("val_a3"));
+        assertThat("中間省略以外の列は正しく取得", row3.get(colCIdx), is("val_c3"));
     }
 
     // -------------------------------------------------------------------
@@ -151,8 +162,11 @@ public class YamlTestDataReaderTest {
         }
 
         assertThat("最終行が存在すること", lastLine, is(notNullValue()));
-        // setup_files の最後の値行 = 先頭セルが空
+        // setup_files の最後の値行: ["", "002", "鈴木花子"]
+        assertThat("最終行の列数", lastLine.size(), is(3));
         assertThat("最終行の先頭セルが空（データ行）", lastLine.get(0), is(""));
+        assertThat("最終値行の1列目（USER_ID）", lastLine.get(1), is("002"));
+        assertThat("最終値行の2列目（USER_NAME）", lastLine.get(2), is("鈴木花子"));
     }
 
     // -------------------------------------------------------------------
