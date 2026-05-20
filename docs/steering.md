@@ -194,27 +194,53 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ### R-3: カバーゼロ仕様の新規テスト作成
 
-**目的**: I-2 で「テスト追加必要」とされた仕様IDと、スキーマ外仕様（E-4/E-5/E-7）のランタイム担保テストを作成し、カバーゼロを解消する。
+**目的**: I-2 で「テスト追加必要」とされた27件の仕様IDに対してテストを作成し、カバーゼロを解消する。
 
 **前提**: R-1 完了、I-2/I-3 完了
 
-**作業内容**:
-- [ ] D-14（複数レコードレイアウト）: `DataFileParser` に対して複数 record fragment を持つ YAML テストデータを使ったシナリオテストを追加する（`BasicTestDataParserTest` ではなく `DataFileParser` 直接テスト）
-- [ ] MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParser` / `GroupMessageParser` に対して YAML テストデータを使ったテストを追加する
-- [ ] E-4（startsWith 前方一致）: `DataType` 名の前方一致マッチングが YAML セクションキーで正しく機能することを検証するテストを追加する
-- [ ] E-5（sendSyncTestData 配置規則）: `sendSyncTestData/{requestId}/message` の配置規則が YAML でも機能することを確認するテストを追加する
-- [ ] E-7（行数一致チェック）: `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数不一致時に `IllegalStateException` が発生することを YAML テストデータで確認するテストを追加する
-- [ ] E-6（defaultDirectives の DI）: SystemRepository の `defaultDirectives` キーで設定されたデフォルトディレクティブが YAML テストデータにも正しく適用されることを確認するテストを追加する。テスト対象は「DI設定済みの状態で YAML テストデータが正しく動作すること」に限定し、XML設定の正しさはテスト対象外と明記する
-- [ ] E-8（DATE型TZハザード）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境と同一TZ（JST前提か否か）で動作することを確認する。TZ依存が解消できない場合は制約事項として D-1 に明記する
-- [ ] E-9（BasicJapaneseCharacterInterpreter誤記）: `design.md` D-6 の「スルー vs 例外」条件の誤記を修正する（ドキュメント修正）
+**テスト追加対象一覧**（I-2 確定・27件）:
+
+| 仕様ID | 概要 | テスト追加方針 |
+|---|---|---|
+| DT-03 | DataType 前方一致（`startsWith`）判定 | `DataType#getType()` の前方一致動作を直接検証するテストを追加（`DataTypeTest` または新クラス） |
+| DT-07 | RESPONSE_HEADER/BODY_MESSAGES の GroupData 経路 | `GroupMessageParser` 経由の GroupData 取得をテスト |
+| SS-04 | SETUP_TABLE 主キーカラム省略不可 | 主キー省略時に INSERT が失敗または意図しないデフォルト値になることを検証 |
+| SS-05 | EXPECTED_TABLE と EXPECTED_COMPLETE_TABLE の混在 | 同一ファイル内で混在させた場合に後半データが欠落することを検証 |
+| SS-11 | 複数レコードレイアウト連続記述（旧D-14） | `DataFileParser` に複数 record fragment を持つ YAML テストデータでシナリオテストを追加 |
+| SS-19 | `testShots` LIST_MAP 予約ID | バッチリクエスト単体テストで `testShots` が自動読み込みされることを検証 |
+| HC-06 | 行内コメント（先頭以外の `//` 以降切り捨て） | 行内コメントが正しく切り捨てられることを `TestDataParsingTemplate` で検証 |
+| HC-07 | 空行スキップ | 全要素 null/空文字の行がスキップされることを検証 |
+| IV-03 | `DateTimeInterpreter` 完全一致制約 | `${systemTime}` 等の完全一致のみ変換され部分文字列は変換されないことを検証（独立テストクラス作成） |
+| IV-09 | 日付型カラム記述形式の境界値 | `yyyyMMddHHmmssSSS`（17文字）・後置0埋め・JDBC エスケープ形式の各パターンを `TableData` で検証 |
+| IV-10 | Timestamp 型期待値の末尾 `.0` 必須 | `.0` がない期待値と `.0` がある期待値の比較挙動を検証 |
+| IV-11 | バイナリデータの `0x` プレフィクス記法 | `0x` 付き16進数と `0x` なし文字列の扱いの違いを検証 |
+| IV-15 | X9/SX9 型フィールドの実値記述 | パディング文字・符号を含む実値で固定長フィールドが正しく読み書きされることを検証 |
+| DR-03 | 可変長ディレクティブキー制限 | 無効なディレクティブキーで例外が発生することを `VariableLengthFileParser` で検証 |
+| DR-04 | `defaultDirectives` DI（旧E-6） | SystemRepository の `defaultDirectives` キーで設定したディレクティブが YAML テストデータに適用されることを検証。XML設定の正しさはテスト対象外と明記 |
+| DR-05 | `fixedLengthDirectives` DI | 固定長専用デフォルトディレクティブの YAML 適用を検証 |
+| DR-06 | `variableLengthDirectives` DI | 可変長専用デフォルトディレクティブの YAML 適用を検証 |
+| MS-04 | `errorMode:timeout`/`msgException` 特殊値 | `SendSyncMessageParser` に対して YAML テストデータで errorMode 特殊値のパースを検証 |
+| MS-05 | HEADER/BODY MESSAGES 行数一致必須（旧E-7） | 行数不一致時に `IllegalStateException` が発生することを YAML テストデータで検証 |
+| MS-06 | `GroupMessageParser` 複数メッセージ収集 | 同一 groupId の複数メッセージプール収集を YAML テストデータで検証 |
+| MS-07 | `sendSyncTestData` 配置規則（旧E-5） | `sendSyncTestData/{requestId}/message` の配置規則が YAML でも機能することを検証 |
+| MS-08 | ステータスコード列なし時のデフォルト "200" | ステータスコード列が存在しない YAML テストデータで "200" が使われることを検証 |
+| MS-09 | マルチレコード送信の行数一致 | N回送信で各 N 行記述する規約を YAML テストデータで検証 |
+| MS-10 | no 値による複数回送信順序 | `no` 値を変えた連続記述で複数回送信が正しく動作することを検証 |
+| MS-11 | HTTP同期応答ボディ行長制約 | `response_body_messages` の各行長が同一であることを YAML テストデータで検証 |
+| MS-12 | フォーマット定義ファイル命名規則 | `{requestId}_RECEIVE` / `{requestId}_SEND` 命名で正しく解決されることを検証 |
+| MS-13 | `messaging.assertAsMapFileType` キー切り替え | SystemRepository 設定値に応じてアサート方式が切り替わることを検証 |
+
+**作業手順**:
+- [ ] 上記27件を対象テストクラス別に整理し、既存テストクラスへの追加か新規クラス作成かを決定する
+- [ ] 各テストを YAML テストデータを使う形式で実装する（R-1 完了後に着手）
+- [ ] SS-18（DATE型TZハザード・旧E-8）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境 TZ で動作することを確認。TZ依存が解消できない場合は制約事項として SS-18 の注記と D-1 に明記する
 - [ ] セルフチェック（チェック結果: `docs/checks/R-3.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- D-14/MS-04〜MS-07/E-4/E-5/E-7/E-6/E-8 に対応するテストが全グリーン
-- E-9 の `design.md` 誤記が修正されていること
-- E-8 について「TZ依存解消済み」または「制約事項として D-1 に記載済み」のいずれかが確認できること
+- 上記27件すべてに対応するテストが全グリーン
+- SS-18（TZハザード）について「TZ依存解消済み」または「制約事項として D-1 に記載済み」のいずれかが確認できること
 
 ---
 
@@ -267,24 +293,31 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 ## 現在の状態（2026-05-20時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
-- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1 完了
-- **進行中フェーズ**: Ph-1（三角マッピング確立）
-- **次の着手**: I-2 と I-3（並行実施可）
-- **未着手タスク**: I-2/I-3（並行可） → R-1 → R-2/R-3（並行可） → V-1 → D-1
+- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
+- **進行中フェーズ**: Ph-1 完了 → Ph-2 着手準備
+- **次の着手**: R-1（`YamlTestDataReader` 実装・TDD）
+- **未着手タスク**: R-1 → R-2/R-3（並行可） → V-1 → D-1
 
-### I-1 完了状況（2026-05-20）
+### Ph-1 完了状況（2026-05-20）
 
+**I-1:**
 - **成果物**: `docs/ntf-impl-spec-list.md`（仕様ID 80件: DT-01〜DT-07 / SS-01〜SS-20 / RS-01〜RS-08 / HC-01〜HC-07 / IV-01〜IV-15 / DR-01〜DR-10 / MS-01〜MS-13）
 - **チェック結果**: `docs/checks/I-1.md`（担当者 OK・QA OK・ユーザーレビュー OK）
-- **E-1〜E-9 処置**: 8件昇格（RS/DT/MS/DR/SS に割り当て）、E-9 は design.md 修正済みのため新仕様ID不要
-- **ユーザーレビュー指摘対応**: IV-12/IV-13 の分類を「テストデータ構造」に変更（外す根拠が100%明確でないため）。DR の実装内部ロジック件数表記を2件→3件に修正。テストデータ構造 71件・実装内部ロジック 9件が確定値
 
-### I-2/I-3 着手にあたっての注意事項
+**I-2:**
+- **成果物**: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」追加（80件全件）
+- 既存テストあり 45件 / テスト追加必要 35件（RS 全8件は YamlTestDataReader 未実装）
+- **チェック結果**: `docs/checks/I-2.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
-- **I-2**（仕様ID×既存テストマッピング）と **I-3**（仕様ID×YAMLスキーママッピング）は並行実施可
-- I-2 の出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
-- I-3 の出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
-- I-2 完了後に R-3 の追加対象（MS-08/11 等）が確定するため、R-3 の作業内容は I-2 完了後に更新すること
+**I-3:**
+- **成果物**: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」追加（80件全件）
+- スキーマ根拠あり 43件 / スキーマ外 37件
+- **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
+
+### R-1 着手にあたっての注意事項
+
+- **R-1** は TDD ベース: `YamlTestDataReaderTest` を先に書いてから実装する
+- R-3 の作業対象（27件）は I-2 完了で確定済み。R-1 完了後に並行着手可
 
 ### 再開手順
 
