@@ -142,9 +142,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.snakeyaml</groupId>
-      <artifactId>snakeyaml-engine</artifactId>
-      <version>2.9</version>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>2.6</version>
     </dependency>
     
     <dependency>
