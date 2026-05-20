@@ -1,7 +1,7 @@
 # ADR-002: snakeyaml-engine の依存スコープ
 
 - **日付**: 2026-05-20
-- **ステータス**: 承認待ち
+- **ステータス**: 承認済み
 
 ## コンテキスト
 
@@ -20,24 +20,22 @@ YAMLテストデータを使わないプロジェクトにも snakeyaml-engine �
 
 ## 決定
 
-**`optional`** スコープで追加する。
+**`compile`（スコープ省略）** で追加する。POI と同じ扱い。
 
 ```xml
 <dependency>
     <groupId>org.snakeyaml</groupId>
     <artifactId>snakeyaml-engine</artifactId>
     <version>2.9</version>
-    <optional>true</optional>
 </dependency>
 ```
 
 ## 理由
 
-- YAMLテストデータを使わないプロジェクトに不要なライブラリが入ることを避けたい
-- モジュール分割・リポジトリ分割は利用者側の影響は同じだが、管理コストが大きく今回の規模に見合わない
-- `compile` は構造変更不要だが、既存の POI（Excel不要なPJにも入っている）と同じ問題を踏襲することになり、新規追加で同じ轍を踏む理由がない
+- 既存の `poi-ooxml` がスコープ省略（compile）で追加されており、それと一貫した方針を採る
+- 構造変更なしで済む
+- モジュール分割・リポジトリ分割は管理コストが大きく今回の規模に見合わない
 
 ## 影響
 
-- `YamlTestDataReader` を使うプロジェクトは `pom.xml` に `snakeyaml-engine` の依存を明示的に追加する必要がある
-- `YamlTestDataReader` を使わないプロジェクトへの影響はゼロ
+- `nablarch-testing` に依存する全プロジェクトに `snakeyaml-engine` が推移的に入る（POI と同様）
