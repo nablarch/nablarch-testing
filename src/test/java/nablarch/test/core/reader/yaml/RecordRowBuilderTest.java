@@ -207,6 +207,32 @@ public class RecordRowBuilderTest {
         assertThat("長さ行", out.get(2), is(Arrays.asList("")));
     }
 
+    // -------------------------------------------------------------------
+    // フィールドの name / type が null のとき "" として扱われる
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: フィールドの name が null、type が null
+     * When:  addRecordRows を呼び出す
+     * Then:  フィールド名行・型行の対応セルは "" になる
+     */
+    @Test
+    public void addRecordRows_nullNameAndType_treatedAsEmpty() {
+        // Given
+        Map<String, Object> record = buildRecord("DATA",
+                Arrays.asList(buildField(null, null, "5")),
+                Arrays.asList(Arrays.asList((Object) "val"))
+        );
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        RecordRowBuilder.addRecordRows(record, true, out);
+
+        // Then: フィールド名行 ["DATA", ""]・型行 ["", ""]
+        assertThat("フィールド名がnullなら空文字", out.get(0).get(1), is(""));
+        assertThat("型がnullなら空文字",           out.get(1).get(1), is(""));
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------

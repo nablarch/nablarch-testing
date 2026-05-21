@@ -261,6 +261,21 @@ public class FileSectionConverterTest {
         assertThat(out.get(0).get(0), is("SETUP_FIXED=data.dat"));  // R-5
     }
 
+    // -------------------------------------------------------------------
+    // FileSection.of: 未知のキーで IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: "setup_files" / "expected_files" 以外のキー
+     * When:  FileSectionConverter のコンストラクタを呼び出す
+     * Then:  IllegalArgumentException がスローされる
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void constructor_unknownYamlKey_throwsException() {
+        // Given / When / Then
+        new FileSectionConverter("unknown_section");
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------

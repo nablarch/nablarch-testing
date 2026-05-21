@@ -340,6 +340,24 @@ public class YamlTestDataReaderTest {
     }
 
     // -------------------------------------------------------------------
+    // loadYaml: YAML の最上位がマップ形式でない場合は空マップとして扱われる
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: YAML の最上位がリスト形式のファイル（マップでない）
+     * When:  open して readLine() を呼び出す
+     * Then:  即座に null を返す（空マップ扱い・セクションなし）
+     */
+    @Test
+    public void open_yamlNotAMap_readLineReturnsNull() {
+        // Given / When
+        sut.open(DIR, "YamlNotAMapTestData");
+
+        // Then: セクションが存在しないため先頭から null
+        assertThat("非マップYAMLは空として扱われること", sut.readLine(), is(nullValue()));
+    }
+
+    // -------------------------------------------------------------------
     // 行シーケンス確認: setup_tables（グループIDなし）
     // -------------------------------------------------------------------
 
