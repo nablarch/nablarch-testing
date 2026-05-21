@@ -35,9 +35,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
     private DefaultValues defaultValues = new BasicDefaultValues();
     private List<TestDataInterpreter> interpreters;
 
-    private volatile YamlTableDataBuilder tableDataBuilder;
-    private volatile YamlFileBuilder fileBuilder;
-    private volatile YamlMessageBuilder messageBuilder;
+    private YamlTableDataBuilder tableDataBuilder;
+    private YamlFileBuilder fileBuilder;
+    private YamlMessageBuilder messageBuilder;
 
     /** デフォルトコンストラクタ。ビルダーをデフォルト設定で初期化する。 */
     public YamlTestDataParser() {

@@ -34,8 +34,7 @@ public final class YamlLoader {
 
     /** YAML キャッシュ（filePath → 解析済み Map）。アクセス順 LRU で最大 {@value #YAML_CACHE_MAX_SIZE} エントリを保持する。 */
     private static final Map<String, Map<String, Object>> YAML_CACHE =
-            Collections.synchronizedMap(
-                    NablarchTestUtils.<String, Map<String, Object>>createLRUMap(YAML_CACHE_MAX_SIZE));
+            NablarchTestUtils.createLRUMap(YAML_CACHE_MAX_SIZE);
 
     private YamlLoader() {
     }
@@ -50,27 +49,25 @@ public final class YamlLoader {
      */
     public static Map<String, Object> load(String basePath, String resourceName) {
         String filePath = basePath + resourceName + YAML_EXTENSION;
-        synchronized (YAML_CACHE) {
-            Map<String, Object> cached = YAML_CACHE.get(filePath);
-            if (cached != null) {
-                return cached;
+        Map<String, Object> cached = YAML_CACHE.get(filePath);
+        if (cached != null) {
+            return cached;
+        }
+        LoaderOptions options = new LoaderOptions();
+        options.setAllowDuplicateKeys(false);
+        Yaml yaml = new Yaml(new SafeConstructor(options));
+        try (FileInputStream in = new FileInputStream(new File(filePath))) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) yaml.load(in);
+            if (result == null) {
+                result = Collections.emptyMap();
             }
-            LoaderOptions options = new LoaderOptions();
-            options.setAllowDuplicateKeys(false);
-            Yaml yaml = new Yaml(new SafeConstructor(options));
-            try (FileInputStream in = new FileInputStream(new File(filePath))) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> result = (Map<String, Object>) yaml.load(in);
-                if (result == null) {
-                    result = Collections.emptyMap();
-                }
-                YAML_CACHE.put(filePath, result);
-                return result;
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to load YAML file: " + filePath, e);
-            } catch (YAMLException e) {
-                throw new IllegalStateException("Failed to parse YAML file: " + filePath, e);
-            }
+            YAML_CACHE.put(filePath, result);
+            return result;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load YAML file: " + filePath, e);
+        } catch (YAMLException e) {
+            throw new IllegalStateException("Failed to parse YAML file: " + filePath, e);
         }
     }
 
