@@ -44,6 +44,17 @@ setup_files:
         rows:
           - ["田中", "100"]
 
+  - group_id: noRecordType
+    path: dummy/no_record_type.dat
+    type: fixed
+    records:
+      - fields:
+          - name: FIELD1
+            type: X
+            length: 5
+        rows:
+          - ["HELLO"]
+
 expected_files:
   - path: dummy/expected_fixed.dat
     type: fixed

@@ -76,6 +76,8 @@ response_body_messages:
 
   - group_id: grp1
     id: sync001
+    directives:
+      text-encoding: UTF-8
     records:
       - record_type: BODY
         fields:

@@ -1,5 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.VariableLengthFile;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -212,5 +214,61 @@ public class YamlFileBuilderTest {
 
         // Then
         assertThat(result.get(0).createLayout().getDirective().get("text-encoding"), is("Windows-31J"));
+    }
+
+    // ========================================================================
+    // record_type が YAML に存在しない場合 "default" にフォールバックすること（QA観点2-軽微）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: records に record_type キーが存在しない場合 "default" にフォールバックすること（QA観点2-軽微）。
+     *
+     * <p>
+     * Given: setup_files の noRecordType グループのエントリで records に record_type キーなし<br>
+     * When:  buildFileList(yaml, "setup_files", "[noRecordType]", path) を呼ぶ<br>
+     * Then:  FixedLengthFile のフラグメントの record_type が "default" であること
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_recordTypeNullFallbackToDefault() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[noRecordType]", DIR);
+
+        // Then: record_type がない場合 "default" にフォールバックすること
+        assertThat(result.size(), is(1));
+        LayoutDefinition layout = result.get(0).createLayout();
+        assertThat("record_type なしの場合は 'default' にフォールバックすること",
+                layout.getRecords().get(0).getTypeName(), is("default"));
+    }
+
+    // ========================================================================
+    // 可変長ファイルで length なしのフィールドが正しく扱われること（QA観点2-軽微）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: 可変長ファイルで length が指定されていない場合、setLengths が呼ばれないこと（QA観点2-軽微）。
+     *
+     * <p>
+     * Given: setup_files の variable エントリで fields に length なし<br>
+     * When:  buildFileList(yaml, "setup_files", "", path) を呼ぶ<br>
+     * Then:  VariableLengthFile が返り、レコード定義に lengths が含まれないこと（record-length ディレクティブなし）
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_variableFileWithNoLength() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        VariableLengthFile variableFile = (VariableLengthFile) result.get(1);
+
+        // Then: length なしフィールドの場合 record-length ディレクティブが null であること（setLengths は呼ばれない）
+        LayoutDefinition layout = variableFile.createLayout();
+        assertThat("可変長ファイルでは record-length ディレクティブが設定されないこと",
+                layout.getDirective().get("record-length"), nullValue());
     }
 }

@@ -20,6 +20,24 @@ setup_tables:
     table: TEST_TABLE
     rows: []
 
+  - group_id: dupTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000010"
+        PK_COL2: "EF"
+        VARCHAR2_COL: "さしすせそ"
+        NUMBER_COL: "10"
+        NUMBER_COL2: "10.1"
+
+  - group_id: dupTable
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000011"
+        PK_COL2: "GH"
+        VARCHAR2_COL: "たちつてと"
+        NUMBER_COL: "11"
+        NUMBER_COL2: "11.1"
+
 list_maps:
   - id: testListMap
     rows:

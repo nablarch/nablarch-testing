@@ -1,8 +1,10 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
+import nablarch.test.core.reader.DataType;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import org.junit.After;
@@ -22,6 +24,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * {@link YamlMessageBuilder} のテストクラス。
@@ -229,6 +232,115 @@ public class YamlMessageBuilderTest {
         // Then
         assertThat(result, notNullValue());
         assertThat(result.get(0).getRequestId(), is("sync001"));
+    }
+
+    // ========================================================================
+    // buildMessageFile: skipFwHeader=true で FW_HEADER フラグメント除外（QA観点1-軽微）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder/YamlFileBuilder] buildMessagePool: FW_HEADER レコードが FixedLengthFile から除外されること。
+     *
+     * <p>
+     * Given: messages に id=req001 が FW_HEADER + BODY の 2 レコードで定義されている<br>
+     * When:  buildMessagePool を呼ぶ（内部で buildMessageFile(skipFwHeader=true) を使用）<br>
+     * Then:  FixedLengthFile の layout に BODY レコード 1 件のみ含まれること（FW_HEADER は除外）
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_fwHeaderFragmentExcluded() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: YamlFileBuilder 経由で buildMessagePool を呼ぶ（YamlMessageBuilder が buildMessageFile を内部で使用）
+        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<nablarch.test.core.util.interpreter.TestDataInterpreter>>getComponent("interpreters"));
+        FixedLengthFile file = fileBuilder.buildMessageFile(yaml, "messages", "req001", DIR);
+
+        // Then: FW_HEADER が除外され BODY のみ 1 フラグメントであること
+        assertNotNull(file);
+        LayoutDefinition layout = file.createLayout();
+        assertThat("FW_HEADER を除いた BODY レコードのみが含まれること", layout.getRecords().size(), is(1));
+        assertThat("レコードタイプが 'default' に固定されること", layout.getRecords().get(0).getTypeName(), is("default"));
+    }
+
+    // ========================================================================
+    // buildSendSyncMessageList: directives が MockMessages に設定されること（QA観点1-軽微）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: directives が MockMessages に設定されること。
+     *
+     * <p>
+     * Given: response_body_messages の grp1 エントリに text-encoding: UTF-8 が指定されている<br>
+     * When:  buildSendSyncMessageList を呼ぶ<br>
+     * Then:  result.get(0).createLayout().getDirective("text-encoding") が "UTF-8" を返すこと
+     * </p>
+     */
+    @Test
+    public void testBuildSendSyncMessageList_directivesAreSet() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+                yaml, "response_body_messages", "grp1", DIR);
+
+        // Then: directives が MockMessages に設定されていること（source フィールド経由で確認）
+        assertThat(result, notNullValue());
+        Field sourceField = MessagePool.class.getDeclaredField("source");
+        sourceField.setAccessible(true);
+        FixedLengthFile source = (FixedLengthFile) sourceField.get(result.get(0));
+        assertThat(source.createLayout().getDirective().get("text-encoding"), is("UTF-8"));
+    }
+
+    // ========================================================================
+    // buildMessageFile: 存在しない ID で null が返ること（QA観点2-軽微）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildMessageFile: 存在しない ID を指定した場合は null が返ること（QA観点2-軽微）。
+     *
+     * <p>
+     * Given: messages に存在しない id<br>
+     * When:  YamlFileBuilder.buildMessageFile(yaml, "messages", "noSuchId", path) を呼ぶ<br>
+     * Then:  null が返ること
+     * </p>
+     */
+    @Test
+    public void testBuildMessageFile_idNotFound() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<nablarch.test.core.util.interpreter.TestDataInterpreter>>getComponent("interpreters"));
+
+        // When
+        FixedLengthFile result = fileBuilder.buildMessageFile(yaml, "messages", "noSuchId", DIR);
+
+        // Then
+        assertNull(result);
+    }
+
+    // ========================================================================
+    // dataTypeToSectionKey: 不正DataTypeで IllegalArgumentException（QA観点2-中）
+    // ========================================================================
+
+    /**
+     * [YamlSection] dataTypeToSectionKey: messaging 以外の DataType を渡した場合 IllegalArgumentException がスローされること（QA観点2-中）。
+     *
+     * <p>
+     * Given: DataType.SETUP_TABLE_DATA（messaging 系以外）<br>
+     * When:  YamlSection.dataTypeToSectionKey(DataType.SETUP_TABLE_DATA) を呼ぶ<br>
+     * Then:  IllegalArgumentException がスローされること
+     * </p>
+     */
+    @Test
+    public void testDataTypeToSectionKey_unsupportedDataTypeThrowsException() {
+        // Given / When / Then
+        try {
+            YamlSection.dataTypeToSectionKey(DataType.SETUP_TABLE_DATA);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            // OK: 不正な DataType に対して例外がスローされること
+        }
     }
 
     // ========================================================================

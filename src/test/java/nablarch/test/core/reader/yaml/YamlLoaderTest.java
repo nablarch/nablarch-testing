@@ -231,4 +231,35 @@ public class YamlLoaderTest {
         assertThat("lru1 はキャッシュから追い出され、別インスタンスになること（QA-5）",
                 first == reloaded, is(false));
     }
+
+    /**
+     * [YamlLoader] load: 最近アクセスしたエントリが LRU キャッシュから追い出されないこと（QA観点2-中）。
+     *
+     * <p>
+     * Given: lru1.yaml〜lru8.yaml（8ファイル）をロード後、lru1 に再アクセスする<br>
+     * When:  lru9.yaml（9件目）をロードしてエビクションを起こす<br>
+     * Then:  最近アクセスした lru1 がキャッシュに残っており、同一インスタンスが返ること
+     * </p>
+     */
+    @Test
+    public void testLoad_recentlyAccessedEntryIsNotEvicted() {
+        // Given: 8 ファイルをロードしてキャッシュを満杯にする
+        Map<String, Object> lru1 = YamlLoader.load(DIR, "YamlLoaderTest/lru1");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru2");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru3");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru4");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru5");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru6");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru7");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru8");
+
+        // When: lru1 に再アクセスして「最近使用」にしてから 9 件目をロード
+        YamlLoader.load(DIR, "YamlLoaderTest/lru1");  // lru1 を最近使用に更新
+        YamlLoader.load(DIR, "YamlLoaderTest/lru9");  // lru2 が追い出されるはず
+
+        // Then: lru1 はキャッシュに残っており同一インスタンス（最近アクセスしたので追い出されない）
+        Map<String, Object> afterEviction = YamlLoader.load(DIR, "YamlLoaderTest/lru1");
+        assertThat("最近アクセスした lru1 はキャッシュに残っているため同一インスタンスであること",
+                lru1 == afterEviction, is(true));
+    }
 }

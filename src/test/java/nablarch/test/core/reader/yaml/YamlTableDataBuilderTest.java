@@ -272,6 +272,30 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildTableDataList: 同一グループID に同一テーブル名のエントリが複数ある場合、
+     * 全件取得できること（QA観点2-軽微）。
+     *
+     * <p>
+     * Given: setup_tables に group_id=dupTable で TEST_TABLE が 2 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[dupTable]", false, path) を呼ぶ<br>
+     * Then:  2 件の TableData が返り、それぞれのデータが正しいこと
+     * </p>
+     */
+    @Test
+    public void testBuildTableDataList_duplicateTableNamesInSameGroup() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[dupTable]", false, DIR);
+
+        // Then
+        assertThat("同一グループの同一テーブル名エントリが 2 件返ること", result.size(), is(2));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000010"));
+        assertThat(result.get(1).getValue(0, "PK_COL1").toString(), is("0000000011"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>
