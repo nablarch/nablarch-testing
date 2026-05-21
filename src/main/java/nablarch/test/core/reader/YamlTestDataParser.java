@@ -1,5 +1,6 @@
 package nablarch.test.core.reader;
 
+import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.db.TableData;
@@ -9,6 +10,7 @@ import nablarch.test.core.file.MockMessages;
 import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
+import nablarch.test.core.util.interpreter.BinaryFileInterpreter;
 import nablarch.test.core.util.interpreter.InterpretationContext;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -21,9 +23,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * YAML 形式のテストデータを読み込むパーサ。
@@ -39,7 +43,7 @@ import java.util.Map;
  * SnakeYAML 2.x を使用し、{@link SafeConstructor} で型変換を制限して安全にロードする。
  * </p>
  *
- * @author NTF YAML 実装フェーズ
+ * @author kiyotis
  */
 public class YamlTestDataParser extends BasicTestDataParser {
 
@@ -94,7 +98,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     /** path フィールドキー */
     private static final String FIELD_PATH = "path";
 
-    /** type フィールドキー（"fixed" / "variable"） */
+    /** type フィールドキー（"fixed" / "variable" またはフィールド型） */
     private static final String FIELD_TYPE = "type";
 
     /** directives フィールドキー */
@@ -112,9 +116,6 @@ public class YamlTestDataParser extends BasicTestDataParser {
     /** name フィールドキー */
     private static final String FIELD_NAME = "name";
 
-    /** type（フィールド型）フィールドキー */
-    private static final String FIELD_FIELD_TYPE = "type";
-
     /** length フィールドキー */
     private static final String FIELD_LENGTH = "length";
 
@@ -124,10 +125,13 @@ public class YamlTestDataParser extends BasicTestDataParser {
     /** フレームワーク制御ヘッダのレコードタイプ識別子 */
     private static final String FW_HEADER_RECORD_TYPE = "FW_HEADER";
 
+    /** YAML キャッシュの最大保持エントリ数 */
+    private static final int YAML_CACHE_MAX_SIZE = 8;
+
     /** フレームワーク制御ヘッダフィールド名セット */
-    private static final java.util.Set<String> FW_HEADER_FIELDS;
+    private static final Set<String> FW_HEADER_FIELDS;
     static {
-        java.util.Set<String> s = new java.util.HashSet<String>();
+        Set<String> s = new HashSet<String>();
         s.add("requestId");
         s.add("userId");
         s.add("resendFlag");
@@ -139,17 +143,17 @@ public class YamlTestDataParser extends BasicTestDataParser {
     private DbInfo dbInfo;
 
     /** デフォルト値 */
-    private DefaultValues defaultValues;
+    private DefaultValues defaultValues = new BasicDefaultValues();
 
     /** Interpreter リスト */
     private List<TestDataInterpreter> interpreters;
 
     /** YAML キャッシュ（path → 解析済み Map） */
     private static final Map<String, Map<String, Object>> YAML_CACHE =
-            Collections.synchronizedMap(new java.util.LinkedHashMap<String, Map<String, Object>>() {
+            Collections.synchronizedMap(new LinkedHashMap<String, Map<String, Object>>() {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-                    return size() > 8;
+                    return size() > YAML_CACHE_MAX_SIZE;
                 }
             });
 
@@ -201,7 +205,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
         }
         Map<String, Object> yaml = loadYaml(path, resourceName);
         String gid = formatGroupId(groupId);
-        return buildTableDataList(yaml, KEY_SETUP_TABLES, gid, false);
+        return buildTableDataList(yaml, KEY_SETUP_TABLES, gid, false, path);
     }
 
     /** {@inheritDoc} */
@@ -209,8 +213,8 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public List<TableData> getExpectedTableData(String path, String resourceName, String... groupId) {
         Map<String, Object> yaml = loadYaml(path, resourceName);
         String gid = formatGroupId(groupId);
-        List<TableData> expected = buildTableDataList(yaml, KEY_EXPECTED_TABLES, gid, false);
-        List<TableData> completed = buildTableDataList(yaml, KEY_EXPECTED_COMPLETE_TABLES, gid, true);
+        List<TableData> expected = buildTableDataList(yaml, KEY_EXPECTED_TABLES, gid, false, path);
+        List<TableData> completed = buildTableDataList(yaml, KEY_EXPECTED_COMPLETE_TABLES, gid, true, path);
         expected.addAll(completed);
         return expected;
     }
@@ -224,7 +228,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
             Map<String, Object> map = castMap(entry);
             String entryId = toString(map.get(FIELD_ID));
             if (id.equals(entryId)) {
-                return buildListMapRows(map);
+                return buildListMapRows(map, path);
             }
         }
         return Collections.emptyList();
@@ -281,8 +285,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
         for (Object entry : entries) {
             Map<String, Object> map = castMap(entry);
             String groupId = toString(map.get(FIELD_GROUP_ID));
-            String expectedGid = "[" + id + "]";
-            if (expectedGid.equals("[" + (groupId != null ? groupId : "") + "]") && groupId != null && groupId.equals(id)) {
+            if (groupId != null && groupId.equals(id)) {
                 MockMessages file = buildMockMessages(map, path);
                 Map<String, String> emptyHeader = Collections.emptyMap();
                 RequestTestingMessagePool pool = new RequestTestingMessagePool(file, emptyHeader);
@@ -309,8 +312,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
      */
     private Map<String, Object> loadYaml(String basePath, String resourceName) {
         String filePath = basePath + resourceName + YAML_EXTENSION;
-        if (YAML_CACHE.containsKey(filePath)) {
-            return YAML_CACHE.get(filePath);
+        Map<String, Object> cached = YAML_CACHE.get(filePath);
+        if (cached != null) {
+            return cached;
         }
         LoaderOptions options = new LoaderOptions();
         options.setAllowDuplicateKeys(false);
@@ -341,12 +345,14 @@ public class YamlTestDataParser extends BasicTestDataParser {
      * @param sectionKey    セクションキー
      * @param groupId       整形済みグループ ID（例: "[case01]" または ""）
      * @param fillDefaults  true の場合 {@link TableData#fillDefaultValues()} を呼ぶ
+     * @param path          インタープリタ用ベースパス
      * @return TableData リスト
      */
     private List<TableData> buildTableDataList(Map<String, Object> yaml, String sectionKey,
-                                                String groupId, boolean fillDefaults) {
+                                                String groupId, boolean fillDefaults, String path) {
         List<Object> entries = getList(yaml, sectionKey);
         List<TableData> result = new ArrayList<TableData>();
+        List<TestDataInterpreter> interps = addBinaryFileInterpreter(path);
         for (Object entry : entries) {
             Map<String, Object> map = castMap(entry);
             String entryGroupId = toString(map.get(FIELD_GROUP_ID));
@@ -372,7 +378,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                 for (String col : columnNames) {
                     Object rawVal = rowMap.get(col);
                     String strVal = objectToString(rawVal);
-                    String interpreted = interpret(strVal);
+                    String interpreted = interpret(strVal, interps);
                     rowValues.add(interpreted);
                 }
                 td.addRow(rowValues);
@@ -390,12 +396,13 @@ public class YamlTestDataParser extends BasicTestDataParser {
      * List-Map の行リストを構築する。
      *
      * @param listMapEntry list_maps の 1 エントリ
+     * @param path         インタープリタ用ベースパス
      * @return rows として構築した Map リスト
      */
-    @SuppressWarnings("unchecked")
-    private List<Map<String, String>> buildListMapRows(Map<String, Object> listMapEntry) {
+    private List<Map<String, String>> buildListMapRows(Map<String, Object> listMapEntry, String path) {
         List<Object> rows = getList(listMapEntry, FIELD_ROWS);
         List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+        List<TestDataInterpreter> interps = addBinaryFileInterpreter(path);
         for (Object rowObj : rows) {
             Map<String, Object> rowMap = castMap(rowObj);
             Map<String, String> row = new java.util.TreeMap<String, String>();
@@ -406,7 +413,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                     continue;
                 }
                 String val = objectToString(e.getValue());
-                String interpreted = interpret(val);
+                String interpreted = interpret(val, interps);
                 row.put(key, interpreted);
             }
             result.add(row);
@@ -485,10 +492,11 @@ public class YamlTestDataParser extends BasicTestDataParser {
      *
      * @param file     ファイル
      * @param map      セクション Map
-     * @param basePath ファイルパス基点
+     * @param basePath インタープリタ用ベースパス
      */
     private void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
         List<Object> records = getList(map, FIELD_RECORDS);
+        List<TestDataInterpreter> interps = addBinaryFileInterpreter(basePath);
         for (Object recordObj : records) {
             Map<String, Object> record = castMap(recordObj);
             nablarch.test.core.file.DataFileFragment fragment = file.getNewFragment();
@@ -505,7 +513,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
             for (Object fieldObj : fields) {
                 Map<String, Object> field = castMap(fieldObj);
                 names.add(toString(field.get(FIELD_NAME)));
-                types.add(toString(field.get(FIELD_FIELD_TYPE)));
+                types.add(toString(field.get(FIELD_TYPE)));
                 Object len = field.get(FIELD_LENGTH);
                 if (len != null) {
                     hasLength = true;
@@ -535,7 +543,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                     List<String> rowValues = new ArrayList<String>(rowList.size());
                     for (Object val : rowList) {
                         String strVal = objectToString(val);
-                        rowValues.add(interpret(strVal));
+                        rowValues.add(interpret(strVal, interps));
                     }
                     fragment.addValue(rowValues);
                 }
@@ -609,13 +617,10 @@ public class YamlTestDataParser extends BasicTestDataParser {
 
             for (Object fieldObj : fields) {
                 Map<String, Object> field = castMap(fieldObj);
-                String fieldName = toString(field.get(FIELD_NAME));
-                // FW 制御ヘッダはフラグメントに含めない（fwHeader として分離）
-                // ただし YAML 実装では全フィールドをフラグメントに含める
-                names.add(fieldName);
-                types.add(toString(field.get(FIELD_FIELD_TYPE)));
+                names.add(toString(field.get(FIELD_NAME)));
+                types.add(toString(field.get(FIELD_TYPE)));
                 Object len = field.get(FIELD_LENGTH);
-                lengths.add(len != null ? toString(len) : "0");
+                lengths.add(len != null ? toString(len) : "");
             }
 
             fragment.setNames(names);
@@ -630,7 +635,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                     List<String> rowValues = new ArrayList<String>(rowList.size());
                     for (Object val : rowList) {
                         String strVal = objectToString(val);
-                        rowValues.add(interpret(strVal));
+                        rowValues.add(interpret(strVal, interpreters));
                     }
                     fragment.addValue(rowValues);
                 }
@@ -667,7 +672,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                                 @SuppressWarnings("unchecked")
                                 List<Object> firstRow = (List<Object>) rows.get(0);
                                 int fieldIndex = fieldIndexOf(fields, fieldName);
-                                if (fieldIndex < firstRow.size()) {
+                                if (fieldIndex >= 0 && fieldIndex < firstRow.size()) {
                                     fwHeader.put(fieldName, objectToString(firstRow.get(fieldIndex)));
                                 }
                             }
@@ -738,18 +743,36 @@ public class YamlTestDataParser extends BasicTestDataParser {
     /**
      * インタープリタチェーンを適用して値を変換する。
      *
-     * @param value 変換前の値（null 可）
+     * @param value   変換前の値（null 可）
+     * @param interps 使用するインタープリタリスト
      * @return 変換後の値
      */
-    private String interpret(String value) {
+    private String interpret(String value, List<TestDataInterpreter> interps) {
         if (value == null) {
             return null;
         }
-        if (interpreters == null || interpreters.isEmpty()) {
+        if (interps == null || interps.isEmpty()) {
             return value;
         }
-        InterpretationContext ctx = new InterpretationContext(value, interpreters);
+        InterpretationContext ctx = new InterpretationContext(value, interps);
         return ctx.invokeNext();
+    }
+
+    /**
+     * {@link BinaryFileInterpreter} をインタープリタリストの先頭に積んで返す。
+     *
+     * @param path ベースパス
+     * @return BinaryFileInterpreter を先頭に追加したリスト
+     */
+    private List<TestDataInterpreter> addBinaryFileInterpreter(String path) {
+        BinaryFileInterpreter fileInterpreter = new BinaryFileInterpreter(path);
+        List<TestDataInterpreter> newInterpreters = new ArrayList<TestDataInterpreter>(
+                (interpreters != null ? interpreters.size() : 0) + 1);
+        newInterpreters.add(fileInterpreter);
+        if (interpreters != null) {
+            newInterpreters.addAll(interpreters);
+        }
+        return newInterpreters;
     }
 
     /**

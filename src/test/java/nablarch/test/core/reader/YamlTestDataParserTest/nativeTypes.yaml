@@ -7,7 +7,8 @@ list_maps:
     rows:
       - STR_COL: "hello"
         NULL_COL: null
-        BOOL_TRUE: "true"
-        BOOL_FALSE: "false"
-        INT_COL: "42"
-        FLOAT_COL: "3.14"
+        BOOL_TRUE: true
+        BOOL_FALSE: false
+        INT_COL: 42
+        FLOAT_COL: 3.14
+        FLOAT_SCIENTIFIC: 1e10

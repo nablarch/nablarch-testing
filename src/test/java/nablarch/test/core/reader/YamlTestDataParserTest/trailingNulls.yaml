@@ -9,3 +9,11 @@ list_maps:
       - COL1: "val4"
         COL2: null
         COL3: null
+
+  - id: trailingKeyOmitTest
+    rows:
+      - COL1: "row1_a"
+        COL2: "row1_b"
+        COL3: "row1_c"
+      - COL1: "row2_a"
+        COL2: "row2_b"

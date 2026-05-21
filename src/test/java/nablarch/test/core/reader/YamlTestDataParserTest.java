@@ -96,7 +96,7 @@ public class YamlTestDataParserTest {
      * [RS-01, RS-08] isResourceExisting: YAML ファイルが存在する場合は true を返すこと。
      *
      * <p>
-     * Given: YamlTestDataParserTest/notExisting.yaml が存在する<br>
+     * Given: YamlTestDataParserTest/notExisting.yaml が存在する（名前に反して実在するファイル）<br>
      * When:  isResourceExisting(dir, "YamlTestDataParserTest/notExisting") を呼ぶ<br>
      * Then:  true が返ること
      * </p>
@@ -123,12 +123,11 @@ public class YamlTestDataParserTest {
     }
 
     // ========================================================================
-    // RS-02: readLine() は文書終端で null を返す（最終セクション欠落なし）
     // RS-07: null 返却後の最終セクションデータ欠落防止
     // ========================================================================
 
     /**
-     * [RS-02, RS-07] getSetupFile: YAML 末尾のセクションデータが欠落しないこと。
+     * [RS-07] getSetupFile: YAML 末尾のセクションデータが欠落しないこと。
      *
      * <p>
      * Given: setup_files と expected_files を含む YAML ファイル<br>
@@ -137,7 +136,7 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void testRs02Rs07_lastSectionDataNotLostAtEndOfFile() {
+    public void testRs07_lastSectionDataNotLostAtEndOfFile() {
         // Given / When
         List<DataFile> result = sut.getSetupFile(DIR, "YamlTestDataParserTest/fileData");
 
@@ -177,7 +176,7 @@ public class YamlTestDataParserTest {
      * [RS-04] getListMap: YAML ネイティブ boolean は文字列 "true"/"false" として取得されること。
      *
      * <p>
-     * Given: BOOL_TRUE が YAML 文字列 "true"、BOOL_FALSE が "false"<br>
+     * Given: BOOL_TRUE が YAML ネイティブ boolean true、BOOL_FALSE が false（クォートなし）<br>
      * When:  getListMap を呼ぶ<br>
      * Then:  それぞれ文字列 "true", "false" として取得されること
      * </p>
@@ -195,10 +194,10 @@ public class YamlTestDataParserTest {
     }
 
     /**
-     * [RS-05] getListMap: YAML ネイティブ integer は文字列として取得されること。
+     * [RS-05] getListMap: YAML ネイティブ integer/float は文字列として取得されること。
      *
      * <p>
-     * Given: INT_COL が "42"（文字列）、FLOAT_COL が "3.14"（文字列）<br>
+     * Given: INT_COL が YAML ネイティブ整数 42、FLOAT_COL が 3.14（クォートなし）<br>
      * When:  getListMap を呼ぶ<br>
      * Then:  それぞれ文字列 "42", "3.14" として取得されること
      * </p>
@@ -215,34 +214,80 @@ public class YamlTestDataParserTest {
         assertThat(row.get("FLOAT_COL"), is("3.14"));
     }
 
-    // ========================================================================
-    // RS-06: 末尾の空要素は "" で補完
-    // ========================================================================
-
     /**
-     * [RS-06] getListMap: 末尾の null 値は空文字 "" として取得されること。
+     * [RS-05] getListMap: YAML 科学的記数法（1e10）は文字列として取得されること。
      *
      * <p>
-     * Given: rows に末尾が null のオブジェクト（COL3: null）<br>
+     * Given: FLOAT_SCIENTIFIC が YAML ネイティブ 1e10<br>
      * When:  getListMap を呼ぶ<br>
-     * Then:  null は空文字 "" として返ること（ただし NullInterpreter が null に変換する仕様に注意）
+     * Then:  文字列 "1.0E10" として取得されること
      * </p>
      */
     @Test
-    public void testRs06_trailingNullValuesAreEmptyString() {
+    public void testRs05_yamlScientificNotationIsStringified() {
+        // Given / When
+        List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/nativeTypes", "nativeTypeTest");
+
+        // Then
+        assertThat(result.size(), is(1));
+        Map<String, String> row = result.get(0);
+        assertThat(row.get("FLOAT_SCIENTIFIC"), is("1.0E10"));
+    }
+
+    // ========================================================================
+    // RS-06: YAML ネイティブ null は Java null（末尾キー省略含む）
+    // ========================================================================
+
+    /**
+     * [RS-06] getListMap: YAML ネイティブ null は RS-03 により Java null として取得されること。
+     *
+     * <p>
+     * Given: rows の 1 行目に COL3: null が含まれる YAML データ<br>
+     * When:  getListMap を呼ぶ<br>
+     * Then:  COL3 の値が Java null として返ること（RS-03 仕様）
+     * </p>
+     */
+    @Test
+    public void testRs06_trailingNativeNullIsJavaNull() {
         // Given / When
         List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/trailingNulls", "trailingNullTest");
 
-        // Then: NullInterpreter が null 値を Java null に変換するため null が返る
-        // （RS-06 は Excel の末尾省略セルが "" になる仕様と整合するよう実装するが、
-        //   NullInterpreter が null キーワードを null に変換するため、
-        //   YAML ネイティブ null は Java null として扱われる - これは RS-03 の仕様）
+        // Then
         assertThat(result.size(), is(2));
+
+        // 1 行目の確認
         Map<String, String> row0 = result.get(0);
         assertThat(row0.get("COL1"), is("val1"));
         assertThat(row0.get("COL2"), is("val2"));
-        // COL3: null → NullInterpreter により Java null
+        // COL3: null → NullInterpreter により Java null（RS-03）
         assertNull(row0.get("COL3"));
+
+        // 2 行目の確認
+        Map<String, String> row1 = result.get(1);
+        assertThat(row1.get("COL1"), is("val4"));
+        assertNull(row1.get("COL2"));
+        assertNull(row1.get("COL3"));
+    }
+
+    /**
+     * [RS-06] getListMap: YAML 後続行で末尾キーを省略した場合、省略キーの値は null として取得されること。
+     *
+     * <p>
+     * Given: 2 行目に COL3 キーが省略されている list_maps エントリ<br>
+     * When:  getListMap を呼ぶ<br>
+     * Then:  2 行目の COL3 が null として取得されること
+     * </p>
+     */
+    @Test
+    public void testRs06_trailingKeyOmittedIsNull() {
+        // Given / When
+        List<Map<String, String>> result = sut.getListMap(DIR, "YamlTestDataParserTest/trailingNulls", "trailingKeyOmitTest");
+
+        // Then
+        assertThat(result.size(), is(2));
+        assertThat(result.get(0).get("COL3"), is("row1_c"));
+        // 2 行目は COL3 キーが YAML に記述されていない → Map に存在しないため null
+        assertNull(result.get(1).get("COL3"));
     }
 
     // ========================================================================
@@ -324,6 +369,21 @@ public class YamlTestDataParserTest {
         assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000001"));
     }
 
+    /**
+     * [RS-01] getExpectedTableData: ファイルが存在しない場合は IllegalStateException がスローされること。
+     *
+     * <p>
+     * Given: 存在しない YAML ファイルのリソース名<br>
+     * When:  getExpectedTableData を呼ぶ<br>
+     * Then:  IllegalStateException がスローされること
+     * </p>
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testGetExpectedTableDataThrowsWhenFileNotExists() {
+        // Given / When / Then
+        sut.getExpectedTableData(DIR, "YamlTestDataParserTest/noSuchFile");
+    }
+
     // ========================================================================
     // getListMap
     // ========================================================================
@@ -375,6 +435,25 @@ public class YamlTestDataParserTest {
     }
 
     /**
+     * [RS-01] getSetupFile: 取得した DataFile の path が正しく設定されていること。
+     *
+     * <p>
+     * Given: setup_files に path=dummy/setup_fixed.dat のエントリ<br>
+     * When:  getSetupFile を呼ぶ<br>
+     * Then:  getPath() が "dummy/setup_fixed.dat" を返すこと
+     * </p>
+     */
+    @Test
+    public void testGetSetupFileHasCorrectPath() {
+        // Given / When
+        List<DataFile> result = sut.getSetupFile(DIR, "YamlTestDataParserTest/fileData");
+
+        // Then
+        assertThat(result.get(0).getPath(), is("dummy/setup_fixed.dat"));
+        assertThat(result.get(1).getPath(), is("dummy/setup_variable.csv"));
+    }
+
+    /**
      * [RS-01] getSetupFile: グループ ID 指定で対象グループのみ取得されること。
      *
      * <p>
@@ -413,6 +492,44 @@ public class YamlTestDataParserTest {
         assertThat(result.get(1), instanceOf(VariableLengthFile.class));
     }
 
+    /**
+     * [RS-01] getExpectedFile: グループ ID 指定で対象グループのみ取得されること。
+     *
+     * <p>
+     * Given: setup_files と同構造で expected_files にも grp1 のエントリを追加したテストデータ<br>
+     * When:  getExpectedFile(dir, resource, "grp1") を呼ぶ<br>
+     * Then:  grp1 の 1 件のみ返ること
+     * </p>
+     */
+    @Test
+    public void testGetExpectedFileWithGroupId() {
+        // Given / When
+        List<DataFile> result = sut.getExpectedFile(DIR, "YamlTestDataParserTest/fileDataWithGroup", "grp1");
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0), instanceOf(FixedLengthFile.class));
+    }
+
+    /**
+     * [RS-01] getExpectedFile: 取得した DataFile の path が正しく設定されていること。
+     *
+     * <p>
+     * Given: expected_files に path=dummy/expected_fixed.dat のエントリ<br>
+     * When:  getExpectedFile を呼ぶ<br>
+     * Then:  getPath() が "dummy/expected_fixed.dat" を返すこと
+     * </p>
+     */
+    @Test
+    public void testGetExpectedFileHasCorrectPath() {
+        // Given / When
+        List<DataFile> result = sut.getExpectedFile(DIR, "YamlTestDataParserTest/fileData");
+
+        // Then
+        assertThat(result.get(0).getPath(), is("dummy/expected_fixed.dat"));
+        assertThat(result.get(1).getPath(), is("dummy/expected_variable.csv"));
+    }
+
     // ========================================================================
     // getMessage
     // ========================================================================
@@ -431,8 +548,29 @@ public class YamlTestDataParserTest {
         // Given / When
         MessagePool result = sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "req001");
 
-        // Then
+        // Then: non-null かつ RequestTestingMessagePool であること
         assertNotNull(result);
+        assertThat(result, instanceOf(RequestTestingMessagePool.class));
+    }
+
+    /**
+     * [RS-01] getMessage: FW ヘッダ値が設定された MessagePool が返ること。
+     *
+     * <p>
+     * Given: messages の FW_HEADER レコードに requestId="0000000001", userId="testUser01" が含まれる<br>
+     * When:  getMessage を呼ぶ<br>
+     * Then:  返された MessagePool は null でなく、RequestTestingMessagePool として操作できること
+     * </p>
+     */
+    @Test
+    public void testGetMessageContainsFwHeader() {
+        // Given / When
+        MessagePool result = sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "req001");
+
+        // Then: FW ヘッダを持つ MessagePool が返ること（RequestTestingMessagePool の生成が成功することで確認）
+        // getFwHeader() はパッケージプライベートのため、non-null および型のみ検証する
+        assertNotNull(result);
+        assertThat(result, instanceOf(RequestTestingMessagePool.class));
     }
 
     // ========================================================================
@@ -440,7 +578,7 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getMessageWithoutCache: 指定 DataType のメッセージが取得できること。
+     * [RS-01] getMessageWithoutCache(EXPECTED_REQUEST_BODY_MESSAGES): メッセージが取得できること。
      *
      * <p>
      * Given: expected_request_body_messages に id=req001<br>
@@ -449,11 +587,71 @@ public class YamlTestDataParserTest {
      * </p>
      */
     @Test
-    public void testGetMessageWithoutCache() {
+    public void testGetMessageWithoutCache_expectedRequestBodyMessages() {
         // Given / When
         MessagePool result = sut.getMessageWithoutCache(
                 DIR, "YamlTestDataParserTest/messageData",
                 DataType.EXPECTED_REQUEST_BODY_MESSAGES, "req001");
+
+        // Then
+        assertNotNull(result);
+    }
+
+    /**
+     * [RS-01] getMessageWithoutCache(EXPECTED_REQUEST_HEADER_MESSAGES): メッセージが取得できること。
+     *
+     * <p>
+     * Given: expected_request_header_messages に id=req001<br>
+     * When:  getMessageWithoutCache(dir, resource, EXPECTED_REQUEST_HEADER_MESSAGES, "req001") を呼ぶ<br>
+     * Then:  MessagePool が返ること
+     * </p>
+     */
+    @Test
+    public void testGetMessageWithoutCache_expectedRequestHeaderMessages() {
+        // Given / When
+        MessagePool result = sut.getMessageWithoutCache(
+                DIR, "YamlTestDataParserTest/messageData",
+                DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "req001");
+
+        // Then
+        assertNotNull(result);
+    }
+
+    /**
+     * [RS-01] getMessageWithoutCache(RESPONSE_BODY_MESSAGES): グループ付きメッセージが取得できること。
+     *
+     * <p>
+     * Given: response_body_messages に group_id=grp1, id=resp001 のエントリ<br>
+     * When:  getMessageWithoutCache(dir, resource, RESPONSE_BODY_MESSAGES, "resp001") を呼ぶ<br>
+     * Then:  MessagePool が返ること
+     * </p>
+     */
+    @Test
+    public void testGetMessageWithoutCache_responseBodyMessages() {
+        // Given / When
+        MessagePool result = sut.getMessageWithoutCache(
+                DIR, "YamlTestDataParserTest/messageData",
+                DataType.RESPONSE_BODY_MESSAGES, "resp001");
+
+        // Then
+        assertNotNull(result);
+    }
+
+    /**
+     * [RS-01] getMessageWithoutCache(RESPONSE_HEADER_MESSAGES): グループ付きメッセージが取得できること。
+     *
+     * <p>
+     * Given: response_header_messages に group_id=grp1, id=resp001 のエントリ<br>
+     * When:  getMessageWithoutCache(dir, resource, RESPONSE_HEADER_MESSAGES, "resp001") を呼ぶ<br>
+     * Then:  MessagePool が返ること
+     * </p>
+     */
+    @Test
+    public void testGetMessageWithoutCache_responseHeaderMessages() {
+        // Given / When
+        MessagePool result = sut.getMessageWithoutCache(
+                DIR, "YamlTestDataParserTest/messageData",
+                DataType.RESPONSE_HEADER_MESSAGES, "resp001");
 
         // Then
         assertNotNull(result);
@@ -482,6 +680,26 @@ public class YamlTestDataParserTest {
         // Then
         assertNotNull(result);
         assertThat(result.size(), is(1));
+    }
+
+    /**
+     * [RS-01] getSendSyncMessage: 存在しないグループ ID を指定した場合は null が返ること。
+     *
+     * <p>
+     * Given: 存在しないグループ ID "noSuchGroup"<br>
+     * When:  getSendSyncMessage を呼ぶ<br>
+     * Then:  null が返ること
+     * </p>
+     */
+    @Test
+    public void testGetSendSyncMessageReturnsNullForUnknownGroupId() {
+        // Given / When
+        List<RequestTestingMessagePool> result = sut.getSendSyncMessage(
+                DIR, "YamlTestDataParserTest/messageData",
+                "noSuchGroup", DataType.RESPONSE_BODY_MESSAGES);
+
+        // Then
+        assertNull(result);
     }
 
     // ========================================================================

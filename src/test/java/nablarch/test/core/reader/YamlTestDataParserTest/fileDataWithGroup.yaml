@@ -1,0 +1,27 @@
+expected_files:
+  - path: dummy/expected_fixed.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: RESULT
+        fields:
+          - name: CODE
+            type: X
+            length: 4
+        rows:
+          - ["0000"]
+
+  - group_id: grp1
+    path: dummy/expected_fixed_grp.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: RESULT
+        fields:
+          - name: CODE
+            type: X
+            length: 4
+        rows:
+          - ["0000"]
