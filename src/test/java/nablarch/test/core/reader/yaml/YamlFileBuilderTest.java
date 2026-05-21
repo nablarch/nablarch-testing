@@ -188,4 +188,29 @@ public class YamlFileBuilderTest {
         // Then: グループIDなしの 2 件のみ
         assertThat(result.size(), is(2));
     }
+
+    // ========================================================================
+    // ディレクティブが正しく設定されること（QA-2）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: directives が DataFile に正しく設定されること（QA-2）。
+     *
+     * <p>
+     * Given: setup_files の fixed エントリに text-encoding: Windows-31J が指定されている<br>
+     * When:  buildFileList を呼ぶ<br>
+     * Then:  getDirective("text-encoding") が "Windows-31J" を返すこと
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_directivesAreSet() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+
+        // Then
+        assertThat(result.get(0).createLayout().getDirective().get("text-encoding"), is("Windows-31J"));
+    }
 }

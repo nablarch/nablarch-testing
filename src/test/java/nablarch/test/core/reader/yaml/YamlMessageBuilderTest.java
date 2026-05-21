@@ -207,4 +207,83 @@ public class YamlMessageBuilderTest {
         // Then
         assertNull(result);
     }
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: requestId が MessagePool に設定されること（QA-3）。
+     *
+     * <p>
+     * Given: response_body_messages に id=sync001, group_id=grp1 のエントリ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "grp1", path) を呼ぶ<br>
+     * Then:  result.get(0).getRequestId() が "sync001" を返すこと（QA-3）
+     * </p>
+     */
+    @Test
+    public void testBuildSendSyncMessageList_requestIdIsSet() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+                yaml, "response_body_messages", "grp1", DIR);
+
+        // Then
+        assertThat(result, notNullValue());
+        assertThat(result.get(0).getRequestId(), is("sync001"));
+    }
+
+    // ========================================================================
+    // fwHeaderFields カスタム設定（QA-4）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: reader.fwHeaderfields が SystemRepository に設定されている場合、
+     * そのフィールドのみ FW ヘッダとして抽出されること（QA-4）。
+     *
+     * <p>
+     * Given: SystemRepository に reader.fwHeaderfields=customField を一時設定した YamlMessageBuilder<br>
+     *        messages に id=req001 が FW_HEADER/BODY レコードで定義されている<br>
+     * When:  buildMessagePool を呼ぶ<br>
+     * Then:  customField が FW ヘッダに含まれ、requestId は含まれないこと（QA-4）
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_customFwHeaderFields() throws Exception {
+        // Given: reader.fwHeaderfields を一時設定
+        nablarch.core.repository.SystemRepository.load(new nablarch.core.repository.ObjectLoader() {
+            @Override
+            public Map<String, Object> load() {
+                java.util.HashMap<String, Object> map = new java.util.HashMap<String, Object>();
+                map.put("reader.fwHeaderfields", "customField");
+                return map;
+            }
+        });
+        try {
+            List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
+                    repositoryResource.getComponent("interpreters");
+            YamlMessageBuilder customSut = new YamlMessageBuilder(interpreters);
+            Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+
+            // When
+            MessagePool result = customSut.buildMessagePool(yaml, "messages", "req001", DIR);
+
+            // Then
+            assertNotNull(result);
+            Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+            fwHeaderField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+            assertThat("customField が設定されていること", fwHeader.get("customField"), is("CUSTOM_VALUE"));
+            assertThat("requestId は含まれないこと", fwHeader.containsKey("requestId"), is(false));
+        } finally {
+            // リポジトリを元の状態に戻す
+            nablarch.core.repository.SystemRepository.load(new nablarch.core.repository.ObjectLoader() {
+                @Override
+                public Map<String, Object> load() {
+                    java.util.HashMap<String, Object> map = new java.util.HashMap<String, Object>();
+                    map.put("reader.fwHeaderfields", null);
+                    return map;
+                }
+            });
+        }
+    }
 }

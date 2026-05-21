@@ -197,4 +197,38 @@ public class YamlLoaderTest {
         // Given / When / Then
         assertThat(YamlLoader.isResourceExisting(DIR, "YamlLoaderTest/noSuchFile"), is(false));
     }
+
+    // ========================================================================
+    // load: LRU キャッシュ上限超過で最古エントリが追い出されること（QA-5）
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: LRU キャッシュ上限（8件）を超えると最初にロードしたエントリが追い出されること（QA-5）。
+     *
+     * <p>
+     * Given: lru1.yaml〜lru9.yaml（9ファイル）。キャッシュ上限は 8<br>
+     * When:  9ファイルをロードした後、lru1.yaml を再ロードする<br>
+     * Then:  lru1.yaml の再ロード結果が最初のロードと別インスタンスであること（キャッシュから追い出されたため）
+     * </p>
+     */
+    @Test
+    public void testLoad_lruEvictionWhenCacheFull() {
+        // Given: キャッシュ上限 8 を超える 9 ファイルをロードする
+        Map<String, Object> first = YamlLoader.load(DIR, "YamlLoaderTest/lru1");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru2");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru3");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru4");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru5");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru6");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru7");
+        YamlLoader.load(DIR, "YamlLoaderTest/lru8");
+
+        // When: 9件目をロードして lru1 をキャッシュから追い出す
+        YamlLoader.load(DIR, "YamlLoaderTest/lru9");
+
+        // Then: lru1 は追い出されているため再ロードすると別インスタンス
+        Map<String, Object> reloaded = YamlLoader.load(DIR, "YamlLoaderTest/lru1");
+        assertThat("lru1 はキャッシュから追い出され、別インスタンスになること（QA-5）",
+                first == reloaded, is(false));
+    }
 }

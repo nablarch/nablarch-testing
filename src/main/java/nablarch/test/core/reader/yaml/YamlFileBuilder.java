@@ -136,7 +136,7 @@ public final class YamlFileBuilder {
      * @param skipFwHeader true の場合 FW_HEADER レコードをスキップし、record_type を "default" に固定する
      * @param interps      使用するインタープリタリスト
      */
-    public void buildFragmentsCore(DataFile file, Map<String, Object> map,
+    void buildFragmentsCore(DataFile file, Map<String, Object> map,
                              boolean skipFwHeader, List<TestDataInterpreter> interps) {
         List<Object> records = getList(map, FIELD_RECORDS);
         for (Object recordObj : records) {
