@@ -268,29 +268,57 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ---
 
-## Ph-2: YAMLリーダー実装（TDDベース）
+## Ph-2: YAMLパーサー実装（TDDベース）
 
 **前提**: Ph-1（I-1/I-2/I-3）全完了
 
-### A-1: YamlTestDataParser 直接実装の実現可能性調査
+### 実装方針（確定）
 
-**目的**: `TestDataReader`（`readLine` ベース）ではなく `TestDataParser` を直接実装することで、`List<List<String>>` 中間フォーマットと `yaml` パッケージ（10クラス）を排除できるか調査する。
+```
+YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / DataFile / MessagePool
+```
 
-**前提**: R-1 実装済み（ただし本調査結果次第で R-1 を廃棄・再実装する可能性がある）
+- `BasicTestDataParser` を継承し、getter を YAML から直接オーバーライドする
+- `List<List<String>>` 中間フォーマットは使わない
+- 公開API（`TestDataParser` インタフェース・`SendSyncSupport` 等）の変更は不要
+- SnakeYAML は `pom.xml` に追加する（ADR-001/002 参照）
+
+**根拠**:
+- `TestDataParser` インタフェースは `@Published(tag="architect")` のため変更不可
+- `SendSyncSupport` / `RequestTestingSendSyncSupport` が `BasicTestDataParser` 型に直接依存しているため、`implements TestDataParser` の独立実装への差し替えは不可（キャスト失敗）
+- `BasicTestDataParser` は `public class`・`final` なし → 継承可能
+- `extends BasicTestDataParser` のサブクラスであれば既存のキャストがすべて通る
+
+---
+
+### R-1: `YamlTestDataParser` 実装（`BasicTestDataParser` 継承）
+
+**目的**: `BasicTestDataParser` を継承し、getter を YAML から直接オーバーライドする `YamlTestDataParser` を TDD で実装する。
+
+**前提**: Ph-1 完了
 
 **作業内容**:
-- [ ] `BasicTestDataParser`・`TestDataParsingTemplate` を全行読み、`List<List<String>>` に依存している処理（キャッシュ・コメント除去・interpreter・`instanceof PoiXlsReader` 等）を洗い出す
-- [ ] `TestDataParser` の全メソッド（`getSetupTableData` / `getExpectedTableData` / `getListMap` / `getSetupFile` / `getExpectedFile` / `getMessage` / `isResourceExisting`）が YAML から直接実装できるか確認する
-- [ ] 直接実装した場合に再利用できる処理・不要になる処理・新規実装が必要な処理を分類する
-- [ ] できない理由・リスク・変更範囲（影響クラス数）を明確にする
-- [ ] セルフチェック（チェック結果: `docs/checks/A-1.md`）
+- [ ] TDD: `YamlTestDataParserTest` を先に書いてから実装する（仕様ID RS-01〜RS-08 を網羅）
+- [ ] `YamlTestDataParser extends BasicTestDataParser` を実装する
+  - `getSetupTableData` / `getExpectedTableData` / `getListMap` / `getSetupFile` / `getExpectedFile` / `getMessage` / `getMessageWithoutCache` / `getSendSyncMessage` / `isResourceExisting` を `@Override`
+  - `setTestDataReader` は `UnsupportedOperationException` で実装（YAML実装は `TestDataReader` を使わない）
+  - `setDbInfo` / `setInterpreters` / `setDefaultValues` は `super` に委譲
+  - SnakeYAML によるパース・キャッシュは `YamlTestDataParser` 内に閉じ込める
+  - interpreter チェーン（`setInterpreters` で注入）を各 getter 内で値ごとに適用する
+- [ ] `pom.xml` に SnakeYAML 依存を追加する
+- [ ] **テスト実行・グリーン確認**
+- [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
+- [ ] Javaエキスパートレビュー（サブエージェントで実施）
+- [ ] ソフトウエアエンジニアレビュー（サブエージェントで実施）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- 「できる / できない / 条件付きでできる」のいずれかで結論を出し、根拠が記載されていること
-- できない・困難な場合はその理由と代替案が明記されていること
-- 調査結果に基づく次タスクの方針（R-1 廃棄・再実装 or 現状承認）が明記されていること
+- `YamlTestDataParserTest` が全グリーン（RS-01〜RS-08 全網羅）
+- `setTestDataReader` 呼び出し時に `UnsupportedOperationException` がスローされること
+- DI 設定で `class="nablarch.test.core.reader.YamlTestDataParser"` に差し替えたとき `SendSyncSupport` / `RequestTestingSendSyncSupport` のキャストが通ること
+- 実装コードが既存コードのスタイルに準拠していること（Javadoc・`@Override`・型引数等）
+- テストコードに GWT（Given/When/Then）コメントと仕様ID（RS-xx）参照が記載されていること
 
 ---
 
@@ -303,7 +331,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **作業内容**:
 - [ ] `pom.xml` に JaCoCo Maven プラグインを追加する（`prepare-agent` + `report` ゴール）
 - [ ] `mvn test` 実行後に `target/site/jacoco/index.html` が生成されることを確認する
-- [ ] `YamlTestDataReader` および `yaml` パッケージの行カバレッジ・分岐カバレッジを確認し、未達箇所を記録する
+- [ ] `YamlTestDataParser` の行カバレッジ・分岐カバレッジを確認し、未達箇所を記録する
 - [ ] セルフチェック（チェック結果: `docs/checks/C-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
 - [ ] Javaエキスパートレビュー（サブエージェントで実施）
@@ -312,57 +340,23 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 **完了条件**:
 - `mvn test` 実行後に `target/site/jacoco/index.html` が生成されること
-- `YamlTestDataReader` および `nablarch.test.core.reader.yaml` パッケージの行カバレッジ・分岐カバレッジが HTML レポートで確認できること
+- `YamlTestDataParser` の行カバレッジ・分岐カバレッジが HTML レポートで確認できること
 - カバレッジ未達の行・分岐が存在する場合、その箇所と理由が `docs/checks/C-1.md` に記録されていること
 
 ---
 
-### R-1: `TestDataReader` インタフェースの YAML実装クラス作成
+### R-2: 既存テスト（BasicTestDataParserTest）のYAML版作成
 
-**目的**: `PoiXlsReader` と同一インタフェースで YAML を読む `YamlTestDataReader` を実装する。
-
-**作業内容**:
-- [x] `TestDataReader` インタフェースを実装
-- [x] `open(path, dataName)` の呼び出し規約を実装: `dataName` = `"ファイル名（拡張子なし）"` → `{dataName}.yaml` を探す
-- [x] `readLine()` の返却仕様を実装（全てExcelの挙動に合わせる）
-  - YAML ネイティブ `null` → 文字列 `"null"` として返す（E-1）
-  - YAML ネイティブ boolean (`true`/`false`) → 文字列 `"true"/"false"` として返す（E-1）
-  - YAML ネイティブ integer/float → 数字文字列として返す（E-1）
-  - 末尾空要素は `""` として補完する（E-2）
-  - 文書終端で `null` を返す。`null` を返した直前のセクションデータが欠落しないことを保証する（E-3）
-- [x] `isDataExisting` / `isResourceExisting` を実装
-- [x] TDD: テストクラス `YamlTestDataReaderTest` を先に書いてから実装する
-- [x] **テスト実行・グリーン確認**
-- [x] セルフチェック（チェック結果: `docs/checks/R-1.md`）
-- [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [x] Javaエキスパートレビュー（既存スタイル準拠・ベストプラクティス確認）
-- [x] テストコードレビュー（GWT構造・仕様IDリンク・エッジケース網羅）
-- [ ] ユーザーレビュー依頼・OK取得
-
-**完了条件**:
-- `YamlTestDataReaderTest` が全グリーン
-- YAML ネイティブ型の文字列化（E-1）の境界値テスト（null/true/false/integer/float各型、科学表記を含む）が含まれること
-- 末尾空要素補完（E-2）のテストが含まれること（末尾省略・中間省略の両ケース）
-- `readLine()` が `null` を返した後、直前のセクションデータが欠落しないことを検証するテストが含まれること（E-3）（具体的な値でアサートすること）
-- 実装コードが既存コード（`PoiXlsReader` 等）のスタイルに準拠していること（Javadoc・`@Override`・型引数等）
-- テストコードに GWT（Given/When/Then）コメントが記載されていること
-- テストコードのコメントに仕様ID（RS-xx）と参照先（`docs/ntf-impl-spec-list.md`）が明記されていること
-- Javaエキスパートによるレビューが完了し、本質的な指摘がなくなっていること
-
----
-
-### R-2: 既存テスト（BasicTestDataParserTest）のYAMLリーダー版作成
-
-**目的**: 既存のExcelベーステストと同一結果をYAMLリーダーで再現し、「ExcelとYAMLが等価である」ことを証明する。
+**目的**: 既存の Excel ベーステストと同一結果を `YamlTestDataParser` で再現し、「Excel と YAML が等価である」ことを証明する。
 
 **前提**: R-1 完了
 
 **作業内容**:
 - [ ] `BasicTestDataParserTest.xls` の内容を YAML に変換し `BasicTestDataParserTest.yaml` として配置
-- [ ] `BasicTestDataParserTestYaml` を作成し、`TestDataParser` に `YamlTestDataReader` を差し込んで同一アサーションを実行
+- [ ] `BasicTestDataParserTestYaml` を作成し、`YamlTestDataParser` で同一アサーションを実行
 - [ ] 既存16テストメソッド全件をYAML版で実行し、差異がある場合は原因を文書に明記する
 - [ ] セルフチェック（チェック結果: `docs/checks/R-2.md`）
-- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] QAエンジニアレビュー（サブエージェントで実施）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
@@ -412,7 +406,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 **作業手順**:
 - [ ] 上記27件を対象テストクラス別に整理し、既存テストクラスへの追加か新規クラス作成かを決定する
-- [ ] 各テストを YAML テストデータを使う形式で実装する（R-1 完了後に着手）
+- [ ] 各テストを YAML テストデータを使う形式で実装する（R-1 の `YamlTestDataParser` を使う）
 - [ ] SS-18（DATE型TZハザード・旧E-8）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境 TZ で動作することを確認。TZ依存が解消できない場合は制約事項として SS-18 の注記と D-1 に明記する
 - [ ] セルフチェック（チェック結果: `docs/checks/R-3.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
@@ -426,7 +420,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ## Ph-3: 既存ExcelテストのYAML版並走と差分ゼロ確認
 
-**前提**: R-1 完了
+**前提**: R-1（YamlTestDataParser）完了
 
 ### V-1: 全Excelテストファイルの YAML変換と並走実行
 
@@ -473,16 +467,14 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 ## 現在の状態（2026-05-21時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
-- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
-- **進行中フェーズ**: Ph-2 R-1 ユーザーレビュー中 + A-1 調査待ち
-- **次の着手**: A-1（YamlTestDataParser 直接実装の実現可能性調査）を先に実施 → 結果次第で R-1 を見直すか現状承認して C-1/R-2/R-3 に進む
-- **未着手タスク**: A-1（調査・最優先） → C-1（JaCoCo設定・並行可）、R-2/R-3（並行可） → V-1 → D-1
+- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）全完了
+- **次の着手**: **R-1**（`YamlTestDataParser extends BasicTestDataParser` の TDD 実装）
+- **未着手タスク**: R-1（最優先）→ C-1（並行可）、R-2/R-3（R-1 完了後）→ V-1 → D-1
 
 ### 環境情報
 
 - **Java**: Eclipse Temurin 17（`update-alternatives` で切り替え済み）
 - **Maven settings**: `~/.m2/settings.xml` に社内 Nexus リポジトリ設定済み（`nablarch-parent:6-NEXT-SNAPSHOT` 解決済み）
-- **ビルド確認**: `mvn clean package -Dtest="YamlTestDataReaderTest,YamlValueConverterTest,RecordRowBuilderTest,TableSectionConverterTest,ListMapSectionConverterTest,FileSectionConverterTest,MessageSectionConverterTest,GroupMessageSectionConverterTest,YamlRowBuilderTest"` で96件グリーン確認済み
 - **注意**: `mvn clean package` は Javadoc プラグインが `JAVA_HOME` 未設定で `BUILD FAILURE` になるが、テスト自体は全グリーン。`Tests run:` 行と `Failures: 0, Errors: 0` で確認すること
 
 ### カバレッジ取得方法（pom.xml 変更不要）
@@ -509,7 +501,7 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 **I-2:**
 - **成果物**: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」追加（80件全件）
-- 既存テストあり 45件 / テスト追加必要 35件（RS 全8件は YamlTestDataReader 未実装として記録済み）
+- 既存テストあり 45件 / テスト追加必要 35件（RS 全8件は `YamlTestDataParser` 未実装として記録）
 - **チェック結果**: `docs/checks/I-2.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
 **I-3:**
@@ -517,59 +509,16 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - スキーマ根拠あり 43件 / スキーマ外 37件
 - **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
-### Ph-2 R-1 状況（ユーザーレビュー待ち）
+### ADR（設計判断記録）
 
-**成果物:**
-- `src/main/java/nablarch/test/core/reader/YamlTestDataReader.java`（ファイルI/O・委譲・LoggerManager ログ）
-- `src/main/java/nablarch/test/core/reader/yaml/` パッケージ（10クラス）:
-  - `YamlRowBuilder`（public）、`SectionConverter`（interface）、`TableSectionConverter`、`ListMapSectionConverter`、`FileSectionConverter`（FileSection enum 方式）、`MessageSectionConverter`、`GroupMessageSectionConverter`、`RecordRowBuilder`、`YamlValueConverter`（singletonRow/collectAllKeys 集約）、`package-info`
-- `src/test/java/nablarch/test/core/reader/YamlTestDataReaderTest.java`（23件・RS-01〜RS-08 全網羅）
-- `src/test/java/nablarch/test/core/reader/yaml/` テスト8クラス（73件・各クラス単体検証 + 欠落キー異常系）
-- テストデータ YAML 4件（`src/test/resources/nablarch/test/core/reader/` 配下）
-- **チェック結果**: `docs/checks/R-1.md`（担当者 OK・QA OK・Javaエキスパート OK・SWE OK）
-
-**カバレッジ達成状況:**
-- yaml パッケージ全クラス: C0=100% / C1=100%
-- `YamlTestDataReader`: C0=100% / C1=100%
-
-**ADR（設計判断記録）:**
 - `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
 - `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
-
-**エキスパートレビュー対応済み一覧（全35件 + 再レビュー5件 + 追加レビュー対応済み）:**
-
-QA-1〜QA-16: 全対応済み（テスト追加・アサート強化）
-JAVA-1〜JAVA-10: 全対応済み（空コンストラクタ削除・二重ラップ解消・テストデータ移動等）
-SWE-1〜SWE-8: 全対応済み（isResource/isData共通化・addKeyValueRows共通化・FileSection enum化等）
-再レビュー R-1〜R-8: 本質的指摘5件を対応済み（FileSection.of 明示的比較・type=nullテスト等）
-追加レビュー（スレッドセーフ・メモリ・エラー通知）:
-- T-1: 非スレッドセーフ旨を Javadoc に明記
-- E-1: 必須キー欠落時の IllegalArgumentException 追加（table/id/path・5クラス）
-- E-2: FileSectionConverter の type 不正値チェック追加
-- E-3: LoggerManager によるデバッグログ追加（open 時にファイルパス・行数出力）
-- E-4（対応しない）: 例外メッセージは英語のまま（PoiXlsReader との統一性）
-
-### 設計上の論点（A-1 調査の背景）
-
-ユーザーレビュー中に以下の設計問題が浮上した。
-
-**問題**: `YamlTestDataReader`（`TestDataReader` 実装）は `List<List<String>>` という中間フォーマットを経由して `TableData` 等に変換している。この中間フォーマットは「Excel の行をメモリに展開したもの」であり、NTF が Excel ありきで設計された結果の負債。
-
-```
-現在: YAML → YamlTestDataReader(readLine) → List<List<String>> → TestDataParsingTemplate → TableData
-理想: YAML → YamlTestDataParser(TestDataParser実装) → TableData（直接）
-```
-
-`yaml` パッケージ（10クラス）の複雑さはこの迂回のために存在している。`TestDataParser` を直接実装すれば中間フォーマットと yaml パッケージ全体が不要になる可能性がある。
-
-**A-1 調査**: `TestDataParser` 直接実装の実現可能性・変更範囲・リスクを調査する。
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認
 2. `git status` でクリーンであることを確認
-3. **A-1 調査を実施する**（`BasicTestDataParser`・`TestDataParsingTemplate`・`TestDataParser` の全体を読み、YamlTestDataParser 直接実装の実現可能性を明確にする）
-4. A-1 結果次第で R-1 を見直すか現状承認 → C-1/R-2/R-3 に着手
+3. **R-1 を実施する**（`YamlTestDataParser extends BasicTestDataParser` の TDD 実装）
 
 ---
 
