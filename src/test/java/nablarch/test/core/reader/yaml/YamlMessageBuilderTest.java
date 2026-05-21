@@ -324,6 +324,37 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
+    // FW_HEADER rows が空のとき例外なく空 Map が返ること（E-3 分岐D）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: FW_HEADER の rows が空リストの場合、
+     * 例外をスローせず空の fwHeader で MessagePool が返ること（E-3 分岐D）。
+     *
+     * <p>
+     * Given: messages_empty_fw_header_rows に id=emptyRows001 の FW_HEADER rows が空リスト<br>
+     * When:  buildMessagePool(yaml, "messages_empty_fw_header_rows", "emptyRows001", path) を呼ぶ<br>
+     * Then:  MessagePool が返り、fwHeader が空 Map であること（型チェック分岐には到達しない）
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_emptyFwHeaderRows() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages_empty_fw_header_rows", "emptyRows001", DIR);
+
+        // Then: 例外なく返り、fwHeader は空 Map
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("rows が空のとき fwHeader は空 Map であること", fwHeader.size(), is(0));
+    }
+
+    // ========================================================================
     // FW_HEADER rows が Map 形式（誤記）のとき IllegalStateException + context（E-3）
     // ========================================================================
 

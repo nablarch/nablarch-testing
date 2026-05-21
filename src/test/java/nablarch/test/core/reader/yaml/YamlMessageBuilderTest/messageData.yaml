@@ -90,6 +90,23 @@ response_body_messages:
         rows:
           - ["0000", "SYNC_DATA1"]
 
+messages_empty_fw_header_rows:
+  - id: emptyRows001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+        rows: []
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: X
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
 messages_malformed_fw_header:
   - id: malformed001
     records:

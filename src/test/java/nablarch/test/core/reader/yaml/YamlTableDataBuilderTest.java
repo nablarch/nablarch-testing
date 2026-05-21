@@ -316,6 +316,7 @@ public class YamlTableDataBuilderTest {
             sut.buildTableDataList(yaml, "setup_tables", "[missingTable]", false, DIR);
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
+            assertThat("フィールド名がメッセージに含まれること", e.getMessage(), containsString("table"));
             assertThat("セクション名がメッセージに含まれること", e.getMessage(), containsString("setup_tables"));
             assertThat("ファイルパスがメッセージに含まれること", e.getMessage(), containsString(DIR));
         }

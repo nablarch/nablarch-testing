@@ -269,6 +269,7 @@ public class YamlFileBuilderTest {
             sut.buildFileList(yaml, "setup_files", "[missingPath]", DIR);
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
+            assertThat("フィールド名がメッセージに含まれること", e.getMessage(), containsString("path"));
             assertThat("セクション名がメッセージに含まれること", e.getMessage(), containsString("setup_files"));
             assertThat("グループIDがメッセージに含まれること", e.getMessage(), containsString("[missingPath]"));
         }
