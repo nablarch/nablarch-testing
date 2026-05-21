@@ -29,6 +29,7 @@ public final class YamlLoader {
 
     private static final String YAML_EXTENSION = ".yaml";
 
+    /** 既存の {@link nablarch.test.core.reader.TableDataParser} 等のキャッシュサイズに合わせた値。 */
     private static final int YAML_CACHE_MAX_SIZE = 8;
 
     /** YAML キャッシュ（filePath → 解析済み Map）。アクセス順 LRU で最大 {@value #YAML_CACHE_MAX_SIZE} エントリを保持する。 */
@@ -85,6 +86,10 @@ public final class YamlLoader {
     /**
      * テスト専用: YAML キャッシュをクリアする。
      * テスト間のキャッシュ汚染を防ぐために {@code @After} メソッドから呼ぶこと。
+     *
+     * <p>
+     * このメソッドはテストコードからのみ呼ぶこと。プロダクションコードからの呼び出しは不可。
+     * </p>
      */
     public static void clearCacheForTest() {
         YAML_CACHE.clear();

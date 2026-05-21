@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static nablarch.test.core.reader.yaml.YamlSection.FIELD_DIRECTIVES;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_FIELDS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_GROUP_ID;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ID;
@@ -22,6 +21,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORDS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.FILE_TYPE_FIXED;
+import static nablarch.test.core.reader.yaml.YamlSection.DEFAULT_RECORD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.FW_HEADER_RECORD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.addBinaryFileInterpreter;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
@@ -116,28 +116,22 @@ public final class YamlFileBuilder {
     }
 
     private void applyDirectives(DataFile file, Map<String, Object> map) {
-        Object directivesObj = map.get(FIELD_DIRECTIVES);
-        if (directivesObj == null) {
-            return;
-        }
-        Map<String, Object> directives = castMap(directivesObj);
-        for (Map.Entry<String, Object> e : directives.entrySet()) {
-            file.setDirective(e.getKey(), toStr(e.getValue()));
-        }
-    }
-
-    private void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
-        buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
+        YamlSection.applyDirectives(file, map);
     }
 
     /**
-     * MockMessages 用のフラグメントを構築する（FW_HEADER スキップなし・skipFwHeader=false）。
+     * DataFileFragment を構築してファイルに追加する（FW_HEADER スキップなし）。
      *
-     * @param file     MockMessages インスタンス
+     * <p>
+     * {@code buildDataFile} および {@link nablarch.test.core.reader.yaml.YamlMessageBuilder} からの
+     * MockMessages フラグメント構築に使用する。
+     * </p>
+     *
+     * @param file     DataFile インスタンス（MockMessages を含む）
      * @param map      セクション Map
      * @param basePath インタープリタ用ベースパス
      */
-    void buildMockMessageFragments(DataFile file, Map<String, Object> map, String basePath) {
+    void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
         buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
     }
 
@@ -161,7 +155,7 @@ public final class YamlFileBuilder {
             }
 
             DataFileFragment fragment = file.getNewFragment();
-            fragment.setRecordType(skipFwHeader ? "default" : (recordType != null ? recordType : "default"));
+            fragment.setRecordType(skipFwHeader ? DEFAULT_RECORD_TYPE : (recordType != null ? recordType : DEFAULT_RECORD_TYPE));
 
             List<Object> fields = getList(record, FIELD_FIELDS);
             List<String> names = new ArrayList<String>(fields.size());

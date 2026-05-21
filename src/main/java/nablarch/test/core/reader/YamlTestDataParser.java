@@ -39,8 +39,20 @@ public class YamlTestDataParser extends BasicTestDataParser {
     private YamlFileBuilder fileBuilder;
     private YamlMessageBuilder messageBuilder;
 
+    /** デフォルトコンストラクタ。ビルダーをデフォルト設定で初期化する。 */
+    public YamlTestDataParser() {
+        rebuildBuilders();
+    }
+
     /**
      * {@inheritDoc}
+     *
+     * <p>
+     * {@code YamlTestDataParser} は {@link TestDataReader} を使用しない。
+     * YAML ファイルはファイルシステムから直接ロードするため、このメソッドを呼ぶ必要はない。
+     * DI 設定で本クラスを使用する場合は {@code setTestDataReader} を設定しないこと。
+     * </p>
+     *
      * @throws UnsupportedOperationException 常にスローされる
      */
     @Override

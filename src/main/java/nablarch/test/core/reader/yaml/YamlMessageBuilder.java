@@ -58,6 +58,9 @@ public final class YamlMessageBuilder {
     public YamlMessageBuilder(List<TestDataInterpreter> interpreters) {
         this.interpreters = interpreters;
         this.fileBuilder = new YamlFileBuilder(interpreters);
+        // fwHeaderFields はコンストラクタ時点の SystemRepository 状態で解決する。
+        // YamlTestDataParser の setter 呼び出しごとにビルダーが再生成されるため、
+        // setter 呼び出し後の SystemRepository の状態が反映される。
         this.fwHeaderFields =
                 isNullOrEmpty(SystemRepository.getString(FW_HEADER_KEY))
                 ? NablarchTestUtils.asSet("requestId", "userId", "resendFlag", "resultCode")
@@ -117,19 +120,12 @@ public final class YamlMessageBuilder {
         String entryId = toStr(map.get(FIELD_ID));
         MockMessages file = new MockMessages(entryId != null ? entryId : "");
         applyDirectives(file, map);
-        fileBuilder.buildMockMessageFragments(file, map, basePath);
+        fileBuilder.buildFragments(file, map, basePath);
         return file;
     }
 
     private void applyDirectives(DataFile file, Map<String, Object> map) {
-        Object directivesObj = map.get(YamlSection.FIELD_DIRECTIVES);
-        if (directivesObj == null) {
-            return;
-        }
-        Map<String, Object> directives = castMap(directivesObj);
-        for (Map.Entry<String, Object> e : directives.entrySet()) {
-            file.setDirective(e.getKey(), toStr(e.getValue()));
-        }
+        YamlSection.applyDirectives(file, map);
     }
 
     private Map<String, String> extractFwHeader(Map<String, Object> yaml, String sectionKey, String id) {

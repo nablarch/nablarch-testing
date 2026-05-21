@@ -66,6 +66,9 @@ public final class YamlSection {
 
     public static final String FW_HEADER_RECORD_TYPE = "FW_HEADER";
 
+    /** フォールバック時に使用するレコードタイプ名。record_type が未指定の場合および skipFwHeader=true の場合に使用する。 */
+    public static final String DEFAULT_RECORD_TYPE = "default";
+
     // ========================================================================
     // ユーティリティメソッド
     // ========================================================================
@@ -119,6 +122,8 @@ public final class YamlSection {
      *
      * <p>
      * テストデータのセル値変換用。設定値取得には {@link #toStr(Object)} を使うこと。
+     * 現在の実装は {@link #toStr(Object)} と同一だが、将来 YAML ネイティブ型の変換仕様が
+     * 変わった場合はこちらのみ変更すること（例: 数値フォーマットの変更、null 表現の変換等）。
      * </p>
      */
     public static String objectToString(Object value) {
@@ -152,6 +157,23 @@ public final class YamlSection {
             result.addAll(interpreters);
         }
         return result;
+    }
+
+    /**
+     * YAML エントリの directives を {@link nablarch.test.core.file.DataFile} に適用する。
+     *
+     * @param file ディレクティブを設定するファイル
+     * @param map  YAML エントリ Map
+     */
+    public static void applyDirectives(nablarch.test.core.file.DataFile file, Map<String, Object> map) {
+        Object directivesObj = map.get(FIELD_DIRECTIVES);
+        if (directivesObj == null) {
+            return;
+        }
+        Map<String, Object> directives = castMap(directivesObj);
+        for (Map.Entry<String, Object> e : directives.entrySet()) {
+            file.setDirective(e.getKey(), toStr(e.getValue()));
+        }
     }
 
     /**
