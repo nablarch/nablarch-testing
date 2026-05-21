@@ -38,7 +38,13 @@ class FileSectionConverter implements SectionConverter {
         }
 
         static FileSection of(String yamlKey) {
-            return yamlKey.startsWith("setup") ? SETUP : EXPECTED;
+            if ("setup_files".equals(yamlKey)) {
+                return SETUP;
+            }
+            if ("expected_files".equals(yamlKey)) {
+                return EXPECTED;
+            }
+            throw new IllegalArgumentException("Unknown file section YAML key: " + yamlKey);
         }
     }
 

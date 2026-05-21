@@ -213,12 +213,16 @@ public class YamlRowBuilderTest {
     // -------------------------------------------------------------------
 
     /**
+     * setup_tables と list_maps が存在するとき、出力順は SECTION_ENTRIES の定義順
+     * （setup_tables → list_maps）であることを確認する（QA-6）。
+     * ※ 出力順は YAML ドキュメントのキー順ではなく、YamlRowBuilder が保持する SECTION_ENTRIES の定義順。
+     *
      * Given: setup_tables と list_maps の両方が存在
      * When:  build を呼び出す
-     * Then:  setup_tables が list_maps より先に出力され、LIST_MAP セクションヘッダが正しいこと（QA-6）
+     * Then:  setup_tables が list_maps より先に出力される（SECTION_ENTRIES 定義順）（QA-6）
      */
     @Test
-    public void build_multipleSection_outputInYamlKeyOrder() {
+    public void build_multipleSection_outputInSectionEntriesOrder() {
         // Given
         Map<String, Object> tableEntry = buildTableEntry(null, "USER",
                 Collections.singletonList(buildRow("ID", "1")));
@@ -233,18 +237,23 @@ public class YamlRowBuilderTest {
         // When
         List<List<String>> result = sut.build(yaml);
 
-        // Then: setup_tables が先頭
+        // Then: setup_tables (index=0) が list_maps より先に出力されること（SECTION_ENTRIES 定義順）
         assertThat("先頭行は SETUP_TABLE", result.get(0).get(0), is("SETUP_TABLE=USER"));
 
-        // LIST_MAP ヘッダが正確な文字列で出力されていること（QA-6）
-        boolean foundListMap = false;
-        for (List<String> row : result) {
-            if (!row.isEmpty() && "LIST_MAP=params".equals(row.get(0))) {
-                foundListMap = true;
-                break;
+        // LIST_MAP ヘッダの位置が SETUP_TABLE より後であること
+        int setupTableIdx = -1;
+        int listMapIdx = -1;
+        for (int i = 0; i < result.size(); i++) {
+            String cell = result.get(i).isEmpty() ? "" : result.get(i).get(0);
+            if ("SETUP_TABLE=USER".equals(cell)) {
+                setupTableIdx = i;
+            }
+            if ("LIST_MAP=params".equals(cell)) {
+                listMapIdx = i;
             }
         }
-        assertThat("LIST_MAP=params セクションが存在する", foundListMap, is(true));  // QA-6
+        assertThat("LIST_MAP=params が存在すること", listMapIdx, is(not(-1)));
+        assertTrue("setup_tables が list_maps より先に出力されること", setupTableIdx < listMapIdx);  // QA-6
     }
 
     // -------------------------------------------------------------------

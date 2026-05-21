@@ -236,6 +236,31 @@ public class FileSectionConverterTest {
         assertThat("行数（長さ行なし）", out.size(), is(4));
     }
 
+    // -------------------------------------------------------------------
+    // R-5: type=null のとき固定長（SETUP_FIXED）として扱われること（仕様確認）
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: type が null（未指定）の setup_files エントリ
+     * When:  convert を呼び出す
+     * Then:  固定長のデフォルト動作として "SETUP_FIXED=path" ヘッダが出力される（R-5 仕様確認）
+     */
+    @Test
+    public void convert_nullType_defaultsToFixed() {
+        // Given
+        FileSectionConverter sut = new FileSectionConverter("setup_files");
+        Map<String, Object> entry = buildEntry(null, "data.dat", null,  // type=null
+                Collections.<String, Object>emptyMap(),
+                Collections.<Map<String, Object>>emptyList());
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        sut.convert(entry, out);
+
+        // Then: type が null の場合は固定長のデフォルト（SETUP_FIXED）として扱われる（R-5）
+        assertThat(out.get(0).get(0), is("SETUP_FIXED=data.dat"));  // R-5
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------

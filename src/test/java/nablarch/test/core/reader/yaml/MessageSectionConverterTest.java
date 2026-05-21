@@ -70,6 +70,31 @@ public class MessageSectionConverterTest {
     }
 
     // -------------------------------------------------------------------
+    // EXPECTED_REQUEST_BODY_MESSAGES セクション（R-8）
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: EXPECTED_REQUEST_BODY_MESSAGES セクション、id="bodyMsg"
+     * When:  convert を呼び出す
+     * Then:  セクションヘッダ "EXPECTED_REQUEST_BODY_MESSAGES=bodyMsg"（MS-03 / R-8）
+     */
+    @Test
+    public void convert_expectedRequestBodyMessages_headerFormat() {
+        // Given
+        MessageSectionConverter sut = new MessageSectionConverter("EXPECTED_REQUEST_BODY_MESSAGES");
+        Map<String, Object> entry = buildEntry("bodyMsg",
+                Collections.<String, Object>emptyMap(),
+                Collections.<Map<String, Object>>emptyList());
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        sut.convert(entry, out);
+
+        // Then
+        assertThat(out.get(0).get(0), is("EXPECTED_REQUEST_BODY_MESSAGES=bodyMsg"));  // MS-03
+    }
+
+    // -------------------------------------------------------------------
     // ディレクティブ行が出力される
     // -------------------------------------------------------------------
 

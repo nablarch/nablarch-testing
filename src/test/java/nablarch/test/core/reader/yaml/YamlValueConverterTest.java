@@ -85,6 +85,9 @@ public class YamlValueConverterTest {
      * Given: YAML 科学表記 1.0E10（SnakeYAML が Double として渡す）、isMissing=false
      * When:  toCell を呼び出す
      * Then:  文字列 "1.0E10" を返す（RS-05 境界値）
+     *
+     * <p>注: Java 17（Temurin-17.0.19）では {@code String.valueOf(1.0E10)} = {@code "1.0E10"} で安定している。
+     * Java バージョン変更時は本テストの期待値を再確認すること。</p>
      */
     @Test
     public void toCell_scientificNotationFloat_returnsString() {
