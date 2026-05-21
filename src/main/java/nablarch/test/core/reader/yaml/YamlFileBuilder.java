@@ -95,7 +95,7 @@ public final class YamlFileBuilder {
             String entryId = toStr(map.get(FIELD_ID));
             if (id.equals(entryId)) {
                 FixedLengthFile file = new FixedLengthFile(id);
-                applyDirectives(file, map);
+                YamlSection.applyDirectives(file, map);
                 buildFragmentsCore(file, map, true, addBinaryFileInterpreter(basePath, interpreters));
                 return file;
             }
@@ -110,13 +110,9 @@ public final class YamlFileBuilder {
         } else {
             file = new VariableLengthFile(filePath);
         }
-        applyDirectives(file, map);
+        YamlSection.applyDirectives(file, map);
         buildFragments(file, map, basePath);
         return file;
-    }
-
-    private void applyDirectives(DataFile file, Map<String, Object> map) {
-        YamlSection.applyDirectives(file, map);
     }
 
     /**
