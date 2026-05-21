@@ -166,23 +166,14 @@ public class YamlTestDataParser extends BasicTestDataParser {
     }
 
     private YamlTableDataBuilder tableDataBuilder() {
-        if (tableDataBuilder == null) {
-            tableDataBuilder = new YamlTableDataBuilder(dbInfo, defaultValues, interpreters);
-        }
         return tableDataBuilder;
     }
 
     private YamlFileBuilder fileBuilder() {
-        if (fileBuilder == null) {
-            fileBuilder = new YamlFileBuilder(interpreters);
-        }
         return fileBuilder;
     }
 
     private YamlMessageBuilder messageBuilder() {
-        if (messageBuilder == null) {
-            messageBuilder = new YamlMessageBuilder(interpreters);
-        }
         return messageBuilder;
     }
 }

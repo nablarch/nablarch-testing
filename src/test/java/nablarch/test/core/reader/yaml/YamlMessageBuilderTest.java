@@ -1,10 +1,13 @@
 package nablarch.test.core.reader.yaml;
 
 import nablarch.core.dataformat.LayoutDefinition;
+import nablarch.core.repository.ObjectLoader;
+import nablarch.core.repository.SystemRepository;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
 import nablarch.test.core.reader.DataType;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import org.junit.After;
@@ -14,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,8 +50,7 @@ public class YamlMessageBuilderTest {
 
     @Before
     public void before() {
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
-                repositoryResource.getComponent("interpreters");
+        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
         sut = new YamlMessageBuilder(interpreters);
     }
 
@@ -253,7 +256,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When: YamlFileBuilder 経由で buildMessagePool を呼ぶ（YamlMessageBuilder が buildMessageFile を内部で使用）
-        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<nablarch.test.core.util.interpreter.TestDataInterpreter>>getComponent("interpreters"));
+        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<TestDataInterpreter>>getComponent("interpreters"));
         FixedLengthFile file = fileBuilder.buildMessageFile(yaml, "messages", "req001", DIR);
 
         // Then: FW_HEADER が除外され BODY のみ 1 フラグメントであること
@@ -310,7 +313,7 @@ public class YamlMessageBuilderTest {
     public void testBuildMessageFile_idNotFound() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
-        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<nablarch.test.core.util.interpreter.TestDataInterpreter>>getComponent("interpreters"));
+        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<TestDataInterpreter>>getComponent("interpreters"));
 
         // When
         FixedLengthFile result = fileBuilder.buildMessageFile(yaml, "messages", "noSuchId", DIR);
@@ -361,17 +364,16 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_customFwHeaderFields() throws Exception {
         // Given: reader.fwHeaderfields を一時設定
-        nablarch.core.repository.SystemRepository.load(new nablarch.core.repository.ObjectLoader() {
+        SystemRepository.load(new ObjectLoader() {
             @Override
             public Map<String, Object> load() {
-                java.util.HashMap<String, Object> map = new java.util.HashMap<String, Object>();
+                HashMap<String, Object> map = new HashMap<String, Object>();
                 map.put("reader.fwHeaderfields", "customField");
                 return map;
             }
         });
         try {
-            List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
-                    repositoryResource.getComponent("interpreters");
+            List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
             YamlMessageBuilder customSut = new YamlMessageBuilder(interpreters);
             Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
 
@@ -388,10 +390,10 @@ public class YamlMessageBuilderTest {
             assertThat("requestId は含まれないこと", fwHeader.containsKey("requestId"), is(false));
         } finally {
             // リポジトリを元の状態に戻す
-            nablarch.core.repository.SystemRepository.load(new nablarch.core.repository.ObjectLoader() {
+            SystemRepository.load(new ObjectLoader() {
                 @Override
                 public Map<String, Object> load() {
-                    java.util.HashMap<String, Object> map = new java.util.HashMap<String, Object>();
+                    HashMap<String, Object> map = new HashMap<String, Object>();
                     map.put("reader.fwHeaderfields", null);
                     return map;
                 }

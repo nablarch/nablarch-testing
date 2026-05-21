@@ -9,7 +9,6 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 
@@ -17,7 +16,8 @@ import java.util.Map;
  * YAML ファイルのロードとキャッシュ管理。
  *
  * <p>
- * パッケージプライベート。{@code nablarch.test.core.reader.yaml} パッケージ内からのみ使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
+ * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  *
  * <p>
@@ -56,9 +56,7 @@ public final class YamlLoader {
         LoaderOptions options = new LoaderOptions();
         options.setAllowDuplicateKeys(false);
         Yaml yaml = new Yaml(new SafeConstructor(options));
-        InputStream in = null;
-        try {
-            in = new FileInputStream(new File(filePath));
+        try (FileInputStream in = new FileInputStream(new File(filePath))) {
             @SuppressWarnings("unchecked")
             Map<String, Object> result = (Map<String, Object>) yaml.load(in);
             if (result == null) {
@@ -70,10 +68,6 @@ public final class YamlLoader {
             throw new IllegalStateException("Failed to load YAML file: " + filePath, e);
         } catch (YAMLException e) {
             throw new IllegalStateException("Failed to parse YAML file: " + filePath, e);
-        } finally {
-            if (in != null) {
-                try { in.close(); } catch (IOException ignore) { /* ignore */ }
-            }
         }
     }
 

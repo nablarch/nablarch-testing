@@ -27,7 +27,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * YAML から {@link TableData} および ListMap を構築するビルダー。
  *
  * <p>
- * パッケージプライベート。{@code nablarch.test.core.reader.yaml} パッケージ内からのみ使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
+ * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  */
 public final class YamlTableDataBuilder {
@@ -72,6 +73,7 @@ public final class YamlTableDataBuilder {
             }
 
             Map<String, Object> firstRow = castMap(rows.get(0));
+            // SnakeYAML はマッピングを LinkedHashMap としてロードするため、keySet() の順序は YAML の記述順と一致する。
             String[] columnNames = firstRow.keySet().toArray(new String[0]);
 
             TableData td = new TableData(dbInfo, tableName, columnNames, defaultValues);

@@ -13,6 +13,7 @@ import java.util.Map;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_DIRECTIVES;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_FIELDS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_GROUP_ID;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ID;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_LENGTH;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_NAME;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_PATH;
@@ -33,7 +34,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * YAML から {@link DataFile} を構築するビルダー。
  *
  * <p>
- * パッケージプライベート。{@code nablarch.test.core.reader.yaml} パッケージ内からのみ使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
+ * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  */
 public final class YamlFileBuilder {
@@ -90,7 +92,7 @@ public final class YamlFileBuilder {
         List<Object> entries = getList(yaml, sectionKey);
         for (Object entry : entries) {
             Map<String, Object> map = castMap(entry);
-            String entryId = toStr(map.get(YamlSection.FIELD_ID));
+            String entryId = toStr(map.get(FIELD_ID));
             if (id.equals(entryId)) {
                 FixedLengthFile file = new FixedLengthFile(id);
                 applyDirectives(file, map);
@@ -125,6 +127,17 @@ public final class YamlFileBuilder {
     }
 
     private void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
+        buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
+    }
+
+    /**
+     * MockMessages 用のフラグメントを構築する（FW_HEADER スキップなし・skipFwHeader=false）。
+     *
+     * @param file     MockMessages インスタンス
+     * @param map      セクション Map
+     * @param basePath インタープリタ用ベースパス
+     */
+    void buildMockMessageFragments(DataFile file, Map<String, Object> map, String basePath) {
         buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
     }
 

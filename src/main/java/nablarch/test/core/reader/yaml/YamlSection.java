@@ -14,7 +14,8 @@ import java.util.Map;
  * YAML セクションキー定数と共通ヘルパーメソッド。
  *
  * <p>
- * パッケージプライベート。{@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスからのみ使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
+ * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  */
 public final class YamlSection {
@@ -96,14 +97,18 @@ public final class YamlSection {
     }
 
     /**
-     * Object を文字列に変換する（null の場合は null）。
+     * YAML Map のキー値（パス・ファイル種別・フィールド名等の設定値）を文字列に変換する（null の場合は null）。
+     *
+     * <p>
+     * 設定値取得用。テストデータのセルデータ変換には {@link #objectToString(Object)} を使うこと。
+     * </p>
      */
     public static String toStr(Object value) {
         return value != null ? value.toString() : null;
     }
 
     /**
-     * YAML オブジェクトを文字列に変換する（RS-03〜RS-05）。
+     * YAML のテストデータ値を文字列に変換する（RS-03〜RS-05）。
      *
      * <ul>
      * <li>null → null（RS-03）</li>
@@ -111,12 +116,13 @@ public final class YamlSection {
      * <li>数値 → 数字文字列（RS-05）</li>
      * <li>その他 → {@code toString()}</li>
      * </ul>
+     *
+     * <p>
+     * テストデータのセル値変換用。設定値取得には {@link #toStr(Object)} を使うこと。
+     * </p>
      */
     public static String objectToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        return value.toString();
+        return value != null ? value.toString() : null;
     }
 
     /**

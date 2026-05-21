@@ -24,7 +24,6 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_NAME;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORDS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
 import static nablarch.test.core.reader.yaml.YamlSection.FW_HEADER_RECORD_TYPE;
-import static nablarch.test.core.reader.yaml.YamlSection.addBinaryFileInterpreter;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.objectToString;
@@ -34,7 +33,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * YAML から {@link MessagePool} および {@link MockMessages} を構築するビルダー。
  *
  * <p>
- * パッケージプライベート。{@code nablarch.test.core.reader.yaml} パッケージ内からのみ使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
+ * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  */
 public final class YamlMessageBuilder {
@@ -117,7 +117,7 @@ public final class YamlMessageBuilder {
         String entryId = toStr(map.get(FIELD_ID));
         MockMessages file = new MockMessages(entryId != null ? entryId : "");
         applyDirectives(file, map);
-        fileBuilder.buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
+        fileBuilder.buildMockMessageFragments(file, map, basePath);
         return file;
     }
 

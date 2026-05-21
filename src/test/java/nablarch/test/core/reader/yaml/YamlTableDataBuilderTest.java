@@ -4,6 +4,7 @@ import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
@@ -50,8 +51,7 @@ public class YamlTableDataBuilderTest {
     @Before
     public void before() {
         dbInfo = repositoryResource.getComponent("dbInfo");
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
-                repositoryResource.getComponent("interpreters");
+        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
         sut = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
     }
 

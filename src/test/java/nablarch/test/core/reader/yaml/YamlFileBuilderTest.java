@@ -4,6 +4,7 @@ import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.VariableLengthFile;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import org.junit.After;
@@ -40,8 +41,7 @@ public class YamlFileBuilderTest {
 
     @Before
     public void before() {
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
-                repositoryResource.getComponent("interpreters");
+        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
         sut = new YamlFileBuilder(interpreters);
     }
 
