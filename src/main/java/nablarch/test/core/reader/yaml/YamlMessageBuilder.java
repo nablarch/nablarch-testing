@@ -74,7 +74,7 @@ public final class YamlMessageBuilder {
      * @param sectionKey セクションキー（例: "messages"）
      * @param id         メッセージ ID
      * @param basePath   インタープリタ用ベースパス
-     * @return {@link RequestTestingMessagePool}、または存在しない場合 null
+     * @return {@link RequestTestingMessagePool}、または存在しない場合 null（呼び出し元で null チェックが必要）
      */
     public MessagePool buildMessagePool(Map<String, Object> yaml, String sectionKey,
                                   String id, String basePath) {
@@ -93,7 +93,7 @@ public final class YamlMessageBuilder {
      * @param sectionKey セクションキー
      * @param groupId    グループ ID
      * @param basePath   インタープリタ用ベースパス
-     * @return {@link RequestTestingMessagePool} リスト、または存在しない場合 null
+     * @return {@link RequestTestingMessagePool} リスト、または存在しない場合 null（呼び出し元で null チェックが必要）
      */
     public List<RequestTestingMessagePool> buildSendSyncMessageList(Map<String, Object> yaml, String sectionKey,
                                                               String groupId, String basePath) {
@@ -147,8 +147,15 @@ public final class YamlMessageBuilder {
                         Map<String, Object> field = castMap(fieldObj);
                         String fieldName = toStr(field.get(FIELD_NAME));
                         if (fwHeaderFields.contains(fieldName) && !rows.isEmpty()) {
+                            Object firstRowObj = rows.get(0);
+                            if (!(firstRowObj instanceof List)) {
+                                throw new IllegalStateException(
+                                        "FW_HEADER rows must be a list of lists, but got "
+                                                + firstRowObj.getClass().getName()
+                                                + ". sectionKey=" + sectionKey + ", id=" + id);
+                            }
                             @SuppressWarnings("unchecked")
-                            List<Object> firstRow = (List<Object>) rows.get(0);
+                            List<Object> firstRow = (List<Object>) firstRowObj;
                             int fieldIndex = fieldIndexOf(fields, fieldName);
                             if (fieldIndex >= 0 && fieldIndex < firstRow.size()) {
                                 fwHeader.put(fieldName, objectToString(firstRow.get(fieldIndex)));

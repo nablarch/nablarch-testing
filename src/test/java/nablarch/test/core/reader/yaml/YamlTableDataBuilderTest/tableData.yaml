@@ -38,6 +38,11 @@ setup_tables:
         NUMBER_COL: "11"
         NUMBER_COL2: "11.1"
 
+  - group_id: missingTable
+    rows:
+      - PK_COL1: "0000000099"
+        PK_COL2: "XX"
+
 list_maps:
   - id: testListMap
     rows:

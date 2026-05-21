@@ -67,6 +67,11 @@ public final class YamlFileBuilder {
                 continue;
             }
             String filePath = toStr(map.get(FIELD_PATH));
+            if (filePath == null) {
+                throw new IllegalStateException(
+                        "Missing required field '" + FIELD_PATH + "' in " + sectionKey
+                                + " entry. groupId=" + formattedEntryGid + ", basePath=" + basePath);
+            }
             String fileType = toStr(map.get(FIELD_TYPE));
             DataFile dataFile = buildDataFile(filePath, fileType, map, basePath);
             result.add(dataFile);

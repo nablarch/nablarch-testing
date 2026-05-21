@@ -18,11 +18,13 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * {@link YamlTableDataBuilder} のテストクラス。
@@ -293,6 +295,30 @@ public class YamlTableDataBuilderTest {
         assertThat("同一グループの同一テーブル名エントリが 2 件返ること", result.size(), is(2));
         assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000010"));
         assertThat(result.get(1).getValue(0, "PK_COL1").toString(), is("0000000011"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: table キーが存在しないエントリで IllegalStateException がスローされること（E-1）。
+     *
+     * <p>
+     * Given: setup_tables に table キーがない missingTable グループのエントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[missingTable]", false, path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージにセクション名とファイルパスが含まれること
+     * </p>
+     */
+    @Test
+    public void testBuildTableDataList_missingTableThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When / Then
+        try {
+            sut.buildTableDataList(yaml, "setup_tables", "[missingTable]", false, DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            assertThat("セクション名がメッセージに含まれること", e.getMessage(), containsString("setup_tables"));
+            assertThat("ファイルパスがメッセージに含まれること", e.getMessage(), containsString(DIR));
+        }
     }
 
     /**

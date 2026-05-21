@@ -67,6 +67,10 @@ public final class YamlTableDataBuilder {
                 continue;
             }
             String tableName = toStr(map.get(FIELD_TABLE));
+            if (tableName == null) {
+                throw new IllegalStateException(
+                        "Missing required field '" + FIELD_TABLE + "' in " + sectionKey + " entry. file=" + path);
+            }
             List<Object> rows = getList(map, FIELD_ROWS);
             if (rows.isEmpty()) {
                 continue;

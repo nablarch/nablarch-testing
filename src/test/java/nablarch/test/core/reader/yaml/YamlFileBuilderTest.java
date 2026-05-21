@@ -16,10 +16,12 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * {@link YamlFileBuilder} のテストクラス。
@@ -242,6 +244,34 @@ public class YamlFileBuilderTest {
         LayoutDefinition layout = result.get(0).createLayout();
         assertThat("record_type なしの場合は 'default' にフォールバックすること",
                 layout.getRecords().get(0).getTypeName(), is("default"));
+    }
+
+    // ========================================================================
+    // path キーが存在しないエントリで IllegalStateException がスローされること（E-2）
+    // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: path キーが存在しないエントリで IllegalStateException がスローされること（E-2）。
+     *
+     * <p>
+     * Given: setup_files に path キーがない missingPath グループのエントリ<br>
+     * When:  buildFileList(yaml, "setup_files", "[missingPath]", basePath) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージにセクション名とグループIDが含まれること
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_missingPathThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When / Then
+        try {
+            sut.buildFileList(yaml, "setup_files", "[missingPath]", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            assertThat("セクション名がメッセージに含まれること", e.getMessage(), containsString("setup_files"));
+            assertThat("グループIDがメッセージに含まれること", e.getMessage(), containsString("[missingPath]"));
+        }
     }
 
     // ========================================================================

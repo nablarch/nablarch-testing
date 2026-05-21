@@ -50,25 +50,27 @@ public final class YamlLoader {
      */
     public static Map<String, Object> load(String basePath, String resourceName) {
         String filePath = basePath + resourceName + YAML_EXTENSION;
-        Map<String, Object> cached = YAML_CACHE.get(filePath);
-        if (cached != null) {
-            return cached;
-        }
-        LoaderOptions options = new LoaderOptions();
-        options.setAllowDuplicateKeys(false);
-        Yaml yaml = new Yaml(new SafeConstructor(options));
-        try (FileInputStream in = new FileInputStream(new File(filePath))) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> result = (Map<String, Object>) yaml.load(in);
-            if (result == null) {
-                result = Collections.emptyMap();
+        synchronized (YAML_CACHE) {
+            Map<String, Object> cached = YAML_CACHE.get(filePath);
+            if (cached != null) {
+                return cached;
             }
-            YAML_CACHE.put(filePath, result);
-            return result;
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load YAML file: " + filePath, e);
-        } catch (YAMLException e) {
-            throw new IllegalStateException("Failed to parse YAML file: " + filePath, e);
+            LoaderOptions options = new LoaderOptions();
+            options.setAllowDuplicateKeys(false);
+            Yaml yaml = new Yaml(new SafeConstructor(options));
+            try (FileInputStream in = new FileInputStream(new File(filePath))) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> result = (Map<String, Object>) yaml.load(in);
+                if (result == null) {
+                    result = Collections.emptyMap();
+                }
+                YAML_CACHE.put(filePath, result);
+                return result;
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to load YAML file: " + filePath, e);
+            } catch (YAMLException e) {
+                throw new IllegalStateException("Failed to parse YAML file: " + filePath, e);
+            }
         }
     }
 
@@ -85,7 +87,11 @@ public final class YamlLoader {
 
     /**
      * テスト専用: YAML キャッシュをクリアする。
-     * テスト間のキャッシュ汚染を防ぐために {@code @After} メソッドから呼ぶこと。
+     *
+     * <p>
+     * テスト間のキャッシュ汚染を防ぐために、各テストクラスの {@code @After} メソッドから必ず呼ぶこと。
+     * 呼び忘れた場合、テスト間でファイルを変更しても古いキャッシュが使われ続け、テスト結果が不正になる。
+     * </p>
      *
      * <p>
      * このメソッドはテストコードからのみ呼ぶこと。プロダクションコードからの呼び出しは不可。

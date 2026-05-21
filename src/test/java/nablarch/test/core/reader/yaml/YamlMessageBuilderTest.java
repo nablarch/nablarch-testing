@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -320,6 +321,35 @@ public class YamlMessageBuilderTest {
 
         // Then
         assertNull(result);
+    }
+
+    // ========================================================================
+    // FW_HEADER rows が Map 形式（誤記）のとき IllegalStateException + context（E-3）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: FW_HEADER の rows が Map 形式の場合、
+     * IllegalStateException がスローされセクションキーと ID がメッセージに含まれること（E-3）。
+     *
+     * <p>
+     * Given: messages_malformed_fw_header に id=malformed001 の FW_HEADER rows が Map 形式<br>
+     * When:  buildMessagePool(yaml, "messages_malformed_fw_header", "malformed001", path) を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、sectionKey と id がメッセージに含まれること
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_malformedFwHeaderRowsThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When / Then
+        try {
+            sut.buildMessagePool(yaml, "messages_malformed_fw_header", "malformed001", DIR);
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            assertThat("セクションキーがメッセージに含まれること", e.getMessage(), containsString("messages_malformed_fw_header"));
+            assertThat("IDがメッセージに含まれること", e.getMessage(), containsString("malformed001"));
+        }
     }
 
     // ========================================================================

@@ -90,6 +90,17 @@ response_body_messages:
         rows:
           - ["0000", "SYNC_DATA1"]
 
+messages_malformed_fw_header:
+  - id: malformed001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+        rows:
+          - requestId: "0000000001"
+
 response_header_messages:
   - group_id: grp1
     id: resp001
