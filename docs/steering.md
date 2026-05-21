@@ -452,8 +452,8 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
-- **進行中フェーズ**: Ph-2 R-1 エキスパートレビュー対応中（QA/Java/SWE 各レビュー結果あり・修正対応待ち）
-- **次の着手**: R-1 指摘対応 → 再レビュー → ユーザーレビュー OK → R-2/R-3 並行着手
+- **進行中フェーズ**: Ph-2 R-1 エキスパートレビュー指摘対応中
+- **次の着手**: R-1 の指摘を全件対応 → 再レビュー → ユーザーレビュー OK → C-1 と R-2/R-3 を並行着手
 - **未着手タスク**: C-1（JaCoCo設定・他タスクと並行可）、R-2/R-3（並行可） → V-1 → D-1
 
 ### 環境情報
@@ -478,7 +478,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - スキーマ根拠あり 43件 / スキーマ外 37件
 - **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
-### Ph-2 R-1 完了状況（ユーザーレビュー待ち）
+### Ph-2 R-1 状況（エキスパートレビュー指摘対応中）
 
 **成果物:**
 - `src/main/java/nablarch/test/core/reader/YamlTestDataReader.java`（ファイルI/O・委譲のみ）
@@ -487,19 +487,58 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - `src/test/java/nablarch/test/core/reader/YamlTestDataReaderTest.java`（17件・RS-01〜RS-08 全網羅）
 - `src/test/java/nablarch/test/core/reader/yaml/` テスト8クラス（46件・各クラス単体検証）
 - テストデータ YAML 3件（`YamlTestDataReaderTestData.yaml`・`YamlNativeTypesTestData.yaml`・`YamlTrailingNullTestData.yaml`）
-- **チェック結果**: `docs/checks/R-1.md`（担当者 OK・Javaエキスパート OK・QA OK・ユーザーレビュー待ち）
+- **チェック結果**: `docs/checks/R-1.md`（担当者 OK・旧レビュー OK・エキスパートレビュー指摘対応待ち）
 
 **ADR（設計判断記録）:**
 - `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
 - `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
 
+**エキスパートレビュー指摘一覧（全件対応が必要。対応不要な場合はユーザー確認を取ること）:**
+
+| 指摘ID | 区分 | 概要 | 対応状況 |
+|---|---|---|---|
+| QA-1 | QA | `open_loadsYamlFile` のアサートが弱い（`notNullValue()` のみ） | 未対応 |
+| QA-2 | QA | 科学表記の文字列表現がJVM実装依存・SnakeYAML 経由の境界テストが統合テストのみ | 未対応 |
+| QA-3 | QA | `close()` 後の `readLine()` が `null` を返すことのテストがない | 未対応 |
+| QA-4 | QA | `open()` 再呼び出し（再オープン）の動作テストがない | 未対応 |
+| QA-5 | QA | `readLine_lastSectionNotLost` が具体値に依存しすぎで保守性が低い | 未対応 |
+| QA-6 | QA | `YamlRowBuilderTest` の LIST_MAP 順序アサートが弱い | 未対応 |
+| QA-7 | QA | `TableSectionConverter` に null 値を含む行の変換テストがない | 未対応 |
+| QA-8 | QA | `FileSectionConverter` の `expected/fixed` 組み合わせテストがない | 未対応 |
+| QA-9 | QA | `FileSectionConverter` の `setup/variable` 組み合わせテストがない | 未対応 |
+| QA-10 | QA | `RecordRowBuilder` でフィールド0件のエッジケーステストがない | 未対応 |
+| QA-11 | QA | `YamlValueConverter.asMapList()` のテストが存在しない | 未対応 |
+| QA-12 | QA | `open()` の `path=null` ケースのテストがない | 未対応 |
+| QA-13 | QA | `isDataExisting` のテストが `isResourceExisting` と非対称（存在しないディレクトリケース漏れ） | 未対応 |
+| QA-14 | QA | `ListMapSectionConverter` に null 値を含む行の変換テストがない | 未対応 |
+| QA-15 | QA | `GroupMessageSectionConverter` のテストで型行・長さ行のアサートが不完全 | 未対応 |
+| QA-16 | QA | `YamlRowBuilderTest` に setup_files / messages 等6セクションの確認テストがない | 未対応 |
+| JAVA-1 | Java | `YamlRowBuilder` の空コンストラクタが不要 | 未対応 |
+| JAVA-2 | Java | `new ArrayList<>(Arrays.asList(...))` の二重ラップが不要 | 未対応 |
+| JAVA-3 | Java | 型パラメータ明示（`new ArrayList<String>()` 等）がやや古い（プロジェクト方針次第） | 未対応 |
+| JAVA-4 | Java | `singletonRow` メソッドが5クラスに重複定義 | 未対応 |
+| JAVA-5 | Java | `FileSectionConverter` のフィールド名 `yamlKey` が役割と不一致 | 未対応 |
+| JAVA-6 | Java | `open()` の `path` パラメータに null チェックがない | 未対応 |
+| JAVA-7 | Java | Javadoc スタイルが既存クラスと不統一（`<br/>` の有無） | 未対応 |
+| JAVA-8 | Java | テストデータのパスが `src/test/java` 直下でリソースとコードが混在 | 未対応 |
+| JAVA-9 | Java | テストでマジックナンバーによる行スキップ（`for (int i = 0; i < 10; i++)`） | 未対応 |
+| JAVA-10 | Java | `toCell_isMissing_returnsEmpty` で1メソッドに複数アサートが混在 | 未対応 |
+| SWE-1 | SWE | `isResourceExisting` と `isDataExisting` の実装が同一なのに共通化されていない | 未対応 |
+| SWE-2 | SWE | `singletonRow` が5クラスに重複コピー（JAVA-4 と同内容） | 未対応 |
+| SWE-3 | SWE | `TableSectionConverter` と `ListMapSectionConverter` のデータ行生成ロジックが重複 | 未対応 |
+| SWE-4 | SWE | `FileSectionConverter` のコンストラクタ設計が他コンバータと不統一 | 未対応 |
+| SWE-5 | SWE | `open()` 重複呼び出し時の挙動が Javadoc に未記載 | 未対応 |
+| SWE-6 | SWE | `SECTION_ENTRIES` が static フィールドでコンバータをシングルトン共有（将来の状態追加時のリスク） | 未対応 |
+| SWE-7 | SWE | `asString` と `toCell` の null 扱いが非対称・`RecordRowBuilder` で null 混入リスク | 未対応 |
+| SWE-8 | SWE | `YamlRowBuilder` だけ `public` で Javadoc と矛盾 | 未対応 |
+
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認
 2. `git status` でクリーンであることを確認
-3. R-1 ユーザーレビューの結果を確認する
-   - OK → R-2 と R-3 を並行着手
-   - NG → 指摘事項を修正して再レビュー依頼
+3. R-1 の指摘を上表に従って全件対応する（対応不要と判断する場合はユーザー確認を取ること）
+4. 対応完了後にサブエージェントで再レビューを実施し、本質的な指摘がなくなったらユーザーレビューを依頼する
+5. ユーザーレビュー OK → C-1（JaCoCo設定）と R-2/R-3 を並行着手
 
 ---
 
