@@ -460,7 +460,8 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 - **Java**: Eclipse Temurin 17（`update-alternatives` で切り替え済み）
 - **Maven settings**: `~/.m2/settings.xml` に社内 Nexus リポジトリ設定済み（`nablarch-parent:6-NEXT-SNAPSHOT` 解決済み）
-- **ビルド確認**: `mvn test -Dtest="YamlTestDataReaderTest,YamlValueConverterTest,RecordRowBuilderTest,TableSectionConverterTest,ListMapSectionConverterTest,FileSectionConverterTest,MessageSectionConverterTest,GroupMessageSectionConverterTest,YamlRowBuilderTest"` で89件グリーン確認済み
+- **ビルド確認**: `mvn clean package -Dtest="YamlTestDataReaderTest,YamlValueConverterTest,RecordRowBuilderTest,TableSectionConverterTest,ListMapSectionConverterTest,FileSectionConverterTest,MessageSectionConverterTest,GroupMessageSectionConverterTest,YamlRowBuilderTest"` で96件グリーン確認済み
+- **注意**: `mvn clean package` は Javadoc プラグインが `JAVA_HOME` 未設定で `BUILD FAILURE` になるが、テスト自体は全グリーン。`Tests run:` 行と `Failures: 0, Errors: 0` で確認すること
 
 ### カバレッジ取得方法（pom.xml 変更不要）
 
@@ -497,11 +498,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 ### Ph-2 R-1 状況（ユーザーレビュー待ち）
 
 **成果物:**
-- `src/main/java/nablarch/test/core/reader/YamlTestDataReader.java`（ファイルI/O・委譲のみ）
+- `src/main/java/nablarch/test/core/reader/YamlTestDataReader.java`（ファイルI/O・委譲・LoggerManager ログ）
 - `src/main/java/nablarch/test/core/reader/yaml/` パッケージ（10クラス）:
   - `YamlRowBuilder`（public）、`SectionConverter`（interface）、`TableSectionConverter`、`ListMapSectionConverter`、`FileSectionConverter`（FileSection enum 方式）、`MessageSectionConverter`、`GroupMessageSectionConverter`、`RecordRowBuilder`、`YamlValueConverter`（singletonRow/collectAllKeys 集約）、`package-info`
 - `src/test/java/nablarch/test/core/reader/YamlTestDataReaderTest.java`（23件・RS-01〜RS-08 全網羅）
-- `src/test/java/nablarch/test/core/reader/yaml/` テスト8クラス（66件・各クラス単体検証）
+- `src/test/java/nablarch/test/core/reader/yaml/` テスト8クラス（73件・各クラス単体検証 + 欠落キー異常系）
 - テストデータ YAML 4件（`src/test/resources/nablarch/test/core/reader/` 配下）
 - **チェック結果**: `docs/checks/R-1.md`（担当者 OK・QA OK・Javaエキスパート OK・SWE OK）
 
@@ -513,12 +514,18 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
 - `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
 
-**エキスパートレビュー対応済み一覧（全35件 + 再レビュー5件 対応済み）:**
+**エキスパートレビュー対応済み一覧（全35件 + 再レビュー5件 + 追加レビュー対応済み）:**
 
 QA-1〜QA-16: 全対応済み（テスト追加・アサート強化）
 JAVA-1〜JAVA-10: 全対応済み（空コンストラクタ削除・二重ラップ解消・テストデータ移動等）
 SWE-1〜SWE-8: 全対応済み（isResource/isData共通化・addKeyValueRows共通化・FileSection enum化等）
 再レビュー R-1〜R-8: 本質的指摘5件を対応済み（FileSection.of 明示的比較・type=nullテスト等）
+追加レビュー（スレッドセーフ・メモリ・エラー通知）:
+- T-1: 非スレッドセーフ旨を Javadoc に明記
+- E-1: 必須キー欠落時の IllegalArgumentException 追加（table/id/path・5クラス）
+- E-2: FileSectionConverter の type 不正値チェック追加
+- E-3: LoggerManager によるデバッグログ追加（open 時にファイルパス・行数出力）
+- E-4（対応しない）: 例外メッセージは英語のまま（PoiXlsReader との統一性）
 
 ### 再開手順
 
