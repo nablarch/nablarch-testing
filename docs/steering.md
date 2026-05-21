@@ -270,25 +270,27 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ### I-4: 異常系仕様の列挙と三角マッピングへの追加（I-1 やり直し）
 
-**目的**: I-1 で正常系仕様のみを列挙し異常系（必須フィールド欠如・型誤り等の入力不正時の挙動）が抜けていたことが R-1-refactor の実装レビューで判明した。異常系仕様を `ntf-impl-spec-list.md` に追加し、I-2/I-3 のマッピングも完成させる。
+**目的**: I-1 で正常系仕様のみを列挙し異常系（必須フィールド欠如・型誤り等の入力不正時の挙動）が抜けていたことが R-1-refactor の実装レビューで判明した。**既存 Excel 実装の異常系挙動を仕様として洗い出し**、`ntf-impl-spec-list.md` に追加する。YAML 実装がその仕様と一致しているかも確認する。
 
 **背景**:
-R-1-refactor で「`table` キー欠如時に例外スロー」「`path` キー欠如時に例外スロー」「FW_HEADER rows 型誤り時に例外スロー」のテストを追加したが、これらに対応する仕様IDが `ntf-impl-spec-list.md` に存在しなかった。原因は I-1 が「パーサが正常に動作するときの仕様」しか列挙しておらず、「パーサが不正入力を受けたときに何をすべきか」という異常系仕様を仕様IDとして認識していなかったこと。
+R-1-refactor で「`table` キー欠如時に例外スロー」「`path` キー欠如時に例外スロー」「FW_HEADER rows 型誤り時に例外スロー」のテストを追加したが、これらに対応する仕様IDが `ntf-impl-spec-list.md` に存在しなかった。`YamlTestDataParser` は `BasicTestDataParser` の代替実装であり、異常系の振る舞いも既存 Excel 実装が仕様の基準になる。YAML 実装ベースで異常系を列挙するのではなく、**既存実装・既存テストから異常系仕様を読み取るべきだった**。
 
 **前提**: I-1/I-2/I-3 完了（ただし本タスクはその不完全さを修正する）
 
 **作業内容**:
-- [ ] `YamlTestDataParser` および `reader.yaml` パッケージ全クラスのソースコードを走査し、異常系の挙動（例外スロー・null 返却・空リスト返却等）を全件列挙する
-- [ ] 列挙した異常系挙動を仕様IDとして `ntf-impl-spec-list.md` に追加する（プレフィクスは RS-xx に続番、または新カテゴリとして判断する）
+- [ ] `TableDataParser` / `DataFileParser` / `MessageParser` / `SendSyncMessageParser` 等の既存 Excel 系実装を走査し、異常系の挙動（例外スロー・null 返却・空リスト返却等）を全件列挙する
+- [ ] 既存テストクラス（`BasicTestDataParserTest` / `FileSupportTest` / `MessageParserTest` 等）で異常系が検証されているものを確認し、未テストのものを「テスト追加必要」として記録する
+- [ ] 列挙した異常系挙動を仕様IDとして `ntf-impl-spec-list.md` に追加する
 - [ ] 追加した仕様IDに対して I-2 相当（対応テストメソッド）・I-3 相当（スキーマ根拠またはスキーマ外理由）を記載する
-- [ ] R-1-refactor で追加した既存テスト（table欠如・path欠如・FW_HEADER rows 型誤り・rows 空の各テスト）を追加仕様IDに対応づける
+- [ ] R-1-refactor で追加した既存テスト（table欠如・path欠如・FW_HEADER rows 型誤り・rows 空の各テスト）が追加仕様IDと一致しているか、または乖離があれば修正する
 - [ ] セルフチェック（チェック結果: `docs/checks/I-4.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- `ntf-impl-spec-list.md` の全仕様IDに異常系を含めた仕様が網羅されていること
+- 既存 Excel 系実装の異常系挙動が全件仕様IDとして登録されていること
 - R-1-refactor で追加した全テストメソッドが、いずれかの仕様IDに対応づけられていること
+- YAML 実装の異常系挙動が既存 Excel 実装の仕様と一致していること（乖離がある場合は理由が明記されていること）
 - 「仕様IDのないテスト」が存在しないこと
 
 ---
@@ -540,10 +542,25 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）完了（ただし I-4 で異常系仕様を追加する必要あり）
-- **R-1-refactor 進捗**: **全レビュー通過済み・ユーザーレビュー待ち**（ユーザーレビューは I-4 完了後に実施）
-- **タスク順序**: I-4 → R-1-refactor ユーザーレビュー → C-1（並行可）→ R-2/R-3 → V-1 → D-1
+- **R-1-refactor 進捗**: 全レビュー通過済み・追加修正済み（ユーザーレビューは I-4 完了後に実施）
+- **タスク順序**: **I-4 → R-1-refactor ユーザーレビュー** → C-1（並行可）→ R-2/R-3 → V-1 → D-1
 
 **I-4 追加の経緯**: R-1-refactor の実装レビューで「`table`/`path` キー欠如・FW_HEADER rows 型誤り時に例外スロー」のテストを追加したが、これらに対応する仕様IDが `ntf-impl-spec-list.md` に存在しなかった。I-1 が正常系仕様のみを列挙し異常系を仕様IDとして認識していなかったことが原因。
+
+### R-1-refactor 追加修正の内容（コミット `1a37700`〜`345bf83`）
+
+今回セッションで以下の追加修正を実施した（83件全グリーン）:
+
+| 変更 | 内容 |
+|---|---|
+| M-1 | `YamlLoader.clearCacheForTest()` Javadoc 強化（`@After` 必須・呼び忘れ時の影響を明記） |
+| E-1 | `YamlTableDataBuilder`: `table` キー欠如時にセクション名・ファイルパス付き `IllegalStateException` |
+| E-2 | `YamlFileBuilder`: `path` キー欠如時にセクション名・グループID付き `IllegalStateException` |
+| E-3 | `YamlMessageBuilder.extractFwHeader()`: FW_HEADER rows の型チェックで sectionKey・id 付き例外 |
+| E-4 | `buildMessagePool` / `buildSendSyncMessageList` Javadoc に null 返却時の呼び出し元責任を明記 |
+| A-1/A-2 revert | `synchronized`/`volatile` 追加を取り消し（既存 Excel 系キャッシュ全クラスが排他制御なし・シングルスレッド前提の設計であることを確認） |
+
+**注意**: 上記 E-1/E-2/E-3 のテストは対応する仕様IDが `ntf-impl-spec-list.md` に未登録。I-4 で仕様IDを確定してから対応づけること。
 
 ### 環境情報
 
