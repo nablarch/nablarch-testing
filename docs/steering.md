@@ -515,8 +515,9 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）全完了
-- **次の着手**: **R-1 ユーザーレビュー依頼**（全レビュー指摘 B-1〜B-5・QA・Javaエキスパート・ソフトウエアエンジニア全件対応済み、37テスト全グリーン）
-- **未着手タスク**: R-1（ユーザーレビュー待ち）→ R-1-refactor（R-1 完了後・TDDベースクラス分割）→ C-1（並行可）、R-2/R-3（R-1-refactor 完了後）→ V-1 → D-1
+- **R-1 ユーザーレビュー結果**: **NG**（理由: ファットクラス設計。828行のクラスに複数責務が混在。クラス分割が必要）
+- **次の着手**: **R-1-refactor**（TDDベースで `reader.yaml` サブパッケージにクラス分割してから再実装）
+- **タスク順序**: R-1-refactor → C-1（並行可）→ R-2/R-3 → V-1 → D-1
 
 ### 環境情報
 
@@ -556,75 +557,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - スキーマ根拠あり 43件 / スキーマ外 37件
 - **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
 
-### R-1 進捗状況
+### R-1 進捗状況（参照用・ユーザーレビュー NG）
 
-**実装・テスト（第1回レビュー指摘対応済み）**: コミット `526ce71`。38テスト全グリーン。
-- A-1〜A-14（実装修正）/ T-1〜T-13（テスト修正）全件対応済み
-
-**第2回レビュー（ソフトウェアエンジニア）完了**: 総合 NG。対応必要な指摘あり（下記）。
-**第2回レビュー（QA・Javaエキスパート）**: 結果取得後に対応。
-
-#### 対応確定済み指摘（B系列・次回再開時に修正すること）
-
-**ソフトウェアエンジニアレビュー指摘（対応要）:**
-
-| # | ファイル:行 | 内容 | 優先度 |
-|---|---|---|---|
-| B-1 | `YamlTestDataParser.java` `buildFragmentsForMessage` | `interpret(strVal, interpreters)` が `addBinaryFileInterpreter` なしの生フィールドを参照。`buildFragments` との動作差異（バグ疑義）。`addBinaryFileInterpreter(basePath)` の結果を使うよう修正する | 高 |
-| B-2 | `YamlTestDataParser.java` `buildFragments`/`buildFragmentsForMessage` | 処理骨格が重複。`boolean skipFwHeader` と `List<TestDataInterpreter> interps` を引数に持つ内部 private メソッドに一本化する（前回 A-8 が未実装だった） | 中 |
-| B-3 | `YamlTestDataParser.java` `setDbInfo`/`setInterpreters`/`setDefaultValues` | 自フィールドと `super.setXxx()` の二重管理。将来 `BasicTestDataParser` に getter が追加された場合に親フィールドが古い値になりうる。二重管理の意図を Javadoc コメントで明示する（コードの削減が難しい場合） | 中 |
-| B-4 | `YamlTestDataParser.java` `YAML_CACHE` | `get→null→put` がアトミックでない。`ConcurrentHashMap.computeIfAbsent` への変更を検討する | 中 |
-| B-5 | `YamlTestDataParserTest.java` | `YAML_CACHE`（static）をリセットする `@After` / `@AfterClass` がなく、テスト間キャッシュ分離が未保証 | 中 |
-
-**却下（対応不要）:**
-
-| # | 内容 | 理由 |
-|---|---|---|
-| X-3 | `setTestDataReader` の UnsupportedOperationException を LSP 違反として no-op に変更 | X-1 と同じ理由で却下済み。不正な使い方を早期検出する設計意図。 |
-
-#### 第1回レビュー対応済み指摘（参照用）
-
-<details>
-<summary>A-1〜A-14 / T-1〜T-13（クリックで展開）</summary>
-
-**実装（A系列）:**
-
-| # | 内容 |
-|---|---|
-| A-1 | `@author` を `kiyotis` に変更 |
-| A-2 | 完全修飾名を import 追加で統一 |
-| A-3 | `defaultValues` デフォルトを `= new BasicDefaultValues()` に変更 |
-| A-4 | `loadYaml` の TOCTOU 解消（`get` + null チェック） |
-| A-5 | `extractFwHeader` で `fieldIndex >= 0` チェック追加 |
-| A-6 | `getSendSyncMessage` 条件式簡略化 |
-| A-7 | `YAML_CACHE_MAX_SIZE` 定数化 |
-| A-8 | `buildFragments`/`buildFragmentsForMessage` 共通化（→ B-2 で再指摘） |
-| A-9 | `FIELD_FIELD_TYPE` → `FIELD_TYPE` に一本化 |
-| A-10 | length デフォルト `""` に統一 |
-| A-11 | `objectToString` Javadoc 修正 |
-| A-12 | 各 getter で `addBinaryFileInterpreter(path)` 呼び出し（→ B-1 で `buildFragmentsForMessage` が漏れていた） |
-| A-13 | `import BasicDefaultValues` 追加 |
-| A-14 | `import BinaryFileInterpreter` 追加 |
-
-**テスト（T系列）:**
-
-| # | 内容 |
-|---|---|
-| T-1 | `nativeTypes.yaml` boolean/integer/float をネイティブ型に修正 |
-| T-2 | `FLOAT_SCIENTIFIC: 1e10` テスト追加 |
-| T-3 | `testRs06` 名称・Javadoc 修正 |
-| T-4 | `testRs06` 2行目検証追加 |
-| T-5 | `testRs02Rs07` → `testRs07` 改名・RS-02 言及削除 |
-| T-6 | `getPath()` アサーション追加 |
-| T-7 | `getMessage` 型アサーション追加 |
-| T-8 | `getExpectedTableData` ファイル不存在テスト追加 |
-| T-9 | 末尾キー省略テスト追加 |
-| T-10 | `getSendSyncMessage` 不存在グループID → null テスト追加 |
-| T-11 | `getExpectedFile` グループID指定テスト追加 |
-| T-12 | `getMessageWithoutCache` 残り3 DataType テスト追加 |
-| T-13 | `testRs08` Javadoc 正確化 |
-
-</details>
+- コミット `e9a7432` 時点の実装（37テスト全グリーン）がベースとして存在する
+- R-1-refactor でクラス分割後、既存37テストが引き続き通ることをリグレッション確認として使用する
+- `docs/checks/R-1.md` に全レビュー指摘対応履歴を記録済み
 
 ### ADR（設計判断記録）
 
@@ -634,10 +571,15 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **R-1 ユーザーレビュー**を依頼する（`docs/checks/R-1.md` 参照。全レビュー指摘対応済み・37テスト全グリーン）
-3. R-1 ユーザーレビュー OK 取得後、**R-1-refactor** に着手する（TDDベースクラス分割）
-   - `reader.yaml` サブパッケージに各ビルダーのテストを先に書き、グリーンになってから実装する
-   - `YamlTestDataParser` を委譲のみにした後、既存37テストが全グリーンであることを確認する
+2. **R-1-refactor** に着手する（ステアリング R-1-refactor タスク参照）
+3. TDDの進め方:
+   a. `reader.yaml` サブパッケージに各ビルダーの**テストクラスを先に作成**（`YamlLoaderTest` → `YamlTableDataBuilderTest` → `YamlFileBuilderTest` → `YamlMessageBuilderTest` の順）
+   b. テストがレッドになることを確認してから実装クラスを作成してグリーンにする
+   c. 全ビルダーが揃ったら `YamlTestDataParser` を委譲のみに書き換える
+   d. 既存 `YamlTestDataParserTest` の37テストが全グリーンであることをリグレッション確認する
+4. テスト全グリーン確認: `mvn clean package -Dtest="YamlTestDataParserTest,YamlLoaderTest,YamlTableDataBuilderTest,YamlFileBuilderTest,YamlMessageBuilderTest"`
+5. セルフチェック → QAエンジニアレビュー → Javaエキスパートレビュー → ソフトウエアエンジニアレビュー（各サブエージェントで実施）
+6. 全レビュー OK 後にユーザーレビューを依頼する
 
 ---
 
