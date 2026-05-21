@@ -1,0 +1,6 @@
+# RS-08: isResourceExisting のテスト用ダミーファイル（存在するリソース）
+
+list_maps:
+  - id: dummy
+    rows:
+      - COL1: "value"

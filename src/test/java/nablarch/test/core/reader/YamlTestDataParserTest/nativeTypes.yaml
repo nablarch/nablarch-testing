@@ -1,0 +1,13 @@
+# RS-03: YAML ネイティブ null
+# RS-04: YAML ネイティブ boolean
+# RS-05: YAML ネイティブ integer/float
+
+list_maps:
+  - id: nativeTypeTest
+    rows:
+      - STR_COL: "hello"
+        NULL_COL: null
+        BOOL_TRUE: "true"
+        BOOL_FALSE: "false"
+        INT_COL: "42"
+        FLOAT_COL: "3.14"

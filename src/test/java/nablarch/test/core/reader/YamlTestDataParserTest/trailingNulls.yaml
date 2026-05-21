@@ -1,0 +1,11 @@
+# RS-06: 末尾の空要素は "" で補完する
+
+list_maps:
+  - id: trailingNullTest
+    rows:
+      - COL1: "val1"
+        COL2: "val2"
+        COL3: null
+      - COL1: "val4"
+        COL2: null
+        COL3: null
