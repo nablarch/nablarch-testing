@@ -340,6 +340,22 @@ public class YamlTestDataReaderTest {
     }
 
     // -------------------------------------------------------------------
+    // loadYaml: ファイル読み込みに失敗した場合は RuntimeException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 同名のディレクトリが存在する（FileInputStream に渡すと IOException が発生）
+     * When:  open を呼び出す
+     * Then:  RuntimeException がスローされる
+     */
+    @Test(expected = RuntimeException.class)
+    public void open_ioError_throwsRuntimeException() {
+        // Given: DIR/YamlIoErrorTestData.yaml はディレクトリ（存在チェックを通過しつつ IOException を誘発）
+        // When / Then
+        sut.open(DIR, "YamlIoErrorTestData");
+    }
+
+    // -------------------------------------------------------------------
     // loadYaml: YAML の最上位がマップ形式でない場合は空マップとして扱われる
     // -------------------------------------------------------------------
 
