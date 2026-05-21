@@ -272,6 +272,28 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 **前提**: Ph-1（I-1/I-2/I-3）全完了
 
+### A-1: YamlTestDataParser 直接実装の実現可能性調査
+
+**目的**: `TestDataReader`（`readLine` ベース）ではなく `TestDataParser` を直接実装することで、`List<List<String>>` 中間フォーマットと `yaml` パッケージ（10クラス）を排除できるか調査する。
+
+**前提**: R-1 実装済み（ただし本調査結果次第で R-1 を廃棄・再実装する可能性がある）
+
+**作業内容**:
+- [ ] `BasicTestDataParser`・`TestDataParsingTemplate` を全行読み、`List<List<String>>` に依存している処理（キャッシュ・コメント除去・interpreter・`instanceof PoiXlsReader` 等）を洗い出す
+- [ ] `TestDataParser` の全メソッド（`getSetupTableData` / `getExpectedTableData` / `getListMap` / `getSetupFile` / `getExpectedFile` / `getMessage` / `isResourceExisting`）が YAML から直接実装できるか確認する
+- [ ] 直接実装した場合に再利用できる処理・不要になる処理・新規実装が必要な処理を分類する
+- [ ] できない理由・リスク・変更範囲（影響クラス数）を明確にする
+- [ ] セルフチェック（チェック結果: `docs/checks/A-1.md`）
+- [ ] QAエンジニアレビュー（サブエージェントで実施）
+- [ ] ユーザーレビュー依頼・OK取得
+
+**完了条件**:
+- 「できる / できない / 条件付きでできる」のいずれかで結論を出し、根拠が記載されていること
+- できない・困難な場合はその理由と代替案が明記されていること
+- 調査結果に基づく次タスクの方針（R-1 廃棄・再実装 or 現状承認）が明記されていること
+
+---
+
 ### C-1: JaCoCo カバレッジレポート設定
 
 **目的**: `mvn test` 実行時に行・分岐カバレッジの HTML レポートが生成されるようにし、担当者がテストの網羅性をローカルで確認できるようにする。
@@ -452,9 +474,9 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
-- **進行中フェーズ**: Ph-2 R-1 ユーザーレビュー中
-- **次の着手**: ユーザーレビュー OK を得る → C-1 と R-2/R-3 を並行着手
-- **未着手タスク**: C-1（JaCoCo設定・他タスクと並行可）、R-2/R-3（並行可） → V-1 → D-1
+- **進行中フェーズ**: Ph-2 R-1 ユーザーレビュー中 + A-1 調査待ち
+- **次の着手**: A-1（YamlTestDataParser 直接実装の実現可能性調査）を先に実施 → 結果次第で R-1 を見直すか現状承認して C-1/R-2/R-3 に進む
+- **未着手タスク**: A-1（調査・最優先） → C-1（JaCoCo設定・並行可）、R-2/R-3（並行可） → V-1 → D-1
 
 ### 環境情報
 
@@ -527,12 +549,27 @@ SWE-1〜SWE-8: 全対応済み（isResource/isData共通化・addKeyValueRows共
 - E-3: LoggerManager によるデバッグログ追加（open 時にファイルパス・行数出力）
 - E-4（対応しない）: 例外メッセージは英語のまま（PoiXlsReader との統一性）
 
+### 設計上の論点（A-1 調査の背景）
+
+ユーザーレビュー中に以下の設計問題が浮上した。
+
+**問題**: `YamlTestDataReader`（`TestDataReader` 実装）は `List<List<String>>` という中間フォーマットを経由して `TableData` 等に変換している。この中間フォーマットは「Excel の行をメモリに展開したもの」であり、NTF が Excel ありきで設計された結果の負債。
+
+```
+現在: YAML → YamlTestDataReader(readLine) → List<List<String>> → TestDataParsingTemplate → TableData
+理想: YAML → YamlTestDataParser(TestDataParser実装) → TableData（直接）
+```
+
+`yaml` パッケージ（10クラス）の複雑さはこの迂回のために存在している。`TestDataParser` を直接実装すれば中間フォーマットと yaml パッケージ全体が不要になる可能性がある。
+
+**A-1 調査**: `TestDataParser` 直接実装の実現可能性・変更範囲・リスクを調査する。
+
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認
 2. `git status` でクリーンであることを確認
-3. ユーザーレビュー OK を得る
-4. C-1（JaCoCo設定）と R-2/R-3 を並行着手
+3. **A-1 調査を実施する**（`BasicTestDataParser`・`TestDataParsingTemplate`・`TestDataParser` の全体を読み、YamlTestDataParser 直接実装の実現可能性を明確にする）
+4. A-1 結果次第で R-1 を見直すか現状承認 → C-1/R-2/R-3 に着手
 
 ---
 
