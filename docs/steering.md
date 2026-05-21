@@ -452,15 +452,31 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1 I-1/I-2/I-3 完了
-- **進行中フェーズ**: Ph-2 R-1 ユーザーレビュー中（カバレッジ確認の質問が出ている）
-- **次の着手**: カバレッジ確認 → ユーザーレビュー OK → C-1 と R-2/R-3 を並行着手
+- **進行中フェーズ**: Ph-2 R-1 ユーザーレビュー中
+- **次の着手**: ユーザーレビュー OK を得る → C-1 と R-2/R-3 を並行着手
 - **未着手タスク**: C-1（JaCoCo設定・他タスクと並行可）、R-2/R-3（並行可） → V-1 → D-1
 
 ### 環境情報
 
 - **Java**: Eclipse Temurin 17（`update-alternatives` で切り替え済み）
 - **Maven settings**: `~/.m2/settings.xml` に社内 Nexus リポジトリ設定済み（`nablarch-parent:6-NEXT-SNAPSHOT` 解決済み）
-- **ビルド確認**: `mvn test -Dtest="YamlTestDataReaderTest,YamlValueConverterTest,RecordRowBuilderTest,TableSectionConverterTest,ListMapSectionConverterTest,FileSectionConverterTest,MessageSectionConverterTest,GroupMessageSectionConverterTest,YamlRowBuilderTest"` で63件グリーン確認済み
+- **ビルド確認**: `mvn test -Dtest="YamlTestDataReaderTest,YamlValueConverterTest,RecordRowBuilderTest,TableSectionConverterTest,ListMapSectionConverterTest,FileSectionConverterTest,MessageSectionConverterTest,GroupMessageSectionConverterTest,YamlRowBuilderTest"` で89件グリーン確認済み
+
+### カバレッジ取得方法（pom.xml 変更不要）
+
+親 POM に JaCoCo Offline Instrumentation が定義済みのため、以下の手順で取得できる。
+
+```bash
+# 1. テスト実行（jacoco.exec がプロジェクトルートに生成される）
+mvn clean package -Dtest="対象テストクラス..."
+
+# 2. レポート生成
+mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
+# → target/site/jacoco/index.html で確認
+```
+
+`mvn test` だけでは `restore-instrumented-classes` が走らず（`prepare-package` フェーズにバインド）、
+`jacoco:report` 時に「instrumented class」エラーになる。`package` まで実行すること。
 
 ### Ph-1 完了状況
 
@@ -484,10 +500,14 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - `src/main/java/nablarch/test/core/reader/YamlTestDataReader.java`（ファイルI/O・委譲のみ）
 - `src/main/java/nablarch/test/core/reader/yaml/` パッケージ（10クラス）:
   - `YamlRowBuilder`（public）、`SectionConverter`（interface）、`TableSectionConverter`、`ListMapSectionConverter`、`FileSectionConverter`（FileSection enum 方式）、`MessageSectionConverter`、`GroupMessageSectionConverter`、`RecordRowBuilder`、`YamlValueConverter`（singletonRow/collectAllKeys 集約）、`package-info`
-- `src/test/java/nablarch/test/core/reader/YamlTestDataReaderTest.java`（20件・RS-01〜RS-08 全網羅）
+- `src/test/java/nablarch/test/core/reader/YamlTestDataReaderTest.java`（23件・RS-01〜RS-08 全網羅）
 - `src/test/java/nablarch/test/core/reader/yaml/` テスト8クラス（66件・各クラス単体検証）
-- テストデータ YAML 3件（`src/test/resources/` 配下に移動済み）
+- テストデータ YAML 4件（`src/test/resources/nablarch/test/core/reader/` 配下）
 - **チェック結果**: `docs/checks/R-1.md`（担当者 OK・QA OK・Javaエキスパート OK・SWE OK）
+
+**カバレッジ達成状況:**
+- yaml パッケージ全クラス: C0=100% / C1=100%
+- `YamlTestDataReader`: C0=100% / C1=100%
 
 **ADR（設計判断記録）:**
 - `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
@@ -504,11 +524,8 @@ SWE-1〜SWE-8: 全対応済み（isResource/isData共通化・addKeyValueRows共
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認
 2. `git status` でクリーンであることを確認
-3. カバレッジ確認: ユーザーから「C0/C1で100%か？」という質問が出ている
-   - pom.xml に JaCoCo の設定はない → C-1 タスク（JaCoCo設定）をユーザーに追加可否を確認してから設定する
-   - JaCoCo 設定後に `mvn test` を実行し、`YamlTestDataReader` および `yaml` パッケージのカバレッジを確認する
-   - 未達箇所があればテスト追加を検討し、`docs/checks/R-1.md` に記録する
-4. カバレッジ OK → ユーザーレビュー OK を得る → C-1 と R-2/R-3 を並行着手
+3. ユーザーレビュー OK を得る
+4. C-1（JaCoCo設定）と R-2/R-3 を並行着手
 
 ---
 
