@@ -1,0 +1,5 @@
+expected_complete_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000099"
+        PK_COL2: "ZZ"

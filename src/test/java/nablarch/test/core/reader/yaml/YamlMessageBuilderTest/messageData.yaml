@@ -1,0 +1,88 @@
+# getMessage / getMessageWithoutCache テスト用
+
+messages:
+  - id: req001
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: X
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+expected_request_header_messages:
+  - id: req001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+
+expected_request_body_messages:
+  - id: req001
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: X
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+response_body_messages:
+  - group_id: grp1
+    id: resp001
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: X
+            length: 4
+          - name: DATA
+            type: X
+            length: 10
+        rows:
+          - ["0000", "RESULT_DAT"]
+
+response_header_messages:
+  - group_id: grp1
+    id: resp001
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+        rows:
+          - ["0000000001"]

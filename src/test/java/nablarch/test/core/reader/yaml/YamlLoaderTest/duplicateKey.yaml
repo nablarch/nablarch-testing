@@ -1,0 +1,8 @@
+setup_tables:
+  - table: TABLE_A
+    rows:
+      - COL1: "val1"
+setup_tables:
+  - table: TABLE_B
+    rows:
+      - COL1: "val2"

@@ -1,0 +1,165 @@
+package nablarch.test.core.reader.yaml;
+
+import nablarch.test.core.reader.DataType;
+import nablarch.test.core.util.interpreter.BinaryFileInterpreter;
+import nablarch.test.core.util.interpreter.InterpretationContext;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * YAML セクションキー定数と共通ヘルパーメソッド。
+ *
+ * <p>
+ * パッケージプライベート。{@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスからのみ使用する。
+ * </p>
+ */
+public final class YamlSection {
+
+    // ========================================================================
+    // セクションキー定数
+    // ========================================================================
+
+    public static final String KEY_SETUP_TABLES = "setup_tables";
+    public static final String KEY_EXPECTED_TABLES = "expected_tables";
+    public static final String KEY_EXPECTED_COMPLETE_TABLES = "expected_complete_tables";
+    public static final String KEY_LIST_MAPS = "list_maps";
+    public static final String KEY_SETUP_FILES = "setup_files";
+    public static final String KEY_EXPECTED_FILES = "expected_files";
+    public static final String KEY_MESSAGES = "messages";
+    public static final String KEY_EXPECTED_REQUEST_HEADER_MESSAGES = "expected_request_header_messages";
+    public static final String KEY_EXPECTED_REQUEST_BODY_MESSAGES = "expected_request_body_messages";
+    public static final String KEY_RESPONSE_HEADER_MESSAGES = "response_header_messages";
+    public static final String KEY_RESPONSE_BODY_MESSAGES = "response_body_messages";
+
+    // ========================================================================
+    // フィールドキー定数
+    // ========================================================================
+
+    public static final String FIELD_GROUP_ID = "group_id";
+    public static final String FIELD_ID = "id";
+    public static final String FIELD_TABLE = "table";
+    public static final String FIELD_ROWS = "rows";
+    public static final String FIELD_PATH = "path";
+    /** "fixed" / "variable" またはフィールド型 */
+    public static final String FIELD_TYPE = "type";
+    public static final String FIELD_DIRECTIVES = "directives";
+    public static final String FIELD_RECORDS = "records";
+    public static final String FIELD_RECORD_TYPE = "record_type";
+    public static final String FIELD_FIELDS = "fields";
+    public static final String FIELD_NAME = "name";
+    public static final String FIELD_LENGTH = "length";
+
+    // ========================================================================
+    // ファイル種別定数
+    // ========================================================================
+
+    public static final String FILE_TYPE_FIXED = "fixed";
+
+    // ========================================================================
+    // メッセージ系定数
+    // ========================================================================
+
+    public static final String FW_HEADER_RECORD_TYPE = "FW_HEADER";
+
+    // ========================================================================
+    // ユーティリティメソッド
+    // ========================================================================
+
+    private YamlSection() {
+    }
+
+    /**
+     * YAML Map から指定キーのリストを取得する。値が null またはキー不在の場合は空リストを返す。
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Object> getList(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof List) {
+            return (List<Object>) val;
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Object を {@code Map<String, Object>} にキャストする。Map でない場合は空 Map を返す。
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> castMap(Object obj) {
+        if (obj instanceof Map) {
+            return (Map<String, Object>) obj;
+        }
+        return Collections.emptyMap();
+    }
+
+    /**
+     * Object を文字列に変換する（null の場合は null）。
+     */
+    public static String toStr(Object value) {
+        return value != null ? value.toString() : null;
+    }
+
+    /**
+     * YAML オブジェクトを文字列に変換する（RS-03〜RS-05）。
+     *
+     * <ul>
+     * <li>null → null（RS-03）</li>
+     * <li>Boolean → "true"/"false"（RS-04）</li>
+     * <li>数値 → 数字文字列（RS-05）</li>
+     * <li>その他 → {@code toString()}</li>
+     * </ul>
+     */
+    public static String objectToString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return value.toString();
+    }
+
+    /**
+     * インタープリタチェーンを適用して値を変換する。
+     */
+    public static String interpret(String value, List<TestDataInterpreter> interps) {
+        if (value == null) {
+            return null;
+        }
+        if (interps == null || interps.isEmpty()) {
+            return value;
+        }
+        InterpretationContext ctx = new InterpretationContext(value, interps);
+        return ctx.invokeNext();
+    }
+
+    /**
+     * {@link BinaryFileInterpreter} をリストの先頭に積んで返す。
+     */
+    public static List<TestDataInterpreter> addBinaryFileInterpreter(String path,
+                                                               List<TestDataInterpreter> interpreters) {
+        BinaryFileInterpreter fileInterpreter = new BinaryFileInterpreter(path);
+        List<TestDataInterpreter> result = new ArrayList<TestDataInterpreter>(
+                (interpreters != null ? interpreters.size() : 0) + 1);
+        result.add(fileInterpreter);
+        if (interpreters != null) {
+            result.addAll(interpreters);
+        }
+        return result;
+    }
+
+    /**
+     * {@link DataType} から YAML セクションキーへ変換する。
+     */
+    public static String dataTypeToSectionKey(DataType dataType) {
+        switch (dataType) {
+            case MESSAGE:                          return KEY_MESSAGES;
+            case EXPECTED_REQUEST_HEADER_MESSAGES: return KEY_EXPECTED_REQUEST_HEADER_MESSAGES;
+            case EXPECTED_REQUEST_BODY_MESSAGES:   return KEY_EXPECTED_REQUEST_BODY_MESSAGES;
+            case RESPONSE_HEADER_MESSAGES:         return KEY_RESPONSE_HEADER_MESSAGES;
+            case RESPONSE_BODY_MESSAGES:           return KEY_RESPONSE_BODY_MESSAGES;
+            default:
+                throw new IllegalArgumentException("Unsupported DataType for messaging: " + dataType);
+        }
+    }
+}

@@ -1,0 +1,4 @@
+setup_tables:
+  - table: TEST_TABLE
+    rows:
+      - COL1: "val1"
