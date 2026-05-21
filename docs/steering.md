@@ -468,8 +468,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）全完了
-- **次の着手**: **R-1 レビュー指摘対応**（実装・テストの修正）
-- **未着手タスク**: R-1（レビュー対応中）→ C-1（並行可）、R-2/R-3（R-1 完了後）→ V-1 → D-1
+- **次の着手**: **R-1 第2回レビュー指摘対応**（下記「対応確定済み指摘 B系列」を修正後、ユーザーレビュー依頼）
+- **未着手タスク**: R-1（ユーザーレビュー待ち）→ C-1（並行可）、R-2/R-3（R-1 完了後）→ V-1 → D-1
 
 ### 環境情報
 
@@ -511,55 +511,73 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 ### R-1 進捗状況
 
-**実装・テスト**: コミット済み（`7dfc0dd`）。27テスト全グリーン。
+**実装・テスト（第1回レビュー指摘対応済み）**: コミット `526ce71`。38テスト全グリーン。
+- A-1〜A-14（実装修正）/ T-1〜T-13（テスト修正）全件対応済み
 
-**レビュー済み**: QA・Javaエキスパート・ソフトウェアエンジニアの3レビュー完了。
+**第2回レビュー（ソフトウェアエンジニア）完了**: 総合 NG。対応必要な指摘あり（下記）。
+**第2回レビュー（QA・Javaエキスパート）**: 結果取得後に対応。
 
-**対応確定済み指摘**（次回再開時に修正すること）:
+#### 対応確定済み指摘（B系列・次回再開時に修正すること）
 
-#### 実装（YamlTestDataParser.java）
+**ソフトウェアエンジニアレビュー指摘（対応要）:**
 
-| # | 内容 |
-|---|---|
-| A-1 | `@author NTF YAML 実装フェーズ` → `@author kiyotis` に変更 |
-| A-2 | `FW_HEADER_FIELDS` static initializer と `buildListMapRows` の完全修飾名（`java.util.HashSet` 等）を import 追加で統一 |
-| A-3 | `defaultValues` フィールドのデフォルトを `= new BasicDefaultValues()` に変更（`BasicTestDataParser` と整合） |
-| A-4 | `loadYaml` の `containsKey` → `get` を `YAML_CACHE.get()` + null チェックに修正（TOCTOU解消） |
-| A-5 | `extractFwHeader` で `fieldIndex >= 0` チェックを追加（-1 時の IOOBE 防止） |
-| A-6 | `getSendSyncMessage` の条件式を `groupId != null && groupId.equals(id)` に簡略化 |
-| A-7 | `YAML_CACHE` のサイズ `8` を名前付き定数 `YAML_CACHE_MAX_SIZE` に変更 |
-| A-8 | `buildFragments` と `buildFragmentsForMessage` の重複ロジックをパラメータ化して共通化 |
-| A-9 | `FIELD_TYPE`（ファイル種別キー）と `FIELD_FIELD_TYPE`（フィールド型キー）が同値の別名定数 → `FIELD_TYPE` に一本化しコンテキストで使い分け |
-| A-10 | `buildFragmentsForMessage` の length デフォルト `"0"` を `buildFragments` の `""` と統一 |
-| A-11 | `objectToString` の Javadoc を実態（`value.toString()` 委譲のみ）に合わせて修正 |
-| A-12 | 各 getter で `addBinaryFileInterpreter(path)` を呼ぶよう修正（`BasicTestDataParser` との整合） |
-| A-13 | `import nablarch.test.core.db.BasicDefaultValues` を追加 |
-| A-14 | `import nablarch.test.core.util.interpreter.BinaryFileInterpreter` を追加 |
+| # | ファイル:行 | 内容 | 優先度 |
+|---|---|---|---|
+| B-1 | `YamlTestDataParser.java` `buildFragmentsForMessage` | `interpret(strVal, interpreters)` が `addBinaryFileInterpreter` なしの生フィールドを参照。`buildFragments` との動作差異（バグ疑義）。`addBinaryFileInterpreter(basePath)` の結果を使うよう修正する | 高 |
+| B-2 | `YamlTestDataParser.java` `buildFragments`/`buildFragmentsForMessage` | 処理骨格が重複。`boolean skipFwHeader` と `List<TestDataInterpreter> interps` を引数に持つ内部 private メソッドに一本化する（前回 A-8 が未実装だった） | 中 |
+| B-3 | `YamlTestDataParser.java` `setDbInfo`/`setInterpreters`/`setDefaultValues` | 自フィールドと `super.setXxx()` の二重管理。将来 `BasicTestDataParser` に getter が追加された場合に親フィールドが古い値になりうる。二重管理の意図を Javadoc コメントで明示する（コードの削減が難しい場合） | 中 |
+| B-4 | `YamlTestDataParser.java` `YAML_CACHE` | `get→null→put` がアトミックでない。`ConcurrentHashMap.computeIfAbsent` への変更を検討する | 中 |
+| B-5 | `YamlTestDataParserTest.java` | `YAML_CACHE`（static）をリセットする `@After` / `@AfterClass` がなく、テスト間キャッシュ分離が未保証 | 中 |
 
-#### テスト（YamlTestDataParserTest.java / nativeTypes.yaml）
-
-| # | 内容 |
-|---|---|
-| T-1 | `nativeTypes.yaml` の `BOOL_TRUE: "true"` → `BOOL_TRUE: true`（クォート除去）。同様に `BOOL_FALSE`/`INT_COL`/`FLOAT_COL` も修正。SnakeYAML が Java `Boolean`/`Integer`/`Double` を生成するケースを実際にテストする |
-| T-2 | `nativeTypes.yaml` に `FLOAT_SCIENTIFIC: 1e10` を追加し、`"1.0E10"` になることをアサートする（科学的記数法の端点） |
-| T-3 | `testRs06_trailingNullValuesAreEmptyString` → RS-06 は YAML 実装では「YAML ネイティブ null は RS-03 により Java null」であり末尾空文字補完は非適用。テスト名・Javadoc を `testRs06_trailingNativeNullIsJavaNull` 等に修正し、アサーションと整合させる |
-| T-4 | `testRs06` で `result.get(1)`（2行目）の検証を追加 |
-| T-5 | RS-02 はExcel版の `readLine()` に関する仕様。テスト名を `testRs07_lastSectionDataNotLostAtEndOfFile` に変更し、RS-02 への言及を削除（YAML実装では RS-02 は非適用） |
-| T-6 | `getSetupFile`/`getExpectedFile` のアサーションに `DataFile.getPath()` の検証を追加 |
-| T-7 | `getMessage` のアサーションに `RequestTestingMessagePool` の非 null 確認に加え FW ヘッダ値の検証を追加 |
-| T-8 | `getExpectedTableData` のファイル不存在テスト追加（`IllegalStateException` がスローされること） |
-| T-9 | YAML 後続行でキーを省略した場合（末尾キー省略）の補完動作テスト追加 |
-| T-10 | `getSendSyncMessage` で存在しないグループID → null 返却テスト追加 |
-| T-11 | `getExpectedFile` にグループID指定テスト追加（`getSetupFile` との対称化） |
-| T-12 | `getMessageWithoutCache` の DataType を `EXPECTED_REQUEST_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` / `RESPONSE_HEADER_MESSAGES` の各テスト追加（残り3種） |
-| T-13 | `testRs08_isResourceExistingReturnsTrueWhenFileExists` の Javadoc を「`notExisting.yaml` という名前だが存在するファイル」と正確に記述 |
-
-#### 却下・対応不要
+**却下（対応不要）:**
 
 | # | 内容 | 理由 |
 |---|---|---|
-| X-1 | `setTestDataReader` の UnsupportedOperationException を noop に変更 | 不正な使い方を早期検出する設計意図。steering.md にも仕様として明記。LSP 違反とまでは言えない |
-| X-2 | `@version 1.0` 追加 | 周囲のクラス（ListMapParser/MessageParser/TableDataParser等）に `@version` なし。追加不要 |
+| X-3 | `setTestDataReader` の UnsupportedOperationException を LSP 違反として no-op に変更 | X-1 と同じ理由で却下済み。不正な使い方を早期検出する設計意図。 |
+
+#### 第1回レビュー対応済み指摘（参照用）
+
+<details>
+<summary>A-1〜A-14 / T-1〜T-13（クリックで展開）</summary>
+
+**実装（A系列）:**
+
+| # | 内容 |
+|---|---|
+| A-1 | `@author` を `kiyotis` に変更 |
+| A-2 | 完全修飾名を import 追加で統一 |
+| A-3 | `defaultValues` デフォルトを `= new BasicDefaultValues()` に変更 |
+| A-4 | `loadYaml` の TOCTOU 解消（`get` + null チェック） |
+| A-5 | `extractFwHeader` で `fieldIndex >= 0` チェック追加 |
+| A-6 | `getSendSyncMessage` 条件式簡略化 |
+| A-7 | `YAML_CACHE_MAX_SIZE` 定数化 |
+| A-8 | `buildFragments`/`buildFragmentsForMessage` 共通化（→ B-2 で再指摘） |
+| A-9 | `FIELD_FIELD_TYPE` → `FIELD_TYPE` に一本化 |
+| A-10 | length デフォルト `""` に統一 |
+| A-11 | `objectToString` Javadoc 修正 |
+| A-12 | 各 getter で `addBinaryFileInterpreter(path)` 呼び出し（→ B-1 で `buildFragmentsForMessage` が漏れていた） |
+| A-13 | `import BasicDefaultValues` 追加 |
+| A-14 | `import BinaryFileInterpreter` 追加 |
+
+**テスト（T系列）:**
+
+| # | 内容 |
+|---|---|
+| T-1 | `nativeTypes.yaml` boolean/integer/float をネイティブ型に修正 |
+| T-2 | `FLOAT_SCIENTIFIC: 1e10` テスト追加 |
+| T-3 | `testRs06` 名称・Javadoc 修正 |
+| T-4 | `testRs06` 2行目検証追加 |
+| T-5 | `testRs02Rs07` → `testRs07` 改名・RS-02 言及削除 |
+| T-6 | `getPath()` アサーション追加 |
+| T-7 | `getMessage` 型アサーション追加 |
+| T-8 | `getExpectedTableData` ファイル不存在テスト追加 |
+| T-9 | 末尾キー省略テスト追加 |
+| T-10 | `getSendSyncMessage` 不存在グループID → null テスト追加 |
+| T-11 | `getExpectedFile` グループID指定テスト追加 |
+| T-12 | `getMessageWithoutCache` 残り3 DataType テスト追加 |
+| T-13 | `testRs08` Javadoc 正確化 |
+
+</details>
 
 ### ADR（設計判断記録）
 
@@ -568,11 +586,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 ### 再開手順
 
-1. `git checkout convert-testdata-excel-to-text` でブランチを確認
-2. `git status` でクリーンであることを確認
-3. **R-1 レビュー指摘対応** を実施する（上記「対応確定済み指摘」A-1〜A-14 / T-1〜T-13 を全件修正）
-4. テスト全グリーン確認（`mvn test -Dtest="YamlTestDataParserTest"`）
-5. `docs/checks/R-1.md` にレビュー結果を記入し、ユーザーレビューを依頼する
+1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
+2. QA・Javaエキスパートの第2回レビュー結果をサブエージェントで確認・収集する（バックグラウンドで走った結果が未取得の場合、再度サブエージェントを起動して実施）
+3. 全レビュー結果を統合し、**B-1〜B-5** および QA・Javaエキスパート指摘を全件対応する
+4. テスト全グリーン確認（`mvn clean package -Dtest="YamlTestDataParserTest"`）
+5. `docs/checks/R-1.md` にレビュー結果を追記し、ユーザーレビューを依頼する
 
 ---
 
