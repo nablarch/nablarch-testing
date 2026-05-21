@@ -20,6 +20,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -549,25 +550,29 @@ public class YamlTestDataParserTest {
      * <p>
      * Given: messages の FW_HEADER レコードに requestId="0000000001", userId="testUser01" が含まれる<br>
      * When:  getMessage を呼ぶ<br>
-     * Then:  MessagePool が返り、requestId と userId が設定されていること
+     * Then:  MessagePool が返り、requestId と userId が extractFwHeader で正しく抽出されていること
      * </p>
      */
     @Test
-    public void testGetMessage() {
+    public void testGetMessage() throws Exception {
         // Given / When
         MessagePool result = sut.getMessage(DIR, "YamlTestDataParserTest/messageData", "req001");
 
         // Then: non-null かつ RequestTestingMessagePool であること
         assertNotNull(result);
         assertThat(result, instanceOf(RequestTestingMessagePool.class));
-        // FW ヘッダ値の検証: MessagePool.fwHeader はパッケージプライベートのため、
-        // 同パッケージの本テストクラスからキャストして直接参照できる
-        RequestTestingMessagePool pool = (RequestTestingMessagePool) result;
-        // getRequestId() は getSendSyncMessage 用であり getMessage では設定されない（設計仕様）
-        // FW ヘッダが extractFwHeader で正しく抽出されたことは、MessagePool 構築が例外なく完了することで確認する
-        // 具体値は messageData.yaml に基づき requestId=0000000001, userId=testUser01 のはずだが
-        // MessagePool の fwHeader フィールドは protected/package-private でないためリフレクションで確認
-        assertThat(result.getClass().getName(), is(RequestTestingMessagePool.class.getName()));
+
+        // FW ヘッダ実値の検証: MessagePool.getFwHeader() はパッケージプライベートのため
+        // リフレクションで fwHeader フィールドを直接取得して検証する
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+
+        assertThat("requestId が設定されていること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("userId が設定されていること", fwHeader.get("userId"), is("testUser01"));
+        assertThat("resendFlag が設定されていること", fwHeader.get("resendFlag"), is("0"));
+        assertThat("resultCode が設定されていること", fwHeader.get("resultCode"), is("0000"));
     }
 
     // ========================================================================
