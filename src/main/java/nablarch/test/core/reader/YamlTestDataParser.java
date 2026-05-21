@@ -1,10 +1,13 @@
 package nablarch.test.core.reader;
 
+import nablarch.core.repository.SystemRepository;
+import nablarch.test.NablarchTestUtils;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
+import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.MockMessages;
 import nablarch.test.core.file.VariableLengthFile;
@@ -23,11 +26,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+
+import static nablarch.core.util.StringUtil.isNullOrEmpty;
 
 /**
  * YAML 形式のテストデータを読み込むパーサ。
@@ -128,16 +133,26 @@ public class YamlTestDataParser extends BasicTestDataParser {
     /** YAML キャッシュの最大保持エントリ数 */
     private static final int YAML_CACHE_MAX_SIZE = 8;
 
-    /** フレームワーク制御ヘッダフィールド名セット */
-    private static final Set<String> FW_HEADER_FIELDS;
-    static {
-        Set<String> s = new HashSet<String>();
-        s.add("requestId");
-        s.add("userId");
-        s.add("resendFlag");
-        s.add("resultCode");
-        FW_HEADER_FIELDS = Collections.unmodifiableSet(s);
-    }
+    /**
+     * フレームワーク制御ヘッダフィールド名を SystemRepository から読み込むためのキー。
+     * {@link nablarch.test.core.reader.MessageParser} と同じキーを参照することで、
+     * DI 設定による FW ヘッダフィールドの変更が YAML 実装にも反映される。
+     */
+    private static final String FW_HEADER_KEY = "reader.fwHeaderfields";
+
+    /**
+     * フレームワーク制御ヘッダフィールド名セット。
+     * {@value #FW_HEADER_KEY} が SystemRepository に設定されている場合はその値を使用し、
+     * 設定がない場合はデフォルト値 {@code {requestId, userId, resendFlag, resultCode}} を使用する。
+     */
+    private final Set<String> fwHeaderFields =
+            isNullOrEmpty(SystemRepository.getString(FW_HEADER_KEY))
+            ? NablarchTestUtils.asSet("requestId", "userId", "resendFlag", "resultCode")
+            : NablarchTestUtils.asSet(NablarchTestUtils.makeArray(SystemRepository.getString(FW_HEADER_KEY)));
+
+    /** YAML キャッシュ（path → 解析済み Map）。アクセス順 LRU で最大 {@value #YAML_CACHE_MAX_SIZE} エントリを保持する。 */
+    private static final Map<String, Map<String, Object>> YAML_CACHE =
+            Collections.synchronizedMap(NablarchTestUtils.<String, Map<String, Object>>createLRUMap(YAML_CACHE_MAX_SIZE));
 
     /** DbInfo */
     private DbInfo dbInfo;
@@ -147,15 +162,6 @@ public class YamlTestDataParser extends BasicTestDataParser {
 
     /** Interpreter リスト */
     private List<TestDataInterpreter> interpreters;
-
-    /** YAML キャッシュ（path → 解析済み Map） */
-    private static final Map<String, Map<String, Object>> YAML_CACHE =
-            Collections.synchronizedMap(new LinkedHashMap<String, Map<String, Object>>() {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-                    return size() > YAML_CACHE_MAX_SIZE;
-                }
-            });
 
     /**
      * {@inheritDoc}
@@ -170,21 +176,42 @@ public class YamlTestDataParser extends BasicTestDataParser {
                         + "YAML files are loaded directly from the file system.");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * YAML 実装は {@code dbInfo} を独自フィールドに保持する。{@code super.setDbInfo()} も呼ぶことで、
+     * 親クラスの内部処理（{@code fillDefaultValues} などの委譲先となるメソッド）が正しく機能するようにする。
+     * </p>
+     */
     @Override
     public void setDbInfo(DbInfo dbInfo) {
         this.dbInfo = dbInfo;
         super.setDbInfo(dbInfo);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * YAML 実装は {@code interpreters} を独自フィールドに保持する。{@code super.setInterpreters()} も呼ぶことで、
+     * 親クラスに依存する処理が正しく動作するようにする。
+     * </p>
+     */
     @Override
     public void setInterpreters(List<TestDataInterpreter> interpretersPrototype) {
         this.interpreters = interpretersPrototype;
         super.setInterpreters(interpretersPrototype);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * YAML 実装は {@code defaultValues} を独自フィールドに保持する。{@code super.setDefaultValues()} も呼ぶことで、
+     * 親クラスに依存する処理が正しく動作するようにする。
+     * </p>
+     */
     @Override
     public void setDefaultValues(DefaultValues defaultValues) {
         this.defaultValues = defaultValues;
@@ -254,7 +281,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     @Override
     public MessagePool getMessage(String path, String resourceName, String id) {
         Map<String, Object> yaml = loadYaml(path, resourceName);
-        FixedLengthFile file = buildMessageFile(yaml, KEY_MESSAGES, id, false);
+        FixedLengthFile file = buildMessageFile(yaml, KEY_MESSAGES, id, false, path);
         if (file == null) {
             return null;
         }
@@ -267,7 +294,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public MessagePool getMessageWithoutCache(String path, String resourceName, DataType dataType, String id) {
         Map<String, Object> yaml = loadYaml(path, resourceName);
         String sectionKey = dataTypeToSectionKey(dataType);
-        FixedLengthFile file = buildMessageFile(yaml, sectionKey, id, false);
+        FixedLengthFile file = buildMessageFile(yaml, sectionKey, id, false, path);
         if (file == null) {
             return null;
         }
@@ -297,6 +324,18 @@ public class YamlTestDataParser extends BasicTestDataParser {
             }
         }
         return result.isEmpty() ? null : result;
+    }
+
+    // ========================================================================
+    // テスト専用
+    // ========================================================================
+
+    /**
+     * テスト専用: YAML キャッシュをクリアする。
+     * テスト間のキャッシュ汚染を防ぐために {@code @After} メソッドから呼ぶこと。
+     */
+    static void clearCacheForTest() {
+        YAML_CACHE.clear();
     }
 
     // ========================================================================
@@ -405,7 +444,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
         List<TestDataInterpreter> interps = addBinaryFileInterpreter(path);
         for (Object rowObj : rows) {
             Map<String, Object> rowMap = castMap(rowObj);
-            Map<String, String> row = new java.util.TreeMap<String, String>();
+            Map<String, String> row = new TreeMap<String, String>();
             for (Map.Entry<String, Object> e : rowMap.entrySet()) {
                 String key = e.getKey();
                 // マーカーカラム（[COLNAME] 形式）は除外
@@ -488,21 +527,43 @@ public class YamlTestDataParser extends BasicTestDataParser {
     }
 
     /**
-     * DataFileFragment を構築してファイルに追加する。
+     * DataFileFragment を構築してファイルに追加する（ファイルデータ用）。
+     *
+     * <p>
+     * FW_HEADER レコードは除外せず、record_type はそのまま使用する。
+     * </p>
      *
      * @param file     ファイル
      * @param map      セクション Map
      * @param basePath インタープリタ用ベースパス
      */
     private void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
+        buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath));
+    }
+
+    /**
+     * DataFileFragment を構築してファイルに追加する（共通実装）。
+     *
+     * @param file         ファイル
+     * @param map          セクション Map
+     * @param skipFwHeader true の場合 FW_HEADER レコードをスキップし、record_type を "default" に固定する
+     * @param interps      使用するインタープリタリスト
+     */
+    private void buildFragmentsCore(DataFile file, Map<String, Object> map,
+                                     boolean skipFwHeader, List<TestDataInterpreter> interps) {
         List<Object> records = getList(map, FIELD_RECORDS);
-        List<TestDataInterpreter> interps = addBinaryFileInterpreter(basePath);
         for (Object recordObj : records) {
             Map<String, Object> record = castMap(recordObj);
-            nablarch.test.core.file.DataFileFragment fragment = file.getNewFragment();
-
             String recordType = toString(record.get(FIELD_RECORD_TYPE));
-            fragment.setRecordType(recordType != null ? recordType : "default");
+
+            if (skipFwHeader && FW_HEADER_RECORD_TYPE.equals(recordType)) {
+                // FW_HEADER レコードはフラグメントに含めない（fwHeader として分離）
+                continue;
+            }
+
+            DataFileFragment fragment = file.getNewFragment();
+            // メッセージ系は record_type を "default" に固定（MessageParser の仕様）
+            fragment.setRecordType(skipFwHeader ? "default" : (recordType != null ? recordType : "default"));
 
             List<Object> fields = getList(record, FIELD_FIELDS);
             List<String> names = new ArrayList<String>(fields.size());
@@ -525,8 +586,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
 
             fragment.setNames(names);
             fragment.setTypes(types);
-            if (hasLength) {
-                // null を含む場合は空文字に変換
+
+            if (skipFwHeader || hasLength) {
+                // メッセージ系: 常に lengths を設定。ファイル系: 少なくとも 1 つの length が指定された場合のみ設定
                 List<String> cleanedLengths = new ArrayList<String>(lengths.size());
                 for (String l : lengths) {
                     cleanedLengths.add(l != null ? l : "");
@@ -534,7 +596,6 @@ public class YamlTestDataParser extends BasicTestDataParser {
                 fragment.setLengths(cleanedLengths);
             }
 
-            // データ行を追加
             List<Object> rows = getList(record, FIELD_ROWS);
             for (Object rowObj : rows) {
                 if (rowObj instanceof List) {
@@ -558,10 +619,11 @@ public class YamlTestDataParser extends BasicTestDataParser {
      * @param sectionKey セクションキー
      * @param id         メッセージ ID
      * @param isMock     MockMessages を使う場合 true
+     * @param basePath   インタープリタ用ベースパス
      * @return FixedLengthFile、または存在しない場合 null
      */
     private FixedLengthFile buildMessageFile(Map<String, Object> yaml, String sectionKey,
-                                              String id, boolean isMock) {
+                                              String id, boolean isMock, String basePath) {
         List<Object> entries = getList(yaml, sectionKey);
         for (Object entry : entries) {
             Map<String, Object> map = castMap(entry);
@@ -569,7 +631,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
             if (id.equals(entryId)) {
                 FixedLengthFile file = isMock ? new MockMessages(id) : new FixedLengthFile(id);
                 applyDirectives(file, map);
-                buildFragmentsForMessage(file, map);
+                buildFragmentsCore(file, map, true, addBinaryFileInterpreter(basePath));
                 return file;
             }
         }
@@ -589,58 +651,6 @@ public class YamlTestDataParser extends BasicTestDataParser {
         applyDirectives(file, map);
         buildFragments(file, map, basePath);
         return file;
-    }
-
-    /**
-     * メッセージ系フラグメントを構築する（record_type を "default" に固定）。
-     *
-     * @param file ファイル
-     * @param map  セクション Map
-     */
-    private void buildFragmentsForMessage(FixedLengthFile file, Map<String, Object> map) {
-        List<Object> records = getList(map, FIELD_RECORDS);
-        for (Object recordObj : records) {
-            Map<String, Object> record = castMap(recordObj);
-            // FW_HEADER レコードはフラグメントに含めない（fwHeader として分離）
-            String recordType = toString(record.get(FIELD_RECORD_TYPE));
-            if (FW_HEADER_RECORD_TYPE.equals(recordType)) {
-                continue;
-            }
-            nablarch.test.core.file.DataFileFragment fragment = file.getNewFragment();
-            // MessageParser は record_type を "default" に上書きする
-            fragment.setRecordType("default");
-
-            List<Object> fields = getList(record, FIELD_FIELDS);
-            List<String> names = new ArrayList<String>(fields.size());
-            List<String> types = new ArrayList<String>(fields.size());
-            List<String> lengths = new ArrayList<String>(fields.size());
-
-            for (Object fieldObj : fields) {
-                Map<String, Object> field = castMap(fieldObj);
-                names.add(toString(field.get(FIELD_NAME)));
-                types.add(toString(field.get(FIELD_TYPE)));
-                Object len = field.get(FIELD_LENGTH);
-                lengths.add(len != null ? toString(len) : "");
-            }
-
-            fragment.setNames(names);
-            fragment.setTypes(types);
-            fragment.setLengths(lengths);
-
-            List<Object> rows = getList(record, FIELD_ROWS);
-            for (Object rowObj : rows) {
-                if (rowObj instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<Object> rowList = (List<Object>) rowObj;
-                    List<String> rowValues = new ArrayList<String>(rowList.size());
-                    for (Object val : rowList) {
-                        String strVal = objectToString(val);
-                        rowValues.add(interpret(strVal, interpreters));
-                    }
-                    fragment.addValue(rowValues);
-                }
-            }
-        }
     }
 
     /**
@@ -666,7 +676,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                     for (Object fieldObj : fields) {
                         Map<String, Object> field = castMap(fieldObj);
                         String fieldName = toString(field.get(FIELD_NAME));
-                        if (FW_HEADER_FIELDS.contains(fieldName)) {
+                        if (fwHeaderFields.contains(fieldName)) {
                             // 最初の行の値を FW ヘッダとして取得
                             if (!rows.isEmpty()) {
                                 @SuppressWarnings("unchecked")
@@ -724,7 +734,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
      * YAML オブジェクトを文字列に変換する（RS-03〜RS-05）。
      *
      * <ul>
-     * <li>null → null（RS-03: Java null として返す）</li>
+     * <li>null → null（RS-03: SnakeYAML が YAML ネイティブ null を Java null に変換し、そのまま返す）</li>
      * <li>Boolean → "true" / "false"（RS-04）</li>
      * <li>Integer / Long / Double 等の数値 → 数字文字列（RS-05）</li>
      * <li>その他 → {@code toString()}</li>

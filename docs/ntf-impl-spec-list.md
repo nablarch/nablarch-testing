@@ -69,10 +69,10 @@
 |---|---|---|---|---|---|
 | RS-01 | `open(path, dataName)` 規約: `dataName` に対して `{dataName}.yaml` ファイルを検索する | 実装内部ロジック | `TestDataReader` インタフェース（設計方針） | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（`YamlTestDataReader.open()` の実装仕様。Ph-2 R-1 で実装） |
 | RS-02 | `readLine()` は文書終端で `null` を返す | 実装内部ロジック | `TestDataReader` インタフェース（既存 Excel 実装との整合） | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（`readLine()` の終端返却仕様） |
-| RS-03 | YAML ネイティブ `null`（アンクォート）は文字列 `"null"` として返す（旧E-1） | 実装内部ロジック | `design.md §7`、YAML native type conversion | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（YAML ネイティブ null の文字列化） |
+| RS-03 | YAML ネイティブ `null`（アンクォート）は Java `null` として返す（旧E-1） | 実装内部ロジック | `design.md §7`（SnakeYAML が Java null に変換し、パーサがそのまま返す） | `testRs03_yamlNativeNullIsJavaNull`（`YamlTestDataParserTest`） | スキーマ外・パーサ実装で担保（YAML ネイティブ null は Java null として返す） |
 | RS-04 | YAML ネイティブ boolean (`true`/`false`) は文字列 `"true"`/`"false"` として返す（旧E-1） | 実装内部ロジック | `design.md §7` | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（YAML ネイティブ boolean の文字列化） |
 | RS-05 | YAML ネイティブ integer/float は数字文字列として返す（旧E-1） | 実装内部ロジック | `design.md §7` | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（YAML ネイティブ数値の文字列化） |
-| RS-06 | 末尾の空要素（null や省略）は空文字 `""` で補完して返す（旧E-2） | 実装内部ロジック | `HeaderLine.java` 行69-85 の末尾省略仕様と整合 | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（末尾空要素の "" 補完） |
+| RS-06 | 末尾の空要素（YAML ネイティブ null または省略）は Java `null` として返す（旧E-2） | 実装内部ロジック | Excel 実装（`HeaderLine.java`）が `""` 補完するのに対し、YAML 実装は RS-03 仕様により Java null を返す。これは設計上の決定であり `design.md §7` に明記 | `testRs06_trailingNativeNullIsJavaNull` / `testRs06_trailingKeyOmittedIsNull`（`YamlTestDataParserTest`） | スキーマ外・パーサ実装で担保（末尾空要素は Java null として返す） |
 | RS-07 | `readLine()` が `null` を返した後、直前のセクションデータが欠落しないことを保証する（旧E-3） | 実装内部ロジック | `TestDataParsingTemplate.java` 行187-219 の parse ロジック | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（null 返却後の最終セクション欠落防止） |
 | RS-08 | `isDataExisting(directory, resource)` / `isResourceExisting(directory, resource)` の実装（リソース存在確認） | 実装内部ロジック | `BasicTestDataParser.java` 行267-271 | テスト追加必要（YamlTestDataReader 未実装。Ph-2 R-1 で実装・テスト作成予定） | スキーマ外・パーサ実装で担保（isDataExisting/isResourceExisting の実装） |
 

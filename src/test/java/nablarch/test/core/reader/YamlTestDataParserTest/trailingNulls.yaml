@@ -1,4 +1,4 @@
-# RS-06: 末尾の空要素は "" で補完する
+# RS-06: 末尾の空要素（YAML ネイティブ null または省略）は Java null として返す
 
 list_maps:
   - id: trailingNullTest
