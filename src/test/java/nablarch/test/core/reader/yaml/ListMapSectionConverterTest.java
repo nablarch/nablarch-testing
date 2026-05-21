@@ -122,6 +122,31 @@ public class ListMapSectionConverterTest {
         assertThat("null → \"null\"", dataRow.get(colBIdx), is("null"));  // RS-03
     }
 
+    // -------------------------------------------------------------------
+    // E-1: 'id' キー欠落時に IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 'id' キーが欠落したエントリ
+     * When:  convert を呼び出す
+     * Then:  IllegalArgumentException がスローされ、メッセージにキー名が含まれる（E-1）
+     */
+    @Test
+    public void convert_missingId_throwsIllegalArgumentException() {
+        // Given: id キーなし
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("rows", Collections.<Map<String, Object>>emptyList());
+
+        // When / Then
+        List<List<String>> out = new ArrayList<List<String>>();
+        try {
+            sut.convert(entry, out);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            assertThat("例外メッセージに 'id' が含まれること", e.getMessage(), containsString("id"));  // E-1
+        }
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------

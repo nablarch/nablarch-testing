@@ -36,6 +36,10 @@ class TableSectionConverter implements SectionConverter {
     public void convert(Map<String, Object> entry, List<List<String>> out) {
         String groupId   = YamlValueConverter.asString(entry.get("group_id"));
         String tableName = YamlValueConverter.asString(entry.get("table"));
+        if (tableName == null) {
+            throw new IllegalArgumentException(
+                    dataTypeName + " entry is missing required key 'table'. entry=" + entry);
+        }
 
         // セクションヘッダ行
         String header = groupId == null

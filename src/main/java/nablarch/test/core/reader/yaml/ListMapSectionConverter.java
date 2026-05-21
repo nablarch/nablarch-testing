@@ -17,6 +17,10 @@ class ListMapSectionConverter implements SectionConverter {
     @Override
     public void convert(Map<String, Object> entry, List<List<String>> out) {
         String id = YamlValueConverter.asString(entry.get("id"));
+        if (id == null) {
+            throw new IllegalArgumentException(
+                    "list_maps entry is missing required key 'id'. entry=" + entry);
+        }
 
         // セクションヘッダ行
         out.add(YamlValueConverter.singletonRow("LIST_MAP=" + id));

@@ -262,6 +262,61 @@ public class FileSectionConverterTest {
     }
 
     // -------------------------------------------------------------------
+    // E-1: 'path' キー欠落時に IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 'path' キーが欠落したエントリ
+     * When:  convert を呼び出す
+     * Then:  IllegalArgumentException がスローされ、メッセージにキー名が含まれる（E-1）
+     */
+    @Test
+    public void convert_missingPath_throwsIllegalArgumentException() {
+        // Given: path キーなし
+        FileSectionConverter sut = new FileSectionConverter("setup_files");
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("type", "fixed");
+        entry.put("directives", Collections.<String, Object>emptyMap());
+        entry.put("records", Collections.<Map<String, Object>>emptyList());
+
+        // When / Then
+        List<List<String>> out = new ArrayList<List<String>>();
+        try {
+            sut.convert(entry, out);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            assertThat("例外メッセージに 'path' が含まれること", e.getMessage(), containsString("path"));  // E-1
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // E-2: 'type' に "fixed"/"variable"/null 以外の値で IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: type が "fxied"（タイポ）の setup_files エントリ
+     * When:  convert を呼び出す
+     * Then:  IllegalArgumentException がスローされ、不正な type 値がメッセージに含まれる（E-2）
+     */
+    @Test
+    public void convert_unknownType_throwsIllegalArgumentException() {
+        // Given: type のタイポ
+        FileSectionConverter sut = new FileSectionConverter("setup_files");
+        Map<String, Object> entry = buildEntry(null, "data.dat", "fxied",
+                Collections.<String, Object>emptyMap(),
+                Collections.<Map<String, Object>>emptyList());
+
+        // When / Then
+        List<List<String>> out = new ArrayList<List<String>>();
+        try {
+            sut.convert(entry, out);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            assertThat("例外メッセージに不正な type 値が含まれること", e.getMessage(), containsString("fxied"));  // E-2
+        }
+    }
+
+    // -------------------------------------------------------------------
     // FileSection.of: 未知のキーで IllegalArgumentException
     // -------------------------------------------------------------------
 

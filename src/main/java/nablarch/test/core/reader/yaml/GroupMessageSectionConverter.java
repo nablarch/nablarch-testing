@@ -34,6 +34,10 @@ class GroupMessageSectionConverter implements SectionConverter {
     public void convert(Map<String, Object> entry, List<List<String>> out) {
         String groupId = YamlValueConverter.asString(entry.get("group_id"));
         String id      = YamlValueConverter.asString(entry.get("id"));
+        if (id == null) {
+            throw new IllegalArgumentException(
+                    dataTypeName + " entry is missing required key 'id'. entry=" + entry);
+        }
 
         String header = groupId != null
                 ? dataTypeName + "[" + groupId + "]=" + id

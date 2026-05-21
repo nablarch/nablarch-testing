@@ -65,7 +65,11 @@ class FileSectionConverter implements SectionConverter {
     public void convert(Map<String, Object> entry, List<List<String>> out) {
         String groupId = YamlValueConverter.asString(entry.get("group_id"));
         String path    = YamlValueConverter.asString(entry.get("path"));
-        String type    = YamlValueConverter.asString(entry.get("type")); // "fixed" or "variable"
+        if (path == null) {
+            throw new IllegalArgumentException(
+                    fileSection.fixedDataTypeName + " entry is missing required key 'path'. entry=" + entry);
+        }
+        String type    = YamlValueConverter.asString(entry.get("type")); // "fixed", "variable", or null
 
         String dataTypeName = resolveDataTypeName(type);
 
@@ -96,6 +100,10 @@ class FileSectionConverter implements SectionConverter {
         if ("variable".equals(type)) {
             return fileSection.variableDataTypeName;
         }
-        return fileSection.fixedDataTypeName;
+        if (type == null || "fixed".equals(type)) {
+            return fileSection.fixedDataTypeName;
+        }
+        throw new IllegalArgumentException(
+                "Unknown file type '" + type + "'. Must be 'fixed' or 'variable'.");
     }
 }

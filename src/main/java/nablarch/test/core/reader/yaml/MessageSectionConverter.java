@@ -31,6 +31,10 @@ class MessageSectionConverter implements SectionConverter {
     @Override
     public void convert(Map<String, Object> entry, List<List<String>> out) {
         String id = YamlValueConverter.asString(entry.get("id"));
+        if (id == null) {
+            throw new IllegalArgumentException(
+                    dataTypeName + " entry is missing required key 'id'. entry=" + entry);
+        }
         out.add(YamlValueConverter.singletonRow(dataTypeName + "=" + id));
 
         // ディレクティブ行

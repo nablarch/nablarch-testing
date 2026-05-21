@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
 import nablarch.core.util.StringUtil;
 import nablarch.test.core.reader.yaml.YamlRowBuilder;
 
@@ -39,8 +41,15 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * {@link #open(String, String)} を複数回呼び出した場合、以前のデータは破棄され
  * 新しいファイルのデータで上書きされる。読み込み位置は先頭にリセットされる。
  * </p>
+ *
+ * <p>
+ * このクラスはスレッドセーフではない。複数スレッドから同一インスタンスを共有しないこと。
+ * </p>
  */
 public class YamlTestDataReader implements TestDataReader {
+
+    /** ロガー */
+    private static final Logger LOGGER = LoggerManager.get(YamlTestDataReader.class);
 
     /** 行シーケンスの組み立てを委譲するビルダ */
     private final YamlRowBuilder rowBuilder = new YamlRowBuilder();
@@ -71,9 +80,12 @@ public class YamlTestDataReader implements TestDataReader {
             throw new RuntimeException("YAML test data file not found: " + file.getAbsolutePath());
         }
 
+        LOGGER.logDebug("Loading YAML test data: " + file.getAbsolutePath());
         Map<String, Object> yaml = loadYaml(file);
         rows = rowBuilder.build(yaml);
         index = 0;
+        LOGGER.logDebug("Loaded YAML test data: " + file.getAbsolutePath()
+                + " (" + rows.size() + " rows)");
     }
 
     /** {@inheritDoc} */

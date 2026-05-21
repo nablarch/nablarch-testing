@@ -154,6 +154,33 @@ public class MessageSectionConverterTest {
         assertThat("長さ行が出力される", out.get(3).get(1), is("5"));
     }
 
+    // -------------------------------------------------------------------
+    // E-1: 'id' キー欠落時に IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 'id' キーが欠落したエントリ
+     * When:  convert を呼び出す
+     * Then:  IllegalArgumentException がスローされ、メッセージにキー名が含まれる（E-1）
+     */
+    @Test
+    public void convert_missingId_throwsIllegalArgumentException() {
+        // Given: id キーなし
+        MessageSectionConverter sut = new MessageSectionConverter("MESSAGE");
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("directives", Collections.<String, Object>emptyMap());
+        entry.put("records", Collections.<Map<String, Object>>emptyList());
+
+        // When / Then
+        List<List<String>> out = new ArrayList<List<String>>();
+        try {
+            sut.convert(entry, out);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            assertThat("例外メッセージに 'id' が含まれること", e.getMessage(), containsString("id"));  // E-1
+        }
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------

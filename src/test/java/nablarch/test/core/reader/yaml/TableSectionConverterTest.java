@@ -180,6 +180,31 @@ public class TableSectionConverterTest {
         assertThat(out.get(0).get(0), is("EXPECTED_COMPLETE_TABLE=TABLE"));
     }
 
+    // -------------------------------------------------------------------
+    // E-1: 'table' キー欠落時に IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 'table' キーが欠落したエントリ
+     * When:  convert を呼び出す
+     * Then:  IllegalArgumentException がスローされ、メッセージにキー名が含まれる（E-1）
+     */
+    @Test
+    public void convert_missingTable_throwsIllegalArgumentException() {
+        // Given: table キーなし
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("rows", Collections.<Map<String, Object>>emptyList());
+
+        // When / Then
+        List<List<String>> out = new ArrayList<List<String>>();
+        try {
+            sut.convert(entry, out);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            assertThat("例外メッセージに 'table' が含まれること", e.getMessage(), containsString("table"));  // E-1
+        }
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------

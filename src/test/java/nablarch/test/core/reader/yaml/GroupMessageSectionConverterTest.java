@@ -140,6 +140,33 @@ public class GroupMessageSectionConverterTest {
         assertThat("record2 フィールド名行", out.get(5).get(1), is("STATUS"));
     }
 
+    // -------------------------------------------------------------------
+    // E-1: 'id' キー欠落時に IllegalArgumentException
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 'id' キーが欠落したエントリ
+     * When:  convert を呼び出す
+     * Then:  IllegalArgumentException がスローされ、メッセージにキー名が含まれる（E-1）
+     */
+    @Test
+    public void convert_missingId_throwsIllegalArgumentException() {
+        // Given: id キーなし
+        GroupMessageSectionConverter sut =
+                new GroupMessageSectionConverter("RESPONSE_HEADER_MESSAGES");
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("records", Collections.<Map<String, Object>>emptyList());
+
+        // When / Then
+        List<List<String>> out = new ArrayList<List<String>>();
+        try {
+            sut.convert(entry, out);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            assertThat("例外メッセージに 'id' が含まれること", e.getMessage(), containsString("id"));  // E-1
+        }
+    }
+
     // -----------------------------------------------------------------------
     // ヘルパー
     // -----------------------------------------------------------------------
