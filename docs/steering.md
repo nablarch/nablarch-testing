@@ -322,6 +322,53 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 ---
 
+### R-1-refactor: `YamlTestDataParser` のクラス分割リファクタリング（TDDベース）
+
+**目的**: 828行のファットクラスを責務ごとに分割し、保守性・可読性・テスト網羅性の判断容易性を向上させる。
+
+**前提**: R-1 完了（ユーザーレビュー OK 取得後に着手）
+
+**設計方針**:
+
+```
+nablarch.test.core.reader
+  └─ YamlTestDataParser（公開API・委譲のみ）
+
+nablarch.test.core.reader.yaml（パッケージプライベート）
+  ├─ YamlLoader          … YAMLロード・キャッシュ管理
+  ├─ YamlTableDataBuilder … TableData 構築（setup_tables / expected_tables）
+  ├─ YamlFileBuilder     … DataFile / Fragment 構築（setup_files / expected_files）
+  ├─ YamlMessageBuilder  … MessagePool 構築（messages / *_messages）
+  └─ YamlSection         … セクションキー定数・共通ヘルパー（getList / castMap 等）
+```
+
+- `YamlTestDataParser` は `reader` パッケージに残し `BasicTestDataParser` 継承を維持する（キャスト互換性のため）
+- 各ビルダーはパッケージプライベート（外部APIは変えない）
+- `util/interpreter/`・`util/generator/` と同様の慣例でサブパッケージに閉じ込める
+
+**作業内容**:
+- [ ] TDD: 各ビルダークラスのテストを先に書いてから実装する
+  - `YamlLoaderTest` → `YamlLoader` 実装
+  - `YamlTableDataBuilderTest` → `YamlTableDataBuilder` 実装
+  - `YamlFileBuilderTest` → `YamlFileBuilder` 実装
+  - `YamlMessageBuilderTest` → `YamlMessageBuilder` 実装
+- [ ] `YamlTestDataParser` を各ビルダーへの委譲のみに書き換える
+- [ ] `YamlTestDataParserTest`（既存37テスト）が引き続き全グリーンであることを確認する
+- [ ] セルフチェック（チェック結果: `docs/checks/R-1-refactor.md`）
+- [ ] QAエンジニアレビュー（サブエージェントで実施）
+- [ ] Javaエキスパートレビュー（サブエージェントで実施）
+- [ ] ソフトウエアエンジニアレビュー（サブエージェントで実施）
+- [ ] ユーザーレビュー依頼・OK取得
+
+**完了条件**:
+- `YamlTestDataParser` の行数が 200行以内であること（委譲コードのみ）
+- 各ビルダークラスが単一責務であること（1クラスの行数が 200行以内を目安）
+- `YamlTestDataParserTest` の既存37テストが全グリーンであること
+- 各ビルダーの単体テストが存在し、仕様IDとの対応が明確であること
+- 既存の公開API（`getSetupTableData` 等）のシグネチャが変わっていないこと
+
+---
+
 ### C-1: JaCoCo カバレッジレポート設定
 
 **目的**: `mvn test` 実行時に行・分岐カバレッジの HTML レポートが生成されるようにし、担当者がテストの網羅性をローカルで確認できるようにする。
@@ -469,7 +516,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）全完了
 - **次の着手**: **R-1 ユーザーレビュー依頼**（全レビュー指摘 B-1〜B-5・QA・Javaエキスパート・ソフトウエアエンジニア全件対応済み、37テスト全グリーン）
-- **未着手タスク**: R-1（ユーザーレビュー待ち）→ C-1（並行可）、R-2/R-3（R-1 完了後）→ V-1 → D-1
+- **未着手タスク**: R-1（ユーザーレビュー待ち）→ R-1-refactor（R-1 完了後・TDDベースクラス分割）→ C-1（並行可）、R-2/R-3（R-1-refactor 完了後）→ V-1 → D-1
 
 ### 環境情報
 
@@ -587,10 +634,10 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. QA・Javaエキスパートの第2回レビュー結果をサブエージェントで確認・収集する（バックグラウンドで走った結果が未取得の場合、再度サブエージェントを起動して実施）
-3. 全レビュー結果を統合し、**B-1〜B-5** および QA・Javaエキスパート指摘を全件対応する
-4. テスト全グリーン確認（`mvn clean package -Dtest="YamlTestDataParserTest"`）
-5. `docs/checks/R-1.md` にレビュー結果を追記し、ユーザーレビューを依頼する
+2. **R-1 ユーザーレビュー**を依頼する（`docs/checks/R-1.md` 参照。全レビュー指摘対応済み・37テスト全グリーン）
+3. R-1 ユーザーレビュー OK 取得後、**R-1-refactor** に着手する（TDDベースクラス分割）
+   - `reader.yaml` サブパッケージに各ビルダーのテストを先に書き、グリーンになってから実装する
+   - `YamlTestDataParser` を委譲のみにした後、既存37テストが全グリーンであることを確認する
 
 ---
 
