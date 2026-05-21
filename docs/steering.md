@@ -515,8 +515,7 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
 - **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）全完了
-- **R-1 ユーザーレビュー結果**: **NG**（理由: ファットクラス設計。828行のクラスに複数責務が混在。クラス分割が必要）
-- **次の着手**: **R-1-refactor**（TDDベースで `reader.yaml` サブパッケージにクラス分割してから再実装）
+- **R-1-refactor 進捗**: **QAエンジニアレビュー対応中**
 - **タスク順序**: R-1-refactor → C-1（並行可）→ R-2/R-3 → V-1 → D-1
 
 ### 環境情報
@@ -563,6 +562,27 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - R-1-refactor でクラス分割後、既存37テストが引き続き通ることをリグレッション確認として使用する
 - `docs/checks/R-1.md` に全レビュー指摘対応履歴を記録済み
 
+### R-1-refactor 進捗状況（QAエンジニアレビュー対応中）
+
+コミット `fb4f2f0`（担当者セルフチェック OK 後）で以下の状態:
+- `YamlTestDataParser`（188行）+ `reader.yaml` サブパッケージ5クラス（合計778行）
+- テスト: `YamlTestDataParserTest`（37件）+ 各ビルダーテスト（30件）= 67件全グリーン
+- `docs/checks/R-1-refactor.md`（担当者 OK・レビュー待ち状態）
+
+**QAエンジニアレビュー指摘（未対応）**:
+
+| # | 深刻度 | 概要 | ファイル |
+|---|---|---|---|
+| QA-1 | 中 | `buildFragmentsCore` が `public` 公開（パッケージプライベートで十分） | `YamlFileBuilder.java:139` |
+| QA-2 | 中 | ディレクティブ設定が未検証（`testBuildFileList_directivesAreSet` テストがない） | `YamlFileBuilderTest.java` |
+| QA-3 | 中 | `buildSendSyncMessageList` の `requestId` 設定が未検証 | `YamlMessageBuilderTest.java` |
+| QA-4 | 軽微 | `reader.fwHeaderfields` カスタム設定が未テスト | `YamlMessageBuilder.java` |
+| QA-5 | 軽微 | LRU キャッシュ上限到達時の挙動が未テスト | `YamlLoaderTest.java` |
+
+**QA指摘の対応方針（ユーザーへの確認必要）**:
+- QA-4 / QA-5 の対応有無についてユーザーに確認してから実施すること
+- QA-1〜QA-3 は対応する
+
 ### ADR（設計判断記録）
 
 - `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
@@ -571,15 +591,14 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **R-1-refactor** に着手する（ステアリング R-1-refactor タスク参照）
-3. TDDの進め方:
-   a. `reader.yaml` サブパッケージに各ビルダーの**テストクラスを先に作成**（`YamlLoaderTest` → `YamlTableDataBuilderTest` → `YamlFileBuilderTest` → `YamlMessageBuilderTest` の順）
-   b. テストがレッドになることを確認してから実装クラスを作成してグリーンにする
-   c. 全ビルダーが揃ったら `YamlTestDataParser` を委譲のみに書き換える
-   d. 既存 `YamlTestDataParserTest` の37テストが全グリーンであることをリグレッション確認する
-4. テスト全グリーン確認: `mvn clean package -Dtest="YamlTestDataParserTest,YamlLoaderTest,YamlTableDataBuilderTest,YamlFileBuilderTest,YamlMessageBuilderTest"`
-5. セルフチェック → QAエンジニアレビュー → Javaエキスパートレビュー → ソフトウエアエンジニアレビュー（各サブエージェントで実施）
-6. 全レビュー OK 後にユーザーレビューを依頼する
+2. **R-1-refactor QAレビュー対応** を行う
+3. QA-1〜QA-3 の修正:
+   a. `YamlFileBuilder.buildFragmentsCore` を `public` → package-private（修飾子なし）に変更
+   b. `YamlFileBuilderTest` にディレクティブ検証テストを追加（`createLayout().getDirective().get("text-encoding")` で確認）
+   c. `YamlMessageBuilderTest` に `requestId` 設定検証テストを追加（`result.get(0).getRequestId()` で確認）
+4. QA-4 / QA-5 の対応有無を**ユーザーに確認してから判断すること**
+5. 全修正後に `mvn clean package -Dtest="YamlTestDataParserTest,YamlLoaderTest,YamlTableDataBuilderTest,YamlFileBuilderTest,YamlMessageBuilderTest"` で全グリーン確認
+6. `docs/checks/R-1-refactor.md` の QA 欄を更新し、Javaエキスパートレビュー → SEレビュー → ユーザーレビューへ進む
 
 ---
 
