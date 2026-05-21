@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -176,6 +177,34 @@ public class RecordRowBuilderTest {
 
         // Then: フィールド名行先頭は ""
         assertThat(out.get(0).get(0), is(""));
+    }
+
+    // -------------------------------------------------------------------
+    // QA-10: フィールド0件のエッジケース
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: fields が空リスト（フィールド0件）
+     * When:  addRecordRows を呼び出す
+     * Then:  フィールド名行（先頭セルのみ）・型行（先頭セルのみ）・長さ行（先頭セルのみ）が3行出力される
+     */
+    @Test
+    public void addRecordRows_noFields_outputsHeaderRowsOnly() {
+        // Given
+        Map<String, Object> record = buildRecord("DATA",
+                Collections.<Map<String, Object>>emptyList(),
+                Collections.<List<Object>>emptyList()
+        );
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        RecordRowBuilder.addRecordRows(record, true, out);
+
+        // Then: フィールド名行（["DATA"]）・型行（[""]）・長さ行（[""]）の3行
+        assertThat("行数（固定長・フィールド0件）", out.size(), is(3));
+        assertThat("フィールド名行", out.get(0), is(Arrays.asList("DATA")));
+        assertThat("型行", out.get(1), is(Arrays.asList("")));
+        assertThat("長さ行", out.get(2), is(Arrays.asList("")));
     }
 
     // -----------------------------------------------------------------------

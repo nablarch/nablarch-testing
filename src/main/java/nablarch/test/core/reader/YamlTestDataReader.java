@@ -34,6 +34,11 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *   <li>各行の末尾が省略された列は {@code ""} で補完</li>
  * </ul>
  * </p>
+ *
+ * <p>
+ * {@link #open(String, String)} を複数回呼び出した場合、以前のデータは破棄され
+ * 新しいファイルのデータで上書きされる。読み込み位置は先頭にリセットされる。
+ * </p>
  */
 public class YamlTestDataReader implements TestDataReader {
 
@@ -46,9 +51,17 @@ public class YamlTestDataReader implements TestDataReader {
     /** 現在の読み込み位置 */
     private int index = 0;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalArgumentException {@code path} または {@code dataName} が null または空の場合
+     * @throws RuntimeException         YAMLファイルが存在しない場合、またはファイル読み込みに失敗した場合
+     */
     @Override
     public void open(String path, String dataName) {
+        if (StringUtil.isNullOrEmpty(path)) {
+            throw new IllegalArgumentException("path must not be null or empty.");
+        }
         if (StringUtil.isNullOrEmpty(dataName)) {
             throw new IllegalArgumentException("dataName must not be null or empty.");
         }
@@ -82,18 +95,29 @@ public class YamlTestDataReader implements TestDataReader {
     /** {@inheritDoc} */
     @Override
     public boolean isResourceExisting(String basePath, String resourceName) {
-        return new File(basePath, resourceName + ".yaml").exists();
+        return existsYamlFile(basePath, resourceName);
     }
 
     /** {@inheritDoc} */
     @Override
     public boolean isDataExisting(String basePath, String resourceName) {
-        return new File(basePath, resourceName + ".yaml").exists();
+        return existsYamlFile(basePath, resourceName);
     }
 
     // -----------------------------------------------------------------------
-    // YAML ロード
+    // プライベートメソッド
     // -----------------------------------------------------------------------
+
+    /**
+     * 指定パス配下に {@code {resourceName}.yaml} が存在するかを返す。
+     *
+     * @param basePath     ベースパス
+     * @param resourceName リソース名（拡張子なし）
+     * @return ファイルが存在する場合 {@code true}
+     */
+    private boolean existsYamlFile(String basePath, String resourceName) {
+        return new File(basePath, resourceName + ".yaml").exists();
+    }
 
     /**
      * YAML ファイルをロードしてトップレベルマップを返す。

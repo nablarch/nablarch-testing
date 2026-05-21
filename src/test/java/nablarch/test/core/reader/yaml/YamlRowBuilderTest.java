@@ -67,13 +67,155 @@ public class YamlRowBuilderTest {
     }
 
     // -------------------------------------------------------------------
-    // 複数セクションが YAML キー順で変換される
+    // QA-16: setup_files セクションが変換される
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: setup_files に1エントリ（固定長）
+     * When:  build を呼び出す
+     * Then:  "SETUP_FIXED=path" ヘッダが出力される（QA-16）
+     */
+    @Test
+    public void build_setupFiles_outputsHeader() {
+        // Given
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("path", "input/data.dat");
+        entry.put("type", "fixed");
+        entry.put("directives", Collections.emptyMap());
+        entry.put("records", Collections.emptyList());
+
+        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
+        yaml.put("setup_files", Collections.singletonList(entry));
+
+        // When
+        List<List<String>> result = sut.build(yaml);
+
+        // Then: ヘッダのみ（レコードなし）
+        assertThat("行数", result.size(), is(1));
+        assertThat("ヘッダ", result.get(0).get(0), is("SETUP_FIXED=input/data.dat"));  // QA-16
+    }
+
+    // -------------------------------------------------------------------
+    // QA-16: expected_files セクションが変換される
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: expected_files に1エントリ（可変長）
+     * When:  build を呼び出す
+     * Then:  "EXPECTED_VARIABLE=path" ヘッダが出力される（QA-16）
+     */
+    @Test
+    public void build_expectedFiles_outputsHeader() {
+        // Given
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("path", "output/result.dat");
+        entry.put("type", "variable");
+        entry.put("directives", Collections.emptyMap());
+        entry.put("records", Collections.emptyList());
+
+        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
+        yaml.put("expected_files", Collections.singletonList(entry));
+
+        // When
+        List<List<String>> result = sut.build(yaml);
+
+        // Then
+        assertThat("行数", result.size(), is(1));
+        assertThat("ヘッダ", result.get(0).get(0), is("EXPECTED_VARIABLE=output/result.dat"));  // QA-16
+    }
+
+    // -------------------------------------------------------------------
+    // QA-16: messages セクションが変換される
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: messages に1エントリ（id="req001"）
+     * When:  build を呼び出す
+     * Then:  "MESSAGE=req001" ヘッダが出力される（QA-16）
+     */
+    @Test
+    public void build_messages_outputsHeader() {
+        // Given
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("id", "req001");
+        entry.put("directives", Collections.emptyMap());
+        entry.put("records", Collections.emptyList());
+
+        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
+        yaml.put("messages", Collections.singletonList(entry));
+
+        // When
+        List<List<String>> result = sut.build(yaml);
+
+        // Then
+        assertThat("行数", result.size(), is(1));
+        assertThat("ヘッダ", result.get(0).get(0), is("MESSAGE=req001"));  // QA-16
+    }
+
+    // -------------------------------------------------------------------
+    // QA-16: expected_request_header_messages セクションが変換される
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: expected_request_header_messages に1エントリ
+     * When:  build を呼び出す
+     * Then:  "EXPECTED_REQUEST_HEADER_MESSAGES=id" ヘッダが出力される（QA-16）
+     */
+    @Test
+    public void build_expectedRequestHeaderMessages_outputsHeader() {
+        // Given
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("id", "hdr001");
+        entry.put("directives", Collections.emptyMap());
+        entry.put("records", Collections.emptyList());
+
+        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
+        yaml.put("expected_request_header_messages", Collections.singletonList(entry));
+
+        // When
+        List<List<String>> result = sut.build(yaml);
+
+        // Then
+        assertThat("行数", result.size(), is(1));
+        assertThat("ヘッダ", result.get(0).get(0), is("EXPECTED_REQUEST_HEADER_MESSAGES=hdr001"));  // QA-16
+    }
+
+    // -------------------------------------------------------------------
+    // QA-16: expected_request_body_messages セクションが変換される
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: expected_request_body_messages に1エントリ
+     * When:  build を呼び出す
+     * Then:  "EXPECTED_REQUEST_BODY_MESSAGES=id" ヘッダが出力される（QA-16）
+     */
+    @Test
+    public void build_expectedRequestBodyMessages_outputsHeader() {
+        // Given
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("id", "body001");
+        entry.put("directives", Collections.emptyMap());
+        entry.put("records", Collections.emptyList());
+
+        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
+        yaml.put("expected_request_body_messages", Collections.singletonList(entry));
+
+        // When
+        List<List<String>> result = sut.build(yaml);
+
+        // Then
+        assertThat("行数", result.size(), is(1));
+        assertThat("ヘッダ", result.get(0).get(0), is("EXPECTED_REQUEST_BODY_MESSAGES=body001"));  // QA-16
+    }
+
+    // -------------------------------------------------------------------
+    // QA-6: 複数セクションが YAML キー順で変換される（LIST_MAP 順序アサート強化）
     // -------------------------------------------------------------------
 
     /**
      * Given: setup_tables と list_maps の両方が存在
      * When:  build を呼び出す
-     * Then:  setup_tables が list_maps より先に出力される（YAML トップレベルキー順）
+     * Then:  setup_tables が list_maps より先に出力され、LIST_MAP セクションヘッダが正しいこと（QA-6）
      */
     @Test
     public void build_multipleSection_outputInYamlKeyOrder() {
@@ -91,16 +233,18 @@ public class YamlRowBuilderTest {
         // When
         List<List<String>> result = sut.build(yaml);
 
-        // Then: setup_tables が先
+        // Then: setup_tables が先頭
         assertThat("先頭行は SETUP_TABLE", result.get(0).get(0), is("SETUP_TABLE=USER"));
+
+        // LIST_MAP ヘッダが正確な文字列で出力されていること（QA-6）
         boolean foundListMap = false;
         for (List<String> row : result) {
-            if (!row.isEmpty() && row.get(0).startsWith("LIST_MAP=")) {
+            if (!row.isEmpty() && "LIST_MAP=params".equals(row.get(0))) {
                 foundListMap = true;
                 break;
             }
         }
-        assertThat("LIST_MAP セクションが存在する", foundListMap, is(true));
+        assertThat("LIST_MAP=params セクションが存在する", foundListMap, is(true));  // QA-6
     }
 
     // -------------------------------------------------------------------

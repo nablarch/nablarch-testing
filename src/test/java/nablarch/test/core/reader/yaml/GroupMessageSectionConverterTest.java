@@ -70,13 +70,13 @@ public class GroupMessageSectionConverterTest {
     }
 
     // -------------------------------------------------------------------
-    // records がある場合: 固定長として行シーケンスが生成される
+    // records がある場合: 固定長として行シーケンスが生成される（QA-15強化）
     // -------------------------------------------------------------------
 
     /**
-     * Given: records にレコード1件
+     * Given: records にレコード1件（STATUS/X/3、値 "200"）
      * When:  convert を呼び出す
-     * Then:  フィールド名行・型行・長さ行・値行が出力される
+     * Then:  フィールド名行・型行・長さ行・値行が出力される（型行・長さ行のアサートを含む）（QA-15）
      */
     @Test
     public void convert_withRecord_fixedLengthRows() {
@@ -96,8 +96,48 @@ public class GroupMessageSectionConverterTest {
 
         // Then: ヘッダ(0) + フィールド名行(1) + 型行(2) + 長さ行(3) + 値行(4)
         assertThat("行数", out.size(), is(5));
-        assertThat("フィールド名行", out.get(1).get(1), is("STATUS"));
-        assertThat("値行", out.get(4).get(1), is("200"));
+        assertThat("フィールド名行の先頭セル", out.get(1).get(0), is("DATA"));
+        assertThat("フィールド名行のフィールド名", out.get(1).get(1), is("STATUS"));
+        assertThat("型行の先頭セルは空", out.get(2).get(0), is(""));
+        assertThat("型行の型", out.get(2).get(1), is("X"));          // QA-15: 型行アサート
+        assertThat("長さ行の先頭セルは空", out.get(3).get(0), is(""));
+        assertThat("長さ行の長さ", out.get(3).get(1), is("3"));       // QA-15: 長さ行アサート
+        assertThat("値行の値", out.get(4).get(1), is("200"));
+    }
+
+    // -------------------------------------------------------------------
+    // records が複数件の場合
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: records に2件のレコード
+     * When:  convert を呼び出す
+     * Then:  2件分の行シーケンス（各4行）が出力される（MS-06）
+     */
+    @Test
+    public void convert_multipleRecords_allRecordsOutput() {
+        // Given
+        GroupMessageSectionConverter sut =
+                new GroupMessageSectionConverter("RESPONSE_BODY_MESSAGES");
+        Map<String, Object> record1 = buildRecord("REQ",
+                Arrays.asList(buildField("ID", "X", "5")),
+                Arrays.asList(Arrays.asList((Object) "R0001"))
+        );
+        Map<String, Object> record2 = buildRecord("RSP",
+                Arrays.asList(buildField("STATUS", "X", "3")),
+                Arrays.asList(Arrays.asList((Object) "200"))
+        );
+        Map<String, Object> entry = buildEntry("g1", "resp",
+                Arrays.asList(record1, record2));
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        sut.convert(entry, out);
+
+        // Then: ヘッダ(0) + record1の4行(1-4) + record2の4行(5-8) = 9行
+        assertThat("行数", out.size(), is(9));
+        assertThat("record1 フィールド名行", out.get(1).get(1), is("ID"));
+        assertThat("record2 フィールド名行", out.get(5).get(1), is("STATUS"));
     }
 
     // -----------------------------------------------------------------------

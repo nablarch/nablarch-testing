@@ -129,6 +129,34 @@ public class TableSectionConverterTest {
     }
 
     // -------------------------------------------------------------------
+    // QA-7: null 値を含む行の変換（RS-03）
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: YAML ネイティブ null 値（COL_B が null）を含む行
+     * When:  convert を呼び出す
+     * Then:  null 値は文字列 "null" に変換される（RS-03）
+     */
+    @Test
+    public void convert_rowWithNullValue_nullConvertedToString() {
+        // Given
+        Map<String, Object> row = new LinkedHashMap<String, Object>();
+        row.put("COL_A", "val_a");
+        row.put("COL_B", null);  // YAML ネイティブ null
+        Map<String, Object> entry = buildEntry(null, "T", Collections.singletonList(row));
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        sut.convert(entry, out);
+
+        // Then: null は "null" に変換される（RS-03）
+        List<String> colHeader = out.get(1);
+        List<String> dataRow   = out.get(2);
+        int colBIdx = colHeader.indexOf("COL_B");
+        assertThat("null → \"null\"", dataRow.get(colBIdx), is("null"));  // RS-03
+    }
+
+    // -------------------------------------------------------------------
     // EXPECTED_COMPLETE_TABLE ヘッダ
     // -------------------------------------------------------------------
 

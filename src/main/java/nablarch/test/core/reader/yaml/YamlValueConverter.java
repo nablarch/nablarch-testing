@@ -1,9 +1,12 @@
 package nablarch.test.core.reader.yaml;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * YAML から取得した値を行シーケンス用の文字列に変換するユーティリティ。
@@ -83,5 +86,31 @@ class YamlValueConverter {
             return null;
         }
         return String.valueOf(obj);
+    }
+
+    /**
+     * 要素1件からなる行を生成する。
+     *
+     * @param value 行の唯一の要素
+     * @return 要素1件の行リスト
+     */
+    static List<String> singletonRow(String value) {
+        List<String> row = new ArrayList<String>(1);
+        row.add(value);
+        return row;
+    }
+
+    /**
+     * 全行の全キーを挿入順で収集する（union）。
+     *
+     * @param rows 行のリスト
+     * @return 全行の全キーの union
+     */
+    static Set<String> collectAllKeys(List<Map<String, Object>> rows) {
+        Set<String> keys = new LinkedHashSet<String>();
+        for (Map<String, Object> row : rows) {
+            keys.addAll(row.keySet());
+        }
+        return keys;
     }
 }

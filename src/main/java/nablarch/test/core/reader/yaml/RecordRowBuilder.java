@@ -40,10 +40,11 @@ class RecordRowBuilder {
 
         for (Object f : fields) {
             Map<String, Object> field = YamlValueConverter.asMap(f);
-            names.add(YamlValueConverter.asString(field.get("name")));
-            types.add(YamlValueConverter.asString(field.get("type")));
+            // name / type が null の場合は "" として扱う（フィールド名行・型行への混入防止）
+            names.add(nullToEmpty(YamlValueConverter.asString(field.get("name"))));
+            types.add(nullToEmpty(YamlValueConverter.asString(field.get("type"))));
             Object len = field.get("length");
-            lengths.add(len == null ? null : YamlValueConverter.toCell(len, false));
+            lengths.add(len == null ? "" : YamlValueConverter.toCell(len, false));
         }
 
         // フィールド名行: [recordType, name1, name2, ...]
@@ -62,9 +63,7 @@ class RecordRowBuilder {
         if (isFixed) {
             List<String> lengthsRow = new ArrayList<String>();
             lengthsRow.add("");
-            for (String len : lengths) {
-                lengthsRow.add(len != null ? len : "");
-            }
+            lengthsRow.addAll(lengths);
             out.add(lengthsRow);
         }
 
@@ -84,5 +83,9 @@ class RecordRowBuilder {
             }
             out.add(valueRow);
         }
+    }
+
+    private static String nullToEmpty(String s) {
+        return s != null ? s : "";
     }
 }

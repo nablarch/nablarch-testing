@@ -2,7 +2,10 @@ package nablarch.test.core.reader.yaml;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -99,17 +102,26 @@ public class YamlValueConverterTest {
     }
 
     // -------------------------------------------------------------------
-    // toCell: RS-06 isMissing=true → ""
+    // toCell: RS-06 isMissing=true → ""（JAVA-10: 各ケース分割）
     // -------------------------------------------------------------------
 
     /**
-     * Given: isMissing=true（キーが省略されている）
-     * When:  toCell を呼び出す（value が何であっても）
+     * Given: isMissing=true、value=null
+     * When:  toCell を呼び出す
      * Then:  空文字 "" を返す（RS-06）
      */
     @Test
-    public void toCell_isMissing_returnsEmpty() {
-        assertThat(YamlValueConverter.toCell(null, true),      is(""));  // RS-06
+    public void toCell_isMissingWithNull_returnsEmpty() {
+        assertThat(YamlValueConverter.toCell(null, true), is(""));  // RS-06
+    }
+
+    /**
+     * Given: isMissing=true、value="something"
+     * When:  toCell を呼び出す
+     * Then:  空文字 "" を返す（RS-06）
+     */
+    @Test
+    public void toCell_isMissingWithValue_returnsEmpty() {
         assertThat(YamlValueConverter.toCell("something", true), is(""));  // RS-06
     }
 
@@ -125,7 +137,7 @@ public class YamlValueConverterTest {
     @Test
     public void asMap_mapObject_returnsSameMap() {
         // Given
-        Map<String, Object> input = new java.util.LinkedHashMap<String, Object>();
+        Map<String, Object> input = new LinkedHashMap<String, Object>();
         input.put("key", "value");
         // When / Then
         assertThat(YamlValueConverter.asMap(input), is(sameInstance(input)));
@@ -151,6 +163,46 @@ public class YamlValueConverterTest {
     @Test
     public void asMap_nonMapObject_returnsEmptyMap() {
         assertThat(YamlValueConverter.asMap("not a map").isEmpty(), is(true));
+    }
+
+    // -------------------------------------------------------------------
+    // asMapList（QA-11）
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: Map のリスト
+     * When:  asMapList を呼び出す
+     * Then:  そのまま List として返す
+     */
+    @Test
+    public void asMapList_listObject_returnsSameList() {
+        // Given
+        Map<String, Object> m1 = new LinkedHashMap<String, Object>();
+        m1.put("k", "v");
+        List<Map<String, Object>> input = Collections.singletonList(m1);
+
+        // When / Then
+        assertThat(YamlValueConverter.asMapList(input), is(sameInstance(input)));
+    }
+
+    /**
+     * Given: null オブジェクト
+     * When:  asMapList を呼び出す
+     * Then:  空リストを返す
+     */
+    @Test
+    public void asMapList_null_returnsEmptyList() {
+        assertThat(YamlValueConverter.asMapList(null).isEmpty(), is(true));
+    }
+
+    /**
+     * Given: List でないオブジェクト
+     * When:  asMapList を呼び出す
+     * Then:  空リストを返す
+     */
+    @Test
+    public void asMapList_nonListObject_returnsEmptyList() {
+        assertThat(YamlValueConverter.asMapList("not a list").isEmpty(), is(true));
     }
 
     // -------------------------------------------------------------------
@@ -200,5 +252,46 @@ public class YamlValueConverterTest {
     @Test
     public void asString_integer_returnsString() {
         assertThat(YamlValueConverter.asString(42), is("42"));
+    }
+
+    // -------------------------------------------------------------------
+    // singletonRow
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 文字列 "SETUP_TABLE=USER"
+     * When:  singletonRow を呼び出す
+     * Then:  要素1件のリストを返す
+     */
+    @Test
+    public void singletonRow_returnsListWithOneElement() {
+        List<String> row = YamlValueConverter.singletonRow("SETUP_TABLE=USER");
+        assertThat(row.size(), is(1));
+        assertThat(row.get(0), is("SETUP_TABLE=USER"));
+    }
+
+    // -------------------------------------------------------------------
+    // collectAllKeys
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: 2行（行1: A,B,C / 行2: A,C,D）
+     * When:  collectAllKeys を呼び出す
+     * Then:  union の A,B,C,D が挿入順で返る
+     */
+    @Test
+    public void collectAllKeys_multipleRows_returnsUnionInInsertionOrder() {
+        // Given
+        Map<String, Object> row1 = new LinkedHashMap<String, Object>();
+        row1.put("A", "1"); row1.put("B", "2"); row1.put("C", "3");
+        Map<String, Object> row2 = new LinkedHashMap<String, Object>();
+        row2.put("A", "4"); row2.put("C", "5"); row2.put("D", "6");
+        List<Map<String, Object>> rows = Arrays.asList(row1, row2);
+
+        // When
+        java.util.Set<String> keys = YamlValueConverter.collectAllKeys(rows);
+
+        // Then: 順序は A,B,C,D
+        assertThat(new ArrayList<String>(keys), is(Arrays.asList("A", "B", "C", "D")));
     }
 }

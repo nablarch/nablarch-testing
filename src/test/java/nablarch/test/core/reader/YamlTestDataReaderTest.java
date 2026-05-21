@@ -16,8 +16,9 @@ import static org.junit.Assert.*;
  */
 public class YamlTestDataReaderTest {
 
+    /** テストデータの配置先（src/test/resources 以下） */
     private static final String DIR =
-            new File("src/test/java/nablarch/test/core/reader/").getAbsolutePath();
+            new File("src/test/resources/nablarch/test/core/reader/").getAbsolutePath();
 
     private final YamlTestDataReader sut = new YamlTestDataReader();
 
@@ -33,14 +34,16 @@ public class YamlTestDataReaderTest {
     /**
      * Given: 有効なパスとデータ名
      * When:  open を呼び出す
-     * Then:  readLine() が null でない行を返す（ファイルがロードされていること）（RS-01）
+     * Then:  readLine() が "SETUP_TABLE=USER" を先頭セルに持つ行を返す（ファイルがロードされていること）（RS-01）
      */
     @Test
     public void open_loadsYamlFile() {
         // Given / When
         sut.open(DIR, "YamlTestDataReaderTestData");
-        // Then
-        assertThat(sut.readLine(), is(notNullValue()));  // RS-01
+        // Then: 先頭行がセクションヘッダ "SETUP_TABLE=USER" であることを確認（RS-01）
+        List<String> firstRow = sut.readLine();
+        assertThat("先頭行が存在すること", firstRow, is(notNullValue()));
+        assertThat("先頭行がセクションヘッダであること", firstRow.get(0), is("SETUP_TABLE=USER"));  // RS-01
     }
 
     /**
@@ -66,6 +69,17 @@ public class YamlTestDataReaderTest {
     }
 
     /**
+     * Given: path が null
+     * When:  open を呼び出す
+     * Then:  IllegalArgumentException がスローされる（RS-01）
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void open_nullPath_throwsException() {
+        // Given / When / Then
+        sut.open(null, "YamlTestDataReaderTestData");  // RS-01
+    }
+
+    /**
      * Given: 存在しないファイル名
      * When:  open を呼び出す
      * Then:  RuntimeException がスローされる（RS-01）
@@ -74,6 +88,26 @@ public class YamlTestDataReaderTest {
     public void open_fileNotFound_throwsException() {
         // Given / When / Then
         sut.open(DIR, "NoSuchFile");  // RS-01
+    }
+
+    /**
+     * Given: 1回 open した後、別のファイルを open する
+     * When:  2回目の open を呼び出す
+     * Then:  最初のファイルのデータは破棄され、2回目のファイルのデータから読み込まれる（RS-01）
+     */
+    @Test
+    public void open_reopenWithDifferentFile_resetsToPreviousData() {
+        // Given: 1回目の open
+        sut.open(DIR, "YamlNativeTypesTestData");
+        List<String> firstFileHeader = sut.readLine();
+        assertThat(firstFileHeader.get(0), is("SETUP_TABLE=NATIVE_TYPES"));
+
+        // When: 2回目の open（別ファイル）
+        sut.open(DIR, "YamlTestDataReaderTestData");
+
+        // Then: 2回目のファイルの先頭から読み込まれること（RS-01）
+        List<String> secondFileHeader = sut.readLine();
+        assertThat("再open後はリセットされること", secondFileHeader.get(0), is("SETUP_TABLE=USER"));  // RS-01
     }
 
     // -------------------------------------------------------------------
@@ -94,6 +128,21 @@ public class YamlTestDataReaderTest {
         }
         // When / Then
         assertThat("EOFの次も null", sut.readLine(), is(nullValue()));  // RS-02
+    }
+
+    /**
+     * Given: close() 後
+     * When:  readLine() を呼び出す
+     * Then:  null を返す（RS-02）
+     */
+    @Test
+    public void readLine_afterClose_returnsNull() {
+        // Given
+        sut.open(DIR, "YamlTestDataReaderTestData");
+        sut.close();
+
+        // When / Then: close 後は null
+        assertThat("close後はnullを返すこと", sut.readLine(), is(nullValue()));  // RS-02
     }
 
     // -------------------------------------------------------------------
@@ -132,13 +181,13 @@ public class YamlTestDataReaderTest {
         int floatSciIdx = colHeader.indexOf("COL_FLOAT_SCI");
         int strIdx      = colHeader.indexOf("COL_STRING");
 
-        assertThat("null → \"null\"",          dataRow.get(nullIdx),     is("null"));    // RS-03
-        assertThat("true → \"true\"",          dataRow.get(trueIdx),     is("true"));    // RS-04
-        assertThat("false → \"false\"",        dataRow.get(falseIdx),    is("false"));   // RS-04
-        assertThat("int → \"42\"",             dataRow.get(intIdx),      is("42"));      // RS-05
-        assertThat("float → \"3.14\"",         dataRow.get(floatIdx),    is("3.14"));    // RS-05
+        assertThat("null → \"null\"",             dataRow.get(nullIdx),     is("null"));    // RS-03
+        assertThat("true → \"true\"",             dataRow.get(trueIdx),     is("true"));    // RS-04
+        assertThat("false → \"false\"",           dataRow.get(falseIdx),    is("false"));   // RS-04
+        assertThat("int → \"42\"",                dataRow.get(intIdx),      is("42"));      // RS-05
+        assertThat("float → \"3.14\"",            dataRow.get(floatIdx),    is("3.14"));    // RS-05
         assertThat("科学表記 float → \"1.0E10\"", dataRow.get(floatSciIdx), is("1.0E10")); // RS-05 境界値
-        assertThat("string → \"hello\"",       dataRow.get(strIdx),      is("hello"));
+        assertThat("string → \"hello\"",          dataRow.get(strIdx),      is("hello"));
     }
 
     // -------------------------------------------------------------------
@@ -198,7 +247,7 @@ public class YamlTestDataReaderTest {
      *
      * Given: 複数セクションを持つテストデータを開く
      * When:  全行を読み切るまで readLine() を呼び出す
-     * Then:  最終行が最後のセクションのデータ行であること（E-3 の回帰防止）（RS-07）
+     * Then:  最終行が最後のセクションの値データ行であること（E-3 の回帰防止）（RS-07）
      */
     @Test
     public void readLine_lastSectionNotLost() {
@@ -279,6 +328,17 @@ public class YamlTestDataReaderTest {
         assertThat(sut.isDataExisting(DIR, "NoSuchFile"), is(false));  // RS-08
     }
 
+    /**
+     * Given: 存在しないディレクトリ
+     * When:  isDataExisting を呼び出す
+     * Then:  false を返す（RS-08）
+     */
+    @Test
+    public void isDataExisting_dirNotExists_returnsFalse() {
+        // Given / When / Then
+        assertThat(sut.isDataExisting("no/such/dir", "YamlTestDataReaderTestData"), is(false));  // RS-08
+    }
+
     // -------------------------------------------------------------------
     // 行シーケンス確認: setup_tables（グループIDなし）
     // -------------------------------------------------------------------
@@ -348,8 +408,11 @@ public class YamlTestDataReaderTest {
         // Given
         sut.open(DIR, "YamlTestDataReaderTestData");
 
-        // setup_tables 2セクション（各3行）を読み飛ばす
-        for (int i = 0; i < 6; i++) { sut.readLine(); }
+        // setup_tables 2セクションをスキップ:
+        //   セクション1(3行: ヘッダ+カラムヘッダ+データ1行) + セクション2(3行: ヘッダ+カラムヘッダ+データ1行)
+        for (int i = 0; i < 6; i++) {
+            sut.readLine();
+        }
 
         // When / Then: LIST_MAP セクションヘッダ
         List<String> sectionHeader = sut.readLine();
@@ -383,8 +446,10 @@ public class YamlTestDataReaderTest {
         // Given
         sut.open(DIR, "YamlTestDataReaderTestData");
 
-        // setup_tables 2セクション（各3行） + list_maps 1セクション（4行）を読み飛ばす
-        for (int i = 0; i < 10; i++) { sut.readLine(); }
+        // setup_tables 2セクション(各3行)=6行 + list_maps 1セクション(ヘッダ+カラムヘッダ+データ2行)=4行
+        for (int i = 0; i < 10; i++) {
+            sut.readLine();
+        }
 
         // When / Then: SETUP_FIXED セクションヘッダ
         List<String> sectionHeader = sut.readLine();

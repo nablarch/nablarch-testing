@@ -19,16 +19,39 @@ import java.util.Map;
  */
 class FileSectionConverter implements SectionConverter {
 
-    /** YAML トップレベルキー（"setup_files" or "expected_files"） */
-    private final String yamlKey;
+    /**
+     * ファイル系セクションの種類を表す列挙型。<br/>
+     * セクション種別ごとの DataType 名プレフィックスを管理する。
+     */
+    enum FileSection {
+        /** setup_files セクション（SETUP_FIXED / SETUP_VARIABLE） */
+        SETUP("SETUP_FIXED", "SETUP_VARIABLE"),
+        /** expected_files セクション（EXPECTED_FIXED / EXPECTED_VARIABLE） */
+        EXPECTED("EXPECTED_FIXED", "EXPECTED_VARIABLE");
+
+        final String fixedDataTypeName;
+        final String variableDataTypeName;
+
+        FileSection(String fixedDataTypeName, String variableDataTypeName) {
+            this.fixedDataTypeName = fixedDataTypeName;
+            this.variableDataTypeName = variableDataTypeName;
+        }
+
+        static FileSection of(String yamlKey) {
+            return yamlKey.startsWith("setup") ? SETUP : EXPECTED;
+        }
+    }
+
+    /** ファイル系セクション種別 */
+    private final FileSection fileSection;
 
     /**
      * コンストラクタ。
      *
-     * @param yamlKey YAML トップレベルキー
+     * @param yamlKey YAML トップレベルキー（{@code "setup_files"} または {@code "expected_files"}）
      */
     FileSectionConverter(String yamlKey) {
-        this.yamlKey = yamlKey;
+        this.fileSection = FileSection.of(yamlKey);
     }
 
     /** {@inheritDoc} */
@@ -44,7 +67,7 @@ class FileSectionConverter implements SectionConverter {
         String header = groupId == null
                 ? dataTypeName + "=" + path
                 : dataTypeName + "[" + groupId + "]=" + path;
-        out.add(singletonRow(header));
+        out.add(YamlValueConverter.singletonRow(header));
 
         // ディレクティブ行
         Map<String, Object> directives = YamlValueConverter.asMap(entry.get("directives"));
@@ -64,16 +87,9 @@ class FileSectionConverter implements SectionConverter {
     }
 
     private String resolveDataTypeName(String type) {
-        boolean isSetup = yamlKey.startsWith("setup");
         if ("variable".equals(type)) {
-            return isSetup ? "SETUP_VARIABLE" : "EXPECTED_VARIABLE";
+            return fileSection.variableDataTypeName;
         }
-        return isSetup ? "SETUP_FIXED" : "EXPECTED_FIXED";
-    }
-
-    private static List<String> singletonRow(String value) {
-        List<String> row = new ArrayList<String>(1);
-        row.add(value);
-        return row;
+        return fileSection.fixedDataTypeName;
     }
 }

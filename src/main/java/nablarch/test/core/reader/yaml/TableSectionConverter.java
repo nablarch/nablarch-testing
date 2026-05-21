@@ -1,7 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,14 +41,25 @@ class TableSectionConverter implements SectionConverter {
         String header = groupId == null
                 ? dataTypeName + "=" + tableName
                 : dataTypeName + "[" + groupId + "]=" + tableName;
-        out.add(singletonRow(header));
+        out.add(YamlValueConverter.singletonRow(header));
 
         List<Map<String, Object>> rows = YamlValueConverter.asMapList(entry.get("rows"));
         if (rows.isEmpty()) {
             return;
         }
 
-        Set<String> allKeys = collectAllKeys(rows);
+        addKeyValueRows(rows, out);
+    }
+
+    /**
+     * カラムヘッダ行とデータ行を出力する。<br/>
+     * {@code TableSectionConverter} と {@code ListMapSectionConverter} で共用する。
+     *
+     * @param rows 行データのリスト
+     * @param out  変換結果を追記する行シーケンス
+     */
+    static void addKeyValueRows(List<Map<String, Object>> rows, List<List<String>> out) {
+        Set<String> allKeys = YamlValueConverter.collectAllKeys(rows);
 
         // カラムヘッダ行: ["", col1, col2, ...]
         List<String> colHeader = new ArrayList<String>();
@@ -66,20 +76,5 @@ class TableSectionConverter implements SectionConverter {
             }
             out.add(dataRow);
         }
-    }
-
-    /** 全行の全キーを挿入順で収集する（union）。 */
-    private static Set<String> collectAllKeys(List<Map<String, Object>> rows) {
-        Set<String> keys = new LinkedHashSet<String>();
-        for (Map<String, Object> row : rows) {
-            keys.addAll(row.keySet());
-        }
-        return keys;
-    }
-
-    private static List<String> singletonRow(String value) {
-        List<String> row = new ArrayList<String>(1);
-        row.add(value);
-        return row;
     }
 }

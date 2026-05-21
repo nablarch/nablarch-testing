@@ -15,17 +15,20 @@ import java.util.Map;
  * </p>
  *
  * <p>
- * このクラスは {@code YamlTestDataReader} の実装詳細であり、直接使用は想定していない。
+ * {@code YamlTestDataReader} が内部で使用するクラスであり、フレームワーク外部からの使用は想定していない。
  * </p>
  */
 public class YamlRowBuilder {
 
-    /** セクション種別定義リスト（YAML トップレベルキー順） */
+    /**
+     * セクション種別定義リスト（YAML トップレベルキー順）。<br/>
+     * 各コンバータはステートレスであるため、インスタンス間で共有しても安全。
+     */
     private static final List<SectionEntry> SECTION_ENTRIES = buildSectionEntries();
 
-    /** コンストラクタ。 */
-    public YamlRowBuilder() {
-    }
+    // -----------------------------------------------------------------------
+    // パブリック API
+    // -----------------------------------------------------------------------
 
     /**
      * YAML ドキュメントを行シーケンスに変換する。
@@ -62,7 +65,7 @@ public class YamlRowBuilder {
     }
 
     private static List<SectionEntry> buildSectionEntries() {
-        List<SectionEntry> list = new ArrayList<SectionEntry>(Arrays.asList(
+        return Collections.unmodifiableList(Arrays.asList(
                 new SectionEntry("setup_tables",
                         new TableSectionConverter("SETUP_TABLE")),
                 new SectionEntry("expected_tables",
@@ -86,6 +89,5 @@ public class YamlRowBuilder {
                 new SectionEntry("response_body_messages",
                         new GroupMessageSectionConverter("RESPONSE_BODY_MESSAGES"))
         ));
-        return Collections.unmodifiableList(list);
     }
 }

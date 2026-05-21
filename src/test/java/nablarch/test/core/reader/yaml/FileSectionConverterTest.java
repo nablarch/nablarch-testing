@@ -70,6 +70,56 @@ public class FileSectionConverterTest {
     }
 
     // -------------------------------------------------------------------
+    // QA-8: expected_files / 固定長: "EXPECTED_FIXED=path"
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: expected_files エントリ、type="fixed"（QA-8）
+     * When:  convert を呼び出す
+     * Then:  セクションヘッダ "EXPECTED_FIXED=path"
+     */
+    @Test
+    public void convert_expectedFixed_headerFormat() {
+        // Given
+        FileSectionConverter sut = new FileSectionConverter("expected_files");
+        Map<String, Object> entry = buildEntry(null, "output/expected.dat", "fixed",
+                Collections.<String, Object>emptyMap(),
+                Collections.<Map<String, Object>>emptyList());
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        sut.convert(entry, out);
+
+        // Then
+        assertThat(out.get(0).get(0), is("EXPECTED_FIXED=output/expected.dat"));  // QA-8
+    }
+
+    // -------------------------------------------------------------------
+    // QA-9: setup_files / 可変長: "SETUP_VARIABLE=path"
+    // -------------------------------------------------------------------
+
+    /**
+     * Given: setup_files エントリ、type="variable"（QA-9）
+     * When:  convert を呼び出す
+     * Then:  セクションヘッダ "SETUP_VARIABLE=path"
+     */
+    @Test
+    public void convert_setupVariable_headerFormat() {
+        // Given
+        FileSectionConverter sut = new FileSectionConverter("setup_files");
+        Map<String, Object> entry = buildEntry(null, "input/var.dat", "variable",
+                Collections.<String, Object>emptyMap(),
+                Collections.<Map<String, Object>>emptyList());
+
+        // When
+        List<List<String>> out = new ArrayList<List<String>>();
+        sut.convert(entry, out);
+
+        // Then
+        assertThat(out.get(0).get(0), is("SETUP_VARIABLE=input/var.dat"));  // QA-9
+    }
+
+    // -------------------------------------------------------------------
     // group_id あり: "SETUP_FIXED[groupId]=path"
     // -------------------------------------------------------------------
 

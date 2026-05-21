@@ -1,6 +1,5 @@
 package nablarch.test.core.reader.yaml;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -39,17 +38,11 @@ class GroupMessageSectionConverter implements SectionConverter {
         String header = groupId != null
                 ? dataTypeName + "[" + groupId + "]=" + id
                 : dataTypeName + "=" + id;
-        out.add(singletonRow(header));
+        out.add(YamlValueConverter.singletonRow(header));
 
         List<Object> records = YamlValueConverter.asList(entry.get("records"));
         for (Object rec : records) {
             RecordRowBuilder.addRecordRows(YamlValueConverter.asMap(rec), true, out);
         }
-    }
-
-    private static List<String> singletonRow(String value) {
-        List<String> row = new ArrayList<String>(1);
-        row.add(value);
-        return row;
     }
 }

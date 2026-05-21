@@ -31,7 +31,7 @@ class MessageSectionConverter implements SectionConverter {
     @Override
     public void convert(Map<String, Object> entry, List<List<String>> out) {
         String id = YamlValueConverter.asString(entry.get("id"));
-        out.add(singletonRow(dataTypeName + "=" + id));
+        out.add(YamlValueConverter.singletonRow(dataTypeName + "=" + id));
 
         // ディレクティブ行
         Map<String, Object> directives = YamlValueConverter.asMap(entry.get("directives"));
@@ -47,11 +47,5 @@ class MessageSectionConverter implements SectionConverter {
         for (Object rec : records) {
             RecordRowBuilder.addRecordRows(YamlValueConverter.asMap(rec), true, out);
         }
-    }
-
-    private static List<String> singletonRow(String value) {
-        List<String> row = new ArrayList<String>(1);
-        row.add(value);
-        return row;
     }
 }
