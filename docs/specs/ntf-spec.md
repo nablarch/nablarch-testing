@@ -29,7 +29,7 @@
 NTF テストデータファイルには、次の3種類のデータを記述します。
 
 **テストケース**  
-テストの実行条件を1エントリ1ケースで定義します。`LIST_MAP=testShots` に記述し、各エントリが1テストケースを表します。HTTP テストなら「リクエストユーザー・期待ステータスコード・期待フォワード先 URI」など、バッチテストなら「実行パス・ユーザー ID・DIコンフィグ・期待ステータスコード」などを列挙します。
+テストの実行条件を1エントリ1ケースで定義します。`LIST_MAP=testShots` に記述し、各エントリが1テストケースを表します。HTTP テストなら「ユーザー ID・期待ステータスコード・期待フォワード先 URI」など、バッチテストなら「リクエストパス・ユーザー ID・DI コンフィグ・期待ステータスコード」などを列挙します。
 
 **セットアップ**  
 テスト実行前に投入するデータです。DB テーブルへの INSERT データ（`SETUP_TABLE`）、固定長・可変長ファイルの入力データ（`SETUP_FIXED` / `SETUP_VARIABLE`）などを定義します。
@@ -96,7 +96,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 - 省略時は空文字扱いです
 - groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
 
-バッチ固有の動作として、`group_id: "default"` はグループIDなし扱いと同等になります。
+バッチ固有の動作として、groupId に `"default"` を指定するとグループIDなし扱いと同等になります。
 
 ### 2.5 RESPONSE_HEADER/BODY_MESSAGES の2経路（DT-07）
 
@@ -137,7 +137,7 @@ HTTP リクエストテストでの必須カラムは以下のとおりです。
 | `setUpTable` | ケース固有の DB セットアップグループID | スキップ |
 | `expectedTable` | テーブル期待値のグループID | スキップ |
 | `expectedMessageId` | 期待するメッセージID | スキップ |
-| `requestParams` 参照 | HTTP リクエストパラメータの `LIST_MAP` 名（TS-02） | — |
+| `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名（TS-02） | — |
 | `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
 | `queryParams` | クエリパラメータの `LIST_MAP` 名 | パラメータなし |
 | `HTTP_METHOD` | HTTP メソッド | `"POST"` |
@@ -172,9 +172,9 @@ HTTP リクエストテストでの必須カラムは以下のとおりです。
 | `args[0]`, `args[1]`, ... | コマンドライン引数 | — |
 | その他任意カラム | コマンドラインオプション | — |
 
-### 3.4 DB 共通セットアップシート（TS-05）
+### 3.4 DB 共通セットアップデータ（TS-05）
 
-`setUpDb` はテストメソッド共通の DB 初期化データを定義する予約シート名です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
+`setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
 
 ---
 
@@ -267,7 +267,7 @@ DB への INSERT 用データです。
 
 ### 5.5 複数レコードレイアウト（SS-11）
 
-1ファイルセクション内に複数のレコードレイアウトを連続して記述できます。データの後ろに新たなフィールド名定義を書くと、新しいレコードレイアウトとして扱われます。
+1ファイルセクション内に複数のレコードレイアウトを連続して記述できます。データの後ろに新たなレコード種別とフィールド名称を書くと、新しいレコードレイアウトとして扱われます。
 
 → [Excel / YAML Example](ntf-spec-examples.md#multi-record)
 
@@ -290,7 +290,7 @@ DB への INSERT 用データです。
 | フィールド名称・データ型・フィールド長リストのサイズ不一致 | `IllegalArgumentException` |
 | 存在しないフィールド名称を指定 | `IllegalArgumentException` |
 | データ要素数が不正 | `IllegalStateException` |
-| ディレクティブまたはフィールド名定義の要素数が2未満 | `IllegalStateException` |
+| ディレクティブまたはレコード種別/フィールド名称定義の要素数が2未満 | `IllegalStateException` |
 | ファイル読み込み失敗（IO 例外） | `RuntimeException` |
 | 日付型カラムの値が日付として解析できない | `RuntimeException` |
 
@@ -534,7 +534,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | SS-25 | データ要素数不正で `IllegalStateException` | 異常系 |
 | SS-26 | ファイル読み込み失敗（IO 例外）で `RuntimeException` | 異常系 |
 | SS-27 | DataFileParser.Status が想定外状態で `IllegalStateException`（通常到達不能） | 異常系 |
-| SS-28 | ディレクティブ/フィールド名定義の要素数2未満で `IllegalStateException` | 異常系 |
+| SS-28 | ディレクティブ/レコード種別・フィールド名称定義の要素数2未満で `IllegalStateException` | 異常系 |
 | SS-29 | TableData#getClone() の CloneNotSupportedException（到達不能） | 異常系 |
 | SS-30 | 日付型カラムの値が解析不可で `RuntimeException` | 異常系 |
 | SS-31 | TableData#getValue() でカラム値が null の場合 null を返す | 代替フロー |
@@ -592,7 +592,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | TS-02 | `LIST_MAP=requestParams` は HTTP リクエストパラメータの予約ID | 正常系 |
 | TS-03 | `LIST_MAP=responseResult` は HTTP レスポンス期待値の予約ID | 正常系 |
 | TS-04 | `LIST_MAP=params` はエンティティバリデーション入力パラメータの予約ID（EntityTestSupport 専用） | 正常系 |
-| TS-05 | `setUpDb` は DB 共通初期化シートの予約シート名 | 正常系 |
+| TS-05 | `setUpDb` は DB 共通初期化データの予約 ID | 正常系 |
 | TS-06 | testShots の `context` カラムが指す LIST_MAP から REQUEST_ID・USER_ID を取得。1エントリのみ有効 | 正常系 |
 | TS-07 | HTTP テストの testShots 必須カラム: `no`・`description`・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 |
 | TS-08 | バッチテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 |
@@ -606,7 +606,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | TS-16 | `expectedContentLength`・`expectedContentType`・`expectedContentFileName` が空の場合各検証スキップ | 代替フロー |
 | TS-17 | `args[n]` カラムはコマンドライン引数、その他の任意カラムはコマンドラインオプション（バッチテスト） | 正常系 |
 | TS-18 | testShots が空の場合 `IllegalStateException` / `IllegalArgumentException` をスロー | 異常系 |
-| TS-19 | sheetName が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-19 | テストデータ識別名（sheetName）が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
 | TS-20 | context LIST_MAP の REQUEST_ID が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
 | TS-21 | context LIST_MAP が1エントリでない場合 `IllegalArgumentException` をスロー | 異常系 |
 | TS-22 | requestParams のエントリ数がテストケース番号より少ない場合 `IllegalArgumentException` をスロー | 異常系 |
