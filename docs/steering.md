@@ -525,16 +525,17 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ## 現在の状態（2026-05-22時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
-- **次タスク**: **ntf-spec.md 作成（I-1 レビュー前提）** → I-1 ユーザーレビュー → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
+- **次タスク**: **ntf-spec.md ユーザー FB 対応** → I-1 ユーザーレビュー → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
 - **I-1**: 完成（109件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
+- **ntf-spec.md / ntf-spec-examples.md**: 初版作成済み（`docs/specs/` に配置）。ユーザー FB 対応中
 
 ### ntf-spec.md 作成方針（確定）
 
 NTF テストデータの全量把握・Nablarch 解説書収録を目的とした仕様書を2ファイルで作成する。
 
 ```
-docs/
+docs/specs/
   ntf-spec.md           # 論理仕様書（形式非依存。各節末尾にExampleファイルへのリンク）
   ntf-spec-examples.md  # Excel表 / YAMLコードブロック 対比（ポイント・差異の解説付き）
 ```
@@ -562,8 +563,8 @@ docs/
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **ntf-spec.md / ntf-spec-examples.md を作成する**
-3. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md` / `docs/ntf-spec.md`）
+2. **ntf-spec.md の FB 対応を完了させる**（`docs/specs/ntf-spec.md` / `docs/specs/ntf-spec-examples.md`）
+3. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md` / `docs/specs/ntf-spec.md`）
 4. **I-2/I-3 を I-1 完全版（109件）を入力として実施する**
 5. I-2/I-3 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得**（`docs/checks/R-1-refactor.md`）
 
