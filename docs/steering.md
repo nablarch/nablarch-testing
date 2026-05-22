@@ -524,11 +524,24 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 ## 現在の状態（2026-05-22時点）
 
-- **ブランチ**: `convert-testdata-excel-to-text`
+- **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
 - **次タスク**: **I-1 やり直し**（正常系・異常系・代替フローの3観点を含む完全版）→ I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-1/I-2/I-3 完了後に実施）
 
 **I-1 やり直しの理由**: 正常系仕様のみ列挙し異常系・代替フローが抜けていた。R-1-refactor で追加した異常系テスト（`table`/`path` キー欠如・FW_HEADER rows 型誤り等）に対応する仕様IDが存在しないことが発覚。I-2/I-3 も I-1 の出力を入力とするため再実施が必要。
+
+### 再開手順
+
+1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
+2. **I-1 をやり直す**
+   - `docs/ntf-impl-spec-list.md`（現在80件・正常系のみ）を正常系・異常系・代替フローの3観点で完全版に作り直す
+   - grep 証跡（対象ファイル一覧・throw/null 返却行数・登録件数・除外件数）を `docs/checks/I-1.md` に記録する
+   - `docs/ntf-impl-spec-list-i4-draft.md`（前回試作の異常系追加版）を差分確認の参考にしてよい
+   - セルフチェック → QAレビュー → ユーザーレビュー
+3. **I-2/I-3 を I-1 完全版を入力として再実施する**
+   - `docs/checks/I-2.md` / `docs/checks/I-3.md` の旧版注記を外して新版に上書きする
+4. I-2/I-3 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得**
+   - `docs/checks/R-1-refactor.md` の内容を提示してユーザーの確認を得る
 
 **参照用成果物**:
 - `docs/ntf-impl-spec-list-i4-draft.md`: 前回セッションで試作した異常系追加版（80件ベース）。差分確認用として残す
