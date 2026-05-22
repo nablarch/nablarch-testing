@@ -5,6 +5,60 @@
 
 ---
 
+## 概要: 1ファイルに3種類のデータを共存させる {#overview}
+
+テストケース（`testShots`）・セットアップ（`SETUP_TABLE`）・検証（`EXPECTED_TABLE`）の3種を1ファイルにまとめて記述した例です。
+
+### Excel
+
+| LIST_MAP=testShots | | | |
+|---|---|---|---|
+| no | description | expectedStatusCode | forwardUri |
+| | 1 | 正常ケース | 200 | /result |
+
+| SETUP_TABLE=USER_TABLE | | |
+|---|---|---|
+| USER_ID | USER_NAME | STATUS |
+| | U001 | 山田太郎 | 01 |
+
+| EXPECTED_TABLE=USER_TABLE | | |
+|---|---|---|
+| USER_ID | STATUS |
+| | U001 | 02 |
+
+### YAML
+
+```yaml
+list_maps:
+  - id: testShots
+    rows:
+      - no: "1"
+        description: "正常ケース"
+        expectedStatusCode: "200"
+        forwardUri: "/result"
+
+setup_tables:
+  - table: USER_TABLE
+    rows:
+      - USER_ID: "U001"
+        USER_NAME: "山田太郎"
+        STATUS: "01"
+
+expected_tables:
+  - table: USER_TABLE
+    rows:
+      - USER_ID: "U001"
+        STATUS: "02"
+```
+
+### ポイント
+
+- テストケース・セットアップ・検証の3種を1ファイルに共存させることができます
+- セクションの記述順序は問いません
+- `EXPECTED_TABLE` で `USER_NAME` を省略しているため、`USER_NAME` カラムは比較対象外になります
+
+---
+
 ## セクション識別 {#section-identifier}
 
 ### Excel
@@ -47,6 +101,55 @@ setup_tables:
 - groupId は Excel では `[case1]` と DataType 名に続けて書きます。YAML では `group_id: case1` フィールドとして記述します
 - マーカーカラム `[MARKER]` は YAML では `"[MARKER]"` とダブルクォートで囲みます（YAML の角括弧構文との衝突を避けるため）
 - **Excel 固有**: Excel では DataType 判定に前方一致（`startsWith`）を使用します。YAML では完全なセクションキーを使用します
+
+---
+
+## テストケース定義 {#test-shots}
+
+### Excel
+
+| LIST_MAP=testShots | | | | | |
+|---|---|---|---|---|---|
+| no | description | isValidToken | expectedStatusCode | forwardUri | context |
+| | 1 | 正常ケース | 0 | 200 | /success | context001 |
+| | 2 | 認証エラー | 0 | 400 | /error | context002 |
+
+| LIST_MAP=context001 | | |
+|---|---|---|
+| REQUEST_ID | USER_ID | HTTP_METHOD |
+| | REQ_001 | user001 | POST |
+
+### YAML
+
+```yaml
+list_maps:
+  - id: testShots
+    rows:
+      - no: "1"
+        description: "正常ケース"
+        isValidToken: "0"
+        expectedStatusCode: "200"
+        forwardUri: "/success"
+        context: "context001"
+      - no: "2"
+        description: "認証エラー"
+        isValidToken: "0"
+        expectedStatusCode: "400"
+        forwardUri: "/error"
+        context: "context002"
+
+  - id: context001
+    rows:
+      - REQUEST_ID: "REQ_001"
+        USER_ID: "user001"
+        HTTP_METHOD: "POST"
+```
+
+### ポイント
+
+- `testShots` はフレームワークが自動読み込みする予約 ID です
+- `context` カラムの値は対応する `LIST_MAP` の ID を指定します。その `LIST_MAP` から `REQUEST_ID`・`USER_ID`・`HTTP_METHOD` を取得します
+- `testShots` が0件の場合は例外がスローされます
 
 ---
 
