@@ -196,30 +196,43 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ### I-1: 仕様ID一覧の確定と棚卸し
 
-**目的**: 後続タスク全体の基準となる「NTFテストデータ仕様ID一覧」を確定する。
+**目的**: 後続タスク全体の基準となる「NTFテストデータ仕様ID一覧」を確定する。正常系・異常系・代替フローの3観点で漏れなく抽出する。
+
+**前提**: なし
+
+**仕様抽出の方法（この手順を守ること）**:
+
+仕様IDは以下の3観点で分類・抽出する。観点の定義を先に決めてから抽出に入ること。
+
+- **正常系**: 正しい入力に対して期待されるデータ返却・ファイル構築等の主フロー
+- **異常系**: 不正入力・矛盾した状態に対して例外をスロー
+- **代替フロー**: 正常入力だが条件次第で主フローと異なる結果になる分岐（null 返却・空リスト返却・デフォルト値補完等）
+
+異常系・代替フローの網羅確認は自己申告ではなく以下の grep 証跡で担保する:
+
+1. 対象クラスとその継承ツリー（抽象クラスの全サブクラス含む）を確定し、ファイル一覧として記録する
+2. `grep -rn "throw "` で例外スロー箇所を全件抽出し、出力行を一覧として記録する
+3. `grep -rn "return null\|Collections.emptyList\|Collections.empty"` で代替フロー候補を全件抽出し、同様に記録する
+4. 各行を「仕様ID登録」または「除外（通常到達不能・スコープ外）」に分類する。除外する場合は根拠コードの行番号を付けて理由を明記する
+5. セルフチェックで「grep 行数 = 登録件数 + 除外件数」を数値で示す
 
 **作業内容**:
-- [x] `docs/ntf-coverage-spec-mapping.md` の仕様ID（DT-xx, SS-xx, RS-xx, HC-xx, IV-xx, DR-xx, MS-xx）を全件棚卸し
-- [x] 調査で判明したギャップ E-1〜E-9 について、仕様IDとして昇格するか否かを判断し文書に明記する。昇格しない場合は除外理由を記載する
-  - E-1: YAML ネイティブ型→文字列化の変換漏れリスク
-  - E-2: 末尾空要素の扱い（Excel は null→"" 補完、YAML は末尾省略されやすい）
-  - E-3: `readLine() == null` 終了判定タイミングのずれによる最終セクションデータ欠落リスク
-  - E-4: `startsWith` 前方一致マッチングの挙動（YAML schema validation とは独立）
-  - E-5: sendSyncTestData のディレクトリ配置規則はYAMLスキーマ外
-  - E-6: `defaultDirectives` のDI設定は SystemRepository XML の問題でありYAMLファイルとは独立
-  - E-7: `EXPECTED_REQUEST_HEADER/BODY_MESSAGES` の行数一致チェックはランタイムのみ
-  - E-8: `BasicDefaultValues` の DATE カラムのTZハザード（JSTとUTCで値が変わる）
-  - E-9: `BasicJapaneseCharacterInterpreter` の「スルー vs 例外」条件の誤記（design.md D-6）
-- [x] 仕様を2つに分類する（テストデータ構造 / 実装内部ロジック）
-- [x] 出力: `docs/ntf-impl-spec-list.md`（仕様ID / 概要 / 分類 の3列）
-- [x] セルフチェック（チェック結果: `docs/checks/I-1.md`）
-- [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [x] ユーザーレビュー依頼・OK取得
+- [ ] `docs/ntf-coverage-spec-mapping.md` の仕様ID（DT-xx, SS-xx, RS-xx, HC-xx, IV-xx, DR-xx, MS-xx）を全件棚卸し（正常系）
+- [ ] 調査で判明したギャップ E-1〜E-9 について、仕様IDとして昇格するか否かを判断し文書に明記する。昇格しない場合は除外理由を記載する
+- [ ] 仕様を2つに分類する（テストデータ構造 / 実装内部ロジック）
+- [ ] 上記の「仕様抽出の方法」に従い、異常系・代替フローを grep で全件抽出し分類する
+  - 対象: `BasicTestDataParser` / `DataFileParser` / `TableData` / `DataFileFragment` / `FixedLengthFileFragment` / `VariableLengthFileFragment` / `DataFile` / `FixedLengthFile` / `VariableLengthFile` / `MessageParser` / `SendSyncMessageParser` および継承ツリーの全クラス
+- [ ] 抽出した異常系・代替フローを仕様IDとして `ntf-impl-spec-list.md` に追加する（正常系と同じ列構成で記載）
+- [ ] 出力: `docs/ntf-impl-spec-list.md`（仕様ID / 概要 / 分類 の3列。正常系・異常系・代替フロー全件）
+- [ ] セルフチェック（チェック結果: `docs/checks/I-1.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- 全仕様IDに分類が付いていること
+- 全仕様IDに「正常系・異常系・代替フロー」のいずれかの分類が明記されていること
 - E-1〜E-9 について「仕様IDとして昇格」または「除外・理由付き」がそれぞれ記載されていること
-- 抜け漏れがないことを確認した旨が記載されていること
+- `docs/checks/I-1.md` に grep 対象ファイル一覧・grep 行数・登録件数・除外件数が記載されており数値が一致すること
+- 除外した行はすべて根拠コードの行番号付きで理由が明記されていること
 
 ---
 
@@ -227,24 +240,22 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 **目的**: 既存テストのどのメソッドがどの仕様IDを検証しているかを明示し、カバーゼロの仕様IDを特定する。
 
-**前提**: I-1 完了
+**前提**: I-1 完了（正常系・異常系・代替フロー全件確定後）
 
 **作業内容**:
-- [x] I-1 の仕様ID一覧に対して、以下のテストクラスのテストメソッドをマッピングする
-  - `BasicTestDataParserTest`（16メソッド確認済み）
+- [ ] I-1 の**全仕様ID**（正常系・異常系・代替フロー全件）に対して、以下のテストクラスのテストメソッドをマッピングする
+  - `BasicTestDataParserTest`
   - `MessageParserTest`
   - `FileSupportTest`
-  - `SendSyncMessageParserTest`（現状17行のみ、MS-04〜MS-07 は実質未テスト）
-  - reader/ パッケージのその他テストクラス
-- [x] マッピングされない仕様ID（カバーゼロ）を「テスト追加必要」として明記する
-  - D-14（複数レコードレイアウトの連続記述）: `BasicTestDataParserTest` に専用テストなし
-  - MS-04〜MS-07（errorMode/NO列/グループメッセージ）: `SendSyncMessageParserTest` が17行しかない
-- [x] 出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
-- [x] セルフチェック（チェック結果: `docs/checks/I-2.md`）
-- [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [x] ユーザーレビュー依頼・OK取得
+  - `SendSyncMessageParserTest`
+  - `reader/` および `reader/yaml/` パッケージのその他テストクラス
+- [ ] マッピングされない仕様ID（カバーゼロ）を「テスト追加必要（理由付き）」として明記する
+- [ ] 出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
+- [ ] セルフチェック（チェック結果: `docs/checks/I-2.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
 
-**完了条件**: 全仕様IDに「対応テストメソッド名」または「テスト追加必要（理由付き）」が記載されること。
+**完了条件**: I-1 の全仕様IDに「対応テストメソッド名」または「テスト追加必要（理由付き）」が記載されること。
 
 ---
 
@@ -252,64 +263,19 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 **目的**: YAMLスキーマのどのキー/定義が、どの仕様IDを表現しているかを明示する。
 
-**前提**: I-1 完了
+**前提**: I-1 完了（正常系・異常系・代替フロー全件確定後）
 
 **作業内容**:
-- [x] I-1 の**全仕様ID**（分類問わず）に対して以下のいずれかを記載する
+- [ ] I-1 の**全仕様ID**（分類問わず全件）に対して以下のいずれかを記載する
   - 「テストデータ構造」分類: `ntf-testdata-yaml-schema.json` / `ntf-testdata-yaml-design.md` のどのセクション/キーが対応するかを記載
   - 「実装内部ロジック」分類: 「スキーマ外・パーサ実装で担保」と明記
-  - スキーマで表現できない仕様（E-4の前方一致、E-5の配置規則、E-7の行数一致チェック等）: 「スキーマ外仕様・テストで担保する方針」と明記し、後続 R-3 でテスト作成することを記載
-- [x] 出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
-- [x] セルフチェック（チェック結果: `docs/checks/I-3.md`）
-- [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [x] ユーザーレビュー依頼・OK取得
-
-**完了条件**: 全仕様IDに対して「スキーマ根拠箇所」または「スキーマ外理由」が記載されること（分類を問わず全件）。
-
----
-
-### I-4: 異常系仕様の列挙と三角マッピングへの追加（I-1 やり直し）
-
-**目的**: I-1 で正常系仕様のみを列挙し異常系（必須フィールド欠如・型誤り等の入力不正時の挙動）が抜けていたことが R-1-refactor の実装レビューで判明した。**既存 Excel 実装の挙動を正常系・異常系・代替フローの3観点で仕様として洗い出し**、`ntf-impl-spec-list.md` に追加する。YAML 実装がその仕様と一致しているかも確認する。
-
-**背景**:
-R-1-refactor で「`table` キー欠如時に例外スロー」「`path` キー欠如時に例外スロー」「FW_HEADER rows 型誤り時に例外スロー」のテストを追加したが、これらに対応する仕様IDが `ntf-impl-spec-list.md` に存在しなかった。`YamlTestDataParser` は `BasicTestDataParser` の代替実装であり、異常系の振る舞いも既存 Excel 実装が仕様の基準になる。YAML 実装ベースで異常系を列挙するのではなく、**既存実装・既存テストから異常系仕様を読み取るべきだった**。
-
-**前提**: I-1/I-2/I-3 完了（ただし本タスクはその不完全さを修正する）
-
-**網羅抽出の方法（この手順を守ること）**:
-
-1. **`throw` 文の全件 grep**: 対象クラスおよびその継承ツリー全クラスに対して `grep -n "throw "` を実行し、出力行数と仕様ID登録件数が一致することを確認する。「走査した」ではなく「grep 結果の全行を確認した」を証跡とする
-2. **null/empty 返却の全件 grep**: `grep -n "return null\|emptyList\|Collections.empty"` を実行し、同様に全行を確認する
-3. **3観点での分類**: 各挙動を以下の3観点に明示的に分類してから仕様IDを割り当てる
-   - **異常系（error）**: 不正入力・矛盾した状態に対して例外をスロー
-   - **代替フロー（alternative）**: 正常だが条件次第で別の結果（null 返却・空リスト返却等）
-   - **通常到達不能パス（unreachable）**: 言語仕様・先行バリデーションにより実行されないパス → 除外対象。除外する場合は「なぜ到達不能か」を根拠コードの行番号で示す
-4. **継承ツリーの確認**: 抽象クラスの `abstract` メソッドを持つクラスは、全サブクラスの実装も grep 対象に含める
-
-**作業内容**:
-- [ ] 対象クラスとその継承ツリーを列挙し、grep 対象ファイル一覧を確定する（`BasicTestDataParser` / `DataFileParser` / `TableData` / `DataFileFragment` / `FixedLengthFileFragment` / `VariableLengthFileFragment` / `DataFile` / `FixedLengthFile` / `VariableLengthFile` / `MessageParser` / `SendSyncMessageParser` 等）
-- [ ] 各ファイルに対して `throw` / `return null` / `return.*emptyList` の grep を実行し、出力を一覧として記録する
-- [ ] 各行を正常系・異常系・代替フロー・通常到達不能パスの4種類に分類する。通常到達不能パスは除外理由を行番号付きで明記する
-- [ ] 異常系・代替フローの挙動を仕様IDとして `ntf-impl-spec-list.md` に追加する
-- [ ] 追加した仕様IDに対して I-2 相当（対応テストメソッド）・I-3 相当（スキーマ根拠またはスキーマ外理由）を記載する
-- [ ] R-1-refactor で追加した既存テスト（table欠如・path欠如・FW_HEADER rows 型誤り・rows 空の各テスト）が追加仕様IDと一致しているか、または乖離があれば修正する
-- [ ] セルフチェック（チェック結果: `docs/checks/I-4.md`）
+  - スキーマで表現できない仕様: 「スキーマ外仕様・テストで担保する方針」と明記し、後続 R-3 でテスト作成することを記載
+- [ ] 出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
+- [ ] セルフチェック（チェック結果: `docs/checks/I-3.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
-**セルフチェックで確認すること（網羅性の客観的検証）**:
-- grep 結果の行数と「仕様IDに登録した件数 + 除外した件数」が一致することを数値で示す
-- 除外した件数は除外理由テーブルの行数と一致することを確認する
-- 3観点（異常系・代替フロー・通常到達不能）での分類が全件に付いていることを確認する
-
-**完了条件**:
-- grep 対象ファイル一覧が `docs/checks/I-4.md` に記載されており、継承ツリーの全クラスを含むこと
-- `throw` / `return null` / `return.*emptyList` の grep 結果の全行が「仕様ID登録」または「除外（理由付き）」のいずれかに分類されていること（未分類の行がゼロ）
-- 各仕様IDに「異常系・代替フロー」のいずれかの分類が明記されていること
-- R-1-refactor で追加した全テストメソッドが、いずれかの仕様IDに対応づけられていること
-- YAML 実装の異常系挙動が既存 Excel 実装の仕様と一致していること（乖離がある場合は理由が明記されていること）
-- 「仕様IDのないテスト」が存在しないこと
+**完了条件**: I-1 の全仕様IDに対して「スキーマ根拠箇所」または「スキーマ外理由」が記載されること（分類を問わず全件）。
 
 ---
 
@@ -556,29 +522,17 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 ---
 
-## 現在の状態（2026-05-21時点）
+## 現在の状態（2026-05-22時点）
 
-- **ブランチ**: `convert-testdata-excel-to-text`（ローカル・リモートともにクリーン）
-- **完了済みフェーズ**: スキーマ設計フェーズ全完了、Ph-1（I-1/I-2/I-3）完了（ただし I-4 で異常系仕様を追加する必要あり）
-- **R-1-refactor 進捗**: 全レビュー通過済み・追加修正済み（ユーザーレビューは I-4 完了後に実施）
-- **タスク順序**: **I-4 → R-1-refactor ユーザーレビュー** → C-1（並行可）→ R-2/R-3 → V-1 → D-1
+- **ブランチ**: `convert-testdata-excel-to-text`
+- **次タスク**: **I-1 やり直し**（正常系・異常系・代替フローの3観点を含む完全版）→ I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
+- **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-1/I-2/I-3 完了後に実施）
 
-**I-4 追加の経緯**: R-1-refactor の実装レビューで「`table`/`path` キー欠如・FW_HEADER rows 型誤り時に例外スロー」のテストを追加したが、これらに対応する仕様IDが `ntf-impl-spec-list.md` に存在しなかった。I-1 が正常系仕様のみを列挙し異常系を仕様IDとして認識していなかったことが原因。
+**I-1 やり直しの理由**: 正常系仕様のみ列挙し異常系・代替フローが抜けていた。R-1-refactor で追加した異常系テスト（`table`/`path` キー欠如・FW_HEADER rows 型誤り等）に対応する仕様IDが存在しないことが発覚。I-2/I-3 も I-1 の出力を入力とするため再実施が必要。
 
-### R-1-refactor 追加修正の内容（コミット `1a37700`〜`345bf83`）
-
-今回セッションで以下の追加修正を実施した（83件全グリーン）:
-
-| 変更 | 内容 |
-|---|---|
-| M-1 | `YamlLoader.clearCacheForTest()` Javadoc 強化（`@After` 必須・呼び忘れ時の影響を明記） |
-| E-1 | `YamlTableDataBuilder`: `table` キー欠如時にセクション名・ファイルパス付き `IllegalStateException` |
-| E-2 | `YamlFileBuilder`: `path` キー欠如時にセクション名・グループID付き `IllegalStateException` |
-| E-3 | `YamlMessageBuilder.extractFwHeader()`: FW_HEADER rows の型チェックで sectionKey・id 付き例外 |
-| E-4 | `buildMessagePool` / `buildSendSyncMessageList` Javadoc に null 返却時の呼び出し元責任を明記 |
-| A-1/A-2 revert | `synchronized`/`volatile` 追加を取り消し（既存 Excel 系キャッシュ全クラスが排他制御なし・シングルスレッド前提の設計であることを確認） |
-
-**注意**: 上記 E-1/E-2/E-3 のテストは対応する仕様IDが `ntf-impl-spec-list.md` に未登録。I-4 で仕様IDを確定してから対応づけること。
+**参照用成果物**:
+- `docs/ntf-impl-spec-list-i4-draft.md`: 前回セッションで試作した異常系追加版（80件ベース）。差分確認用として残す
+- `docs/checks/I-4-draft.md`: 前回セッションの不完全なチェックファイル。参照用として残す
 
 ### 環境情報
 
@@ -602,58 +556,10 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 `mvn test` だけでは `restore-instrumented-classes` が走らず（`prepare-package` フェーズにバインド）、
 `jacoco:report` 時に「instrumented class」エラーになる。`package` まで実行すること。
 
-### Ph-1 完了状況
-
-**I-1:**
-- **成果物**: `docs/ntf-impl-spec-list.md`（仕様ID 80件: DT-01〜DT-07 / SS-01〜SS-20 / RS-01〜RS-08 / HC-01〜HC-07 / IV-01〜IV-15 / DR-01〜DR-10 / MS-01〜MS-13）
-- **チェック結果**: `docs/checks/I-1.md`（担当者 OK・QA OK・ユーザーレビュー OK）
-
-**I-2:**
-- **成果物**: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」追加（80件全件）
-- 既存テストあり 45件 / テスト追加必要 35件（RS 全8件は `YamlTestDataParser` 未実装として記録）
-- **チェック結果**: `docs/checks/I-2.md`（担当者 OK・QA OK・ユーザーレビュー OK）
-
-**I-3:**
-- **成果物**: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」追加（80件全件）
-- スキーマ根拠あり 43件 / スキーマ外 37件
-- **チェック結果**: `docs/checks/I-3.md`（担当者 OK・QA OK・ユーザーレビュー OK）
-
-### R-1 進捗状況（参照用・ユーザーレビュー NG）
-
-- コミット `e9a7432` 時点の実装（37テスト全グリーン）がベースとして存在する
-- R-1-refactor でクラス分割後、既存37テストが引き続き通ることをリグレッション確認として使用する
-- `docs/checks/R-1.md` に全レビュー指摘対応履歴を記録済み
-
-### R-1-refactor 進捗状況（全レビュー通過済み・ユーザーレビュー待ち）
-
-最終コミット `e0719bd` で以下の状態:
-- `YamlTestDataParser`（188行）+ `reader.yaml` サブパッケージ5クラス
-- テスト: `YamlTestDataParserTest`（37件）+ 各ビルダーテスト（42件）= 79件全グリーン
-- `docs/checks/R-1-refactor.md`（担当者 OK・QA OK・Javaエキスパート OK・SE OK・ユーザーレビュー可）
-
-**通過済みレビュー**:
-- QAエンジニアレビュー 2回（QA-1〜QA-5 + 追加8件 全対応）
-- Javaエキスパートレビュー（Javadoc修正・import整理・try-with-resources等 全対応）
-- ソフトウエアエンジニアレビュー（applyDirectives集約・buildFragments統合・DEFAULT_RECORD_TYPE定数化等 全対応）
-
 ### ADR（設計判断記録）
 
 - `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
 - `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
-
-### 再開手順
-
-1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **I-4 を先に完了させる**
-   - `YamlTestDataParser` および `reader.yaml` パッケージの異常系仕様を列挙し `ntf-impl-spec-list.md` に追加
-   - R-1-refactor で追加した全テストを仕様IDに対応づける
-   - セルフチェック → QAレビュー → ユーザーレビュー
-3. I-4 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得** を行う
-   - チェックファイル `docs/checks/R-1-refactor.md` の内容を提示してユーザーの確認を得る
-   - OK が出たら R-1-refactor 完了（タスク作業内容の最後のチェックボックスにチェック）
-4. R-1-refactor 完了後、次タスクへ進む（**C-1 は R-1-refactor と並行可**）
-   - C-1: JaCoCo カバレッジレポート設定
-   - R-2: 既存テスト（BasicTestDataParserTest）の YAML 版作成
 
 ---
 
