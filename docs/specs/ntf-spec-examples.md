@@ -9,15 +9,22 @@
 | no | description | expectedStatusCode | forwardUri |
 | 1 | 正常ケース | 200 | /result |
 
+- `LIST_MAP=testShots` にテストケースを1行1ケースで記述します
+
 | SETUP_TABLE=USER | | |
 |---|---|---|
 | USER_ID | USER_NAME | STATUS |
 | U001 | 山田太郎 | 01 |
 
+- `SETUP_TABLE=テーブル名` にテスト実行前に投入するデータを記述します
+
 | EXPECTED_TABLE=USER | | |
 |---|---|---|
 | USER_ID | USER_NAME | STATUS |
 | U001 | 山田太郎 | 01 |
+
+- `EXPECTED_TABLE=テーブル名` にテスト後の検証データを記述します
+- 3種のセクションは1ファイルに共存でき、記述順序は問いません
 
 ### YAML
 
@@ -44,6 +51,9 @@ expected_tables:
         USER_NAME: "山田太郎"
         STATUS: "01"
 ```
+
+- テストケースは `list_maps:` の `id: testShots` で記述します
+- セットアップは `setup_tables:`、検証は `expected_tables:` で記述します
 
 ---
 
