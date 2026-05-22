@@ -11,19 +11,19 @@
 
 ### Excel
 
-| LIST_MAP=testShots | | | |
-|---|---|---|---|
-| no | description | expectedStatusCode | forwardUri |
+| LIST_MAP=testShots | | | | |
+|---|---|---|---|---|
+| | no | description | expectedStatusCode | forwardUri |
 | | 1 | 正常ケース | 200 | /result |
 
-| SETUP_TABLE=USER_TABLE | | |
-|---|---|---|
-| USER_ID | USER_NAME | STATUS |
+| SETUP_TABLE=USER_TABLE | | | |
+|---|---|---|---|
+| | USER_ID | USER_NAME | STATUS |
 | | U001 | 山田太郎 | 01 |
 
 | EXPECTED_TABLE=USER_TABLE | | |
 |---|---|---|
-| USER_ID | STATUS |
+| | USER_ID | STATUS |
 | | U001 | 02 |
 
 ### YAML
@@ -63,15 +63,15 @@ expected_tables:
 
 ### Excel
 
-| SETUP_TABLE=USER_TABLE | | |
-|---|---|---|
-| USER_ID | USER_NAME | STATUS |
+| SETUP_TABLE=USER_TABLE | | | |
+|---|---|---|---|
+| | USER_ID | USER_NAME | STATUS |
 | | 001 | 山田太郎 | 01 |
 | | 002 | 鈴木花子 | 02 |
 
-| SETUP_TABLE[case1]=ORDER_TABLE | | | |
-|---|---|---|---|
-| ORDER_ID | USER_ID | AMOUNT | [MARKER] |
+| SETUP_TABLE[case1]=ORDER_TABLE | | | | |
+|---|---|---|---|---|
+| | ORDER_ID | USER_ID | AMOUNT | [MARKER] |
 | | 1001 | 001 | 5000 | X |
 
 ### YAML
@@ -108,15 +108,15 @@ setup_tables:
 
 ### Excel
 
-| LIST_MAP=testShots | | | | | |
-|---|---|---|---|---|---|
-| no | description | isValidToken | expectedStatusCode | forwardUri | context |
+| LIST_MAP=testShots | | | | | | |
+|---|---|---|---|---|---|---|
+| | no | description | isValidToken | expectedStatusCode | forwardUri | context |
 | | 1 | 正常ケース | 0 | 200 | /success | context001 |
 | | 2 | 認証エラー | 0 | 400 | /error | context002 |
 
-| LIST_MAP=context001 | | |
-|---|---|---|
-| REQUEST_ID | USER_ID | HTTP_METHOD |
+| LIST_MAP=context001 | | | |
+|---|---|---|---|
+| | REQUEST_ID | USER_ID | HTTP_METHOD |
 | | REQ_001 | user001 | POST |
 
 ### YAML
@@ -159,9 +159,9 @@ list_maps:
 
 #### Excel
 
-| SETUP_TABLE=USER_TABLE | | | |
-|---|---|---|---|
-| USER_ID | USER_NAME | AGE | STATUS |
+| SETUP_TABLE=USER_TABLE | | | | |
+|---|---|---|---|---|
+| | USER_ID | USER_NAME | AGE | STATUS |
 | | 001 | 山田太郎 | 30 | 01 |
 | | 002 | 鈴木花子 | 25 | 02 |
 
@@ -193,14 +193,14 @@ setup_tables:
 
 #### Excel
 
-| EXPECTED_TABLE=USER_TABLE | | |
-|---|---|---|
-| USER_ID | USER_NAME | STATUS |
+| EXPECTED_TABLE=USER_TABLE | | | |
+|---|---|---|---|
+| | USER_ID | USER_NAME | STATUS |
 | | 001 | 山田太郎 | 01 |
 
-| EXPECTED_COMPLETE_TABLE=USER_TABLE | | | |
-|---|---|---|---|
-| USER_ID | USER_NAME | AGE | STATUS |
+| EXPECTED_COMPLETE_TABLE=USER_TABLE | | | | |
+|---|---|---|---|---|
+| | USER_ID | USER_NAME | AGE | STATUS |
 | | 001 | 山田太郎 | | 01 |
 
 #### YAML
@@ -235,9 +235,9 @@ expected_complete_tables:
 
 #### Excel
 
-| LIST_MAP=params | | |
-|---|---|---|
-| KEY | VALUE | NOTE |
+| LIST_MAP=params | | | |
+|---|---|---|---|
+| | KEY | VALUE | NOTE |
 | | userId | user001 | テストユーザー |
 | | requestId | REQ001 | |
 
@@ -463,7 +463,7 @@ messages:
 
 | MESSAGE=sendSyncTestData/REQ001/message | | | | |
 |---|---|---|---|---|
-| no | errorMode | field1 | field2 | |
+| | no | errorMode | field1 | field2 |
 | | 1 | | value1 | value2 |
 | | 2 | | value3 | value4 |
 
@@ -497,9 +497,9 @@ messages:
 
 #### Excel
 
-| EXPECTED_TABLE=SCHEDULE | | | |
-|---|---|---|---|
-| ID | EVENT_NAME | START_DATE | CREATED_AT |
+| EXPECTED_TABLE=SCHEDULE | | | | |
+|---|---|---|---|---|
+| | ID | EVENT_NAME | START_DATE | CREATED_AT |
 | | 1 | 会議 | 2024-01-15 | 2024-01-01 09:00:00.0 |
 | | 2 | ${systemTime} テスト | ${systemTime} | ${systemTime} |
 | | 3 | NULL テスト | NULL | NULL |
@@ -547,24 +547,6 @@ expected_tables:
 | | X | Z |
 | | 10 | 10 |
 | | 001 | 5000 |
-
-#### YAML
-
-```yaml
-setup_files:
-  - path: input/data.dat
-    type: fixed
-    directives:
-      text-encoding: MS932
-      positive-zone-sign-nibble: C
-    records:
-      - record_type: DATA
-        fields:
-          - {name: USER_ID, type: X, length: 10}
-          - {name: AMOUNT,  type: Z, length: 10}
-        rows:
-          - ["001", "5000"]
-```
 
 ### 可変長ファイルのディレクティブ
 
