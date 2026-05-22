@@ -2,8 +2,6 @@
 
 ## 概要: 1ファイルに3種類のデータを共存させる {#overview}
 
-テストケース（`testShots`）・セットアップ（`SETUP_TABLE`）・検証（`EXPECTED_TABLE`）の3種を1ファイルにまとめて記述した例です。セクションの記述順序は問いません。
-
 ### Excel
 
 | LIST_MAP=testShots | | | |
