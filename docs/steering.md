@@ -525,16 +525,47 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ## 現在の状態（2026-05-22時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
-- **次タスク**: **I-1 ユーザーレビュー OK 取得** → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
+- **次タスク**: **ntf-spec.md 作成（I-1 レビュー前提）** → I-1 ユーザーレビュー → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
 - **I-1**: 完成（109件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
+
+### ntf-spec.md 作成方針（確定）
+
+NTF テストデータの全量把握・Nablarch 解説書収録を目的とした仕様書を2ファイルで作成する。
+
+```
+docs/
+  ntf-spec.md           # 論理仕様書（形式非依存。各節末尾にExampleファイルへのリンク）
+  ntf-spec-examples.md  # Excel表 / YAMLコードブロック 対比（ポイント・差異の解説付き）
+```
+
+**論理仕様書のアウトライン**:
+
+1. 概要（NTFテストデータとは・使われる場面・ファイル全体構造）
+2. セクション識別（書式・14種DataType一覧・GroupData/SingleData・groupId）
+3. テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE / LIST_MAP）
+4. ファイルデータ（固定長・可変長・共通ルール・"-"長フィールド・空ファイル・空行）
+5. メッセージングテストデータ（sendSyncTestData配置・HEADER/BODY・errorMode等）
+6. 特殊値・インタープリタ（チェーン仕組み・一覧・日付型境界値・バイナリ）
+7. ディレクティブ（一覧・デフォルトDI・異常系）
+8. ヘッダ行・コメント・空行（行内コメント・空行スキップ）
+9. 付録: 仕様ID索引（ID / 概要 / 分類 の3列）
+
+**Exampleファイルの各節構成**:
+- Excel表（Markdownテーブルでセルを再現）
+- YAMLコードブロック
+- ポイント・差異（Excel固有実装の注記含む）
+
+**Excel固有仕様の扱い**:
+- DT-03（DataType前方一致）・SS-13（データ行先頭セル空）はExcel実装の内部詳細として論理仕様に注記、YAMLでは非適用と明記
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md`）
-3. **I-2/I-3 を I-1 完全版（109件）を入力として実施する**
-4. I-2/I-3 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得**（`docs/checks/R-1-refactor.md`）
+2. **ntf-spec.md / ntf-spec-examples.md を作成する**
+3. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md` / `docs/ntf-spec.md`）
+4. **I-2/I-3 を I-1 完全版（109件）を入力として実施する**
+5. I-2/I-3 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得**（`docs/checks/R-1-refactor.md`）
 
 
 ### 環境情報
