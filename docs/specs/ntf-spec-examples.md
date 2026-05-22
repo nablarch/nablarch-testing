@@ -19,9 +19,7 @@
 | USER_ID | USER_NAME | STATUS |
 | U001 | 山田太郎 | 01 |
 
-- `LIST_MAP=testShots` にテストケースを1行1ケースで記述します
-- `SETUP_TABLE=テーブル名` にテスト実行前に投入するデータを記述します
-- `EXPECTED_TABLE=テーブル名` にテスト後の検証データを記述します
+- `LIST_MAP=testShots` がテストケース、`SETUP_XXXX=値` がセットアップ、`EXPECTED_XXXX=値` が検証を表します
 - 3種のセクションは1ファイルに共存でき、記述順序は問いません
 
 ### YAML
