@@ -1,7 +1,6 @@
 # NTF テストデータ仕様書
 
 - **対象**: Nablarch Testing Framework（NTF）が読み込むテストデータの構造・ルール・制約
-- **対応仕様ID**: DT-01〜08 / SS-01〜32 / HC-01〜07 / IV-01〜16 / DR-01〜12 / MS-01〜14 / TS-01〜32
 - **形式非依存**: 本書は論理仕様を記述します。Excel・YAML のどちらで記述する場合も同じルールが適用されます
 - **記述例**: 各節末尾のリンクから Excel 表と YAML コードブロックの対比例を参照できます
 
@@ -44,7 +43,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 ## 2. セクション識別
 
-### 2.1 セクション識別の書式（DT-02）
+### 2.1 セクション識別の書式
 
 各セクションの先頭には識別子を記述します。書式は以下のとおりです。
 
@@ -57,11 +56,11 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 - `=`: 必須の区切り文字です
 - `識別子の値`: テーブル名・ファイルパス・IDなどセクション種別ごとの識別子です
 
-**Excel 固有の動作**: Excel 実装では DataType 判定に前方一致（`startsWith`）を使用します。DataType 名で始まれば合致します（DT-03）。YAML では完全なセクションキーを使用するため前方一致は発生しません。
+**Excel 固有の動作**: Excel 実装では DataType 判定に前方一致（`startsWith`）を使用します。DataType 名で始まれば合致します。YAML では完全なセクションキーを使用するため前方一致は発生しません。
 
 → [Excel / YAML Example](ntf-spec-examples.md#section-identifier)
 
-### 2.2 DataType の種類（DT-01）
+### 2.2 DataType の種類
 
 テストデータで使用できる DataType は以下の14種類です。
 
@@ -82,16 +81,16 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `RESPONSE_BODY_MESSAGES` | 応答電文ボディデータ | GroupData または SingleData |
 | `DEFAULT` | フレームワーク内部用（通常使用しません） | — |
 
-### 2.3 GroupData と SingleData（DT-04/05）
+### 2.3 GroupData と SingleData
 
 セクションの収集方式は DataType によって異なります。
 
 - **GroupData**: 同一 groupId を持つセクションをすべて収集します。ファイル全体を最後まで読み込みます（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）
 - **SingleData**: 最初に一致したセクション1件だけを取得して停止します（`LIST_MAP`、`MESSAGE` など）
 
-`LIST_MAP` で同一 ID のエントリが複数ある場合、2件目以降は黙って無視されます（SS-06）。
+`LIST_MAP` で同一 ID のエントリが複数ある場合、2件目以降は黙って無視されます。
 
-### 2.4 groupId の書式と制約（DT-06/08）
+### 2.4 groupId の書式と制約
 
 - 書式: `[groupId]`（角括弧で囲みます）
 - 省略時は空文字扱いです
@@ -99,7 +98,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
 
-### 2.5 RESPONSE_HEADER/BODY_MESSAGES の2経路（DT-07）
+### 2.5 RESPONSE_HEADER/BODY_MESSAGES の2経路
 
 `RESPONSE_HEADER_MESSAGES` と `RESPONSE_BODY_MESSAGES` は、以下の2つの経路でアクセスできます。
 
@@ -110,15 +109,15 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 ## 3. テストケース定義
 
-### 3.1 testShots（TS-01）
+### 3.1 testShots
 
 `LIST_MAP=testShots` はテストケース定義の予約IDです。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧ID `testCases` は後方互換性のためフォールバックとして残存します。
 
-テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合は例外がスローされます（TS-18）。
+テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合は例外がスローされます。
 
 → [Excel / YAML Example](ntf-spec-examples.md#test-shots)
 
-### 3.2 リクエスト単体テスト（ウェブアプリケーション）の testShots カラム（TS-07）
+### 3.2 リクエスト単体テスト（ウェブアプリケーション）の testShots カラム
 
 リクエスト単体テスト（ウェブアプリケーション）での必須カラムは以下のとおりです。
 
@@ -131,7 +130,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `forwardUri` | 期待するフォワード先 URI |
 | `context` | リクエスト ID・ユーザ・HTTP メソッドを記載した `LIST_MAP` 名 |
 
-主なオプションカラムは以下のとおりです（TS-09〜16）。
+主なオプションカラムは以下のとおりです。
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
@@ -139,7 +138,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `expectedTable` | テーブル期待値のグループ ID | スキップ |
 | `expectedSearch` | 検索結果期待値のグループ ID | スキップ |
 | `expectedMessageId` | 期待するメッセージ ID（カンマ区切りで複数指定可） | スキップ |
-| `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名（TS-02） | — |
+| `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名 | — |
 | `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
 | `queryParams` | クエリパラメータの `LIST_MAP` 名 | パラメータなし |
 | `HTTP_METHOD` | HTTP メソッド | `"POST"` |
@@ -151,9 +150,9 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `expectedMessageByClient` | HTTP 同期応答メッセージ送信の要求電文グループ ID | スキップ |
 | `responseMessageByClient` | HTTP 同期応答メッセージ送信の応答電文グループ ID | スキップ |
 
-`context` LIST_MAP は1エントリのみ有効です。`REQUEST_ID` が空の場合は例外がスローされます（TS-20/21）。
+`context` LIST_MAP は1エントリのみ有効です。`REQUEST_ID` が空の場合は例外がスローされます。
 
-### 3.3 リクエスト単体テスト（バッチ処理）の testShots カラム（TS-08）
+### 3.3 リクエスト単体テスト（バッチ処理）の testShots カラム
 
 リクエスト単体テスト（バッチ処理）での必須カラムは以下のとおりです。
 
@@ -166,7 +165,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `requestPath` | リクエストパス |
 | `userId` | 実行ユーザ ID |
 
-主なオプションカラムは以下のとおりです（TS-09〜12/17）。
+主なオプションカラムは以下のとおりです。
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
@@ -178,7 +177,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `args[0]`, `args[1]`, ... | コマンドライン引数 | — |
 | その他任意カラム | コマンドラインオプション | — |
 
-### 3.4 DB 共通セットアップデータ（TS-05）
+### 3.4 DB 共通セットアップデータ
 
 `setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
 
@@ -186,26 +185,26 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 ## 4. テーブルデータ
 
-### 4.1 データの形式（SS-01）
+### 4.1 データの形式
 
 テーブルデータの各エントリは「カラム名=値」の形式で記述します。省略したカラムには INSERT 時にデフォルト値が補完されます。
 
 → [Excel / YAML Example](ntf-spec-examples.md#table-data)
 
-### 4.2 SETUP_TABLE（SS-01/04）
+### 4.2 SETUP_TABLE
 
 DB への INSERT 用データです。
 
 - 各エントリのカラム名と値を記述します
 - **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース等）が INSERT されます
 
-### 4.3 EXPECTED_TABLE（SS-02）
+### 4.3 EXPECTED_TABLE
 
 テスト後の DB 状態と比較するデータです。
 
 - **省略したカラムは比較対象外**になります。検証したいカラムだけを列挙できます
 
-### 4.4 EXPECTED_COMPLETE_TABLE（SS-03/18）
+### 4.4 EXPECTED_COMPLETE_TABLE
 
 省略カラムにデフォルト値を補完してから比較するデータです。
 
@@ -221,13 +220,13 @@ DB への INSERT 用データです。
 | バイナリ型 | 10バイトのゼロバイト列の HexString |
 | Boolean 型 | `"false"` |
 
-**注意**: DATE カラムのデフォルト値は JVM のタイムゾーン設定に依存します。JST 環境と UTC 環境では値が異なります（SS-18）。
+**注意**: DATE カラムのデフォルト値は JVM のタイムゾーン設定に依存します。JST 環境と UTC 環境では値が異なります。
 
-**混在禁止（SS-05）**: `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると、後半のデータが読み込まれません。同じ種別のセクションをまとめて記述してください。
+**混在禁止**: `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると、後半のデータが読み込まれません。同じ種別のセクションをまとめて記述してください。
 
 → [Excel / YAML Example](ntf-spec-examples.md#expected-complete-table)
 
-### 4.5 LIST_MAP（SS-06）
+### 4.5 LIST_MAP
 
 キーバリュー形式の汎用データです。テストケース定義（`testShots`）・リクエストパラメータ・期待値オブジェクト・期待ログなど、様々な用途で使用されます。
 
@@ -242,11 +241,11 @@ DB への INSERT 用データです。
 
 ## 5. ファイルデータ
 
-### 5.1 固定長・可変長の統合（SS-07）
+### 5.1 固定長・可変長の統合
 
 `SETUP_FIXED` と `SETUP_VARIABLE` は `getSetupFile()` でまとめて返されます。`EXPECTED_FIXED` / `EXPECTED_VARIABLE` も同様です。ファイル種別はセクション内の属性（固定長 or 可変長）で区別します。
 
-### 5.2 ファイルセクションの構造（SS-08/12）
+### 5.2 ファイルセクションの構造
 
 ファイルセクションは以下の順序で記述します。
 
@@ -256,38 +255,38 @@ DB への INSERT 用データです。
 4. **フィールド長**（固定長のみ）: 各フィールドのバイト長
 5. **データ**（1件以上）: 実データ
 
-**Excel 固有の制約**: データの先頭要素は必ず空（null または空文字）にする必要があります（SS-13）。YAML にはこの制約はありません。
+**Excel 固有の制約**: データの先頭要素は必ず空（null または空文字）にする必要があります。YAML にはこの制約はありません。
 
 → [Excel / YAML Example](ntf-spec-examples.md#file-data)
 
-### 5.3 固定長ファイル固有の仕様（SS-09/16/23）
+### 5.3 固定長ファイル固有の仕様
 
-- フィールド名称・データ型・フィールド長の3リストが同サイズで必須です（SS-09）
-- ファイル内の全フラグメントは同一レコード長でなければなりません。違反時は `IllegalStateException` がスローされます（SS-16）
-- フィールド値がフィールド長を超えた場合は `IllegalStateException` がスローされます（SS-23）
+- フィールド名称・データ型・フィールド長の3リストが同サイズで必須です
+- ファイル内の全フラグメントは同一レコード長でなければなりません。違反時は `IllegalStateException` がスローされます
+- フィールド値がフィールド長を超えた場合は `IllegalStateException` がスローされます
 
-### 5.4 可変長ファイル固有の仕様（SS-10/20）
+### 5.4 可変長ファイル固有の仕様
 
-- フィールド名称・データ型の2リストが同サイズで必須です。フィールド長は不要です（SS-10）
-- **空エントリの動作**: 可変長ファイルの空エントリはスキップされず、全フィールドが `""` のレコードとして保持されます。固定長ファイルの空エントリはスペースパディングされた定長レコードとして書き出されます（SS-20）
+- フィールド名称・データ型の2リストが同サイズで必須です。フィールド長は不要です
+- **空エントリの動作**: 可変長ファイルの空エントリはスキップされず、全フィールドが `""` のレコードとして保持されます。固定長ファイルの空エントリはスペースパディングされた定長レコードとして書き出されます
 
-### 5.5 複数レコードレイアウト（SS-11）
+### 5.5 複数レコードレイアウト
 
 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます。データの後ろに新たなレコード種別とフィールド名称を書くと、新しいレコードレイアウトとして扱われます。
 
 → [Excel / YAML Example](ntf-spec-examples.md#multi-record)
 
-### 5.6 空ファイル（SS-15）
+### 5.6 空ファイル
 
 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します。
 
 → [Excel / YAML Example](ntf-spec-examples.md#empty-file)
 
-### 5.7 `"-"` 長フィールド（SS-17）
+### 5.7 `"-"` 長フィールド
 
 フィールド長に `"-"` を指定すると、追加された全レコードの最大バイト長に自動拡張されます。値は改行コードと前後空白が除去されます。
 
-### 5.8 異常系（SS-14/21〜28/30）
+### 5.8 異常系
 
 | 条件 | 例外 |
 |---|---|
@@ -304,7 +303,7 @@ DB への INSERT 用データです。
 
 ## 6. メッセージングテストデータ
 
-### 6.1 sendSyncTestData の配置規則（MS-07）
+### 6.1 sendSyncTestData の配置規則
 
 テストデータファイルは `sendSyncTestData` ベースパス下にリクエスト ID と同名のファイルとして配置します。
 
@@ -312,7 +311,7 @@ DB への INSERT 用データです。
 sendSyncTestData/{requestId}/message
 ```
 
-### 6.2 FW 制御ヘッダフィールド（MS-01）
+### 6.2 FW 制御ヘッダフィールド
 
 デフォルトの FW 制御ヘッダフィールドは以下の4種類です。`reader.fwHeaderfields` キーで変更できます。
 
@@ -321,39 +320,39 @@ sendSyncTestData/{requestId}/message
 - `resendFlag`
 - `resultCode`
 
-### 6.3 HEADER / BODY MESSAGES の構造と件数制約（MS-05/11）
+### 6.3 HEADER / BODY MESSAGES の構造と件数制約
 
-- `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` のエントリ数（rows 合計）は一致が必須です。不一致の場合は `IllegalStateException` がスローされます（MS-05）
-- HTTP 同期応答メッセージ（`response_body_messages`）の各データエントリは文字列長が同一である必要があります（MS-11）
+- `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` のエントリ数（rows 合計）は一致が必須です。不一致の場合は `IllegalStateException` がスローされます
+- HTTP 同期応答メッセージ（`response_body_messages`）の各データエントリは文字列長が同一である必要があります
 
-### 6.4 no カラムと errorMode（MS-02/04）
+### 6.4 no カラムと errorMode
 
 - `no` カラム（先頭カラム）はフレームワークが除去し、データとして保存されません
 - `errorMode` の値はカラム番号1に格納されます
-- `errorMode:timeout` および `errorMode:msgException` は特殊値です。これらが指定されたエントリでは他フィールドはパースされません（MS-04）
+- `errorMode:timeout` および `errorMode:msgException` は特殊値です。これらが指定されたエントリでは他フィールドはパースされません
 
-### 6.5 複数回送信（MS-09/10）
+### 6.5 複数回送信
 
 N 回送信する場合は、ヘッダ件数とボディ件数をともに N 件ずつ記述します。同一リクエスト ID で複数回送信する場合は `no` 値を変えて連続記述し、送信順序と `no` 値を一致させます。
 
-### 6.6 GroupMessageParser（MS-06）
+### 6.6 GroupMessageParser
 
 同一 groupId の複数メッセージプールを収集します。セクション識別子 `=` 以降をリクエスト ID として使用します。
 
-### 6.7 ステータスコード（MS-08）
+### 6.7 ステータスコード
 
 ステータスコードカラムがない場合はデフォルト値 `"200"` が使用されます。
 
-### 6.8 フォーマット定義ファイルの命名規則（MS-12）
+### 6.8 フォーマット定義ファイルの命名規則
 
 - 応答電文: `{requestId}_RECEIVE`
 - 要求電文: `{requestId}_SEND`
 
-### 6.9 アサート方式の切り替え（MS-13）
+### 6.9 アサート方式の切り替え
 
 SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じてアサート方式が切り替わります。未設定時のデフォルトは `"Fixed"` 形式（項目単位アサート）です。
 
-### 6.10 record_type の扱い（MS-03）
+### 6.10 record_type の扱い
 
 `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は、内部で常に `"default"` に置き換えられます。任意の値を記述できます（装飾的なメタデータとして扱われます）。
 
@@ -367,29 +366,29 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 テストデータの値はパース時にインタープリタチェーンを通過し、変換されます。DI 設定で注入されたインタープリタが順番に適用されます。
 
-### 7.2 インタープリタ一覧（IV-01〜08）
+### 7.2 インタープリタ一覧
 
 | インタープリタ | 変換内容 |
 |---|---|
-| `NullInterpreter` | `null` / `NULL` / `Null`（大文字小文字不問）→ Java null（IV-01） |
-| `QuotationTrimmer` | 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去（IV-02） |
-| `DateTimeInterpreter` | `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換（IV-03） |
-| `LineSeparatorInterpreter` | `\\r` → CR（0x0D）、`\\n` → LF（0x0A）に変換（IV-04） |
-| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換（IV-05） |
-| `BasicJapaneseCharacterInterpreter` | `${文字種,文字数}` 形式で文字列生成（IV-06） |
-| `CompositeInterpreter` | 文字列中の `${...}` 要素を個別解釈して置換（IV-08） |
+| `NullInterpreter` | `null` / `NULL` / `Null`（大文字小文字不問）→ Java null |
+| `QuotationTrimmer` | 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去 |
+| `DateTimeInterpreter` | `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 |
+| `LineSeparatorInterpreter` | `\\r` → CR（0x0D）、`\\n` → LF（0x0A）に変換 |
+| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換 |
+| `BasicJapaneseCharacterInterpreter` | `${文字種,文字数}` 形式で文字列生成 |
+| `CompositeInterpreter` | 文字列中の `${...}` 要素を個別解釈して置換 |
 
-### 7.3 DateTimeInterpreter の完全一致制約（IV-03）
+### 7.3 DateTimeInterpreter の完全一致制約
 
 `DateTimeInterpreter` は完全一致のみ変換します。部分文字列は変換されません。文字列中の `${...}` を置換するには `CompositeInterpreter` との組み合わせが必要です。
 
-### 7.4 BasicJapaneseCharacterGenerator の有効文字種（IV-07）
+### 7.4 BasicJapaneseCharacterGenerator の有効文字種
 
 14種類の文字種が使用できます: 半角英字 / 半角数字 / 半角記号 / 半角カナ / 全角英字 / 全角数字 / 全角ひらがな / 全角カタカナ / 全角漢字 / 全角記号その他 / 中国語 / サロゲートペア / 改行 / 外字
 
-未知の文字種を指定すると `IllegalArgumentException` がスローされます（IV-16）。
+未知の文字種を指定すると `IllegalArgumentException` がスローされます。
 
-### 7.5 QuotationTrimmer によるスペース値明示記法（IV-14）
+### 7.5 QuotationTrimmer によるスペース値明示記法
 
 空白値を可視化して記述するための記法です。
 
@@ -398,7 +397,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | `" "` | 半角スペース1文字 |
 | `"""` | ダブルクォート1文字 |
 
-### 7.6 日付型カラムの記述形式と境界値（IV-09/10）
+### 7.6 日付型カラムの記述形式と境界値
 
 有効な記述形式は以下のとおりです。
 
@@ -406,65 +405,65 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 - 後置0埋め短縮形
 - JDBC タイムスタンプエスケープ形式（5文字目が `-`）
 
-`java.sql.Timestamp` 型カラムの期待値は末尾 `.0` が必須です（例: `"2010-01-01 12:34:56.0"`）。末尾 `.0` がないとアサートが失敗します（IV-10）。
+`java.sql.Timestamp` 型カラムの期待値は末尾 `.0` が必須です（例: `"2010-01-01 12:34:56.0"`）。末尾 `.0` がないとアサートが失敗します。
 
 → [Excel / YAML Example](ntf-spec-examples.md#datetime)
 
-### 7.7 バイナリデータの記述（IV-11）
+### 7.7 バイナリデータの記述
 
 `0x` プレフィクス付き16進数で記述できます。`0x` がない場合は文字列としてエンコードされます。
 
-### 7.8 X9/SX9 型フィールドの記述（IV-15）
+### 7.8 X9/SX9 型フィールドの記述
 
 パディング文字・符号を含めた実際のバイト列表現（固定長フォーマットの実値）をそのまま記述します。
 
-### 7.9 データ型マッピング（IV-12/13）
+### 7.9 データ型マッピング
 
 `BasicDataTypeMapping` のデフォルトマッピング22種が使用できます。未知の型記号を指定すると `IllegalArgumentException` がスローされます。
 
-`TEST_{baseType}` 名のデータ型が存在する場合、自動的に優先使用されます（IV-13）。
+`TEST_{baseType}` 名のデータ型が存在する場合、自動的に優先使用されます。
 
 ---
 
 ## 8. ディレクティブ
 
-### 8.1 ディレクティブの構成（DR-01）
+### 8.1 ディレクティブの構成
 
 ディレクティブは「キー名・値」の2要素で記述します（最低2要素必要）。
 
-### 8.2 固定長ファイルのディレクティブ（DR-02）
+### 8.2 固定長ファイルのディレクティブ
 
-固定長ファイルで有効なディレクティブキーは `FixedLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます（DR-11）。
+固定長ファイルで有効なディレクティブキーは `FixedLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます。
 
 | ディレクティブキー | 説明 |
 |---|---|
-| `file-type` | 自動設定（`"Fixed"`）。通常は記述不要です（DR-07） |
-| `record-length` | フィールド長合計から自動計算。通常は記述不要です（DR-08） |
+| `file-type` | 自動設定（`"Fixed"`）。通常は記述不要です |
+| `record-length` | フィールド長合計から自動計算。通常は記述不要です |
 | `text-encoding` | ファイルの文字エンコーディング |
 | `positive-zone-sign-nibble` | ゾーン10進数の正符号ニブル |
 | その他 | `FixedLengthDirective` 列挙型の定義を参照してください |
 
-### 8.3 可変長ファイルのディレクティブ（DR-03/09/10/12）
+### 8.3 可変長ファイルのディレクティブ
 
-可変長ファイルで有効なディレクティブキーは `VariableLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます（DR-11）。
+可変長ファイルで有効なディレクティブキーは `VariableLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます。
 
 | ディレクティブキー | 説明 |
 |---|---|
-| `file-type` | 自動設定（`"Variable"`）。通常は記述不要です（DR-07） |
-| `field-separator` | フィールド区切り文字。デフォルトは `","` です。`"\\t"` 指定でタブ文字になります。**1文字のみ有効**（2文字以上は `IllegalArgumentException`）（DR-09/12） |
-| `record-separator` | レコード区切り。`NONE` / `CR` / `LF` / `CRLF` または任意リテラル文字列が有効です（DR-10） |
+| `file-type` | 自動設定（`"Variable"`）。通常は記述不要です |
+| `field-separator` | フィールド区切り文字。デフォルトは `","` です。`"\\t"` 指定でタブ文字になります。**1文字のみ有効**（2文字以上は `IllegalArgumentException`） |
+| `record-separator` | レコード区切り。`NONE` / `CR` / `LF` / `CRLF` または任意リテラル文字列が有効です |
 | `quoting-delimiter` | クォート文字 |
 | その他 | `VariableLengthDirective` 列挙型の定義を参照してください |
 
-### 8.4 デフォルトディレクティブの DI 設定（DR-04/05/06）
+### 8.4 デフォルトディレクティブの DI 設定
 
 SystemRepository への DI 設定で、全ファイル共通または種別専用のデフォルトディレクティブを一括設定できます。
 
 | DI キー | 適用対象 |
 |---|---|
-| `defaultDirectives` | 全ファイル共通のデフォルト（DR-04） |
-| `fixedLengthDirectives` | 固定長ファイル専用。`defaultDirectives` より後に上書き適用されます（DR-05） |
-| `variableLengthDirectives` | 可変長ファイル専用（DR-06） |
+| `defaultDirectives` | 全ファイル共通のデフォルト |
+| `fixedLengthDirectives` | 固定長ファイル専用。`defaultDirectives` より後に上書き適用されます |
+| `variableLengthDirectives` | 可変長ファイル専用 |
 
 → [Excel / YAML Example](ntf-spec-examples.md#directive)
 
@@ -476,26 +475,26 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 
 ヘッダにはカラム名を列挙します。
 
-- ヘッダ末尾の空カラムは除去されます（末尾カラムの省略が可能です）（HC-03）
-- データエントリがヘッダより少ない場合、不足分は空文字 `""` で補完されます（HC-04）
+- ヘッダ末尾の空カラムは除去されます（末尾カラムの省略が可能です）
+- データエントリがヘッダより少ない場合、不足分は空文字 `""` で補完されます
 
-### 9.2 マーカーカラム（HC-01/02）
+### 9.2 マーカーカラム
 
 カラム名が `[カラム名]` 形式（角括弧で囲まれた名前）のカラムはマーカーカラムとして扱われ、DB 操作から除外されます。
 
-### 9.3 コメント（HC-05）
+### 9.3 コメント
 
 先頭要素が `//` で始まるエントリは丸ごとスキップされます。
 
 **YAML**: YAML では標準のコメント構文（`#`）を使用します。
 
-### 9.4 途中からのコメント（HC-06）
+### 9.4 途中からのコメント
 
 先頭以外の要素が `//` で始まる場合、その要素以降が切り捨てられます。これは Excel 実装固有の動作です。
 
 **YAML**: YAML では行末コメント（`#`）で同等の機能を実現できます。
 
-### 9.5 空エントリのスキップ（HC-07）
+### 9.5 空エントリのスキップ
 
 全要素が null または空文字のエントリは読み飛ばされます。
 
