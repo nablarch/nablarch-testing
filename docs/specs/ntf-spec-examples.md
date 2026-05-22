@@ -6,7 +6,7 @@
 
 ## 概要: 1ファイルに3種類のデータを共存させる {#overview}
 
-テストケース（`testShots`）・セットアップ（`SETUP_TABLE`）・検証（`EXPECTED_TABLE`）の3種を1ファイルにまとめて記述した例です。
+テストケース（`testShots`）・セットアップ（`SETUP_TABLE`）・検証（`EXPECTED_TABLE`）の3種を1ファイルにまとめて記述した例です。セクションの記述順序は問いません。
 
 ### Excel
 
@@ -51,11 +51,6 @@ expected_tables:
         STATUS: "01"
 ```
 
-### ポイント
-
-- テストケース・セットアップ・検証の3種を1ファイルに共存させることができます
-- セクションの記述順序は問いません
-
 ---
 
 ## セクション識別 {#section-identifier}
@@ -72,6 +67,10 @@ expected_tables:
 |---|---|---|---|
 | ORDER_ID | USER_ID | AMOUNT | [MARKER] |
 | 1001 | 001 | 5000 | X |
+
+- セクション識別行に `SETUP_TABLE=テーブル名` と書きます
+- groupId は `[case1]` と DataType 名に続けて書きます
+- **Excel 固有**: DataType 判定に前方一致（`startsWith`）を使用します。DataType 名で始まれば合致します
 
 ### YAML
 
@@ -94,12 +93,10 @@ setup_tables:
         "[MARKER]": "X"
 ```
 
-### ポイント・差異
-
-- Excel ではセクション識別行に `SETUP_TABLE=テーブル名` と書きます。YAML では `setup_tables:` というセクションキーを使い、各エントリの `table:` にテーブル名を記述します
-- groupId は Excel では `[case1]` と DataType 名に続けて書きます。YAML では `group_id: case1` フィールドとして記述します
-- マーカーカラム `[MARKER]` は YAML では `"[MARKER]"` とダブルクォートで囲みます（YAML の角括弧構文との衝突を避けるため）
-- **Excel 固有**: Excel では DataType 判定に前方一致（`startsWith`）を使用します。YAML では完全なセクションキーを使用します
+- `setup_tables:` というセクションキーを使い、各エントリの `table:` にテーブル名を記述します
+- groupId は `group_id: case1` フィールドとして記述します
+- マーカーカラム `[MARKER]` は `"[MARKER]"` とダブルクォートで囲みます（YAML の角括弧構文との衝突を避けるため）
+- 完全なセクションキーを使用するため前方一致は発生しません
 
 ---
 
@@ -144,8 +141,6 @@ list_maps:
         HTTP_METHOD: "POST"
 ```
 
-### ポイント
-
 - `testShots` はフレームワークが自動読み込みする予約 ID です
 - `context` カラムの値は対応する `LIST_MAP` の ID を指定します。その `LIST_MAP` から `REQUEST_ID`・`USER_ID`・`HTTP_METHOD` を取得します
 - `testShots` が0件の場合は例外がスローされます
@@ -164,6 +159,9 @@ list_maps:
 | 001 | 山田太郎 | 30 | 01 |
 | 002 | 鈴木花子 | 25 | 02 |
 
+- カラム名を1行目に並べ、2行目以降にデータを記述します
+- **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース）が INSERT されます
+
 #### YAML
 
 ```yaml
@@ -180,11 +178,8 @@ setup_tables:
         STATUS: "02"
 ```
 
-#### ポイント・差異
-
-- Excel ではカラム名を1行目に並べ、2行目以降にデータを記述します。YAML では各行がオブジェクトになり、カラム名がキーになります
-- 全値は文字列として記述します（YAML でも `"001"` のようにクォートします）
-- **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース）が INSERT されます
+- 各行がオブジェクトになり、カラム名がキーになります
+- 全値は文字列として記述します（`"001"` のようにクォートします）
 
 ---
 
@@ -202,6 +197,11 @@ setup_tables:
 |---|---|---|---|
 | USER_ID | USER_NAME | AGE | STATUS |
 | 001 | 山田太郎 | | 01 |
+
+- `EXPECTED_TABLE`: 省略したカラムは比較対象外になります
+- `EXPECTED_COMPLETE_TABLE`: 省略したカラムには `BasicDefaultValues` のデフォルト値が補完されてから比較されます
+- いずれも省略は値を空セルにすることで表現します
+- **混在禁止**: 同一ファイル内で `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を混在させると後半のデータが読み込まれません
 
 #### YAML
 
@@ -227,12 +227,7 @@ expected_complete_tables:
         STATUS: "01"
 ```
 
-#### ポイント・差異
-
-- `EXPECTED_TABLE` で省略したカラムは比較対象外になります
-- `EXPECTED_COMPLETE_TABLE` で省略したカラムには `BasicDefaultValues` のデフォルト値が補完されてから比較されます
-- YAML では省略したいカラムのキーを書かないだけです。Excel では値を空セルにすることで省略できます
-- **混在禁止**: 同一ファイル内で `expected_tables` と `expected_complete_tables` を混在させると後半のデータが読み込まれません。種別ごとにまとめて記述してください
+- 省略したいカラムのキーを書かないだけです
 
 ---
 
@@ -245,6 +240,8 @@ expected_complete_tables:
 | KEY | VALUE | NOTE |
 | userId | user001 | テストユーザー |
 | requestId | REQ001 | |
+
+- `LIST_MAP=id` でセクションを識別します
 
 #### YAML
 
@@ -260,9 +257,7 @@ list_maps:
         NOTE: null
 ```
 
-#### ポイント・差異
-
-- Excel では `LIST_MAP=id` でセクションを識別します。YAML では `list_maps:` セクション内の `id:` フィールドで識別します
+- `list_maps:` セクション内の `id:` フィールドで識別します
 - `testShots` は予約 ID です。フレームワークがテストケース定義として自動読み込みします
 
 ---
@@ -281,6 +276,9 @@ list_maps:
 | | 10 | 20 | 10 |
 | | 001 | 山田太郎 | 5000 |
 | | 002 | 鈴木花子 | 3000 |
+
+- 「レコード種別+フィールド名称行・データ型行・フィールド長行」の3行でフィールドを定義します
+- データ行の先頭セルは空です（レコード種別は定義行にのみ記述します）
 
 #### YAML
 
@@ -301,12 +299,9 @@ setup_files:
           - ["002", "鈴木花子", "3000"]
 ```
 
-#### ポイント・差異
-
-- Excel では「レコード種別+フィールド名称行・データ型行・フィールド長行」の3行でフィールドを定義します。YAML では `fields:` 配列の1要素（`name`/`type`/`length`）にまとめます
-- Excel のデータ行は先頭セルが空です（レコード種別は定義行にのみ記述する Excel 固有の規則）。YAML の `rows:` は配列の配列形式で先頭セルの概念はありません
+- `fields:` 配列の1要素（`name`/`type`/`length`）にまとめます
 - `rows:` の各配列は `fields:` と**完全に同じ順序・件数**で値を並べます
-- **パディング不要**: 固定長ファイルのデータ値はパディングなしで記述します（フレームワークが自動付与します）
+- **パディング不要**: データ値はパディングなしで記述します（フレームワークが自動付与します）
 
 ---
 
@@ -341,10 +336,8 @@ setup_files:
           - ["002", "鈴木花子", "3000"]
 ```
 
-#### ポイント・差異
-
-- 可変長ファイルは `length` が不要です。`fields:` の各要素から `length` を省略できます
-- 固定長との見た目の差異は `type: fixed` / `type: variable` と `length` の有無だけです
+- `length` が不要です。`fields:` の各要素から `length` を省略できます
+- 固定長との差異は `type: fixed` / `type: variable` と `length` の有無だけです
 
 ---
 
@@ -362,6 +355,8 @@ setup_files:
 | | X | Z | N |
 | | 10 | 10 | 20 |
 | | 001 | 5000 | 備考 |
+
+- 同一セクション内でレコード種別+フィールド名称行を続けて書くことで複数レコードレイアウトを表現します
 
 #### YAML
 
@@ -385,10 +380,7 @@ setup_files:
           - ["001", "5000", "備考"]
 ```
 
-#### ポイント・差異
-
-- Excel では同一セクション内でレコード種別+フィールド名称行を続けて書くことで複数レコードレイアウトを表現します
-- YAML では `records:` 配列に複数のレコードレイアウトを並べます
+- `records:` 配列に複数のレコードレイアウトを並べます
 
 ---
 
@@ -399,6 +391,8 @@ setup_files:
 | SETUP_FIXED=input/empty.dat | |
 |---|---|
 | text-encoding | MS932 |
+
+- ディレクティブ行のみ記述してレコード定義以降を省略します
 
 #### YAML
 
@@ -411,10 +405,7 @@ setup_files:
     records: []
 ```
 
-#### ポイント・差異
-
-- Excel ではディレクティブ行のみ記述してレコード定義以降を省略します
-- YAML では `records: []` と空配列を記述します
+- `records: []` と空配列を記述します
 
 ---
 
@@ -455,8 +446,6 @@ messages:
           - ["value1", "value2"]
 ```
 
-#### ポイント・差異
-
 - `record_type` の値（`FW_HEADER`、`BODY` 等）はフレームワーク内部で `"default"` に置き換えられます。任意の値を記述できます
 - `no` 列（先頭列）はフレームワークが除去します。データとして保存されません
 
@@ -471,6 +460,8 @@ messages:
 | no | errorMode | field1 | field2 |
 | 1 | | value1 | value2 |
 | 2 | | value3 | value4 |
+
+- `no` 列の値は送信順序と一致させます
 
 #### YAML
 
@@ -489,9 +480,6 @@ messages:
           - ["2", "", "value3", "value4"]
 ```
 
-#### ポイント・差異
-
-- `no` 列の値は送信順序と一致させます
 - `errorMode` に `timeout` または `msgException` を指定すると他フィールドはパース対象外になります
 
 ---
@@ -508,6 +496,8 @@ messages:
 | 1 | 会議 | 2024-01-15 | 2024-01-01 09:00:00.0 |
 | 2 | ${systemTime} テスト | ${systemTime} | ${systemTime} |
 | 3 | NULL テスト | NULL | NULL |
+
+- NULL 値は `NULL` と記述します（`NullInterpreter` が Java null に変換します）
 
 #### YAML
 
@@ -529,12 +519,9 @@ expected_tables:
         CREATED_AT: null
 ```
 
-#### ポイント・差異
-
 - `java.sql.Timestamp` 型カラムの期待値は末尾 `.0` が必須です（`"2024-01-01 09:00:00.0"`）
-- `${systemTime}` は `DateTimeInterpreter` が変換します。完全一致のみ変換されます。文字列中の `${systemTime}` を変換するには `CompositeInterpreter` との組み合わせが必要です
-- NULL 値は Excel では `NULL`（`NullInterpreter` が変換）、YAML では `null`（アンクォート）で記述します
-- **注意**: YAML で `"null"` とクォートすると文字列 `"null"` として格納されます（NULL にはなりません）
+- `${systemTime}` は完全一致のみ変換されます。文字列中に埋め込む場合は `CompositeInterpreter` との組み合わせが必要です
+- NULL 値はアンクォートの `null` で記述します。`"null"` とクォートすると文字列として格納されます
 
 ---
 
@@ -553,6 +540,8 @@ expected_tables:
 | | 10 | 10 |
 | | 001 | 5000 |
 
+- ディレクティブ行を「キー | 値」の2セルで記述します
+
 ### 可変長ファイルのディレクティブ
 
 #### Excel
@@ -564,6 +553,9 @@ expected_tables:
 | DATA | FIELD1 | FIELD2 |
 | | X | X |
 | | value1 | value2 |
+
+- ディレクティブ行を「キー | 値」の2セルで記述します
+- `field-separator` に `\t` を指定するとタブ文字になります
 
 #### YAML
 
@@ -583,9 +575,7 @@ setup_files:
           - ["value1", "value2"]
 ```
 
-#### ポイント・差異
-
-- Excel ではディレクティブ行を「キー | 値」の2セルで記述します。YAML では `directives:` オブジェクトの `key: value` 形式で記述します
+- `directives:` オブジェクトの `key: value` 形式で記述します
+- `field-separator` のタブ文字は `"\\t"` と記述します
 - `file-type` と `record-length` はフレームワークが自動設定するため通常は記述不要です
-- `field-separator` に `\t` を指定するとタブ文字になります。YAML では `"\\t"` と記述します
 - 無効なディレクティブキーを指定すると `IllegalArgumentException` がスローされます
