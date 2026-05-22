@@ -530,13 +530,15 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
   - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列を追加済み（節番号なし = 記載漏れのインジケーター）
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
-- **ntf-spec.md**: 用語見直し・仕様ID参照削除完了。1〜3章を Example と合わせて仕上げ中
+- **ntf-spec.md**: 用語見直し・仕様ID参照削除完了。全章を Example と合わせて仕上げ待ち
   - v6 解説書（全8ページ）を読み込み、用語を `docs/specs/ntf-doc-terms.md` に整理済み
   - 用語統一済み: フィールド名称・データ型・フィールド長・レコード種別・グループ ID・ユーザ ID
   - テスト種別名を正式名称に統一: 「リクエスト単体テスト（ウェブアプリケーション）」「リクエスト単体テスト（バッチ処理）」等
   - Excel 固有表現（シート・セル・行・列）を全排除済み
   - 仕様ID参照（DT-02）等を全削除済み（仕様IDの管理は `ntf-impl-spec-list.md` の節番号列で行う）
-  - **2.1節 課題**: セクション識別の書式が Excel 形式のみ記載。Excel/YAML 両形式を並記する必要がある
+  - **2.1節 未修正**: セクション識別の書式が Excel 形式のみ。Excel/YAML 両形式を並記すること
+- **ntf-spec-examples.md（旧）**: 廃止予定。内容は ntf-spec-examples-*.md に移行する
+- **Exampleリポジトリ調査済み**: nablarch-example-web/batch の Excel テストデータファイル一覧・用途・テーブル名を確認済み（下記「再開手順」参照）
 
 ### ntf-spec.md / ntf-spec-examples-*.md 構成方針
 
