@@ -37,7 +37,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 これらは**セクション**という単位で管理され、`DataType名=識別子` の形式で区別されます。1つのファイルに複数種別のセクションを共存させることができます。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#overview)
+→ [Excel / YAML Example](ntf-spec-examples-overview.md#overview)
 
 ---
 
@@ -45,7 +45,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 ### 2.1 セクション識別の書式
 
-各セクションの先頭には識別子を記述します。書式は以下のとおりです。
+各セクションの先頭には識別子を記述します。論理仕様上の書式は以下のとおりです。
 
 ```
 <DataType名>[groupId]=<識別子の値>
@@ -56,9 +56,51 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 - `=`: 必須の区切り文字です
 - `識別子の値`: テーブル名・ファイルパス・IDなどセクション種別ごとの識別子です
 
-**Excel 固有の動作**: Excel 実装では DataType 判定に前方一致（`startsWith`）を使用します。DataType 名で始まれば合致します。YAML では完全なセクションキーを使用するため前方一致は発生しません。
+#### Excel での記述
 
-→ [Excel / YAML Example](ntf-spec-examples.md#section-identifier)
+Excel ではセクション識別子をセルに直接記述します。
+
+```
+SETUP_TABLE=USER_MASTER
+SETUP_TABLE[case1]=ORDER
+```
+
+- DataType 判定に前方一致（`startsWith`）を使用します。DataType 名で始まれば合致します
+- groupId は DataType 名の直後に `[groupId]` と書きます
+
+#### YAML での記述
+
+YAML ではセクション種別ごとに専用のトップレベルキーを使用します。
+
+| 論理 DataType 名 | YAML キー |
+|---|---|
+| `SETUP_TABLE` | `setup_tables` |
+| `EXPECTED_TABLE` | `expected_tables` |
+| `EXPECTED_COMPLETE_TABLE` | `expected_complete_tables` |
+| `LIST_MAP` | `list_maps` |
+| `SETUP_FIXED` / `SETUP_VARIABLE` | `setup_files` |
+| `EXPECTED_FIXED` / `EXPECTED_VARIABLE` | `expected_files` |
+| `MESSAGE` | `messages` |
+| `EXPECTED_REQUEST_HEADER_MESSAGES` | `expected_request_header_messages` |
+| `EXPECTED_REQUEST_BODY_MESSAGES` | `expected_request_body_messages` |
+| `RESPONSE_HEADER_MESSAGES` | `response_header_messages` |
+| `RESPONSE_BODY_MESSAGES` | `response_body_messages` |
+
+```yaml
+setup_tables:
+  - table: USER_MASTER
+    rows:
+      - USER_ID: "001"
+  - group_id: case1
+    table: ORDER
+    rows:
+      - ORDER_ID: "1001"
+```
+
+- groupId は各エントリの `group_id:` フィールドとして記述します
+- 完全なセクションキーを使用するため前方一致は発生しません
+
+→ [Excel / YAML Example](ntf-spec-examples-overview.md#section-identifier)
 
 ### 2.2 DataType の種類
 
@@ -115,7 +157,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合は例外がスローされます。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#test-shots)
+→ [Excel / YAML Example](ntf-spec-examples-overview.md#test-shots)
 
 ### 3.2 リクエスト単体テスト（ウェブアプリケーション）の testShots カラム
 
@@ -189,7 +231,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 テーブルデータの各エントリは「カラム名=値」の形式で記述します。省略したカラムには INSERT 時にデフォルト値が補完されます。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#table-data)
+→ [Excel / YAML Example](ntf-spec-examples-table.md#table-data)
 
 ### 4.2 SETUP_TABLE
 
@@ -224,7 +266,7 @@ DB への INSERT 用データです。
 
 **混在禁止**: `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると、後半のデータが読み込まれません。同じ種別のセクションをまとめて記述してください。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#expected-complete-table)
+→ [Excel / YAML Example](ntf-spec-examples-table.md#expected-complete-table)
 
 ### 4.5 LIST_MAP
 
@@ -235,7 +277,7 @@ DB への INSERT 用データです。
 
 主な予約IDは [3章](#3-テストケース定義) を参照してください。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#list-map)
+→ [Excel / YAML Example](ntf-spec-examples-table.md#list-map)
 
 ---
 
@@ -257,7 +299,7 @@ DB への INSERT 用データです。
 
 **Excel 固有の制約**: データの先頭要素は必ず空（null または空文字）にする必要があります。YAML にはこの制約はありません。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#file-data)
+→ [Excel / YAML Example](ntf-spec-examples-file.md#file-data)
 
 ### 5.3 固定長ファイル固有の仕様
 
@@ -274,13 +316,13 @@ DB への INSERT 用データです。
 
 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます。データの後ろに新たなレコード種別とフィールド名称を書くと、新しいレコードレイアウトとして扱われます。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#multi-record)
+→ [Excel / YAML Example](ntf-spec-examples-file.md#multi-record)
 
 ### 5.6 空ファイル
 
 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#empty-file)
+→ [Excel / YAML Example](ntf-spec-examples-file.md#empty-file)
 
 ### 5.7 `"-"` 長フィールド
 
@@ -356,7 +398,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は、内部で常に `"default"` に置き換えられます。任意の値を記述できます（装飾的なメタデータとして扱われます）。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#messaging)
+→ [Excel / YAML Example](ntf-spec-examples-messaging.md#messaging)
 
 ---
 
@@ -407,7 +449,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 `java.sql.Timestamp` 型カラムの期待値は末尾 `.0` が必須です（例: `"2010-01-01 12:34:56.0"`）。末尾 `.0` がないとアサートが失敗します。
 
-→ [Excel / YAML Example](ntf-spec-examples.md#datetime)
+→ [Excel / YAML Example](ntf-spec-examples-special.md#datetime)
 
 ### 7.7 バイナリデータの記述
 
@@ -465,7 +507,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | `fixedLengthDirectives` | 固定長ファイル専用。`defaultDirectives` より後に上書き適用されます |
 | `variableLengthDirectives` | 可変長ファイル専用 |
 
-→ [Excel / YAML Example](ntf-spec-examples.md#directive)
+→ [Excel / YAML Example](ntf-spec-examples-special.md#directive)
 
 ---
 
