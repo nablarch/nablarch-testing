@@ -16,15 +16,15 @@
 | no | description | expectedStatusCode | forwardUri |
 | 1 | 正常ケース | 200 | /result |
 
-| SETUP_TABLE=USER_TABLE | | |
+| SETUP_TABLE=USER | | |
 |---|---|---|
 | USER_ID | USER_NAME | STATUS |
 | U001 | 山田太郎 | 01 |
 
-| EXPECTED_TABLE=USER_TABLE | | |
-|---|---|---|
-| USER_ID | STATUS | |
-| U001 | 02 | |
+| EXPECTED_TABLE=USER | |
+|---|---|
+| USER_ID | STATUS |
+| U001 | 01 |
 
 ### YAML
 
@@ -38,17 +38,17 @@ list_maps:
         forwardUri: "/result"
 
 setup_tables:
-  - table: USER_TABLE
+  - table: USER
     rows:
       - USER_ID: "U001"
         USER_NAME: "山田太郎"
         STATUS: "01"
 
 expected_tables:
-  - table: USER_TABLE
+  - table: USER
     rows:
       - USER_ID: "U001"
-        STATUS: "02"
+        STATUS: "01"
 ```
 
 ### ポイント
@@ -63,13 +63,13 @@ expected_tables:
 
 ### Excel
 
-| SETUP_TABLE=USER_TABLE | | |
+| SETUP_TABLE=USER | | |
 |---|---|---|
 | USER_ID | USER_NAME | STATUS |
 | 001 | 山田太郎 | 01 |
 | 002 | 鈴木花子 | 02 |
 
-| SETUP_TABLE[case1]=ORDER_TABLE | | | |
+| SETUP_TABLE[case1]=ORDER | | | |
 |---|---|---|---|
 | ORDER_ID | USER_ID | AMOUNT | [MARKER] |
 | 1001 | 001 | 5000 | X |
@@ -78,7 +78,7 @@ expected_tables:
 
 ```yaml
 setup_tables:
-  - table: USER_TABLE
+  - table: USER
     rows:
       - USER_ID: "001"
         USER_NAME: "山田太郎"
@@ -87,7 +87,7 @@ setup_tables:
         USER_NAME: "鈴木花子"
         STATUS: "02"
   - group_id: case1
-    table: ORDER_TABLE
+    table: ORDER
     rows:
       - ORDER_ID: "1001"
         USER_ID: "001"
@@ -159,7 +159,7 @@ list_maps:
 
 #### Excel
 
-| SETUP_TABLE=USER_TABLE | | | |
+| SETUP_TABLE=USER | | | |
 |---|---|---|---|
 | USER_ID | USER_NAME | AGE | STATUS |
 | 001 | 山田太郎 | 30 | 01 |
@@ -169,7 +169,7 @@ list_maps:
 
 ```yaml
 setup_tables:
-  - table: USER_TABLE
+  - table: USER
     rows:
       - USER_ID: "001"
         USER_NAME: "山田太郎"
@@ -193,12 +193,13 @@ setup_tables:
 
 #### Excel
 
-| EXPECTED_TABLE=USER_TABLE | | |
-|---|---|---|
-| USER_ID | USER_NAME | STATUS |
-| 001 | 山田太郎 | 01 |
+| EXPECTED_TABLE=USER | | | |
+|---|---|---|---|
+| USER_ID | USER_NAME | AGE | STATUS |
+| 001 | 山田太郎 | 30 | 01 |
+| 002 | 鈴木花子 | 25 | 02 |
 
-| EXPECTED_COMPLETE_TABLE=USER_TABLE | | | |
+| EXPECTED_COMPLETE_TABLE=USER | | | |
 |---|---|---|---|
 | USER_ID | USER_NAME | AGE | STATUS |
 | 001 | 山田太郎 | | 01 |
@@ -207,14 +208,19 @@ setup_tables:
 
 ```yaml
 expected_tables:
-  - table: USER_TABLE
+  - table: USER
     rows:
       - USER_ID: "001"
         USER_NAME: "山田太郎"
+        AGE: "30"
         STATUS: "01"
+      - USER_ID: "002"
+        USER_NAME: "鈴木花子"
+        AGE: "25"
+        STATUS: "02"
 
 expected_complete_tables:
-  - table: USER_TABLE
+  - table: USER
     rows:
       - USER_ID: "001"
         USER_NAME: "山田太郎"
@@ -270,14 +276,14 @@ list_maps:
 
 ファイルデータはセクション識別行の直後に「レコード種別とフィールド名称」行が来ます。データ行の先頭セルはレコード種別を繰り返さないため空になります。
 
-| SETUP_FIXED=input/data.dat | | | | |
-|---|---|---|---|---|
-| text-encoding | MS932 | | | |
-| DATA | USER_ID | USER_NAME | AMOUNT | |
-| | X | N | Z | |
-| | 10 | 20 | 10 | |
-| | 001 | 山田太郎 | 5000 | |
-| | 002 | 鈴木花子 | 3000 | |
+| SETUP_FIXED=input/data.dat | | | |
+|---|---|---|---|
+| text-encoding | MS932 | | |
+| DATA | USER_ID | USER_NAME | AMOUNT |
+| | X | N | Z |
+| | 10 | 20 | 10 |
+| | 001 | 山田太郎 | 5000 |
+| | 002 | 鈴木花子 | 3000 |
 
 #### YAML
 
@@ -463,11 +469,11 @@ messages:
 
 #### Excel
 
-| MESSAGE=sendSyncTestData/REQ001/message | | | | |
-|---|---|---|---|---|
-| no | errorMode | field1 | field2 | |
-| 1 | | value1 | value2 | |
-| 2 | | value3 | value4 | |
+| MESSAGE=sendSyncTestData/REQ001/message | | | |
+|---|---|---|---|
+| no | errorMode | field1 | field2 |
+| 1 | | value1 | value2 |
+| 2 | | value3 | value4 |
 
 #### YAML
 
