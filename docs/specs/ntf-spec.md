@@ -29,7 +29,7 @@
 NTF テストデータファイルには、次の3種類のデータを記述します。
 
 **テストケース**  
-テストの実行条件を1エントリ1ケースで定義します。`LIST_MAP=testShots` に記述し、各エントリが1テストケースを表します。HTTP テストなら「ユーザー ID・期待ステータスコード・期待フォワード先 URI」など、バッチテストなら「リクエストパス・ユーザー ID・DI コンフィグ・期待ステータスコード」などを列挙します。
+テストの実行条件を1エントリ1ケースで定義します。`LIST_MAP=testShots` に記述し、各エントリが1テストケースを表します。リクエスト単体テスト（HTTP）なら「ユーザー ID・期待ステータスコード・期待フォワード先 URI」など、リクエスト単体テスト（バッチ）なら「リクエストパス・ユーザー ID・DI コンフィグ・期待ステータスコード」などを列挙します。
 
 **セットアップ**  
 テスト実行前に投入するデータです。DB テーブルへの INSERT データ（`SETUP_TABLE`）、固定長・可変長ファイルの入力データ（`SETUP_FIXED` / `SETUP_VARIABLE`）などを定義します。
@@ -117,9 +117,9 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 → [Excel / YAML Example](ntf-spec-examples.md#test-shots)
 
-### 3.2 HTTP テストの testShots カラム（TS-07）
+### 3.2 リクエスト単体テスト（HTTP）の testShots カラム（TS-07）
 
-HTTP リクエストテストでの必須カラムは以下のとおりです。
+リクエスト単体テスト（HTTP）での必須カラムは以下のとおりです。
 
 | カラム名 | 説明 |
 |---|---|
@@ -147,9 +147,9 @@ HTTP リクエストテストでの必須カラムは以下のとおりです。
 
 `context` LIST_MAP は1エントリのみ有効です。`REQUEST_ID` が空の場合は例外がスローされます（TS-20/21）。
 
-### 3.3 バッチテストの testShots カラム（TS-08）
+### 3.3 リクエスト単体テスト（バッチ）の testShots カラム（TS-08）
 
-バッチ/スタンドアロンテストでの必須カラムは以下のとおりです。
+リクエスト単体テスト（バッチ）での必須カラムは以下のとおりです。
 
 | カラム名 | 説明 |
 |---|---|
@@ -594,9 +594,9 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | TS-04 | `LIST_MAP=params` はエンティティバリデーション入力パラメータの予約ID（EntityTestSupport 専用） | 正常系 |
 | TS-05 | `setUpDb` は DB 共通初期化データの予約 ID | 正常系 |
 | TS-06 | testShots の `context` カラムが指す LIST_MAP から REQUEST_ID・USER_ID を取得。1エントリのみ有効 | 正常系 |
-| TS-07 | HTTP テストの testShots 必須カラム: `no`・`description`・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 |
-| TS-08 | バッチテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 |
-| TS-09 | バッチテストの testShots オプションカラム: `setUpFile`・`expectedFile`（空でスキップ） | 正常系 |
+| TS-07 | リクエスト単体テスト（HTTP）の testShots 必須カラム: `no`・`description`・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 |
+| TS-08 | リクエスト単体テスト（バッチ）の testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 |
+| TS-09 | リクエスト単体テスト（バッチ）の testShots オプションカラム: `setUpFile`・`expectedFile`（空でスキップ） | 正常系 |
 | TS-10 | `setUpTable` カラムに値があればケース固有の DB 初期化を実行。空でスキップ | 正常系 |
 | TS-11 | `expectedTable` カラムに値があればテーブル期待値を検証。空でスキップ | 正常系 |
 | TS-12 | `expectedLog` カラムに値があればログ期待値を読み込む。空でスキップ | 正常系 |
@@ -604,7 +604,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | TS-14 | `queryParams` カラムが空の場合クエリパラメータなし（null 返却） | 代替フロー |
 | TS-15 | `HTTP_METHOD` カラムが空の場合デフォルト `"POST"` | 代替フロー |
 | TS-16 | `expectedContentLength`・`expectedContentType`・`expectedContentFileName` が空の場合各検証スキップ | 代替フロー |
-| TS-17 | `args[n]` カラムはコマンドライン引数、その他の任意カラムはコマンドラインオプション（バッチテスト） | 正常系 |
+| TS-17 | `args[n]` カラムはコマンドライン引数、その他の任意カラムはコマンドラインオプション（リクエスト単体テスト（バッチ）） | 正常系 |
 | TS-18 | testShots が空の場合 `IllegalStateException` / `IllegalArgumentException` をスロー | 異常系 |
 | TS-19 | テストデータ識別名（sheetName）が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
 | TS-20 | context LIST_MAP の REQUEST_ID が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
@@ -614,7 +614,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | TS-24 | `description` も `case` も未定義の場合 `IllegalStateException` をスロー | 異常系 |
 | TS-25 | cookie LIST_MAP 名を指定したが対応 LIST_MAP が空の場合 `IllegalArgumentException` をスロー | 異常系 |
 | TS-26 | queryParams LIST_MAP 名を指定したが対応 LIST_MAP が空の場合 `IllegalArgumentException` をスロー | 異常系 |
-| TS-27 | バッチテストの必須カラムが欠けている場合検証エラー | 異常系 |
+| TS-27 | リクエスト単体テスト（バッチ）の必須カラムが欠けている場合検証エラー | 異常系 |
 | TS-28 | `expectedLog` に値があるが対応 LIST_MAP が空の場合 `IllegalStateException` をスロー | 異常系 |
 | TS-29 | EntityTestSupport の testShots 件数と params 件数が不一致の場合 `IllegalArgumentException` をスロー | 異常系 |
 | TS-30 | EntityTestSupport の testShots 必須カラムが欠けている場合 `IllegalArgumentException` をスロー | 異常系 |
