@@ -29,7 +29,7 @@
 NTF テストデータファイルには、次の3種類のデータを記述します。
 
 **テストケース**  
-テストの実行条件を1エントリ1ケースで定義します。`LIST_MAP=testShots` に記述し、各エントリが1テストケースを表します。リクエスト単体テスト（ウェブアプリケーション）なら「ユーザー ID・期待ステータスコード・期待フォワード先 URI」など、リクエスト単体テスト（バッチ処理）なら「リクエストパス・ユーザー ID・DI コンフィグ・期待ステータスコード」などを列挙します。
+テストの実行条件を1エントリ1ケースで定義します。`LIST_MAP=testShots` に記述し、各エントリが1テストケースを表します。リクエスト単体テスト（ウェブアプリケーション）なら「ユーザ ID・期待ステータスコード・期待フォワード先 URI」など、リクエスト単体テスト（バッチ処理）なら「リクエストパス・ユーザ ID・DI コンフィグ・期待ステータスコード」などを列挙します。
 
 **セットアップ**  
 テスト実行前に投入するデータです。DB テーブルへの INSERT データ（`SETUP_TABLE`）、固定長・可変長ファイルの入力データ（`SETUP_FIXED` / `SETUP_VARIABLE`）などを定義します。
@@ -96,7 +96,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 - 省略時は空文字扱いです
 - groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
 
-バッチ固有の動作として、groupId に `"default"` を指定するとグループIDなし扱いと同等になります。
+バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
 
 ### 2.5 RESPONSE_HEADER/BODY_MESSAGES の2経路（DT-07）
 
@@ -128,15 +128,16 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `isValidToken` | トークン制御フラグ |
 | `expectedStatusCode` | 期待する HTTP ステータスコード |
 | `forwardUri` | 期待するフォワード先 URI |
-| `context` | リクエストコンテキスト（REQUEST_ID・USER_ID を持つ `LIST_MAP` 名） |
+| `context` | リクエスト ID・ユーザ・HTTP メソッドを記載した `LIST_MAP` 名 |
 
 主なオプションカラムは以下のとおりです（TS-09〜16）。
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
-| `setUpTable` | ケース固有の DB セットアップグループID | スキップ |
-| `expectedTable` | テーブル期待値のグループID | スキップ |
-| `expectedMessageId` | 期待するメッセージID | スキップ |
+| `setUpTable` | ケース固有の DB セットアップグループ ID | スキップ |
+| `expectedTable` | テーブル期待値のグループ ID | スキップ |
+| `expectedSearch` | 検索結果期待値のグループ ID | スキップ |
+| `expectedMessageId` | 期待するメッセージ ID（カンマ区切りで複数指定可） | スキップ |
 | `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名（TS-02） | — |
 | `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
 | `queryParams` | クエリパラメータの `LIST_MAP` 名 | パラメータなし |
@@ -144,6 +145,10 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `expectedContentLength` | 期待する Content-Length | スキップ |
 | `expectedContentType` | 期待する Content-Type | スキップ |
 | `expectedContentFileName` | 期待する Content-Disposition ファイル名 | スキップ |
+| `expectedMessage` | 同期応答メッセージ送信の要求電文グループ ID | スキップ |
+| `responseMessage` | 同期応答メッセージ送信の応答電文グループ ID | スキップ |
+| `expectedMessageByClient` | HTTP 同期応答メッセージ送信の要求電文グループ ID | スキップ |
+| `responseMessageByClient` | HTTP 同期応答メッセージ送信の応答電文グループ ID | スキップ |
 
 `context` LIST_MAP は1エントリのみ有効です。`REQUEST_ID` が空の場合は例外がスローされます（TS-20/21）。
 
@@ -158,16 +163,16 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 | `expectedStatusCode` | 期待するステータスコード |
 | `diConfig` | DI コンポーネント設定ファイルパス |
 | `requestPath` | リクエストパス |
-| `userId` | 実行ユーザー ID |
+| `userId` | 実行ユーザ ID |
 
 主なオプションカラムは以下のとおりです（TS-09〜12/17）。
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
-| `setUpTable` | ケース固有の DB セットアップグループID | スキップ |
-| `expectedTable` | テーブル期待値のグループID | スキップ |
-| `setUpFile` | 入力ファイル準備グループID | スキップ |
-| `expectedFile` | 出力ファイル期待値グループID | スキップ |
+| `setUpTable` | ケース固有の DB セットアップグループ ID | スキップ |
+| `expectedTable` | テーブル期待値のグループ ID | スキップ |
+| `setUpFile` | 入力ファイル準備グループ ID | スキップ |
+| `expectedFile` | 出力ファイル期待値グループ ID | スキップ |
 | `expectedLog` | 期待ログの `LIST_MAP` 名 | スキップ |
 | `args[0]`, `args[1]`, ... | コマンドライン引数 | — |
 | その他任意カラム | コマンドラインオプション | — |
