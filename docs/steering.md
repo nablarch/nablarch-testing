@@ -525,30 +525,47 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ## 現在の状態（2026-05-22時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
-- **次タスク**: **ntf-spec.md ユーザーレビュー OK 取得** → I-1 ユーザーレビュー → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
+- **次タスク**: **ntf-spec.md 1〜3章 + ntf-spec-examples-overview.md 作成・ユーザーレビュー**
 - **I-1**: 完成（141件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
+  - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列を追加済み（節番号なし = 記載漏れのインジケーター）
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
-- **ntf-spec.md**: 用語見直し完了。ユーザーレビュー待ち
+- **ntf-spec.md**: 用語見直し・仕様ID参照削除完了。1〜3章を Example と合わせて仕上げ中
   - v6 解説書（全8ページ）を読み込み、用語を `docs/specs/ntf-doc-terms.md` に整理済み
   - 用語統一済み: フィールド名称・データ型・フィールド長・レコード種別・グループ ID・ユーザ ID
   - テスト種別名を正式名称に統一: 「リクエスト単体テスト（ウェブアプリケーション）」「リクエスト単体テスト（バッチ処理）」等
   - Excel 固有表現（シート・セル・行・列）を全排除済み
-  - 3.2節 ウェブアプリケーション testShots オプションカラムに不足列を追加済み（expectedSearch 等）
-  - **ntf-spec-examples.md は未着手**（本文 FB が完了してから着手する）
+  - 仕様ID参照（DT-02）等を全削除済み（仕様IDの管理は `ntf-impl-spec-list.md` の節番号列で行う）
+  - **2.1節 課題**: セクション識別の書式が Excel 形式のみ記載。Excel/YAML 両形式を並記する必要がある
 
-### ntf-spec.md 現行アウトライン（確定版）
+### ntf-spec.md / ntf-spec-examples-*.md 構成方針
+
+**仕様書（ntf-spec.md）の書き方**:
+- ピンポイントで仕様を記述する（形式非依存の論理仕様）
+- 書式・コード例は必要最小限。詳細な例示は Example ファイルに委ねる
+- 書式が Excel と YAML で異なる場合は両形式を並記する（コードブロック2つ）
+
+**Example ファイルの書き方**:
+- アプリ開発の現場で参考にできるレベルの実物に近い例を記述する
+- 説明テキストは各 Excel/YAML セクションの直下に箇条書きで記載する（見出しなし）
+- 章ごとにファイルを分割する（1ファイルが大量になるため）
+
+**Example ファイル構成**:
 
 ```
 docs/specs/
-  ntf-spec.md           # 論理仕様書（形式非依存。各節末尾にExampleファイルへのリンク）
-  ntf-spec-examples.md  # Excel表 / YAMLコードブロック 対比（ポイント・差異の解説付き）
-  ntf-doc-terms.md      # v6 解説書（全8ページ）から抽出した用語リスト（用語確認用）
+  ntf-spec.md                       # 論理仕様書（形式非依存）
+  ntf-spec-examples-overview.md     # 1〜3章: 概要・セクション識別・テストケース定義
+  ntf-spec-examples-table.md        # 4章: テーブルデータ
+  ntf-spec-examples-file.md         # 5章: ファイルデータ
+  ntf-spec-examples-messaging.md    # 6章: メッセージングテストデータ
+  ntf-spec-examples-special.md      # 7〜9章: 特殊値・ディレクティブ・ヘッダ
+  ntf-doc-terms.md                  # v6 解説書から抽出した用語リスト（用語確認用）
 ```
 
 **論理仕様書の現行章構成**:
 
-1. 概要（NTFテストデータとは: テストケース・セットアップ・期待値の3種）
+1. 概要（NTFテストデータとは: テストケース・セットアップ・検証の3種）
 2. セクション識別（書式・14種DataType一覧・GroupData/SingleData・groupId）
 3. テストケース定義（testShots・ウェブアプリケーション/バッチ処理必須カラム・setUpDb）
 4. テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE / LIST_MAP）
@@ -557,7 +574,6 @@ docs/specs/
 7. 特殊値・インタープリタ（チェーン仕組み・一覧・日付型境界値・バイナリ）
 8. ディレクティブ（一覧・デフォルトDI・異常系）
 9. ヘッダ・コメント・空エントリ
-10. 付録: 仕様ID索引（DT/SS/HC/IV/DR/MS/TS 全141件）
 
 **用語ルール**:
 - v6 解説書の表現を使う。不明な用語は `docs/specs/ntf-doc-terms.md` を参照すること
@@ -567,10 +583,10 @@ docs/specs/
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **ntf-spec.md のユーザーレビュー OK を取得する**（`docs/specs/ntf-spec.md`）
-3. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md`）
-4. **I-2/I-3 を I-1 完全版（141件）を入力として実施する**
-5. I-2/I-3 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得**（`docs/checks/R-1-refactor.md`）
+2. **ntf-spec.md 2.1節を修正**（セクション識別の書式を Excel/YAML 両形式で並記）
+3. **ntf-spec-examples-overview.md を作成**（1〜3章: 現場で参考になるレベルの実物例）
+4. **ntf-spec.md の Example リンクを ntf-spec-examples-overview.md に向け直す**（1〜3章分）
+5. **ユーザーレビュー OK → 残り4〜9章の仕様とExampleを同様に作成**
 
 
 ### 環境情報
