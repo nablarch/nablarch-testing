@@ -21,10 +21,10 @@
 | USER_ID | USER_NAME | STATUS |
 | U001 | 山田太郎 | 01 |
 
-| EXPECTED_TABLE=USER | |
-|---|---|
-| USER_ID | STATUS |
-| U001 | 01 |
+| EXPECTED_TABLE=USER | | |
+|---|---|---|
+| USER_ID | USER_NAME | STATUS |
+| U001 | 山田太郎 | 01 |
 
 ### YAML
 
@@ -48,6 +48,7 @@ expected_tables:
   - table: USER
     rows:
       - USER_ID: "U001"
+        USER_NAME: "山田太郎"
         STATUS: "01"
 ```
 
@@ -55,7 +56,6 @@ expected_tables:
 
 - テストケース・セットアップ・検証の3種を1ファイルに共存させることができます
 - セクションの記述順序は問いません
-- `EXPECTED_TABLE` で `USER_NAME` を省略しているため、`USER_NAME` カラムは比較対象外になります
 
 ---
 
