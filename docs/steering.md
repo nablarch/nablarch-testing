@@ -525,34 +525,18 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ## 現在の状態（2026-05-22時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
-- **次タスク**: **ntf-spec.md 全章 + ntf-spec-examples-*.md 全ファイル作成 → まとめてユーザーレビュー1回**
+- **次タスク**: **ntf-spec.md + ntf-spec-examples-*.md をまとめてユーザーレビュー1回** → OK 取得後に I-2/I-3 へ
 - **I-1**: 完成（141件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
   - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列を追加済み（節番号なし = 記載漏れのインジケーター）
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
-- **ntf-spec.md**: 用語見直し・仕様ID参照削除完了。全章を Example と合わせて仕上げ待ち
-  - v6 解説書（全8ページ）を読み込み、用語を `docs/specs/ntf-doc-terms.md` に整理済み
-  - 用語統一済み: フィールド名称・データ型・フィールド長・レコード種別・グループ ID・ユーザ ID
-  - テスト種別名を正式名称に統一: 「リクエスト単体テスト（ウェブアプリケーション）」「リクエスト単体テスト（バッチ処理）」等
-  - Excel 固有表現（シート・セル・行・列）を全排除済み
-  - 仕様ID参照（DT-02）等を全削除済み（仕様IDの管理は `ntf-impl-spec-list.md` の節番号列で行う）
-  - **2.1節 未修正**: セクション識別の書式が Excel 形式のみ。Excel/YAML 両形式を並記すること
-- **ntf-spec-examples.md（旧）**: 廃止予定。内容は ntf-spec-examples-*.md に移行する
-- **Exampleリポジトリ調査済み**: nablarch-example-web/batch の Excel テストデータファイル一覧・用途・テーブル名を確認済み（下記「再開手順」参照）
+- **ntf-spec.md**: 完成（2.1節に Excel/YAML 両形式並記・DataType→YAMLキー対照表を追加済み）
+- **ntf-spec-examples-*.md**: 全5ファイル作成済み・ユーザーレビュー待ち
+  - 実物の `FileToFileBatchSampleTest.xls`・`BatchRequestTestSupportTest.xls`・`MessageParserTest.xls`・`BasicTestDataParserTest.xls` を参照して作成
+  - `ntf-spec.md` の全 Example リンクを新ファイルに向け直し済み
+- **ntf-spec-examples.md（旧）**: まだ残存。ユーザーレビュー OK 後に削除予定
 
-### ntf-spec.md / ntf-spec-examples-*.md 構成方針
-
-**仕様書（ntf-spec.md）の書き方**:
-- ピンポイントで仕様を記述する（形式非依存の論理仕様）
-- 書式・コード例は必要最小限。詳細な例示は Example ファイルに委ねる
-- 書式が Excel と YAML で異なる場合は両形式を並記する（コードブロック2つ）
-
-**Example ファイルの書き方**:
-- アプリ開発の現場で参考にできるレベルの実物に近い例を記述する
-- 説明テキストは各 Excel/YAML セクションの直下に箇条書きで記載する（見出しなし）
-- 章ごとにファイルを分割する（1ファイルが大量になるため）
-
-**Example ファイル構成**:
+### ntf-spec.md / ntf-spec-examples-*.md 構成（完成）
 
 ```
 docs/specs/
@@ -562,20 +546,14 @@ docs/specs/
   ntf-spec-examples-file.md         # 5章: ファイルデータ
   ntf-spec-examples-messaging.md    # 6章: メッセージングテストデータ
   ntf-spec-examples-special.md      # 7〜9章: 特殊値・ディレクティブ・ヘッダ
+  ntf-spec-examples.md              # 旧ファイル（ユーザーレビューOK後に削除）
   ntf-doc-terms.md                  # v6 解説書から抽出した用語リスト（用語確認用）
 ```
 
-**論理仕様書の現行章構成**:
-
-1. 概要（NTFテストデータとは: テストケース・セットアップ・検証の3種）
-2. セクション識別（書式・14種DataType一覧・GroupData/SingleData・groupId）
-3. テストケース定義（testShots・ウェブアプリケーション/バッチ処理必須カラム・setUpDb）
-4. テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE / LIST_MAP）
-5. ファイルデータ（固定長・可変長・共通ルール・"-"長フィールド・空ファイル）
-6. メッセージングテストデータ（sendSyncTestData配置・HEADER/BODY・errorMode等）
-7. 特殊値・インタープリタ（チェーン仕組み・一覧・日付型境界値・バイナリ）
-8. ディレクティブ（一覧・デフォルトDI・異常系）
-9. ヘッダ・コメント・空エントリ
+**Example ファイルの書き方ルール**（次回修正時も守ること）:
+- アプリ開発の現場で参考にできるレベルの実物に近い例を記述する
+- 説明テキストは各 Excel/YAML セクションの直下に箇条書きで記載する（見出しなし）
+- 推測で例を作らない。ローカルの `src/test/java/**/*.xls` を `xlrd` で読んで確認してから書く
 
 **用語ルール**:
 - v6 解説書の表現を使う。不明な用語は `docs/specs/ntf-doc-terms.md` を参照すること
@@ -585,17 +563,10 @@ docs/specs/
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **実物のExcelテストデータを参照する**（推測で例を作らない。必ず以下を WebFetch で確認してから Example を書く）
-   - nablarch-example-web: `https://github.com/nablarch/nablarch-example-web`
-     - `ProjectActionRequestTest.xlsx`（プロジェクトCRUD・セットアップ/期待値テーブル・testShots）
-     - `ProjectBulkActionRequestTest.xlsx`（一括更新・複数テストケース）
-     - `LoginFormTest.xls`、`ProjectFormTest.xls`（EntityTestSupport バリデーション）
-   - nablarch-example-batch: `https://github.com/nablarch/nablarch-example-batch`
-     - `ImportZipCodeFileActionRequestTest.xls`（バッチリクエスト単体テスト・固定長ファイル）
-3. **ntf-spec.md 全章を仕上げる**（2.1節 Excel/YAML 両形式並記を含む）
-4. **ntf-spec-examples-*.md を全章分まとめて作成する**（実物のExcelテストデータに基づいた例）
-5. **ntf-spec.md の Example リンクを各 ntf-spec-examples-*.md に向け直す**
-6. **まとめてユーザーレビュー1回** → OK 取得後に I-2/I-3 へ
+2. **ユーザーレビュー依頼**: `docs/specs/ntf-spec.md` と `docs/specs/ntf-spec-examples-*.md`（5ファイル）をまとめてユーザーに提示し OK を取得する
+3. **ユーザーレビュー OK 後**: `docs/specs/ntf-spec-examples.md`（旧ファイル）を削除する
+4. **I-2 着手**: `ntf-impl-spec-list.md` の全仕様IDに既存テストメソッドをマッピングする
+5. **I-3 着手**: `ntf-impl-spec-list.md` の全仕様IDにスキーマ根拠またはスキーマ外理由を記載する
 
 
 ### 環境情報
