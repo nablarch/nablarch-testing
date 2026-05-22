@@ -1,8 +1,8 @@
 # NTF テストデータ 実装仕様一覧（ntf-impl-spec-list.md）
 
 - **作成日**: 2026-05-20（I-1 タスク）
-- **更新日**: 2026-05-22（I-1 やり直し: 正常系・異常系・代替フローの3観点で完全版に再作成）
-- **参照元**: `ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-coverage-doc-check.md`（公式解説書照合）、`ntf-testdata-yaml-design.md`（スキーマ設計）
+- **更新日**: 2026-05-22（TS カテゴリ追加: テストサポート層の全仕様を抽出・登録）
+- **参照元**: `ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-coverage-doc-check.md`（公式解説書照合）、`ntf-testdata-yaml-design.md`（スキーマ設計）、テストサポート層全クラス（`AbstractHttpRequestTestTemplate`, `TestCaseInfo`, `StandaloneTestSupportTemplate`, `TestShot`, `BatchRequestTestSupport`, `EntityTestSupport`, `DbAccessTestSupport`）
 - **目的**: Ph-1 三角マッピングの基準となる仕様IDを確定する。後続タスク（I-2/I-3/Ph-2）の全件を本文書に基づいて追跡する。
 
 ---
@@ -18,6 +18,7 @@
 | IV | インタープリタ・特殊値 | interpreter / generator パッケージ全クラス |
 | DR | ディレクティブ | `DataFile`, `FixedLengthFile`, `VariableLengthFile`, ディレクティブ列挙体 |
 | MS | メッセージングテストデータ | `MessageParser`, `SendSyncMessageParser`, `GroupMessageParser`, `SendSyncSupport`, `RequestTestingMessagingClient` |
+| TS | テストサポート層 | `AbstractHttpRequestTestTemplate`, `TestCaseInfo`, `StandaloneTestSupportTemplate`, `TestShot`, `BatchRequestTestSupport`, `EntityTestSupport`, `DbAccessTestSupport` |
 
 ---
 
@@ -181,6 +182,47 @@
 
 ---
 
+---
+
+### TS: テストサポート層
+
+| 仕様ID | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
+|---|---|---|---|---|---|
+| TS-01 | `LIST_MAP=testShots` はテストケース定義の予約ID。1行1テストケースを表し、フレームワークが自動読み込みする（現行ID）。旧ID `testCases` は後方互換性のためフォールバックとして残存 | 正常系 | `AbstractHttpRequestTestTemplate.java` 行68/71、`StandaloneTestSupportTemplate.java` 行27、`EntityTestSupport.java` 行51/54 | テスト追加必要（testShots 予約ID動作を明示するテストなし。SS-19 と同件だが TS として整理） | スキーマ外仕様・テストで担保する方針（testShots は LIST_MAP の予約ID） |
+| TS-02 | `LIST_MAP=requestParams` はHTTPリクエストパラメータの予約ID。testShots の行番号（`no` カラム値 -1 のインデックス）に対応する行が使用される | 正常系 | `AbstractHttpRequestTestTemplate.java` 行74 | テスト追加必要 | スキーマ外仕様（パーサ外の利用規約） |
+| TS-03 | `LIST_MAP=responseResult` はHTTPレスポンス（リクエストスコープ）期待値の予約ID | 正常系 | `AbstractHttpRequestTestTemplate.java` 行77 | テスト追加必要 | スキーマ外仕様 |
+| TS-04 | `LIST_MAP=params` はエンティティバリデーションテストの入力パラメータ定義の予約ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須 | 正常系 | `EntityTestSupport.java` 行56、行223 | テスト追加必要 | スキーマ外仕様 |
+| TS-05 | `setUpDb` はDB共通初期化シートの予約シート名。テストメソッド開始時（または各ショット毎）に1度だけ `SETUP_TABLE` データを投入する | 正常系 | `AbstractHttpRequestTestTemplate.java` 行65/199–201、`StandaloneTestSupportTemplate.java` 行24/237 | テスト追加必要 | スキーマ外仕様 |
+| TS-06 | testShots の `context` カラムに指定した名前の `LIST_MAP` から `REQUEST_ID`・`USER_ID` を取得する。`context` LIST_MAP は1行のみ有効 | 正常系 | `TestCaseInfo.java` 行40/292–298/432 | テスト追加必要 | スキーマ外仕様 |
+| TS-07 | HTTPテストの testShots 必須カラム: `no`・`description`（または `case`）・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 | `TestCaseInfo.java` 行31/37/48/54/75/40 | テスト追加必要 | スキーマ外仕様 |
+| TS-08 | バッチ/スタンドアロンテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 | `TestShot.java` 行384–387 | テスト追加必要 | スキーマ外仕様 |
+| TS-09 | バッチテストの testShots オプションカラム: `setUpFile`（入力ファイル準備）・`expectedFile`（出力ファイル検証）。空の場合はスキップ | 正常系 | `BatchRequestTestSupport.java` 行125/128、行75–77/89–91 | テスト追加必要 | スキーマ外仕様 |
+| TS-10 | testShots の `setUpTable` カラムに値がある場合、対応グループIDで `setUpDb(sheetName, groupId)` を呼び出してケース固有のDB初期化を行う。空の場合はスキップ | 正常系 | `TestCaseInfo.java` 行51/374–378、`AbstractHttpRequestTestTemplate.java` 行303–307、`TestShot.java` 行150–153 | テスト追加必要 | スキーマ外仕様 |
+| TS-11 | testShots の `expectedTable` カラムに値がある場合、対応グループIDでテーブル期待値を検証する。空の場合はスキップ | 正常系 | `TestCaseInfo.java` 行63/464–466、`TestShot.java` 行201–202 | テスト追加必要 | スキーマ外仕様 |
+| TS-12 | testShots の `expectedLog` カラムに値がある場合、対応 LIST_MAP からログ期待値を読み込む。空の場合はスキップ | 正常系 | `TestShot.java` 行379/172–174 | テスト追加必要 | スキーマ外仕様 |
+| TS-13 | testShots の `cookie` カラムに値がある場合、対応 LIST_MAP から Cookie 値を読み込む。空の場合は Cookie なし | 代替フロー | `TestCaseInfo.java` 行43/316–319、`AbstractHttpRequestTestTemplate.java` 行342 | テスト追加必要 | スキーマ外仕様 |
+| TS-14 | testShots の `queryParams` カラムに値がある場合、対応 LIST_MAP からクエリパラメータを読み込む。空の場合はクエリパラメータなし | 代替フロー | `TestCaseInfo.java` 行45/327–330、`AbstractHttpRequestTestTemplate.java` 行353 | テスト追加必要 | スキーマ外仕様 |
+| TS-15 | testShots の `HTTP_METHOD` カラムが空の場合、デフォルトは `"POST"` | 代替フロー | `TestCaseInfo.java` 行28/307–309 | テスト追加必要 | スキーマ外仕様 |
+| TS-16 | testShots の `expectedContentLength`・`expectedContentType`・`expectedContentFileName` が空の場合、各検証をスキップ | 代替フロー | `TestCaseInfo.java` 行78/81/84、`AbstractHttpRequestTestTemplate.java` 行492/513/530 | テスト追加必要 | スキーマ外仕様 |
+| TS-17 | バッチテストの testShots で `args[n]`（`args[0]`, `args[1]`, ...）カラムはコマンドライン引数として渡される。その他の任意カラムはコマンドラインオプションとして渡される | 正常系 | `TestShot.java` 行255–271/221–232 | テスト追加必要 | スキーマ外仕様 |
+| TS-18 | testShots が空の場合、`IllegalStateException`（HTTPテスト）または `IllegalArgumentException`（バッチテスト）をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行226–229、`StandaloneTestSupportTemplate.java` 行135–138 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-19 | `sheetName` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行193–194、`StandaloneTestSupportTemplate.java` 行89–91 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-20 | `context` LIST_MAP の `REQUEST_ID` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | `TestCaseInfo.java` 行293–298 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-21 | `context` LIST_MAP が1行でない場合、`IllegalArgumentException` をスロー（"Context LIST_MAP must be 1 row."） | 異常系 | `TestCaseInfo.java` 行432 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-22 | `requestParams` の行数がテストケース番号より少ない場合、`IllegalArgumentException` をスロー | 異常系 | `TestCaseInfo.java` 行346–349 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-23 | `testShots` の `no` カラムが空の場合、`IllegalArgumentException` をスロー | 異常系 | `TestCaseInfo.java` 行418–422 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-24 | `description` カラムも `case` カラムも未定義の場合、`IllegalStateException` をスロー | 異常系 | `TestCaseInfo.java` 行404–405 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-25 | `cookie` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行347–348 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-26 | `queryParams` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行357–359 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-27 | バッチテストの必須カラム（`no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId`）が欠けている場合、検証エラー | 異常系 | `TestShot.java` 行73/384–387 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-28 | `expectedLog` カラムに値があるが対応 LIST_MAP が空の場合、`IllegalStateException` をスロー（"expected log data must be set."） | 異常系 | `TestShot.java` 行178–181 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-29 | `EntityTestSupport` の `testShots` 件数と `params` 件数が一致しない場合、`IllegalArgumentException` をスロー | 異常系 | `EntityTestSupport.java` 行223–228 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-30 | `EntityTestSupport` の testShots 必須カラム（`title`・`expectedMessageId1`・`propertyName1`）が欠けている場合、`IllegalArgumentException` をスロー | 異常系 | `EntityTestSupport.java` 行270–276 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-31 | `DbAccessTestSupport.getParamMap()` でリストが2件以上の場合、`IllegalArgumentException` をスロー。0件の場合は空 Map を返す | 異常系/代替フロー | `DbAccessTestSupport.java` 行280–288 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+| TS-32 | `DbAccessTestSupport.assertTableEquals(failIfNoDataFound=false)` でデータなしの場合、検証をスキップ（例外なし）。`failIfNoDataFound=true` の場合は `IllegalArgumentException` をスロー | 異常系/代替フロー | `DbAccessTestSupport.java` 行363–369 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
+
+---
+
 ## E-1〜E-9 の昇格/除外判断
 
 設計フェーズの調査で発見された E-1〜E-9 の各ギャップについて、仕様IDとして昇格するか否かを判断する。
@@ -210,9 +252,10 @@
 | IV | 16件（IV-01〜IV-16） | 15件 | 1件（IV-16） | 0件 | 0件 |
 | DR | 12件（DR-01〜DR-12） | 7件 | 2件（DR-11/12） | 0件 | 3件（DR-04〜DR-06） |
 | MS | 14件（MS-01〜MS-14） | 11件 | 2件（MS-05/14） | 1件（MS-08） | 0件 |
-| **合計** | **109件** | **73件** | **24件** | **9件** | **3件** |
+| TS | 32件（TS-01〜TS-32） | 17件 | 13件（TS-18〜30） | 4件（TS-13〜16）+2件複合（TS-31/32） | 0件 |
+| **合計** | **141件** | **90件** | **37件** | **13件** | **3件** |
 
-> **注**: 旧 SS（DataFile:298 に対応する旧 SS-26、VariableLengthFile:76 に対応する旧 SS-30）を DR-11/DR-12 に統合し、SS を詰め直した。RS-18〜RS-20 を追加（YAML 実装クラスの代替フロー）。
+> **注**: 旧 SS（DataFile:298 に対応する旧 SS-26、VariableLengthFile:76 に対応する旧 SS-30）を DR-11/DR-12 に統合し、SS を詰め直した。RS-18〜RS-20 を追加（YAML 実装クラスの代替フロー）。TS-01〜TS-32 を追加（テストサポート層の全仕様）。
 
 ---
 

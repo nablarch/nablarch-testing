@@ -1,7 +1,7 @@
 # NTF テストデータ仕様書
 
 - **対象**: Nablarch Testing Framework（NTF）が読み込むテストデータの構造・ルール・制約
-- **対応仕様ID**: DT-01〜08 / SS-01〜32 / HC-01〜07 / IV-01〜16 / DR-01〜12 / MS-01〜14
+- **対応仕様ID**: DT-01〜08 / SS-01〜32 / HC-01〜07 / IV-01〜16 / DR-01〜12 / MS-01〜14 / TS-01〜32
 - **形式非依存**: 本書は論理仕様を記述します。Excel・YAML のどちらで記述する場合も同じルールが適用されます
 - **記述例**: 各節末尾のリンクから Excel 表と YAML コードブロックの対比例を参照できます
 
@@ -25,13 +25,18 @@
 
 ### 1.1 NTF テストデータとは
 
-NTF テストデータは、Nablarch Testing Framework がテスト実行時に読み込む入出力データの定義ファイルです。以下の用途に使用されます。
+NTF テストデータファイルには、次の3種類のデータを記述します。
 
-| 用途 | 説明 |
-|---|---|
-| DB テスト | テスト前の INSERT データ・テスト後の期待値データをテーブル単位で定義します |
-| ファイル I/O テスト | 固定長ファイル・可変長ファイルの入出力データをフィールド定義とともに記述します |
-| メッセージングテスト | 電文の送受信データ（ヘッダ・ボディ）をシナリオごとに記述します |
+**テストケース**  
+テストの実行条件を1行1ケースで定義します。`LIST_MAP=testShots` に記述し、各行が1テストケースを表します。HTTP テストなら「リクエストユーザー・期待ステータスコード・期待フォワード先 URI」など、バッチテストなら「実行パス・ユーザー ID・DIコンフィグ・期待ステータスコード」などを列挙します。
+
+**セットアップ**  
+テスト実行前に投入するデータです。DB テーブルへの INSERT データ（`SETUP_TABLE`）、固定長・可変長ファイルの入力データ（`SETUP_FIXED` / `SETUP_VARIABLE`）などを定義します。
+
+**期待値**  
+テスト後に検証するデータです。DB の期待値（`EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE`）、出力ファイルの期待値（`EXPECTED_FIXED` / `EXPECTED_VARIABLE`）、電文の期待値（`MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` 等）、ログや検索結果等の期待値（`LIST_MAP`）などを定義します。
+
+これらは**セクション**という単位で管理され、`DataType名=識別子` の形式で区別されます。セクションの詳細は [2章](#2-セクション識別)、各データの詳細は [3章](#3-テーブルデータ)〜[5章](#5-メッセージングテストデータ) で説明します。
 
 ### 1.2 テストデータファイルの全体構造
 
@@ -517,3 +522,35 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | MS-12 | フォーマット定義ファイル命名規則: {requestId}_RECEIVE / {requestId}_SEND | 正常系 |
 | MS-13 | messaging.assertAsMapFileType キーでアサート方式を切り替え | 正常系 |
 | MS-14 | SendSyncMessageParser#getFwHeader() は UnsupportedOperationException | 異常系 |
+| TS-01 | `LIST_MAP=testShots` はテストケース定義の予約ID（旧ID `testCases` は後方互換） | 正常系 |
+| TS-02 | `LIST_MAP=requestParams` は HTTP リクエストパラメータの予約ID | 正常系 |
+| TS-03 | `LIST_MAP=responseResult` は HTTP レスポンス期待値の予約ID | 正常系 |
+| TS-04 | `LIST_MAP=params` はエンティティバリデーション入力パラメータの予約ID（EntityTestSupport 専用） | 正常系 |
+| TS-05 | `setUpDb` は DB 共通初期化シートの予約シート名 | 正常系 |
+| TS-06 | testShots の `context` カラムが指す LIST_MAP から REQUEST_ID・USER_ID を取得。1行のみ有効 | 正常系 |
+| TS-07 | HTTP テストの testShots 必須カラム: `no`・`description`・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 |
+| TS-08 | バッチテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 |
+| TS-09 | バッチテストの testShots オプションカラム: `setUpFile`・`expectedFile`（空でスキップ） | 正常系 |
+| TS-10 | `setUpTable` カラムに値があればケース固有の DB 初期化を実行。空でスキップ | 正常系 |
+| TS-11 | `expectedTable` カラムに値があればテーブル期待値を検証。空でスキップ | 正常系 |
+| TS-12 | `expectedLog` カラムに値があればログ期待値を読み込む。空でスキップ | 正常系 |
+| TS-13 | `cookie` カラムが空の場合 Cookie なし（null 返却） | 代替フロー |
+| TS-14 | `queryParams` カラムが空の場合クエリパラメータなし（null 返却） | 代替フロー |
+| TS-15 | `HTTP_METHOD` カラムが空の場合デフォルト `"POST"` | 代替フロー |
+| TS-16 | `expectedContentLength`・`expectedContentType`・`expectedContentFileName` が空の場合各検証スキップ | 代替フロー |
+| TS-17 | `args[n]` カラムはコマンドライン引数、その他の任意カラムはコマンドラインオプション（バッチテスト） | 正常系 |
+| TS-18 | testShots が空の場合 `IllegalStateException` / `IllegalArgumentException` をスロー | 異常系 |
+| TS-19 | sheetName が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-20 | context LIST_MAP の REQUEST_ID が null または空の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-21 | context LIST_MAP が1行でない場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-22 | requestParams の行数がテストケース番号より少ない場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-23 | testShots の `no` カラムが空の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-24 | `description` も `case` も未定義の場合 `IllegalStateException` をスロー | 異常系 |
+| TS-25 | cookie LIST_MAP 名を指定したが対応 LIST_MAP が空の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-26 | queryParams LIST_MAP 名を指定したが対応 LIST_MAP が空の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-27 | バッチテストの必須カラムが欠けている場合検証エラー | 異常系 |
+| TS-28 | `expectedLog` に値があるが対応 LIST_MAP が空の場合 `IllegalStateException` をスロー | 異常系 |
+| TS-29 | EntityTestSupport の testShots 件数と params 件数が不一致の場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-30 | EntityTestSupport の testShots 必須カラムが欠けている場合 `IllegalArgumentException` をスロー | 異常系 |
+| TS-31 | `getParamMap()` でリスト2件以上は `IllegalArgumentException`・0件は空 Map を返す | 異常系/代替フロー |
+| TS-32 | `assertTableEquals(failIfNoDataFound=false)` でデータなしは検証スキップ・`true` の場合は `IllegalArgumentException` | 異常系/代替フロー |
