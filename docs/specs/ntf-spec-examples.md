@@ -1,7 +1,7 @@
 # NTF テストデータ記述例（Excel / YAML 対比）
 
 - **目的**: `ntf-spec.md` の各節に対応する Excel 表と YAML コードブロックを対比形式で示します
-- **Excel 表の読み方**: 各セルをテーブルのセルとして読んでください。先頭列が空のセルは Excel の「先頭セルが空」を表しています
+- **Excel 表の読み方**: 各セルをテーブルのセルとして読んでください。ファイルデータのデータ行で先頭セルが空のセルは、レコード種別が先頭列に入らないことを表しています
 
 ---
 
@@ -11,20 +11,20 @@
 
 ### Excel
 
-| LIST_MAP=testShots | | | | |
-|---|---|---|---|---|
-| | no | description | expectedStatusCode | forwardUri |
-| | 1 | 正常ケース | 200 | /result |
-
-| SETUP_TABLE=USER_TABLE | | | |
+| LIST_MAP=testShots | | | |
 |---|---|---|---|
-| | USER_ID | USER_NAME | STATUS |
-| | U001 | 山田太郎 | 01 |
+| no | description | expectedStatusCode | forwardUri |
+| 1 | 正常ケース | 200 | /result |
+
+| SETUP_TABLE=USER_TABLE | | |
+|---|---|---|
+| USER_ID | USER_NAME | STATUS |
+| U001 | 山田太郎 | 01 |
 
 | EXPECTED_TABLE=USER_TABLE | | |
 |---|---|---|
-| | USER_ID | STATUS |
-| | U001 | 02 |
+| USER_ID | STATUS | |
+| U001 | 02 | |
 
 ### YAML
 
@@ -63,16 +63,16 @@ expected_tables:
 
 ### Excel
 
-| SETUP_TABLE=USER_TABLE | | | |
-|---|---|---|---|
-| | USER_ID | USER_NAME | STATUS |
-| | 001 | 山田太郎 | 01 |
-| | 002 | 鈴木花子 | 02 |
+| SETUP_TABLE=USER_TABLE | | |
+|---|---|---|
+| USER_ID | USER_NAME | STATUS |
+| 001 | 山田太郎 | 01 |
+| 002 | 鈴木花子 | 02 |
 
-| SETUP_TABLE[case1]=ORDER_TABLE | | | | |
-|---|---|---|---|---|
-| | ORDER_ID | USER_ID | AMOUNT | [MARKER] |
-| | 1001 | 001 | 5000 | X |
+| SETUP_TABLE[case1]=ORDER_TABLE | | | |
+|---|---|---|---|
+| ORDER_ID | USER_ID | AMOUNT | [MARKER] |
+| 1001 | 001 | 5000 | X |
 
 ### YAML
 
@@ -108,16 +108,16 @@ setup_tables:
 
 ### Excel
 
-| LIST_MAP=testShots | | | | | | |
-|---|---|---|---|---|---|---|
-| | no | description | isValidToken | expectedStatusCode | forwardUri | context |
-| | 1 | 正常ケース | 0 | 200 | /success | context001 |
-| | 2 | 認証エラー | 0 | 400 | /error | context002 |
+| LIST_MAP=testShots | | | | | |
+|---|---|---|---|---|---|
+| no | description | isValidToken | expectedStatusCode | forwardUri | context |
+| 1 | 正常ケース | 0 | 200 | /success | context001 |
+| 2 | 認証エラー | 0 | 400 | /error | context002 |
 
-| LIST_MAP=context001 | | | |
-|---|---|---|---|
-| | REQUEST_ID | USER_ID | HTTP_METHOD |
-| | REQ_001 | user001 | POST |
+| LIST_MAP=context001 | | |
+|---|---|---|
+| REQUEST_ID | USER_ID | HTTP_METHOD |
+| REQ_001 | user001 | POST |
 
 ### YAML
 
@@ -159,11 +159,11 @@ list_maps:
 
 #### Excel
 
-| SETUP_TABLE=USER_TABLE | | | | |
-|---|---|---|---|---|
-| | USER_ID | USER_NAME | AGE | STATUS |
-| | 001 | 山田太郎 | 30 | 01 |
-| | 002 | 鈴木花子 | 25 | 02 |
+| SETUP_TABLE=USER_TABLE | | | |
+|---|---|---|---|
+| USER_ID | USER_NAME | AGE | STATUS |
+| 001 | 山田太郎 | 30 | 01 |
+| 002 | 鈴木花子 | 25 | 02 |
 
 #### YAML
 
@@ -193,15 +193,15 @@ setup_tables:
 
 #### Excel
 
-| EXPECTED_TABLE=USER_TABLE | | | |
-|---|---|---|---|
-| | USER_ID | USER_NAME | STATUS |
-| | 001 | 山田太郎 | 01 |
+| EXPECTED_TABLE=USER_TABLE | | |
+|---|---|---|
+| USER_ID | USER_NAME | STATUS |
+| 001 | 山田太郎 | 01 |
 
-| EXPECTED_COMPLETE_TABLE=USER_TABLE | | | | |
-|---|---|---|---|---|
-| | USER_ID | USER_NAME | AGE | STATUS |
-| | 001 | 山田太郎 | | 01 |
+| EXPECTED_COMPLETE_TABLE=USER_TABLE | | | |
+|---|---|---|---|
+| USER_ID | USER_NAME | AGE | STATUS |
+| 001 | 山田太郎 | | 01 |
 
 #### YAML
 
@@ -226,7 +226,7 @@ expected_complete_tables:
 
 - `EXPECTED_TABLE` で省略したカラムは比較対象外になります
 - `EXPECTED_COMPLETE_TABLE` で省略したカラムには `BasicDefaultValues` のデフォルト値が補完されてから比較されます
-- YAML では省略したいカラムのキーを書かないだけです。Excel でも値を空にすることで省略できます
+- YAML では省略したいカラムのキーを書かないだけです。Excel では値を空セルにすることで省略できます
 - **混在禁止**: 同一ファイル内で `expected_tables` と `expected_complete_tables` を混在させると後半のデータが読み込まれません。種別ごとにまとめて記述してください
 
 ---
@@ -235,11 +235,11 @@ expected_complete_tables:
 
 #### Excel
 
-| LIST_MAP=params | | | |
-|---|---|---|---|
-| | KEY | VALUE | NOTE |
-| | userId | user001 | テストユーザー |
-| | requestId | REQ001 | |
+| LIST_MAP=params | | |
+|---|---|---|
+| KEY | VALUE | NOTE |
+| userId | user001 | テストユーザー |
+| requestId | REQ001 | |
 
 #### YAML
 
@@ -258,7 +258,7 @@ list_maps:
 #### ポイント・差異
 
 - Excel では `LIST_MAP=id` でセクションを識別します。YAML では `list_maps:` セクション内の `id:` フィールドで識別します
-- `testShots` は予約 ID です。バッチリクエスト単体テストでフレームワークが自動読み込みします
+- `testShots` は予約 ID です。フレームワークがテストケース定義として自動読み込みします
 
 ---
 
@@ -267,6 +267,8 @@ list_maps:
 ### 固定長ファイル
 
 #### Excel
+
+ファイルデータはセクション識別行の直後に「レコード種別とフィールド名称」行が来ます。データ行の先頭セルはレコード種別を繰り返さないため空になります。
 
 | SETUP_FIXED=input/data.dat | | | | |
 |---|---|---|---|---|
@@ -298,8 +300,8 @@ setup_files:
 
 #### ポイント・差異
 
-- Excel では「フィールド名行・データ型行・フィールド長行」の3行でフィールドを定義します。YAML では `fields:` 配列の1要素（`name`/`type`/`length`）にまとめます
-- Excel のデータ行は先頭セルが空です（Excel 固有の規則）。YAML の `rows:` は配列の配列形式で先頭セルの概念はありません
+- Excel では「レコード種別+フィールド名称行・データ型行・フィールド長行」の3行でフィールドを定義します。YAML では `fields:` 配列の1要素（`name`/`type`/`length`）にまとめます
+- Excel のデータ行は先頭セルが空です（レコード種別は定義行にのみ記述する Excel 固有の規則）。YAML の `rows:` は配列の配列形式で先頭セルの概念はありません
 - `rows:` の各配列は `fields:` と**完全に同じ順序・件数**で値を並べます
 - **パディング不要**: 固定長ファイルのデータ値はパディングなしで記述します（フレームワークが自動付与します）
 
@@ -382,7 +384,7 @@ setup_files:
 
 #### ポイント・差異
 
-- Excel では同一セクション内でフィールド名行を続けて書くことで複数レコードレイアウトを表現します
+- Excel では同一セクション内でレコード種別+フィールド名称行を続けて書くことで複数レコードレイアウトを表現します
 - YAML では `records:` 配列に複数のレコードレイアウトを並べます
 
 ---
@@ -408,7 +410,7 @@ setup_files:
 
 #### ポイント・差異
 
-- Excel ではディレクティブ行のみ記述してフィールド名行以降を省略します
+- Excel ではディレクティブ行のみ記述してレコード定義以降を省略します
 - YAML では `records: []` と空配列を記述します
 
 ---
@@ -463,9 +465,9 @@ messages:
 
 | MESSAGE=sendSyncTestData/REQ001/message | | | | |
 |---|---|---|---|---|
-| | no | errorMode | field1 | field2 |
-| | 1 | | value1 | value2 |
-| | 2 | | value3 | value4 |
+| no | errorMode | field1 | field2 | |
+| 1 | | value1 | value2 | |
+| 2 | | value3 | value4 | |
 
 #### YAML
 
@@ -475,10 +477,10 @@ messages:
     records:
       - record_type: DATA
         fields:
-          - {name: no,         type: X, length: 2}
-          - {name: errorMode,  type: X, length: 10}
-          - {name: field1,     type: X, length: 10}
-          - {name: field2,     type: X, length: 10}
+          - {name: no,        type: X, length: 2}
+          - {name: errorMode, type: X, length: 10}
+          - {name: field1,    type: X, length: 10}
+          - {name: field2,    type: X, length: 10}
         rows:
           - ["1", "", "value1", "value2"]
           - ["2", "", "value3", "value4"]
@@ -497,12 +499,12 @@ messages:
 
 #### Excel
 
-| EXPECTED_TABLE=SCHEDULE | | | | |
-|---|---|---|---|---|
-| | ID | EVENT_NAME | START_DATE | CREATED_AT |
-| | 1 | 会議 | 2024-01-15 | 2024-01-01 09:00:00.0 |
-| | 2 | ${systemTime} テスト | ${systemTime} | ${systemTime} |
-| | 3 | NULL テスト | NULL | NULL |
+| EXPECTED_TABLE=SCHEDULE | | | |
+|---|---|---|---|
+| ID | EVENT_NAME | START_DATE | CREATED_AT |
+| 1 | 会議 | 2024-01-15 | 2024-01-01 09:00:00.0 |
+| 2 | ${systemTime} テスト | ${systemTime} | ${systemTime} |
+| 3 | NULL テスト | NULL | NULL |
 
 #### YAML
 
