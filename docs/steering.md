@@ -525,7 +525,7 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ## 現在の状態（2026-05-22時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
-- **次タスク**: **ntf-spec.md 1〜3章 + ntf-spec-examples-overview.md 作成・ユーザーレビュー**
+- **次タスク**: **ntf-spec.md 全章 + ntf-spec-examples-*.md 全ファイル作成 → まとめてユーザーレビュー1回**
 - **I-1**: 完成（141件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
   - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列を追加済み（節番号なし = 記載漏れのインジケーター）
@@ -583,10 +583,17 @@ docs/specs/
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **ntf-spec.md 2.1節を修正**（セクション識別の書式を Excel/YAML 両形式で並記）
-3. **ntf-spec-examples-overview.md を作成**（1〜3章: 現場で参考になるレベルの実物例）
-4. **ntf-spec.md の Example リンクを ntf-spec-examples-overview.md に向け直す**（1〜3章分）
-5. **ユーザーレビュー OK → 残り4〜9章の仕様とExampleを同様に作成**
+2. **実物のExcelテストデータを参照する**（推測で例を作らない。必ず以下を WebFetch で確認してから Example を書く）
+   - nablarch-example-web: `https://github.com/nablarch/nablarch-example-web`
+     - `ProjectActionRequestTest.xlsx`（プロジェクトCRUD・セットアップ/期待値テーブル・testShots）
+     - `ProjectBulkActionRequestTest.xlsx`（一括更新・複数テストケース）
+     - `LoginFormTest.xls`、`ProjectFormTest.xls`（EntityTestSupport バリデーション）
+   - nablarch-example-batch: `https://github.com/nablarch/nablarch-example-batch`
+     - `ImportZipCodeFileActionRequestTest.xls`（バッチリクエスト単体テスト・固定長ファイル）
+3. **ntf-spec.md 全章を仕上げる**（2.1節 Excel/YAML 両形式並記を含む）
+4. **ntf-spec-examples-*.md を全章分まとめて作成する**（実物のExcelテストデータに基づいた例）
+5. **ntf-spec.md の Example リンクを各 ntf-spec-examples-*.md に向け直す**
+6. **まとめてユーザーレビュー1回** → OK 取得後に I-2/I-3 へ
 
 
 ### 環境情報
