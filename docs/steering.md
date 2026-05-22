@@ -525,14 +525,16 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ## 現在の状態（2026-05-22時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
-- **次タスク**: **ntf-spec.md ユーザー FB 対応継続** → I-1 ユーザーレビュー → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
+- **次タスク**: **ntf-spec.md ユーザーレビュー OK 取得** → I-1 ユーザーレビュー → I-2/I-3 → R-1-refactor ユーザーレビュー → C-1/R-2/R-3
 - **I-1**: 完成（141件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
-- **ntf-spec.md**: FB 対応中（ユーザー FB 受け付け中）
-  - 1.1 を「テストケース・セットアップ・期待値」の3種構造に改訂済み
-  - 3章「テストケース定義」新設・形式依存表現（「行」「セル」）を全排除済み
-  - 仕様ID索引に TS-01〜32 追加済み
+- **ntf-spec.md**: 用語見直し完了。ユーザーレビュー待ち
+  - v6 解説書（全8ページ）を読み込み、用語を `docs/specs/ntf-doc-terms.md` に整理済み
+  - 用語統一済み: フィールド名称・データ型・フィールド長・レコード種別・グループ ID・ユーザ ID
+  - テスト種別名を正式名称に統一: 「リクエスト単体テスト（ウェブアプリケーション）」「リクエスト単体テスト（バッチ処理）」等
+  - Excel 固有表現（シート・セル・行・列）を全排除済み
+  - 3.2節 ウェブアプリケーション testShots オプションカラムに不足列を追加済み（expectedSearch 等）
   - **ntf-spec-examples.md は未着手**（本文 FB が完了してから着手する）
 
 ### ntf-spec.md 現行アウトライン（確定版）
@@ -541,13 +543,14 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 docs/specs/
   ntf-spec.md           # 論理仕様書（形式非依存。各節末尾にExampleファイルへのリンク）
   ntf-spec-examples.md  # Excel表 / YAMLコードブロック 対比（ポイント・差異の解説付き）
+  ntf-doc-terms.md      # v6 解説書（全8ページ）から抽出した用語リスト（用語確認用）
 ```
 
 **論理仕様書の現行章構成**:
 
 1. 概要（NTFテストデータとは: テストケース・セットアップ・期待値の3種）
 2. セクション識別（書式・14種DataType一覧・GroupData/SingleData・groupId）
-3. テストケース定義（testShots・HTTP/バッチ必須カラム・setUpDb）
+3. テストケース定義（testShots・ウェブアプリケーション/バッチ処理必須カラム・setUpDb）
 4. テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE / LIST_MAP）
 5. ファイルデータ（固定長・可変長・共通ルール・"-"長フィールド・空ファイル）
 6. メッセージングテストデータ（sendSyncTestData配置・HEADER/BODY・errorMode等）
@@ -556,15 +559,16 @@ docs/specs/
 9. ヘッダ・コメント・空エントリ
 10. 付録: 仕様ID索引（DT/SS/HC/IV/DR/MS/TS 全141件）
 
-**Excel固有仕様の扱い**:
-- DT-03（DataType前方一致）・SS-13（データ先頭セル空）は論理仕様に注記、YAMLでは非適用と明記
-- 「行」「セル」「列」などの Excel 固有表現は使わない。「エントリ」「要素」「ヘッダ」で統一
+**用語ルール**:
+- v6 解説書の表現を使う。不明な用語は `docs/specs/ntf-doc-terms.md` を参照すること
+- DT-03（DataType前方一致）・SS-13（データ先頭要素空）は論理仕様に注記、YAMLでは非適用と明記
+- Excel 固有表現（シート・セル・行・列）は使わない
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
-2. **ntf-spec.md の FB 対応を継続する**（`docs/specs/ntf-spec.md`）
-3. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md` / `docs/specs/ntf-spec.md`）
+2. **ntf-spec.md のユーザーレビュー OK を取得する**（`docs/specs/ntf-spec.md`）
+3. **I-1 ユーザーレビュー OK を取得する**（`docs/ntf-impl-spec-list.md` / `docs/checks/I-1.md`）
 4. **I-2/I-3 を I-1 完全版（141件）を入力として実施する**
 5. I-2/I-3 完了後、**R-1-refactor のユーザーレビュー依頼・OK取得**（`docs/checks/R-1-refactor.md`）
 
