@@ -1,6 +1,8 @@
 # NTF テストデータ記述例（Excel / YAML 対比）
 
-## 概要: 1ファイルに3種類のデータを共存させる {#overview}
+<a name="overview"></a>
+
+## 概要: 1ファイルに3種類のデータを共存させる
 
 ### Excel
 
@@ -53,7 +55,9 @@ expected_tables:
 
 ---
 
-## セクション識別 {#section-identifier}
+<a name="section-identifier"></a>
+
+## セクション識別
 
 ### Excel
 
@@ -100,7 +104,9 @@ setup_tables:
 
 ---
 
-## テストケース定義 {#test-shots}
+<a name="test-shots"></a>
+
+## テストケース定義
 
 ### Excel
 
@@ -147,9 +153,13 @@ list_maps:
 
 ---
 
-## テーブルデータ {#table-data}
+<a name="table-data"></a>
 
-### SETUP_TABLE {#setup-table}
+## テーブルデータ
+
+<a name="setup-table"></a>
+
+### SETUP_TABLE
 
 #### Excel
 
@@ -183,7 +193,9 @@ setup_tables:
 
 ---
 
-### EXPECTED_TABLE と EXPECTED_COMPLETE_TABLE {#expected-complete-table}
+<a name="expected-complete-table"></a>
+
+### EXPECTED_TABLE と EXPECTED_COMPLETE_TABLE
 
 #### Excel
 
@@ -231,7 +243,9 @@ expected_complete_tables:
 
 ---
 
-### LIST_MAP {#list-map}
+<a name="list-map"></a>
+
+### LIST_MAP
 
 #### Excel
 
@@ -262,7 +276,9 @@ list_maps:
 
 ---
 
-## ファイルデータ {#file-data}
+<a name="file-data"></a>
+
+## ファイルデータ
 
 ### 固定長ファイル
 
@@ -341,7 +357,9 @@ setup_files:
 
 ---
 
-### 複数レコードレイアウト {#multi-record}
+<a name="multi-record"></a>
+
+### 複数レコードレイアウト
 
 #### Excel
 
@@ -384,7 +402,9 @@ setup_files:
 
 ---
 
-### 空ファイル {#empty-file}
+<a name="empty-file"></a>
+
+### 空ファイル
 
 #### Excel
 
@@ -409,7 +429,9 @@ setup_files:
 
 ---
 
-## メッセージングテストデータ {#messaging}
+<a name="messaging"></a>
+
+## メッセージングテストデータ
 
 ### MESSAGE セクション
 
@@ -484,7 +506,9 @@ messages:
 
 ---
 
-## 特殊値・インタープリタ {#datetime}
+<a name="datetime"></a>
+
+## 特殊値・インタープリタ
 
 ### 日付型・Timestamp・特殊値
 
@@ -525,7 +549,9 @@ expected_tables:
 
 ---
 
-## ディレクティブ {#directive}
+<a name="directive"></a>
+
+## ディレクティブ
 
 ### 固定長ファイルのディレクティブ
 
