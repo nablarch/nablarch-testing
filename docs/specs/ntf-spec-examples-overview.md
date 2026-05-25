@@ -31,6 +31,8 @@
 | 会員ID[10001] | INFO | |
 | 会員ID[10002] | INFO | |
 
+- `LIST_MAP=testShots` がテストケース定義、`SETUP_TABLE` がセットアップ、`EXPECTED_TABLE` が検証、`LIST_MAP=expectedLog` が期待ログ
+
 ### YAML
 
 ```yaml
@@ -104,6 +106,9 @@ expected_tables:
 | PK_COL1 | PK_COL2 | NUMBER_COL | VARCHAR2_COL | NUMBER_COL2 |
 | 0000000008 | OP | 10000000 | やゆよ | 2.2222 |
 
+- `SETUP_TABLE[case01]` と `SETUP_TABLE[case02]` で groupId を使いケースごとに異なるセットアップデータを使い分けます
+- 同一 groupId のセクションを複数記述するとすべて収集されます（case02 が2件）
+
 ### YAML
 
 ```yaml
@@ -165,6 +170,9 @@ setup_tables:
 | REQUEST_ID | USER_ID | HTTP_METHOD |
 | REQ_001 | invalid_user | POST |
 
+- `testShots` の `context` カラムに `LIST_MAP` の ID を指定し、リクエスト情報（`REQUEST_ID`・`USER_ID`・`HTTP_METHOD`）を参照します
+- `isValidToken` は CSRF トークン制御フラグです（`1`: あり、`0`: なし）
+
 #### YAML
 
 ```yaml
@@ -206,6 +214,9 @@ list_maps:
 | no | description | expectedStatusCode | setUpTable | expectedTable | setUpFile | expectedFile | expectedLog | diConfig | requestPath | userId |
 | 1 | 正しく更新されます | 0 | default | default | | | | nablarch/test/core/batch/BatchSample.xml | DBtoDBBatchSample | test |
 | 2 | 入力ファイルあり | 0 | | | case2 | case2 | | nablarch/test/core/batch/BatchSample.xml | FileToFileBatchSample | test |
+
+- `setUpTable`・`expectedTable` には groupId を指定します（`default` は groupId なし扱い）
+- `setUpFile`・`expectedFile` には `SETUP_FIXED`/`EXPECTED_FIXED` の groupId を指定します
 
 #### YAML
 
