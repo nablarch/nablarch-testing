@@ -90,66 +90,106 @@ expected_tables:
 
 ## 2. セクション識別: groupId の使い方
 
-受注管理テーブルのデータをテストケース別（正常注文 / 大量注文）で使い分けるシナリオ。groupId でセクションを区別します。
+テストケースごとに異なるセットアップデータを使い分けるシナリオ。
+
+**ポイント**: `testShots` の `setUpTable` カラムに groupId を書く → そのgroupIdが付いたセクションだけが投入される。
+
+- ケース1（正常注文）: `setUpTable=case01` → `SETUP_TABLE[case01]` のデータが使われる
+- ケース2（大量注文）: `setUpTable=case02` → `SETUP_TABLE[case02]` のデータが使われる
 
 ### Excel
 
+| LIST_MAP=testShots | | | | |
+|---|---|---|---|---|
+| no | description | expectedStatusCode | setUpTable | expectedTable |
+| 1 | 正常注文 | 0 | case01 | case01 |
+| 2 | 大量注文 | 0 | case02 | case02 |
+
 | SETUP_TABLE[case01]=ORDER_DETAIL | | | | |
 |---|---|---|---|---|
-| ORDER_ID | LINE_NO | PRODUCT_CODE | QUANTITY | UNIT_PRICE |
-| 1001 | 1 | P-001 | 5 | 1500 |
-| 1001 | 2 | P-002 | 3 | 2800 |
+| ORDER_ID | PRODUCT_CODE | QUANTITY | UNIT_PRICE | |
+| 1001 | P-001 | 5 | 1500 | |
+
+| EXPECTED_TABLE[case01]=ORDER_DETAIL | | | | |
+|---|---|---|---|---|
+| ORDER_ID | PRODUCT_CODE | QUANTITY | UNIT_PRICE | |
+| 1001 | P-001 | 5 | 1500 | |
 
 | SETUP_TABLE[case02]=ORDER_DETAIL | | | | |
 |---|---|---|---|---|
-| ORDER_ID | LINE_NO | PRODUCT_CODE | QUANTITY | UNIT_PRICE |
-| 2001 | 1 | P-003 | 100 | 500 |
+| ORDER_ID | PRODUCT_CODE | QUANTITY | UNIT_PRICE | |
+| 2001 | P-003 | 100 | 500 | |
+| 2001 | P-004 | 200 | 300 | |
 
-| SETUP_TABLE[case02]=ORDER_DETAIL | | | | |
+| EXPECTED_TABLE[case02]=ORDER_DETAIL | | | | |
 |---|---|---|---|---|
-| ORDER_ID | LINE_NO | PRODUCT_CODE | QUANTITY | UNIT_PRICE |
-| 2001 | 2 | P-004 | 200 | 300 |
+| ORDER_ID | PRODUCT_CODE | QUANTITY | UNIT_PRICE | |
+| 2001 | P-003 | 100 | 500 | |
+| 2001 | P-004 | 200 | 300 | |
 
-- `SETUP_TABLE[case01]` と `SETUP_TABLE[case02]` で groupId を使いケースごとに異なるセットアップデータを使い分けます
-- 同一 groupId のセクションを複数記述するとすべて収集されます（case02 が2件）
+- `testShots` の `setUpTable` カラムに groupId（`case01`/`case02`）を指定することで、そのケースで使うセクションを選択します
+- `expectedTable` も同様に groupId を指定して検証データを切り替えます
 
 ### YAML
 
 ```yaml
+list_maps:
+  - id: testShots
+    rows:
+      - no: "1"
+        description: "正常注文"
+        expectedStatusCode: "0"
+        setUpTable: "case01"
+        expectedTable: "case01"
+      - no: "2"
+        description: "大量注文"
+        expectedStatusCode: "0"
+        setUpTable: "case02"
+        expectedTable: "case02"
+
 setup_tables:
   - group_id: case01
     table: ORDER_DETAIL
     rows:
       - ORDER_ID: "1001"
-        LINE_NO: "1"
         PRODUCT_CODE: "P-001"
         QUANTITY: "5"
         UNIT_PRICE: "1500"
-      - ORDER_ID: "1001"
-        LINE_NO: "2"
-        PRODUCT_CODE: "P-002"
-        QUANTITY: "3"
-        UNIT_PRICE: "2800"
   - group_id: case02
     table: ORDER_DETAIL
     rows:
       - ORDER_ID: "2001"
-        LINE_NO: "1"
         PRODUCT_CODE: "P-003"
         QUANTITY: "100"
         UNIT_PRICE: "500"
+      - ORDER_ID: "2001"
+        PRODUCT_CODE: "P-004"
+        QUANTITY: "200"
+        UNIT_PRICE: "300"
+
+expected_tables:
+  - group_id: case01
+    table: ORDER_DETAIL
+    rows:
+      - ORDER_ID: "1001"
+        PRODUCT_CODE: "P-001"
+        QUANTITY: "5"
+        UNIT_PRICE: "1500"
   - group_id: case02
     table: ORDER_DETAIL
     rows:
       - ORDER_ID: "2001"
-        LINE_NO: "2"
+        PRODUCT_CODE: "P-003"
+        QUANTITY: "100"
+        UNIT_PRICE: "500"
+      - ORDER_ID: "2001"
         PRODUCT_CODE: "P-004"
         QUANTITY: "200"
         UNIT_PRICE: "300"
 ```
 
-- `group_id:` フィールドで groupId を指定します。省略するとグループIDなし（デフォルトグループ）扱いです
-- 同一 `group_id` のエントリを複数並べるとすべて収集されます（`case02` が2件）
+- `testShots` の `setUpTable`/`expectedTable` に書いた値（`case01`/`case02`）がそのまま groupId として使われ、対応するセクションが収集されます
+- groupId を省略したセクションは `setUpTable` が空のケースで使われます（groupId なし = デフォルトグループ）
 
 ---
 
