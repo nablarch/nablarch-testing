@@ -522,7 +522,7 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 ---
 
-## 現在の状態（2026-05-22時点）
+## 現在の状態（2026-05-25時点）
 
 - **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
 - **次タスク**: **ntf-spec.md + ntf-spec-examples-*.md をまとめてユーザーレビュー1回** → OK 取得後に I-2/I-3 へ
@@ -530,10 +530,18 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
   - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列を追加済み（節番号なし = 記載漏れのインジケーター）
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
-- **ntf-spec.md**: 完成（2.1節に Excel/YAML 両形式並記・DataType→YAMLキー対照表を追加済み）
-- **ntf-spec-examples-*.md**: 全5ファイル作成済み・ユーザーレビュー待ち
-  - 実物の `FileToFileBatchSampleTest.xls`・`BatchRequestTestSupportTest.xls`・`MessageParserTest.xls`・`BasicTestDataParserTest.xls` を参照して作成
-  - `ntf-spec.md` の全 Example リンクを新ファイルに向け直し済み
+- **ntf-spec.md**: 完成。今セッションの主な変更:
+  - 1.2節「テストデータの基本構造」を新設（テストクラスと Excel ブック/YAML ディレクトリの1対1対応を明記）
+  - Excel 混在禁止（EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）を Excel 固有と明記。YAML では混在可と追記
+  - セクションの記述順序自由・YAML トップレベルキー重複禁止を追記
+  - spec/Example の重複を解消（Example は コードブロック + 必要最小限の注釈に整理）
+- **ntf-spec-examples-*.md**: 全5ファイル完成。今セッションの主な修正:
+  - `inFile`/`outFile` → `setUpFile`/`expectedFile` に修正（実装と一致させた）
+  - `list_maps:` 重複キーを解消（同一リストに統合）
+  - `errorMode` の値を `errorMode:timeout`/`errorMode:msgException` に修正
+  - `status_code:` の説明を実行時クライアントの挙動として修正
+  - タイトルから章番号・節名を削除（仕様変更の影響を受けないよう）
+  - YAML セクションの説明を追加（overview/file/messaging）
 - **ntf-spec-examples.md（旧）**: まだ残存。ユーザーレビュー OK 後に削除予定
 
 ### ntf-spec.md / ntf-spec-examples-*.md 構成（完成）
@@ -541,11 +549,11 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 ```
 docs/specs/
   ntf-spec.md                       # 論理仕様書（形式非依存）
-  ntf-spec-examples-overview.md     # 1〜3章: 概要・セクション識別・テストケース定義
-  ntf-spec-examples-table.md        # 4章: テーブルデータ
-  ntf-spec-examples-file.md         # 5章: ファイルデータ
-  ntf-spec-examples-messaging.md    # 6章: メッセージングテストデータ
-  ntf-spec-examples-special.md      # 7〜9章: 特殊値・ディレクティブ・ヘッダ
+  ntf-spec-examples-overview.md     # 概要・セクション識別・テストケース定義の記述例
+  ntf-spec-examples-table.md        # テーブルデータの記述例
+  ntf-spec-examples-file.md         # ファイルデータの記述例
+  ntf-spec-examples-messaging.md    # メッセージングテストデータの記述例
+  ntf-spec-examples-special.md      # 特殊値・ディレクティブ・ヘッダの記述例
   ntf-spec-examples.md              # 旧ファイル（ユーザーレビューOK後に削除）
   ntf-doc-terms.md                  # v6 解説書から抽出した用語リスト（用語確認用）
 ```
@@ -567,6 +575,12 @@ docs/specs/
 3. **ユーザーレビュー OK 後**: `docs/specs/ntf-spec-examples.md`（旧ファイル）を削除する
 4. **I-2 着手**: `ntf-impl-spec-list.md` の全仕様IDに既存テストメソッドをマッピングする
 5. **I-3 着手**: `ntf-impl-spec-list.md` の全仕様IDにスキーマ根拠またはスキーマ外理由を記載する
+
+### Example ファイル修正時の注意
+
+- 仕様書（`ntf-spec.md`）と重複する説明は書かない。ただしコードを読むための指差し注釈（「このキーが〇〇に対応」）は必要
+- 推測で書かない。キー名・カラム名・挙動は必ず実装コードまたは実物 `.xls` で確認する
+- Excel 固有の制約と YAML 固有の制約は明確に区別して記述する
 
 
 ### 環境情報
