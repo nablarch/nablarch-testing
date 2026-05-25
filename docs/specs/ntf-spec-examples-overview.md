@@ -52,6 +52,12 @@ list_maps:
         requestPath: "DBtoDBBatchSample"
         userId: "test"
         expectedLog: "expectedLog"
+  - id: expectedLog
+    rows:
+      - message: "会員ID[10001]"
+        logLevel: "INFO"
+      - message: "会員ID[10002]"
+        logLevel: "INFO"
 
 setup_tables:
   - table: BATCH_SAMPLE
@@ -74,19 +80,11 @@ expected_tables:
         COUNTER: "21"
         MESSAGE: "さようなら"
         UPDATE_DATE: "2010-09-13 12:34:56.0"
-
-list_maps:
-  - id: expectedLog
-    rows:
-      - message: "会員ID[10001]"
-        logLevel: "INFO"
-      - message: "会員ID[10002]"
-        logLevel: "INFO"
 ```
 
 - テストケースは `list_maps:` の `id: testShots` で記述します
 - セットアップは `setup_tables:`、検証は `expected_tables:` で記述します
-- 同一キー（`list_maps:` など）が複数回登場してもよいですが、1ファイルに1つにまとめることを推奨します
+- 同一の `list_maps:` に複数エントリを並べて記述します（YAMLは重複キー不可）
 
 ---
 

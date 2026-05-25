@@ -111,7 +111,7 @@ expected_complete_tables:
 ```
 
 - 省略したいカラムのキーを書かないだけです
-- `expected_tables:` と `expected_complete_tables:` を1ファイルに混在させると、後半のセクションは読み込まれません
+- `expected_tables:` と `expected_complete_tables:` は別キーのため混在可能です（YAMLパーサーが両方を独立して読み込んでマージします）
 
 ---
 

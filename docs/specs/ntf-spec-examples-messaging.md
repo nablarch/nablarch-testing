@@ -134,7 +134,7 @@ expected_request_header_messages:
 
 - `MESSAGE=sendSyncTestData/{requestId}/message` というパスで配置します
 - `no` 列の値は送信順序と一致させます
-- `errorMode` に `timeout` を指定するとタイムアウトエラー、`msgException` を指定すると例外エラーのシミュレーションになります
+- `errorMode` に `errorMode:timeout` を指定するとタイムアウトエラー、`errorMode:msgException` を指定すると例外エラーのシミュレーションになります
 
 ### YAML
 
@@ -153,7 +153,7 @@ messages:
           - ["2", "",        "value3", "value4"]
 ```
 
-- `errorMode` に `timeout` または `msgException` を指定すると他フィールドはパース対象外になります
+- `errorMode` に `errorMode:timeout` または `errorMode:msgException` を指定すると他フィールドはパース対象外になります
 - N 回送信する場合はヘッダ件数とボディ件数をともに N 件ずつ記述します
 
 ---
@@ -186,4 +186,4 @@ response_body_messages:
           - ["RESULT_OK"]
 ```
 
-- `status_code:` フィールドを省略するとデフォルト値 `"200"` が使用されます
+- ステータスコード列がない場合、実行時にデフォルト値 `"200"` が使用されます

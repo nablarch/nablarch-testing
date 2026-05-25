@@ -294,7 +294,7 @@ DB への INSERT 用データです。
 
 **注意**: DATE カラムのデフォルト値は JVM のタイムゾーン設定に依存します。JST 環境と UTC 環境では値が異なります。
 
-**混在禁止**: `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると、後半のデータが読み込まれません。同じ種別のセクションをまとめて記述してください。
+**Excel 混在禁止**: Excel では `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一シート内で混在させると、後半のデータが読み込まれません。同じ種別のセクションをまとめて記述してください。YAML では `expected_tables` と `expected_complete_tables` は別キーのため混在可能です。
 
 → [Excel / YAML Example](ntf-spec-examples-table.md#expected-complete-table)
 
