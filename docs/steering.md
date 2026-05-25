@@ -455,7 +455,12 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-3 着手**: S-1（188件）× S-2（295件超）を突き合わせ、`ntf-impl-spec-list.md` を全件見直して仕様リストを確定する
+2. **S-3 着手**（S-1・S-2 完了済み）:
+   - `docs/checks/S-1.md`（解説書抽出 188件）と `docs/checks/S-2.md`（実装抽出 300件超）を両方読む
+   - 既存 `ntf-impl-spec-list.md`（141件）を出発点として全件見直す
+   - S-1 のみ / S-2 のみ / 両方に存在する項目を明示しながら統合する
+   - 仕様ID採番: DT/SS/HC/IV/DR/MS/TS/RS カテゴリで統一
+   - セルフチェック → QAエンジニアレビュー → ユーザーレビュー
 
 ### ソース一覧（確定・2026-05-25時点）
 
