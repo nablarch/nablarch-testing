@@ -155,10 +155,6 @@ setup_tables:
 - **Excel**: `LIST_MAP=testShots` セクションに記述します
 - **YAML**: `list_maps:` 下の `id: testShots` エントリに記述します
 
-→ [Excel / YAML Example](ntf-spec-examples-overview.md#test-shots)
-
-処理方式ごとの必須カラム・オプションカラム一覧と記述例は以下を参照してください。
-
 → [処理方式別 testShots カラム一覧](ntf-spec-examples-testshots.md)
 
 ### 4.2 DB 共通セットアップデータ
