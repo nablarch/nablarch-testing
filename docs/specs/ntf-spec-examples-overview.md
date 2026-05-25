@@ -1,41 +1,5 @@
 # NTF テストデータ記述例 — 1〜3章: 概要・セクション識別・テストケース定義
 
-<a name="basic-structure"></a>
-
-## 1.2 テストデータの基本構造
-
-テストクラス `FooTest` に対するテストデータの配置例。
-
-### Excel
-
-```
-src/test/java/com/example/
-  FooTest.xls
-    ├── case01    ← シート（読み込み単位）
-    └── case02    ← シート（読み込み単位）
-```
-
-- 1ブック（`.xls` ファイル）= テストクラス1つ分のテストデータ
-- 1シート = 1つの読み込み単位
-
-### YAML
-
-```
-src/test/java/com/example/
-  FooTest/
-    ├── case01.yaml    ← Excelの case01 シートに相当
-    └── case02.yaml    ← Excelの case02 シートに相当
-```
-
-- 1ディレクトリ = テストクラス1つ分のテストデータ
-- 1ファイル（`.yaml`）= 1つの読み込み単位 = Excelの1シートに相当
-
-### 読み込み単位の中身（case01 の例）
-
-読み込み単位（シート/ファイル）の中には、テストケース・セットアップ・検証の複数セクションを共存させます。以下の [概要 Example](#overview) を参照してください。
-
----
-
 <a name="overview"></a>
 
 ## 1.1 概要: 1ファイルに3種類のデータを共存させる
@@ -123,6 +87,38 @@ list_maps:
 - テストケースは `list_maps:` の `id: testShots` で記述します
 - セットアップは `setup_tables:`、検証は `expected_tables:` で記述します
 - 同一キー（`list_maps:` など）が複数回登場してもよいですが、1ファイルに1つにまとめることを推奨します
+
+---
+
+<a name="basic-structure"></a>
+
+## 1.2 テストデータの基本構造
+
+テストクラス `FooTest` に対するテストデータの配置例。
+
+### Excel
+
+```
+src/test/java/com/example/
+  FooTest.xls
+    ├── case01    ← シート（読み込み単位）
+    └── case02    ← シート（読み込み単位）
+```
+
+- 1ブック（`.xls` ファイル）= テストクラス1つ分のテストデータ
+- 1シート = 1つの読み込み単位
+
+### YAML
+
+```
+src/test/java/com/example/
+  FooTest/
+    ├── case01.yaml    ← Excelの case01 シートに相当
+    └── case02.yaml    ← Excelの case02 シートに相当
+```
+
+- 1ディレクトリ = テストクラス1つ分のテストデータ
+- 1ファイル（`.yaml`）= 1つの読み込み単位 = Excelの1シートに相当
 
 ---
 
