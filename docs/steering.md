@@ -220,8 +220,20 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - [ ] 各ファイルを読み、仕様として読み取れる記述（機能・制約・動作・データ構造・エラー条件）を全件抽出する
   - 既存 `ntf-coverage-doc-check.md` を出発点として使ってよいが、全行を再確認して追記・修正すること
 - [ ] 抽出した仕様をリスト形式で記録する（ファイル名・箇所・仕様概要）
-- [ ] セルフチェック（チェック結果: `docs/checks/S-1.md`）
-- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [x] 解説書リポジトリ（nablarch-document）の対象ファイルを全件列挙し、ファイル一覧として記録する（36件）
+- [x] 各ファイルを読み、仕様として読み取れる記述を全件抽出する（147件）
+- [x] 抽出した仕様をリスト形式で記録する（`docs/checks/S-1.md`）
+- [ ] エキスパートレビュー: 1ファイル1サブエージェント・5並列で実施
+  - **方針**: 各エージェントは対象ファイルを独立して読み、自分で仕様を洗い出してから S-1.md と照合する。バイアスなし
+  - **バッチ1** (5並列): 01_entityUnitTestWithBeanValidation.rst / 02_entityUnitTestWithNablarchValidation.rst / 02_componentUnitTest.rst / 05_UnitTestGuide/02_RequestUnitTest/batch.rst / delayed_receive.rst
+  - **バッチ2** (5並列): delayed_send.rst / double_transmission.rst / fileupload.rst / http_real.rst / http_send_sync.rst
+  - **バッチ3** (5並列): mail.rst / real.rst / rest.rst / send_sync.rst / 03_DealUnitTest/batch.rst
+  - **バッチ4** (5並列): 03_DealUnitTest/delayed_receive.rst / delayed_send.rst / http_send_sync.rst / real.rst / rest.rst
+  - **バッチ5** (5並列): 03_DealUnitTest/send_sync.rst / 06_TestFWGuide/01_Abstract.rst / 02_DbAccessTest.rst / 02_RequestUnitTest.rst / 03_Tips.rst
+  - **バッチ6** (5並列): 04_MasterDataRestore.rst / JUnit5_Extension.rst / RequestUnitTest_batch.rst / RequestUnitTest_http_send_sync.rst / RequestUnitTest_real.rst
+  - **バッチ7** (5並列): RequestUnitTest_rest.rst / RequestUnitTest_send_sync.rst / 08_TestTools/01_HttpDumpTool/01_HttpDumpTool.rst / 02_SetUpHttpDumpTool.rst / 08_TestTools/02_MasterDataSetup/01_MasterDataSetupTool.rst
+  - **バッチ8** (1件): 08_TestTools/02_MasterDataSetup/02_ConfigMasterDataSetupTool.rst
+  - 漏れが報告されたら S-1.md に追記してコミット・プッシュ
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
@@ -238,13 +250,13 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 **前提**: なし（S-1 と並行して実施可能）
 
 **作業内容**:
-- [ ] 対象クラスを全件列挙し、ファイル一覧として記録する
-  - 既存 `ntf-coverage-class-list.md` を出発点として使ってよいが、全件を再確認すること
-- [ ] 各クラスの公開メソッド・例外スロー（`grep "throw "`）・代替フロー（`grep "return null\|emptyList\|emptyMap"`）を全件抽出する
-  - 既存 `ntf-coverage-spec-mapping.md` を出発点として使ってよいが、全行を再確認して追記・修正すること
-- [ ] 抽出した振る舞いをリスト形式で記録する（クラス名・行番号・仕様概要・正常系/異常系/代替フロー分類）
-- [ ] セルフチェック（チェック結果: `docs/checks/S-2.md`）
-- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [x] 対象クラスを全件列挙し、ファイル一覧として記録する（166件）
+- [x] 各クラスの公開メソッド・例外スロー・代替フローを全件抽出する（226件）
+- [x] 抽出した振る舞いをリスト形式で記録する（`docs/checks/S-2.md`）
+- [ ] エキスパートレビュー: 1クラス1サブエージェント・5並列で実施
+  - **方針**: 各エージェントは対象クラスを独立して読み、自分で仕様を洗い出してから S-2.md と照合する。バイアスなし
+  - **バッチ1〜34** (各5並列、合計166クラス): src/main/java 配下の全クラスを順番に処理
+  - 漏れが報告されたら S-2.md に追記してコミット・プッシュ
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
