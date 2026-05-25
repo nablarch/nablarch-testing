@@ -112,8 +112,6 @@ setup_tables:
 - 完全なセクションキーを使用するため前方一致は発生しません
 - YAMLでは同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
 
-→ [Excel / YAML Example](ntf-spec-examples-overview.md#section-identifier)
-
 ### 3.2 DataType の種類
 
 テストデータで使用できる DataType は以下の14種類です。
@@ -253,7 +251,7 @@ setup_tables:
 
 バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
 
-→ [Excel / YAML Example](ntf-spec-examples-overview.md#section-identifier)
+→ [Excel / YAML Example](ntf-spec-examples-overview.md#groupid)
 
 ---
 

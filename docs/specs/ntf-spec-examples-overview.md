@@ -86,9 +86,9 @@ expected_tables:
 
 ---
 
-<a name="section-identifier"></a>
+<a name="groupid"></a>
 
-## 3. セクション識別: groupId の使い方
+## 4.5 セクションのグループ化（groupId）
 
 テストケースごとに異なるセットアップデータを使い分けるシナリオ。
 
