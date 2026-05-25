@@ -37,7 +37,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 **検証**  
 テスト後の検証に使うデータです。DB の期待値、出力ファイルの期待値、電文の期待値、ログや検索結果等の期待値などを定義します。
 
-これらは**セクション**という単位で管理され、`DataType名=識別子` の形式で区別されます。1つのファイルに複数種別のセクションを共存させることができます。
+これらは**セクション**という単位で管理され、`DataType名=識別子` の形式で区別されます。1つのファイルに複数種別のセクションを共存させることができます。セクションの記述順序は問いません。
 
 → [Excel / YAML Example](ntf-spec-examples-overview.md#overview)
 
@@ -114,19 +114,9 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 | `RESPONSE_HEADER_MESSAGES` | `response_header_messages` |
 | `RESPONSE_BODY_MESSAGES` | `response_body_messages` |
 
-```yaml
-setup_tables:
-  - table: USER_MASTER
-    rows:
-      - USER_ID: "001"
-  - group_id: case1
-    table: ORDER
-    rows:
-      - ORDER_ID: "1001"
-```
-
 - groupId は各エントリの `group_id:` フィールドとして記述します
 - 完全なセクションキーを使用するため前方一致は発生しません
+- YAMLでは同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
 
 → [Excel / YAML Example](ntf-spec-examples-overview.md#section-identifier)
 

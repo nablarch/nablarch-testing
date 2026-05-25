@@ -31,10 +31,6 @@
 | 会員ID[10001] | INFO | |
 | 会員ID[10002] | INFO | |
 
-- `LIST_MAP=testShots` がテストケース、`SETUP_TABLE=テーブル名` がセットアップ、`EXPECTED_TABLE=テーブル名` が検証
-- `LIST_MAP=expectedLog` のような任意 ID の LIST_MAP も同一ファイルに共存できます
-- 3種のセクションは記述順序を問いません
-
 ### YAML
 
 ```yaml
@@ -82,10 +78,6 @@ expected_tables:
         UPDATE_DATE: "2010-09-13 12:34:56.0"
 ```
 
-- テストケースは `list_maps:` の `id: testShots` で記述します
-- セットアップは `setup_tables:`、検証は `expected_tables:` で記述します
-- 同一の `list_maps:` に複数エントリを並べて記述します（YAMLは重複キー不可）
-
 ---
 
 <a name="section-identifier"></a>
@@ -111,9 +103,6 @@ expected_tables:
 |---|---|---|---|---|
 | PK_COL1 | PK_COL2 | NUMBER_COL | VARCHAR2_COL | NUMBER_COL2 |
 | 0000000008 | OP | 10000000 | やゆよ | 2.2222 |
-
-- `SETUP_TABLE[case01]=TEST_TABLE` のように DataType 名の直後に `[groupId]` を記述します
-- 同一 groupId のセクションは複数記述でき、すべて収集されます（GroupData）
 
 ### YAML
 
@@ -150,9 +139,6 @@ setup_tables:
         NUMBER_COL2: "2.2222"
 ```
 
-- groupId は各エントリの `group_id:` フィールドとして記述します
-- 同一 `group_id` のエントリを複数書けばすべて収集されます
-
 ---
 
 <a name="test-shots"></a>
@@ -178,10 +164,6 @@ setup_tables:
 |---|---|---|
 | REQUEST_ID | USER_ID | HTTP_METHOD |
 | REQ_001 | invalid_user | POST |
-
-- `testShots` はフレームワークが自動読み込みする予約 ID です
-- `context` カラムには対応する `LIST_MAP` の ID を指定します。`REQUEST_ID`・`USER_ID`・`HTTP_METHOD` を取得します
-- `isValidToken` は CSRF トークン制御フラグです（`1`: トークンあり、`0`: トークンなし）
 
 #### YAML
 
@@ -213,9 +195,6 @@ list_maps:
         HTTP_METHOD: "POST"
 ```
 
-- `testShots` が 0 件の場合は例外がスローされます
-- `context` LIST_MAP は 1 エントリのみ有効です。`REQUEST_ID` が空の場合は例外がスローされます
-
 ---
 
 ### リクエスト単体テスト（バッチ処理）
@@ -227,9 +206,6 @@ list_maps:
 | no | description | expectedStatusCode | setUpTable | expectedTable | setUpFile | expectedFile | expectedLog | diConfig | requestPath | userId |
 | 1 | 正しく更新されます | 0 | default | default | | | | nablarch/test/core/batch/BatchSample.xml | DBtoDBBatchSample | test |
 | 2 | 入力ファイルあり | 0 | | | case2 | case2 | | nablarch/test/core/batch/BatchSample.xml | FileToFileBatchSample | test |
-
-- `setUpTable`・`expectedTable` は groupId を指定します。`default` は groupId なし（デフォルトグループ）に相当します
-- `setUpFile`・`expectedFile` には `SETUP_FIXED` / `EXPECTED_FIXED` の groupId を指定します
 
 #### YAML
 
