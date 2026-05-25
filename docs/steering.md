@@ -443,16 +443,25 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-1 着手**: `ntf-coverage-doc-check.md` を出発点に解説書ファイル一覧を全件列挙・仕様抽出
-3. **S-2 着手**（S-1 と並行可）: `ntf-coverage-spec-mapping.md` を出発点に実装ファイル一覧を全件列挙・仕様抽出
+2. **S-1 着手**: 解説書ファイル一覧（36件）を全件列挙・仕様抽出
+3. **S-2 着手**（S-1 と並行可）: 実装ファイル一覧（166件）を全件列挙・仕様抽出。対象外の判断は抽出後に行う
 4. S-1・S-2 完了後 → **S-3 着手**
+
+### ソース一覧（確定・2026-05-25時点）
+
+| ソース | パス | ファイル数 |
+|---|---|---|
+| 解説書（.rst） | `/tmp/nablarch-document/ja/development_tools/testing_framework/guide/development_guide`（index.rst 除く） | 36件 |
+| 既存実装（.java） | `/home/tie303177/work/nablarch-testing/src/main/java`（package-info.java 除く） | 166件 |
+
+**注意**: `/tmp/nablarch-document` は再起動で消える。必要時は `git clone https://github.com/nablarch/nablarch-document.git /tmp/nablarch-document` で再取得。
 
 ### 既存成果物の状態（参考）
 
 | ファイル | 状態 | 各タスクでの扱い |
 |---|---|---|
-| `ntf-coverage-doc-check.md` | 作成済み（再検証必要） | S-1 の出発点 |
-| `ntf-coverage-spec-mapping.md` | 作成済み（再検証必要） | S-2 の出発点 |
+| `ntf-coverage-doc-check.md` | 作成済み（再検証必要・当時13ファイル対象） | S-1 の出発点 |
+| `ntf-coverage-spec-mapping.md` | 作成済み（再検証必要・当時29クラス対象） | S-2 の出発点 |
 | `ntf-impl-spec-list.md` | 141件（S-3 で全件見直し） | S-3 の出発点 |
 | `ntf-spec.md` / `examples-*.md` | 作業中（S-3 前のため全件見直し必要） | S-4 の出発点 |
 | R-1/R-1-refactor コード | 存在（仕様 FIX 前・要再検証） | R-1 やり直し時の参考 |
