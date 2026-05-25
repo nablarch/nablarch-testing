@@ -118,6 +118,10 @@ expected_request_header_messages:
           - ["RM21AA0104_01"]
 ```
 
+- `expected_request_header_messages:` の `group_id:` が `testShots` の `expectedMessage` カラムに対応します
+- `id:` はリクエスト ID（フォーマット定義ファイルの解決に使われます）
+- ヘッダとボディのエントリ数（rows 合計）は一致が必須です
+
 ---
 
 ## 6.3 sendSyncTestData の配置規則

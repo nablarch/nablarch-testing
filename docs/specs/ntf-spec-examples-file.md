@@ -153,6 +153,9 @@ setup_files:
           - ["20001", "30", "morning"]
 ```
 
+- `group_id:` フィールドで groupId を指定します。省略するとグループIDなし（デフォルトグループ）扱いです
+- groupId なしと `group_id: case2` の2エントリが同一 `setup_files:` リストに並びます
+
 ---
 
 ## 5.4 可変長ファイル

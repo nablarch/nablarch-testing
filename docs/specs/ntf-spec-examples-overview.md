@@ -80,6 +80,10 @@ expected_tables:
         UPDATE_DATE: "2010-09-13 12:34:56.0"
 ```
 
+- `list_maps:` の `id: testShots` がテストケース定義、`setup_tables:` がセットアップ、`expected_tables:` が検証です
+- `id: expectedLog` のような任意 ID の `list_maps:` エントリも同一ファイルに共存できます
+- 同一の `list_maps:` キーに複数エントリをリストとして並べます（YAMLはトップレベルキーの重複不可）
+
 ---
 
 <a name="section-identifier"></a>
@@ -144,6 +148,9 @@ setup_tables:
         NUMBER_COL2: "2.2222"
 ```
 
+- `group_id:` フィールドで groupId を指定します。省略するとグループIDなし（デフォルトグループ）扱いです
+- 同一 `group_id` のエントリを複数並べるとすべて収集されます（`case02` が2件）
+
 ---
 
 <a name="test-shots"></a>
@@ -203,6 +210,9 @@ list_maps:
         HTTP_METHOD: "POST"
 ```
 
+- `id: testShots` エントリの `context` フィールドに `LIST_MAP` の ID を指定し、対応する `context001`/`context002` エントリからリクエスト情報を参照します
+- `testShots` が 0 件の場合は例外がスローされます
+
 ---
 
 ### リクエスト単体テスト（バッチ処理）
@@ -247,3 +257,6 @@ list_maps:
         requestPath: "FileToFileBatchSample"
         userId: "test"
 ```
+
+- `setUpTable`/`expectedTable` には `SETUP_TABLE`/`EXPECTED_TABLE` の groupId を指定します（`default` は groupId なし扱い）
+- `setUpFile`/`expectedFile` には `SETUP_FIXED`/`EXPECTED_FIXED` の groupId を指定します。空の場合はスキップされます
