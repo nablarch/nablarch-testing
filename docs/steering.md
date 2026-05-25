@@ -238,38 +238,30 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ### I-1b: 仕様ID 漏れの洗い出しと補完
 
-**目的**: I-1 で確立した仕様 ID 抽出プロセスに構造的な欠陥があったことが判明した。「反映済み」の判定基準が「どこかのドキュメントに記述した」であり「`ntf-impl-spec-list.md` に仕様 ID として起票した」ではなかったため、解説書・実装の両方で仕様 ID への変換が不完全なまま進んでいる。本タスクでその漏れを全件洗い出し補完する。
+**目的**: I-1 の仕様 ID 抽出プロセスに構造的欠陥があったことが判明した。実装の全行走査（`ntf-coverage-spec-mapping.md`）・解説書照合（`ntf-coverage-doc-check.md`）はいずれも実施済みだが、「走査して『仕様あり』と記録した内容」が `ntf-impl-spec-list.md` の仕様 ID 説明文に1対1で反映されているかの確認が抜けていた。本タスクで全ソースと仕様 ID の1対1対応を確認し漏れを全件補完する。
 
 **前提**: I-1 完了済み
 
 **漏れた根本原因（再発防止のために明記する）**:
 
-1. **解説書照合の変換漏れ**: `ntf-coverage-doc-check.md` で「反映済み」と記録した項目のうち、`ntf-impl-spec-list.md` に仕様 ID として起票されていないものが存在する。「examples.yaml に書いた」「design.md に記載した」で済ませており、仕様 ID への昇格確認が抜けていた
-2. **実装照合の変換漏れ**: interpreter/ 配下などの実装クラスにある個別のユースケース（例: `QuotationTrimmer` による `"null"` → 文字列 `null`）が IV-xx として個別起票されず、上位の仕様 ID に束ねて済ませていた
-3. **確認の担保が自己申告**: 「全件起票した」という判断が grep 件数との突き合わせなど客観的な証拠で担保されていなかった
+- **走査と起票の対応確認が抜けていた**: 全行走査で「仕様あり」と記録した各行が、`ntf-impl-spec-list.md` の仕様 ID 説明文に個別に反映されているかの突き合わせをしなかった。「仕様 ID を作った」で完了とみなし、走査記録→仕様 ID 説明文の変換漏れが残った
+- **全ソースが対象**: この問題は実装走査（`ntf-coverage-spec-mapping.md`）・解説書照合（`ntf-coverage-doc-check.md`）・その他調査文書（`ntf-converter-comparison.md`・`ntf-yaml-impl-evaluation.md` 等）すべてに同様に存在する可能性がある
 
 **作業内容**:
 
-- [ ] **解説書照合の全件確認**: `ntf-coverage-doc-check.md` の全行（「反映済み」含む）を `ntf-impl-spec-list.md` と1対1で突き合わせ、仕様 ID が存在しない行を「漏れ」として一覧化する
-- [ ] **インタープリタ実装の全ユースケース確認**: interpreter/ 配下の全クラスについて、各ユースケース（正常系・異常系・代替フロー）が個別の仕様 ID として起票されているか grep 証跡で確認する
-  - `NullInterpreter`: `null`/`Null`/`NULL` の各変換、非 null スルー
-  - `QuotationTrimmer`: 半角クォート除去、全角クォート除去、`"null"` → 文字列 `null`、片側のみはスルー
-  - `LineSeparatorInterpreter`: `\\r` → CR、`\\n` → LF、無関係な値はスルー
-  - `DateTimeInterpreter`: `${systemTime}` / `${updateTime}` / `${setUpTime}` 完全一致変換、部分文字列はスルー
-  - `BinaryFileInterpreter`: 正常読み込み、ファイル未存在エラー、非適用スルー
-  - `BasicJapaneseCharacterInterpreter`: 14種それぞれの生成、未知文字種の例外、書式ミスのスルー
-  - `CompositeInterpreter`: `${...}` 置換、`${...}` なし委譲
-- [ ] **解説書の特殊記法一覧の全件確認**: 01_Abstract.rst の特殊記法テーブル全行（`null`/`"null"`/`"⊔"`/`"""`/`${systemTime}`/`${updateTime}`/`${setUpTime}`/`${文字種,文字数}`/`${binaryFile:パス}`/`\\r`/`\\n` 等）が個別に仕様 ID として起票されているか確認する
-- [ ] **漏れ件数の集計**: 上記3観点の漏れを「解説書由来 N 件・実装由来 N 件」として集計し `docs/checks/I-1b.md` に記録する
-- [ ] **漏れた仕様 ID を `ntf-impl-spec-list.md` に追補する**
+- [ ] **`ntf-coverage-spec-mapping.md` の全「仕様あり」行 → 仕様 ID 対応確認**: 全行走査で「仕様あり」と記録した各行について、対応する仕様 ID が `ntf-impl-spec-list.md` に存在し、その説明文にその内容が反映されているか1行ずつ確認する。対応がない行を「漏れ」として一覧化する
+- [ ] **`ntf-coverage-doc-check.md` の全行 → 仕様 ID 対応確認**: 「反映済み」「未反映」を問わず全行について、対応する仕様 ID が存在するか確認する。「examples.yaml に記載」「design.md に記載」のみで仕様 ID が存在しない行を「漏れ」として一覧化する
+- [ ] **その他調査文書の確認**: `ntf-converter-comparison.md`・`ntf-yaml-impl-evaluation.md`・`ntf-schema-accuracy-basis.md` についても同様に確認する
+- [ ] **漏れの集計**: 各ソース別の漏れ件数を `docs/checks/I-1b.md` に記録する（「走査記録 N 行中 M 件漏れ」の形式で数値で示す）
+- [ ] **漏れた内容を `ntf-impl-spec-list.md` に追補する**
 - [ ] セルフチェック（チェック結果: `docs/checks/I-1b.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- 解説書の特殊記法テーブル全行、および interpreter/ 配下の全ユースケースが仕様 ID と1対1で対応していること
-- 漏れ件数が `docs/checks/I-1b.md` に集計されており、追補後の総件数が I-1 完了時（141件）より増加していること
-- 「反映済みだが仕様 ID なし」が0件であること
+- `ntf-coverage-spec-mapping.md` の全「仕様あり」行、`ntf-coverage-doc-check.md` の全行、その他調査文書の各項目が `ntf-impl-spec-list.md` の仕様 ID と1対1で対応していること
+- 各ソース別の漏れ件数が数値で記録されており、追補後の総件数が I-1 完了時（141件）から変化していること（増加・変化なしいずれも根拠付きで記録）
+- 「走査記録に存在するが仕様 ID に反映されていない内容」が0件であること
 
 ---
 
