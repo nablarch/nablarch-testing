@@ -1,8 +1,12 @@
 # NTF テストデータ 実装仕様一覧（ntf-impl-spec-list.md）
 
 - **作成日**: 2026-05-20（I-1 タスク）
-- **更新日**: 2026-05-25（S-3: 解説書マッピング・実装マッピング列を追加）
+- **更新日**: 2026-05-25（S-3: 解説書マッピング・実装マッピング列を追加・整合確認）
 - **参照元**: `docs/checks/S-1.md`（解説書抽出188件）、`docs/checks/S-2.md`（実装抽出300件超）、`ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-testdata-yaml-design.md`（スキーマ設計）
+
+**マッピング列の記載方針**:
+- `解説書マッピング` 列: その仕様IDを最も直接的に裏付ける S-1 ID を代表的に記載する（同一仕様IDに関連する全 S-1 ID の網羅列挙ではなく代表参照）。全件マッピングは `docs/checks/S-3.md` の S-1 マッピング一覧を参照。
+- `実装マッピング` 列: その仕様IDの動作を実装している主要コード箇所を記載する（1箇所の実装が複数仕様IDにまたがる場合、代表的な仕様IDに記載し他仕様IDからの参照は省略することがある）。全件マッピングは `docs/checks/S-3.md` の S-2 マッピング一覧を参照。
 
 ---
 
@@ -33,7 +37,7 @@
 | DT-04 | GroupData系（SETUP_TABLE 等）は同一 groupId のセクションを全部収集し続ける（`shouldStopOnNextOne() = false`） | 正常系 | S1-064, S1-066 | S2-088, S2-089（GroupDataParsingTemplate） |
 | DT-05 | SingleData系（LIST_MAP / MESSAGE 等）は最初に合致したセクション1つだけを取得して停止する（`shouldStopOnNextOne() = true`） | 正常系 | 解説書に記載なし | S2-090, S2-091（SingleDataParsingTemplate） |
 | DT-06 | groupId 書式: `[groupId]`（省略時は空文字扱い。要素数1時のみ有効・2以上は `IllegalArgumentException`）。バッチ固有: `group_id: "default"` はグループIDなし扱いと同等 | 正常系 | S1-063, S1-064, S1-065, S1-185 | S2-015（BasicTestDataParser.formatGroupId L253-266） |
-| DT-07 | `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` は GroupData（groupId 必須）経路と SingleData（id 一致）経路の2つが存在する | 正常系 | S1-097, S1-098 | S2-002, S2-004（BasicTestDataParser getSendSyncMessage L113）, S2-014 |
+| DT-07 | `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` は GroupData（groupId 必須）経路と SingleData（id 一致）経路の2つが存在する | 正常系 | S1-097, S1-098 | S2-014（BasicTestDataParser.getSendSyncMessage L113）, S2-022（YamlTestDataParser.getSendSyncMessage） |
 | DT-08 | groupId 引数に2件以上指定した場合は `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-015（BasicTestDataParser.formatGroupId L264） |
 
 ---
@@ -246,8 +250,8 @@
 
 | 分類 | 件数 |
 |---|---|
-| 解説書・実装両方に存在 | 54件 |
+| 解説書・実装両方に存在 | 60件 |
 | 解説書のみに存在（S-1 only・実装に記載なし） | 18件 |
-| 実装のみに存在（S-2 only・解説書に記載なし） | 53件 |
-| 解説書・実装ともに記載なし（テストサポート層等の設計レベル仕様） | 20件 |
+| 実装のみに存在（S-2 only・解説書に記載なし） | 49件 |
+| 解説書・実装ともに記載なし（テストサポート層等の設計レベル仕様） | 18件 |
 | **合計** | **145件** |
