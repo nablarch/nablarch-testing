@@ -1,9 +1,8 @@
 # NTF テストデータ 実装仕様一覧（ntf-impl-spec-list.md）
 
 - **作成日**: 2026-05-20（I-1 タスク）
-- **更新日**: 2026-05-22（TS カテゴリ追加: テストサポート層の全仕様を抽出・登録）
-- **参照元**: `ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-coverage-doc-check.md`（公式解説書照合）、`ntf-testdata-yaml-design.md`（スキーマ設計）、テストサポート層全クラス（`AbstractHttpRequestTestTemplate`, `TestCaseInfo`, `StandaloneTestSupportTemplate`, `TestShot`, `BatchRequestTestSupport`, `EntityTestSupport`, `DbAccessTestSupport`）
-- **目的**: Ph-1 三角マッピングの基準となる仕様IDを確定する。後続タスク（I-2/I-3/Ph-2）の全件を本文書に基づいて追跡する。
+- **更新日**: 2026-05-25（S-3: 解説書マッピング・実装マッピング列を追加）
+- **参照元**: `docs/checks/S-1.md`（解説書抽出188件）、`docs/checks/S-2.md`（実装抽出300件超）、`ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-testdata-yaml-design.md`（スキーマ設計）
 
 ---
 
@@ -26,351 +25,227 @@
 
 ### DT: セクション識別・DataType
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| DT-01 | 3.2 | DataType 列挙値: `DEFAULT` / `SETUP_TABLE` / `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` / `LIST_MAP` / `SETUP_FIXED` / `EXPECTED_FIXED` / `SETUP_VARIABLE` / `EXPECTED_VARIABLE` / `MESSAGE` / `EXPECTED_REQUEST_HEADER_MESSAGES` / `EXPECTED_REQUEST_BODY_MESSAGES` / `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` の14種 | 正常系 | `DataType.java` 行10-56 | `DataTypeTest#testGetName`, `DataTypeTest#testGetType`（DataType列挙値の存在確認） | スキーマ根拠: `ntf-test-data.schema.json` の最上位 `properties` キー（`setup_tables`, `expected_tables`, ..., `response_body_messages`）が 14 DataType を網羅 |
-| DT-02 | 3.1 | セクション識別行の書式: `<DataType名>[groupId]=<値>` (`=` が必須区切り文字。groupId は省略可) | 正常系 | `TestDataParsingTemplate.java` 行244-253 | `TestDataParsingTemplateTest#testParseFail`（parse内部でセクション識別を使用）、`BasicTestDataParserTest#testExpectedGetTableData`（EXPECTED_TABLE セクション識別の間接テスト） | スキーマ根拠: 各 `$defs` オブジェクトの `group_id` + `id`/`table`/`path` 構造が `=` 区切り書式を YAML で表現 |
-| DT-03 | 3.1 | DataType 判定は前方一致（`startsWith`）: セル値が DataType の name で始まれば合致。識別キー＋追加文字のセル値でも認識される | 正常系 | `TestDataParsingTemplate.java` 行221-242（旧E-4） | テスト追加必要（`StartsWithTest#testStartsWith` は DataType の `startsWith` とは別クラス。`DataType#getType()` の前方一致動作を直接テストするテストが存在しない） | スキーマ外・パーサ実装で担保（YAML キーは完全なセクション名を使用するため前方一致は発生しない。既存 Excel 互換性のための実装内部仕様） |
-| DT-04 | 3.3 | GroupData系（SETUP_TABLE 等）は同一 groupId のセクションを全部収集し続ける（`shouldStopOnNextOne() = false`） | 正常系 | `GroupDataParsingTemplate.java` 行45-53 | `TestDataParsingTemplateTest#testGroupDataWithNullInterpreter`（GroupData収集の停止しない動作）、`BasicTestDataParserTest#testGetExpectedTableDataWithGroupId`（複数グループの収集） | スキーマ根拠: `setup_tables`/`expected_tables` 等が `type: array` で複数エントリを許容（GroupData の全件収集を表現） |
-| DT-05 | 3.3 | SingleData系（LIST_MAP / MESSAGE 等）は最初に合致したセクション1つだけを取得して停止する（`shouldStopOnNextOne() = true`） | 正常系 | `SingleDataParsingTemplate.java` 行43-53 | `SingleDataParsingTemplateTest#testParseSingleData`（SingleData先着一致）、`TestDataParsingTemplateTest#testSingleDataWithNullInterpreter` | スキーマ根拠: `list_maps` / `messages` の各エントリが `id` キーを持ち、パーサが最初の一致のみを取得（スキーマは構造を定義、先着一致はパーサ実装） |
-| DT-06 | 3.4 | groupId 書式: `[groupId]`（省略時は空文字扱い。要素数1時のみ有効・2以上は `IllegalArgumentException`）。バッチ固有: `group_id: "default"` はグループIDなし扱いと同等になる | 正常系 | `BasicTestDataParser.java` 行243-266、公式解説書 batch.rst（Doc-5） | `BasicTestDataParserTest#testFormatGroupId`, `BasicTestDataParserTest#testFormatGroupIdFail` | スキーマ根拠: `table_data.$defs.group_id` の `minLength: 1` 制約（空文字禁止）。`design.md §8` グループIDなしの場合 |
-| DT-07 | 3.5 | `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` は GroupData（groupId 必須）経路と SingleData（id 一致）経路の2つが存在する | 正常系 | `BasicTestDataParser.java` 行104-117、`design.md §10` | テスト追加必要（`RequestTestingSendSyncSupportTest#testGetExpectedRequestMessageWithoutCache` はアクセスパスBの間接テストのみ。GroupData経路（パスA）のテストなし） | スキーマ根拠: `response_header_messages`/`response_body_messages` が `group_message_data` を参照し、`group_id` 有無で両経路を表現（`design.md §10`） |
-| DT-08 | 3.4 | groupId 引数に2件以上指定した場合は `IllegalArgumentException` をスロー | 異常系 | `BasicTestDataParser.java` 行264（`formatGroupId` メソッド） | `BasicTestDataParserTest#testFormatGroupIdFail`（2件引数で IllegalArgumentException） | スキーマ外・パーサ実装で担保（groupId のバリデーションはパーサ実装） |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| DT-01 | DataType 列挙値: `DEFAULT` / `SETUP_TABLE` / `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` / `LIST_MAP` / `SETUP_FIXED` / `EXPECTED_FIXED` / `SETUP_VARIABLE` / `EXPECTED_VARIABLE` / `MESSAGE` / `EXPECTED_REQUEST_HEADER_MESSAGES` / `EXPECTED_REQUEST_BODY_MESSAGES` / `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` の14種 | 正常系 | S1-005, S1-006, S1-007, S1-008, S1-009, S1-010, S1-011, S1-012, S1-013, S1-014, S1-015, S1-016, S1-017, S1-018 | S2-062（DataType 列挙型定義）, S2-063（getName） |
+| DT-02 | セクション識別行の書式: `<DataType名>[groupId]=<値>` (`=` が必須区切り文字。groupId は省略可) | 正常系 | S1-005 | S2-086（getDataType 前方一致）, S2-087（getTypeValue） |
+| DT-03 | DataType 判定は前方一致（`startsWith`）: セル値が DataType の name で始まれば合致 | 正常系 | 解説書に記載なし | S2-086（TestDataParsingTemplate.getDataType L230-242） |
+| DT-04 | GroupData系（SETUP_TABLE 等）は同一 groupId のセクションを全部収集し続ける（`shouldStopOnNextOne() = false`） | 正常系 | S1-063, S1-064, S1-065, S1-066 | S2-088, S2-089（GroupDataParsingTemplate） |
+| DT-05 | SingleData系（LIST_MAP / MESSAGE 等）は最初に合致したセクション1つだけを取得して停止する（`shouldStopOnNextOne() = true`） | 正常系 | 解説書に記載なし | S2-090, S2-091（SingleDataParsingTemplate） |
+| DT-06 | groupId 書式: `[groupId]`（省略時は空文字扱い。要素数1時のみ有効・2以上は `IllegalArgumentException`）。バッチ固有: `group_id: "default"` はグループIDなし扱いと同等 | 正常系 | S1-063, S1-064, S1-065, S1-185 | S2-015（BasicTestDataParser.formatGroupId L253-266） |
+| DT-07 | `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` は GroupData（groupId 必須）経路と SingleData（id 一致）経路の2つが存在する | 正常系 | S1-097, S1-098 | S2-002, S2-004（BasicTestDataParser getSendSyncMessage L113）, S2-014 |
+| DT-08 | groupId 引数に2件以上指定した場合は `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-015（BasicTestDataParser.formatGroupId L264） |
 
 ---
 
 ### SS: テーブル・ファイル構造
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| SS-01 | 5.1 | テーブルデータ行の形式: カラム名をキーとするオブジェクト形式。省略されたカラムにはデフォルト値が INSERT 時に補完される | 正常系 | `TableData.java`、`design.md §1/§4` | `BasicTestDataParserTest#testGetSetupTableData`（テーブルデータ行の読み取り） | スキーマ根拠: `$defs.table_data.properties.rows` の `additionalProperties: {type: ["string","null"]}` がカラム=値の対応を表現 |
-| SS-02 | 5.3 | `EXPECTED_TABLE`: 省略されたカラムは比較対象外になる（カラム列挙は任意） | 正常系 | `BasicTestDataParser.java` 行170-181、公式解説書 02_DbAccessTest.rst | `BasicTestDataParserTest#testExpectedGetTableData`（カラム省略が比較対象外になること） | スキーマ根拠: `expected_tables` の `table_data.rows` でカラムを省略可能（`additionalProperties` 方式） |
-| SS-03 | 5.4 | `EXPECTED_COMPLETE_TABLE`: 省略されたカラムに `BasicDefaultValues` のデフォルト値を補完してから比較する | 正常系 | `BasicTestDataParser.java` 行170-181 (`fillDefaultValues()` 呼び出し) | `BasicTestDataParserTest#testGetExpectedTableDataCompletedWithoutId`, `BasicTestDataParserTest#testGetExpectedTableDataCompletedWithId` | スキーマ根拠: `expected_complete_tables` の `table_data` 構造は `expected_tables` と同一だが、パーサが `fillDefaultValues()` を呼ぶ点はスキーマ外 |
-| SS-04 | 5.2 | `SETUP_TABLE` では主キーカラムは省略不可（省略するとデフォルト値が INSERT される） | 正常系 | 公式解説書 02_DbAccessTest.rst（Doc-2） | テスト追加必要（主キー省略時の動作を明示するテストなし） | スキーマ外仕様・テストで担保する方針（主キーカラム省略の検出はスキーマでは困難。INSERT 時のランタイム制約） |
-| SS-05 | 5.4 | `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると後半データが読み込まれない（まとめて記述が必要） | 正常系 | 公式解説書 01_Abstract.rst（Doc-4） | テスト追加必要（EXPECTED_TABLE と EXPECTED_COMPLETE_TABLE 混在時の動作を明示するテストなし） | スキーマ外仕様・テストで担保する方針（混在時の後半データ欠落はパーサのランタイム動作。YAML ファイルを分割して記述することを設計で推奨） |
-| SS-06 | 5.5 | `LIST_MAP=id` セクション: id は完全一致。同一ファイル内で同一 id の重複エントリは後続が黙って無視される（先着一致） | 正常系 | `SingleDataParsingTemplate.java`、`design.md §9` | `SingleDataParsingTemplateTest#testParseSingleData`（先着一致） | スキーマ根拠: `$defs.list_map_data.properties.id` が識別子を表現。先着一致はスキーマ外（パーサ実装） |
-| SS-07 | 6.1 | `SETUP_FIXED` と `SETUP_VARIABLE` は `BasicTestDataParser#getSetupFile()` でまとめて返される。`EXPECTED_FIXED`/`EXPECTED_VARIABLE` も同様 | 正常系 | `BasicTestDataParser.java` 行66-80 | `BasicTestDataParserTest#testGetSetupTableData`（getSetupFile 間接テスト）、`FileSupportTest#testSetUpFixedLengthFile`（固定長ファイル） | スキーマ根拠: `setup_files.type` フィールドの `enum: ["fixed","variable"]` で SETUP_FIXED/VARIABLE を統合表現（`design.md §3`） |
-| SS-08 | 6.2 | ファイルセクションの行順序: ディレクティブ行（0行以上） → フィールド名行 → データ型行 → [フィールド長行（固定長のみ）] → データ行 | 正常系 | `DataFileParser.java` 行38-49（`Status` 遷移） | `FileSupportTest#testSetUpFixedLengthFile`, `FileSupportTest#testSetUpVariableLengthFile`（ファイルセクション行順序） | スキーマ根拠: `$defs.file_data` の `directives`（0以上）→ `records[].fields`（名前/型/長さ統合）→ `records[].rows` 構造が行順序を表現 |
-| SS-09 | 6.3 | 固定長フラグメント: `names` / `types` / `lengths` の3リストが同サイズで必須 | 正常系 | `FixedLengthFileFragment.java` 行140-144 | `FileSupportTest#testSetUpFixedLengthFile`（固定長 names/types/lengths 3リスト） | スキーマ根拠: `$defs.record_fragment.fields` の `items: {$ref: field_def}` と `field_def.length` 必須（固定長では実質必須） |
-| SS-10 | 6.4 | 可変長フラグメント: `names` / `types` の2リストが同サイズで必須。`lengths` は不要（型行読み取り後に直接 READING_VALUES へ遷移） | 正常系 | `VariableLengthFileParser.java` 行40-46 | `FileSupportTest#testSetUpVariableLengthFile`（可変長 names/types 2リスト） | スキーマ根拠: `field_def.length` が `anyOf` でオプション（可変長では省略可） |
-| SS-11 | 6.5 | 1ファイルセクション内に複数レコードレイアウトを連続記述可能: データ行の後ろに新たなフィールド名行を書くと新レコードレイアウトとして扱われる | 正常系 | `DataFileParser.java` 行177-191（旧D-14） | テスト追加必要（複数レコードレイアウトの連続記述を明示するテストなし） | スキーマ根拠: `$defs.file_data.records` の `minItems: 0` と複数 `record_fragment` が連続記述を表現（`design.md §24`） |
-| SS-12 | 6.2 | フィールド名行の構造: 先頭列 = レコード種別名、2列目以降 = フィールド名の列挙 | 正常系 | `DataFileParser.java` 行243-252 | `FileSupportTest#testSetUpFixedLengthFile`（先頭セル=レコード種別名） | スキーマ根拠: `$defs.record_fragment.record_type` フィールドが先頭セル（レコード種別名）を表現 |
-| SS-13 | 6.2 | データ行の先頭セルは必ず空（null または空文字）にする | 正常系 | `DataFileParser.java` 行193-210 | `FileSupportTest#testSetUpFixedLengthFile`（データ行先頭セル空） | スキーマ外・パーサ実装で担保（YAML では行概念なく `rows` 配列の各要素が `fields` に対応。先頭セル空の制約なし） |
-| SS-14 | 6.8 | 同一レコード種別内のフィールド名は重複不可（`IllegalArgumentException`）。異なる種別間は重複可 | 異常系 | `DataFileFragment.java` 行348-362（Doc-9） | `FileSupportTest#testSetUpFixedWithDuplicateName`, `FileSupportTest#testAssertFixedWithDuplicateName`, `FileSupportTest#testSetUpVariableWithDuplicateName`, `FileSupportTest#testAssertVariableWithDuplicateName` | スキーマ根拠: `$defs.record_fragment.fields` の `items` で `name` ユニーク制約は JSON Schema では表現困難。スキーマ外・パーサ実装で担保（`IllegalArgumentException`） |
-| SS-15 | 6.6 | 空ファイル（0バイト）表現: ディレクティブ行のみ記述してレコード定義を省略する。`records` の `minItems: 0` が必要 | 正常系 | 公式解説書 03_Tips.rst（Doc-10） | `FileSupportTest#testAssertEmptyVariableFile`, `FileSupportTest#testAssertFixedActuallyEmpty`, `FileSupportTest#testAssertVariableActuallyEmpty` | スキーマ根拠: `$defs.file_data.records` の `minItems: 0`（空配列許容）（`design.md §25`） |
-| SS-16 | 6.3 | 固定長ファイルは全フラグメントで同一レコード長が必須（違反時 `IllegalStateException`） | 異常系 | `FixedLengthFile.java` 行100-117 | `FixedLengthFileParserTest#testInvalidDirectives`（異なるレコード長で IllegalStateException） | スキーマ外・パーサ実装で担保（フラグメント間のレコード長一致はランタイムチェック） |
-| SS-17 | 6.7 | `"-"` 長フィールド: 追加された全レコードの最大バイト長に自動拡張。値は改行コードと前後空白が除去される | 正常系 | `DataFileFragment.java` 行129-161（旧D-16） | `FileSupportTest#testVariation`（"-" 長フィールドの動作） | スキーマ根拠: `$defs.field_def.length` の `anyOf` に `{type: "string", const: "-"}` を含む（`design.md §27`） |
-| SS-18 | 5.4 | `BasicDefaultValues` のデフォルト値: 数値型=`"0"`、CHAR/NCHAR=スペース×カラム長、VARCHAR等=半角スペース1文字、DATE=`"1970-01-01 09:00:00.0"`（JVM タイムゾーン依存）、バイナリ=10バイトゼロHexString、Boolean=`"false"` | 正常系 | `BasicDefaultValues`、`design.md §4` | `BasicTestDataParserTest#testGetExpectedTableDataCompletedWithoutId`（EXPECTED_COMPLETE_TABLE でデフォルト値補完の間接テスト） | スキーマ外・テストで担保する方針（BasicDefaultValues のデフォルト値はパーサ実装。TZ依存（E-8）は制約事項として注記） |
-| SS-19 | 4.1 | `testShots` は LIST_MAP の予約ID: バッチリクエスト単体テストでフレームワークがテストケース一覧として自動読み込みする | 正常系 | 公式解説書 batch.rst（Doc-16） | テスト追加必要（`testShots` の予約ID動作を明示するテストなし） | スキーマ外仕様・テストで担保する方針（`testShots` は LIST_MAP の予約ID。YAML では `list_maps` の `id: testShots` エントリとして記述） |
-| SS-20 | 6.4 | ファイル系空行の動作差異: 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される。固定長ファイルの空行はスペースパディングされた定長レコードとして書き出される | 正常系 | `design.md §AI向けプロンプト ファイル系の空行動作`（旧D-10） | `FileSupportTest#testSetUpVariableEmptyLine`, `FileSupportTest#testSetUpVariableEmptyLine2`, `FileSupportTest#testAssertEmptyLineVariable`, `FileSupportTest#testAssertEmptyLineFixed` | スキーマ外・パーサ実装で担保（空行の扱いはパーサのランタイム動作） |
-| SS-21 | 6.8 | `DataFileFragment` のフィールド名リストまたは型リストが null/空の場合 `IllegalArgumentException` をスロー | 異常系 | `DataFileFragment.java` 行328（`assertNotNullOrEmpty` メソッド） | `FileSupportTest#testSetUpFixedWithDuplicateName`（フラグメント構築の異常系の間接確認）。フィールド名 null/空に対する専用テストは確認要 | スキーマ外・パーサ実装で担保（フィールド定義のバリデーションはパーサ実装） |
-| SS-22 | 6.8 | `DataFileFragment` のフィールド名リストと型/長さリストのサイズ不一致時 `IllegalArgumentException` をスロー | 異常系 | `DataFileFragment.java` 行342（`assertSameSizeAsNames` メソッド） | テスト追加必要（サイズ不一致の専用テストが見当たらない） | スキーマ外・パーサ実装で担保（リストサイズバリデーションはパーサ実装） |
-| SS-23 | 6.3 | 固定長フィールド値がフィールド長を超えた場合 `IllegalStateException` をスロー | 異常系 | `FixedLengthFileFragment.java` 行132（変換時の長さ超過チェック） | テスト追加必要（フィールド長超過の専用テストが見当たらない） | スキーマ外・パーサ実装で担保（フィールド長バリデーションはパーサ実装） |
-| SS-24 | 6.8 | 存在しないフィールド名を指定した場合 `IllegalArgumentException` をスロー | 異常系 | `DataFileFragment.java` 行446（`getIndexOf` メソッド） | テスト追加必要（存在しないフィールド名の専用テストが見当たらない） | スキーマ外・パーサ実装で担保 |
-| SS-25 | 6.8 | `DataFileFragment` のデータ要素数が不正な場合 `IllegalStateException` をスロー | 異常系 | `DataFileFragment.java` 行545（`checkSize` メソッド） | テスト追加必要（データ要素数不正の専用テストが見当たらない） | スキーマ外・パーサ実装で担保 |
-| SS-26 | 6.8 | ファイルの読み込み失敗時（IO例外）に `RuntimeException` をスロー | 異常系 | `DataFile.java` 行185（`read()` メソッド） | テスト追加必要（ファイル読み込み失敗の専用テストが見当たらない） | スキーマ外・パーサ実装で担保 |
-| SS-27 | 6.8 | `DataFileParser.Status` が想定外の状態になった場合 `IllegalStateException` をスロー（通常フローでは到達しない） | 異常系 | `DataFileParser.java` 行84（switch default ケース） | 除外: 通常フローでは到達しない（`onTargetTypeFound` が status を `READING_DIRECTIVES_AND_NAMES` に設定した後でのみ `onReadLine` が呼ばれる。サブクラスが status を直接操作しない限り到達不能）。テスト不要。根拠: DataFileParser.java:84 | スキーマ外・パーサ実装で担保 |
-| SS-28 | 6.8 | ディレクティブ行またはフィールド名行の列数が2未満の場合 `IllegalStateException` をスロー | 異常系 | `DataFileParser.java` 行222（`processDirectives` メソッド） | テスト追加必要（ディレクティブ行の列数不足の専用テストが見当たらない） | スキーマ外・パーサ実装で担保 |
-| SS-29 | — | `TableData#getClone()` で `CloneNotSupportedException` が発生した場合 `RuntimeException` をスロー（到達不能コード） | 異常系 | `TableData.java` 行581（`getClone` メソッド） | 除外: 到達不能コード（`TableData` は `Cloneable` を実装しており `CloneNotSupportedException` は発生しない）。テスト不要。根拠: TableData.java:581 | スキーマ外・パーサ実装で担保 |
-| SS-30 | 6.8 | `TableData#getValue()` で日付型カラムの値が日付として解析できない場合 `RuntimeException` をスロー | 異常系 | `TableData.java` 行204（`toTimestamp` 呼び出し時） | テスト追加必要（不正な日付文字列の専用テストが見当たらない） | スキーマ外・パーサ実装で担保（日付型変換のバリデーションはパーサ実装） |
-| SS-31 | — | `TableData#getValue()` でカラム値が `null` の場合は `null` を返す（代替フロー） | 代替フロー | `TableData.java` 行198（`getValue` メソッド） | `BasicTestDataParserTest#testGetSetupTableData`（null値カラムの間接テスト） | スキーマ根拠: `$defs.table_data.rows.items.additionalProperties` の `type: ["string","null"]` で null 値を許容 |
-| SS-32 | — | `TableData#toTimestamp()` で空文字の場合は `null` を返す（代替フロー） | 代替フロー | `TableData.java` 行224（`toTimestamp` メソッド） | テスト追加必要（日付型カラムに空文字を指定した場合の null 返却テストが見当たらない） | スキーマ外・パーサ実装で担保（空文字→null 変換はパーサ実装） |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| SS-01 | テーブルデータ行の形式: カラム名をキーとするオブジェクト形式。省略されたカラムにはデフォルト値が INSERT 時に補完される | 正常系 | S1-045, S1-046 | S2-127（TableData.addRow L522）, S2-128（fillDefaultValues L706）, S2-097（TableDataParser キャッシュ L60-72） |
+| SS-02 | `EXPECTED_TABLE`: 省略されたカラムは比較対象外になる（カラム列挙は任意） | 正常系 | S1-048 | S2-012（BasicTestDataParser.getExpectedTableData L171-181） |
+| SS-03 | `EXPECTED_COMPLETE_TABLE`: 省略されたカラムに `BasicDefaultValues` のデフォルト値を補完してから比較する | 正常系 | S1-049 | S2-012（BasicTestDataParser.getExpectedTableData fillDefaultValues L171-181）, S2-045（YamlTableDataBuilder.buildTableDataList fillDefaults） |
+| SS-04 | `SETUP_TABLE` では主キーカラムは省略不可（省略するとデフォルト値が INSERT される） | 正常系 | S1-047 | S2-002（BasicTestDataParser.getSetupTableData L43） |
+| SS-05 | `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると後半データが読み込まれない（まとめて記述が必要） | 正常系 | S1-043, S1-044 | S2-080, S2-081（TestDataParsingTemplate.parse キャッシュ L117-128） |
+| SS-06 | `LIST_MAP=id` セクション: id は完全一致。同一ファイル内で同一 id の重複エントリは後続が黙って無視される（先着一致） | 正常系 | S1-062 | S2-090, S2-091（SingleDataParsingTemplate isTargetType L33-41）, S2-100（ListMapParser キャッシュ L34-53） |
+| SS-07 | `SETUP_FIXED` と `SETUP_VARIABLE` は `BasicTestDataParser#getSetupFile()` でまとめて返される。`EXPECTED_FIXED`/`EXPECTED_VARIABLE` も同様 | 正常系 | S1-010, S1-011, S1-012, S1-013 | S2-011b, S2-011c（BasicTestDataParser.getSetupFile/getExpectedFile L67-80） |
+| SS-08 | ファイルセクションの行順序: ディレクティブ行（0行以上） → フィールド名行 → データ型行 → [フィールド長行（固定長のみ）] → データ行 | 正常系 | S1-080, S1-081, S1-158 | S2-114（DataFileParser.Status 遷移 L38-48） |
+| SS-09 | 固定長フラグメント: `names` / `types` / `lengths` の3リストが同サイズで必須 | 正常系 | S1-080 | S2-165, S2-167, S2-168（DataFileFragment.setNames/setTypes/setLengths） |
+| SS-10 | 可変長フラグメント: `names` / `types` の2リストが同サイズで必須。`lengths` は不要（型行読み取り後に直接 READING_VALUES へ遷移） | 正常系 | S1-081 | S2-121（VariableLengthFileParser.onReadingTypes L42-46） |
+| SS-11 | 1ファイルセクション内に複数レコードレイアウトを連続記述可能: データ行の後ろに新たなフィールド名行を書くと新レコードレイアウトとして扱われる | 正常系 | S1-159 | S2-114（DataFileParser.Status 遷移）, S2-116（データ行判定 L204-210） |
+| SS-12 | フィールド名行の構造: 先頭列 = レコード種別名、2列目以降 = フィールド名の列挙 | 正常系 | S1-080 | S2-098（TableDataParser.onTargetTypeFound L89-97）, S2-101b（MessageParser.onReadingNames L60-65） |
+| SS-13 | データ行の先頭セルは必ず空（null または空文字）にする | 正常系 | 解説書に記載なし | S2-116（DataFileParser.isDataRow L204-210） |
+| SS-14 | 同一レコード種別内のフィールド名は重複不可（`IllegalArgumentException`）。異なる種別間は重複可 | 異常系 | S1-161 | S2-166（DataFileFragment.setNames L354-361） |
+| SS-15 | 空ファイル（0バイト）表現: ディレクティブ行のみ記述してレコード定義を省略する | 正常系 | S1-083 | S2-163（DataFile.prepareDefaultDirectives L68-81） |
+| SS-16 | 固定長ファイルは全フラグメントで同一レコード長が必須（違反時 `IllegalStateException`） | 異常系 | 解説書に記載なし | S2-178（FixedLengthFile.getRecordLength L109-113） |
+| SS-17 | `"-"` 長フィールド: 追加された全レコードの最大バイト長に自動拡張 | 正常系 | S1-107 | S2-169（DataFileFragment.setLengths "-" L291-293） |
+| SS-18 | `BasicDefaultValues` のデフォルト値: 数値型=`"0"`、CHAR/NCHAR=スペース×カラム長、VARCHAR等=半角スペース1文字、DATE=epoch（JVM タイムゾーン依存）、バイナリ=10バイトゼロHexString、Boolean=`"false"` | 正常系 | S1-050, S1-051, S1-052, S1-186, S1-187 | S2-146, S2-147, S2-148, S2-149, S2-150, S2-151, S2-151b, S2-152, S2-153（BasicDefaultValues 各デフォルト値）, S2-145（DefaultValues インターフェース） |
+| SS-19 | `testShots` は LIST_MAP の予約ID: バッチリクエスト単体テストでフレームワークがテストケース一覧として自動読み込みする | 正常系 | S1-075, S1-167 | S2-099（ListMapParser L30）, S2-100（LIST_MAP型パース） |
+| SS-20 | ファイル系空行の動作差異: 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される | 正常系 | 解説書に記載なし | S2-170（DataFileFragment.addValue L105-109） |
+| SS-21 | `DataFileFragment` のフィールド名リストまたは型リストが null/空の場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-165（DataFileFragment.setNames L327-329） |
+| SS-22 | `DataFileFragment` のフィールド名リストと型/長さリストのサイズ不一致時 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-167, S2-168（DataFileFragment.setTypes/setLengths） |
+| SS-23 | 固定長フィールド値がフィールド長を超えた場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-186（FixedLengthFileFragment.toBytes L130-135） |
+| SS-24 | 存在しないフィールド名を指定した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-174（DataFileFragment.getIndexOf L446-448） |
+| SS-25 | `DataFileFragment` のデータ要素数が不正な場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-173（DataFileFragment.checkSize L543-546） |
+| SS-26 | ファイルの読み込み失敗時（IO例外）に `RuntimeException` をスロー | 異常系 | 解説書に記載なし | S2-160（DataFile.read L178-187） |
+| SS-27 | `DataFileParser.Status` が想定外の状態になった場合 `IllegalStateException` をスロー（到達不能コード） | 異常系 | 解説書に記載なし | S2-118（DataFileParser 想定外状態 L83-85） |
+| SS-28 | ディレクティブ行またはフィールド名行の列数が2未満の場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-115（DataFileParser.processDirectives L220-223） |
+| SS-29 | `TableData#getClone()` で `CloneNotSupportedException` が発生した場合 `RuntimeException` をスロー（到達不能コード） | 異常系 | 解説書に記載なし | 実装に記載なし（到達不能コード） |
+| SS-30 | `TableData#getValue()` で日付型カラムの値が日付として解析できない場合 `RuntimeException` をスロー | 異常系 | 解説書に記載なし | S2-143（TableData.convert L203-209） |
+| SS-31 | `TableData#getValue()` でカラム値が `null` の場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-130（TableData.convert L197-199） |
+| SS-32 | `TableData#toTimestamp()` で空文字の場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-131（TableData.toTimestamp L222-225） |
 
 ---
 
 ### RS: YAMLリーダー実装仕様
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| RS-01 | — | `open(path, dataName)` 規約: `dataName` に対して `{dataName}.yaml` ファイルを検索する | 正常系 | `TestDataReader` インタフェース（設計方針） | `YamlTestDataParserTest#testRs01_getSetupTableDataLoadsYamlFile`（.yaml ファイルをロード） | スキーマ外・パーサ実装で担保（`YamlTestDataReader.open()` の実装仕様） |
-| RS-02 | — | `readLine()` は文書終端で `null` を返す | 正常系 | `TestDataReader` インタフェース（既存 Excel 実装との整合） | テスト追加必要（YamlTestDataReader を直接テストするケースが存在しない。RS-07 で間接確認） | スキーマ外・パーサ実装で担保（`readLine()` の終端返却仕様） |
-| RS-03 | — | YAML ネイティブ `null`（アンクォート）は Java `null` として返す（旧E-1） | 正常系 | `design.md §7`（SnakeYAML が Java null に変換し、パーサがそのまま返す） | `YamlTestDataParserTest#testRs03_yamlNativeNullIsJavaNull`（YAML ネイティブ null は Java null） | スキーマ外・パーサ実装で担保（YAML ネイティブ null は Java null として返す） |
-| RS-04 | — | YAML ネイティブ boolean (`true`/`false`) は文字列 `"true"`/`"false"` として返す（旧E-1） | 正常系 | `design.md §7` | `YamlTestDataParserTest#testRs04_yamlNativeBooleanIsStringified`（boolean の文字列化） | スキーマ外・パーサ実装で担保（YAML ネイティブ boolean の文字列化） |
-| RS-05 | — | YAML ネイティブ integer/float は数字文字列として返す（旧E-1） | 正常系 | `design.md §7` | `YamlTestDataParserTest#testRs05_yamlNativeNumberIsStringified`, `testRs05_yamlScientificNotationIsStringified`（数値の文字列化） | スキーマ外・パーサ実装で担保（YAML ネイティブ数値の文字列化） |
-| RS-06 | — | 末尾の空要素（YAML ネイティブ null または省略）は Java `null` として返す（旧E-2） | 正常系 | Excel 実装（`HeaderLine.java`）が `""` 補完するのに対し、YAML 実装は RS-03 仕様により Java null を返す。これは設計上の決定であり `design.md §7` に明記 | `YamlTestDataParserTest#testRs06_trailingNativeNullIsJavaNull`, `testRs06_trailingKeyOmittedIsNull`（末尾キー省略→null） | スキーマ外・パーサ実装で担保（末尾空要素は Java null として返す） |
-| RS-07 | — | `readLine()` が `null` を返した後、直前のセクションデータが欠落しないことを保証する（旧E-3） | 正常系 | `TestDataParsingTemplate.java` 行187-219 の parse ロジック | `YamlTestDataParserTest#testRs07_lastSectionDataNotLostAtEndOfFile`（末尾セクション欠落防止） | スキーマ外・パーサ実装で担保（null 返却後の最終セクション欠落防止） |
-| RS-08 | — | `isDataExisting(directory, resource)` / `isResourceExisting(directory, resource)` の実装（リソース存在確認） | 正常系 | `BasicTestDataParser.java` 行267-271 | `YamlTestDataParserTest#testRs08_isResourceExistingReturnsTrueWhenFileExists`, `testRs08_isResourceExistingReturnsFalseWhenFileNotExists` | スキーマ外・パーサ実装で担保（isDataExisting/isResourceExisting の実装） |
-| RS-09 | — | YAML ファイルが存在しない、または読み込み失敗・パース失敗時は `IllegalStateException` をスロー | 異常系 | `YamlLoader.java` 行68-70（IOException / YAMLException キャッチ）、`YamlTestDataParserTest.java` 行391 | `YamlTestDataParserTest#testGetExpectedTableDataThrowsWhenFileNotExists`（ファイル不在時の IllegalStateException） | スキーマ外・パーサ実装で担保（YamlLoader がファイルロードエラーを IllegalStateException に変換） |
-| RS-10 | — | `setup_tables`/`expected_tables` のエントリに `table` キーが存在しない場合 `IllegalStateException` をスロー | 異常系 | `YamlTableDataBuilder.java` 行71（`table` キー欠如チェック） | `YamlTableDataBuilderTest#testBuildTableDataList_missingTableThrowsException`（table キー欠如時の IllegalStateException） | スキーマ外・パーサ実装で担保（テーブル名必須バリデーションは YamlTableDataBuilder 実装） |
-| RS-11 | — | `setup_files`/`expected_files` のエントリに `path` キーが存在しない場合 `IllegalStateException` をスロー | 異常系 | `YamlFileBuilder.java` 行71（`path` キー欠如チェック） | `YamlFileBuilderTest#testBuildFileList_missingPathThrowsException`（path キー欠如時の IllegalStateException） | スキーマ外・パーサ実装で担保（ファイルパス必須バリデーションは YamlFileBuilder 実装） |
-| RS-12 | — | `messages`/`expected_request_*_messages` のエントリで `FW_HEADER` の `rows` が List of Lists でない場合 `IllegalStateException` をスロー | 異常系 | `YamlMessageBuilder.java` 行152（FW_HEADER rows 型チェック） | `YamlMessageBuilderTest#testBuildMessagePool_malformedFwHeaderRowsThrowsException`（FW_HEADER rows 型誤りの IllegalStateException） | スキーマ外・パーサ実装で担保（FW_HEADER rows の型バリデーションは YamlMessageBuilder 実装） |
-| RS-13 | — | メッセージング以外の DataType を `YamlSection#dataTypeToSectionKey` に渡した場合 `IllegalArgumentException` をスロー | 異常系 | `YamlSection.java` 行190（switch default ケース） | `YamlMessageBuilderTest#testDataTypeToSectionKey_unsupportedDataTypeThrowsException`（非メッセージング DataType の IllegalArgumentException） | スキーマ外・パーサ実装で担保（DataType バリデーションは YamlSection 実装） |
-| RS-14 | — | `setTestDataReader` 呼び出し時は `UnsupportedOperationException` をスロー（YAML 実装は TestDataReader を使わない） | 異常系 | `YamlTestDataParser.java` 行60（`setTestDataReader` メソッド） | `YamlTestDataParserTest#testSetTestDataReaderThrowsUnsupported`（UnsupportedOperationException） | スキーマ外・パーサ実装で担保（YAML 実装は TestDataReader を不使用） |
-| RS-15 | — | `getSetupTableData` のみ、ファイルが存在しない場合は空リストを返す（代替フロー）。他のメソッド（`getExpectedTableData`、`getSetupFile` 等）はファイル不在時に RS-09 の `IllegalStateException` をスロー | 代替フロー | `YamlTestDataParser.java` 行99（`isResourceExisting` チェック後の emptyList 返却）、`BasicTestDataParser.java` 行54（継承元の同一ロジック） | `YamlTestDataParserTest#testGetSetupTableDataReturnsEmptyWhenFileNotExists`（ファイル不在時の emptyList）、`testGetSetupTableDataNotExist`（存在しない groupId 時の emptyList） | スキーマ外・パーサ実装で担保（`getSetupTableData` のみが `isResourceExisting` チェックを行う設計。他のメソッドは直接 YamlLoader.load() を呼ぶため不在時に例外） |
-| RS-16 | — | `getMessage`/`getMessageWithoutCache` で対象 ID が見つからない場合は `null` を返す（代替フロー） | 代替フロー | `MessageParser.java` 行129（`data.isEmpty()` 判定後の null 返却）、`YamlFileBuilder.java` 行108（`buildMessageFile` で ID 未発見の null 返却）、`YamlMessageBuilder.java` 行83（`buildMessagePool` で file=null 時の null 返却） | `YamlTestDataParserTest#testGetMessageReturnsNullWhenIdNotFound`, `testGetMessageWithoutCacheReturnsNullWhenIdNotFound`（ID未発見の null 返却） | スキーマ外・パーサ実装で担保（ID未発見→null はパーサ実装） |
-| RS-17 | — | `getSendSyncMessage` で対象 groupId が見つからない場合は `null` を返す（代替フロー） | 代替フロー | `YamlMessageBuilder.java` 行116（`buildSendSyncMessageList` で result が空の場合の null 返却） | `YamlTestDataParserTest#testGetSendSyncMessageReturnsNullForUnknownGroupId`（groupId 未発見の null 返却） | スキーマ外・パーサ実装で担保（groupId 未発見→null はパーサ実装） |
-| RS-18 | — | YAML ファイルの内容が空の場合（`yaml.load()` が null）は空 Map として扱う（代替フロー） | 代替フロー | `YamlLoader.java` 行63（`result == null` の場合 `emptyMap()` に置き換え） | テスト追加必要（YAML ファイルが空の場合の動作を明示するテストが見当たらない） | スキーマ外・パーサ実装で担保（空 YAML→emptyMap はパーサ実装） |
-| RS-19 | — | `getListMap` で指定 ID のエントリが存在しない場合は空リストを返す（代替フロー） | 代替フロー | `YamlTableDataBuilder.java` 行122（`buildListMapRows` で ID 未発見の emptyList 返却） | `YamlTestDataParserTest#testGetListMapReturnsEmptyWhenIdNotFound`（ID未発見の emptyList） | スキーマ外・パーサ実装で担保（ID未発見→emptyList はパーサ実装） |
-| RS-20 | — | `messages` エントリで `FW_HEADER` フラグメントが見つからない場合は空 Map を FW ヘッダとして使用する（代替フロー） | 代替フロー | `YamlMessageBuilder.java` 行169（`extractFwHeader` で FW_HEADER グループ未発見の emptyMap 返却） | `YamlMessageBuilderTest#testBuildMessagePool_emptyFwHeaderRows`（FW_HEADER が空の場合の正常処理） | スキーマ外・パーサ実装で担保（FW_HEADER 未発見→emptyMap はパーサ実装） |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| RS-01 | `open(path, dataName)` 規約: `dataName` に対して `{dataName}.yaml` ファイルを検索する | 正常系 | S1-067, S1-068, S1-069 | S2-018（YamlTestDataParser.isResourceExisting L92）, S2-029（YamlLoader.isResourceExisting L81） |
+| RS-02 | `readLine()` は文書終端で `null` を返す | 正常系 | 解説書に記載なし | S2-066（TestDataReader.readLine L33）, S2-085（TestDataParsingTemplate.readLine L261-265） |
+| RS-03 | YAML ネイティブ `null`（アンクォート）は Java `null` として返す | 正常系 | 解説書に記載なし | S2-034（YamlSection.toStr L109）, S2-035（YamlSection.objectToString L129）, S2-036（YamlSection.interpret L136-145） |
+| RS-04 | YAML ネイティブ boolean (`true`/`false`) は文字列 `"true"`/`"false"` として返す | 正常系 | 解説書に記載なし | S2-035（YamlSection.objectToString L129） |
+| RS-05 | YAML ネイティブ integer/float は数字文字列として返す | 正常系 | 解説書に記載なし | S2-035（YamlSection.objectToString L129） |
+| RS-06 | 末尾の空要素（YAML ネイティブ null または省略）は Java `null` として返す | 正常系 | 解説書に記載なし | S2-035（YamlSection.objectToString null パス） |
+| RS-07 | `readLine()` が `null` を返した後、直前のセクションデータが欠落しないことを保証する | 正常系 | 解説書に記載なし | S2-080, S2-082（TestDataParsingTemplate.parse L117-157） |
+| RS-08 | `isDataExisting(directory, resource)` / `isResourceExisting(directory, resource)` の実装（リソース存在確認） | 正常系 | 解説書に記載なし | S2-016（BasicTestDataParser.isResourceExisting L269）, S2-018（YamlTestDataParser.isResourceExisting L92）, S2-029（YamlLoader.isResourceExisting L81） |
+| RS-09 | YAML ファイルが存在しない、または読み込み失敗・パース失敗時は `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-026（YamlLoader.load IO エラー L67-68）, S2-027（YamlLoader.load パースエラー L69-71） |
+| RS-10 | `setup_tables`/`expected_tables` のエントリに `table` キーが存在しない場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-042（YamlTableDataBuilder.buildTableDataList L71-73） |
+| RS-11 | `setup_files`/`expected_files` のエントリに `path` キーが存在しない場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-049（YamlFileBuilder.buildFileList L70-73） |
+| RS-12 | `messages`/`expected_request_*_messages` のエントリで `FW_HEADER` の `rows` が List of Lists でない場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-060（YamlMessageBuilder.extractFwHeader L131-170） |
+| RS-13 | メッセージング以外の DataType を `YamlSection#dataTypeToSectionKey` に渡した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-037（YamlSection.dataTypeToSectionKey L182-192） |
+| RS-14 | `setTestDataReader` 呼び出し時は `UnsupportedOperationException` をスロー（YAML 実装は TestDataReader を使わない） | 異常系 | 解説書に記載なし | S2-017（YamlTestDataParser.setTestDataReader L59-63） |
+| RS-15 | `getSetupTableData` のみ、ファイルが存在しない場合は空リストを返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-019（YamlTestDataParser.getSetupTableData L99）, S2-011（BasicTestDataParser.getSetupTableData L54） |
+| RS-16 | `getMessage`/`getMessageWithoutCache` で対象 ID が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-056（YamlMessageBuilder.buildMessagePool L79-87）, S2-051（YamlFileBuilder.buildMessageFile L95-109）, S2-101（MessageParser.getResult L127-133） |
+| RS-17 | `getSendSyncMessage` で対象 groupId が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-057（YamlMessageBuilder.buildSendSyncMessageList L98-117） |
+| RS-18 | YAML ファイルの内容が空の場合（`yaml.load()` が null）は空 Map として扱う（代替フロー） | 代替フロー | 解説書に記載なし | S2-025（YamlLoader.load 空ファイル L62-64） |
+| RS-19 | `getListMap` で指定 ID のエントリが存在しない場合は空リストを返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-046（YamlTableDataBuilder.buildListMapRows L113-123） |
+| RS-20 | `messages` エントリで `FW_HEADER` フラグメントが見つからない場合は空 Map を FW ヘッダとして使用する（代替フロー） | 代替フロー | 解説書に記載なし | S2-061（YamlMessageBuilder.extractFwHeader L169） |
+| RS-21 | YAML キャッシュは LRU 最大8件。`clearCacheForTest()` でテスト間汚染防止のためキャッシュをクリアできる | 正常系 | 解説書に記載なし | S2-024（YamlLoader.load LRU 8件 L50）, S2-023（YamlTestDataParser.clearCacheForTest L170）, S2-029b（YamlLoader.clearCacheForTest L97） |
+| RS-22 | YAML ファイルに重複キーが存在する場合 `IllegalStateException` をスロー（SnakeYAML の `setAllowDuplicateKeys(false)` で検出） | 異常系 | 解説書に記載なし | S2-028（YamlLoader.load 重複キー L57） |
 
 ---
 
 ### HC: ヘッダ行・カラム処理
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| HC-01 | 10.2 | マーカーカラムの書式: `[カラム名]`（`[` で始まり `]` で終わる） | 正常系 | `HeaderLine.java` 行87-96 | `BasicTestDataParserTest#testGetListMapIgnoredColumn`, `BasicTestDataParserTest#testGetExpectedTableIgnoredColumn`, `BasicTestDataParserTest#testGetSetupTableIgnoredColumn`（マーカーカラム書式） | スキーマ根拠: `design.md §6` マーカーカラムの扱い。YAML では `[COLNAME]` 形式カラムを出力しない（変換ルール） |
-| HC-02 | 10.2 | マーカーカラムは DB 操作から除外される（データとして格納されない） | 正常系 | `HeaderLine.java` 行53-85、`TableDataParser.java` 行74-82 | `BasicTestDataParserTest#testGetListMapIgnoredColumn`（DB操作から除外） | スキーマ外・パーサ実装で担保（マーカーカラム除外はパーサ実装） |
-| HC-03 | 10.1 | ヘッダ行末尾の空カラムは除去される（末尾カラム省略可） | 正常系 | `HeaderLine.java` 行27-42（`trimTailCopy()`） | `BasicTestDataParserTest#testGetListMapWithInvisibleTail`, `BasicTestDataParserTest#testGetTableDataWithInvisibleTail`（末尾空カラム除去） | スキーマ外・パーサ実装で担保（末尾空カラム除去は `HeaderLine.java` の実装） |
-| HC-04 | 10.1 | データ行がヘッダより短い場合、不足分は空文字 `""` で補完される | 正常系 | `HeaderLine.java` 行69-85 | `BasicTestDataParserTest#testGetListMapWithInvisibleTail`（データ行がヘッダより短い場合の補完） | スキーマ根拠: `$defs.record_fragment.rows` の各配列が `fields` と同順・同件数を要求（補完はパーサ実装） |
-| HC-05 | 10.3 | コメント行: 先頭セルが `//` で始まる行は行ごとスキップ | 正常系 | `TestDataParsingTemplate.java` 行268-291 | `TestDataParsingTemplateTest#testIsCommentRow`（コメント行判定） | スキーマ外・パーサ実装で担保（コメント行はパーサが `//` 先頭を検出してスキップ。YAML では行コメント `#` を使用） |
-| HC-06 | 10.4 | 行内コメント: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て | 正常系 | `TestDataParsingTemplate.java` 行292-308 | テスト追加必要（行内コメント（先頭以外の `//` 以降切り捨て）を明示するテストなし） | スキーマ外・パーサ実装で担保（行内コメント切り捨てはパーサ実装。YAML では行末コメント `#` で同等機能） |
-| HC-07 | 10.5 | 空行スキップ: 全要素が null または空文字の行は読み飛ばす | 正常系 | `TestDataParsingTemplate.java` 行310-318 | テスト追加必要（空行スキップの明示的テストなし） | スキーマ外・パーサ実装で担保（空行スキップはパーサ実装。YAML では空行は存在しない） |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| HC-01 | マーカーカラムの書式: `[カラム名]`（`[` で始まり `]` で終わる） | 正常系 | S1-023 | S2-093（HeaderLine L88-96）, S2-047（YamlTableDataBuilder.buildListMapRows マーカー除外 L133-135） |
+| HC-02 | マーカーカラムは DB 操作から除外される（データとして格納されない） | 正常系 | S1-024 | S2-094, S2-095, S2-096（HeaderLine.getEffectiveColumnNames/getMapExcludingMarkerColumns/excludeMarkerColumns）, S2-098b（TableDataParser.onReadLine） |
+| HC-03 | ヘッダ行末尾の空カラムは除去される（末尾カラム省略可） | 正常系 | 解説書に記載なし | S2-092b（HeaderLine コンストラクタ trimTailCopy L33） |
+| HC-04 | データ行がヘッダより短い場合、不足分は空文字 `""` で補完される | 正常系 | 解説書に記載なし | S2-096（HeaderLine.excludeMarkerColumns L75-85）, S2-170（DataFileFragment.addValue L105-109） |
+| HC-05 | コメント行: 先頭セルが `//` で始まる行は行ごとスキップ | 正常系 | S1-022 | S2-083（TestDataParsingTemplate.isCommentRow L278-280）, S2-074（PoiXlsReader.readLine コメント L124-127） |
+| HC-06 | 行内コメント: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て | 正常系 | S1-022 | S2-084（TestDataParsingTemplate.cutComment L299-308） |
+| HC-07 | 空行スキップ: 全要素が null または空文字の行は読み飛ばす | 正常系 | S1-071, S1-072 | S2-073（PoiXlsReader.readLine 空行スキップ L83-98） |
 
 ---
 
 ### IV: インタープリタ・特殊値
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| IV-01 | 8.2 | `NullInterpreter`: `null`/`NULL`/`Null`（大文字小文字不問）を Java null に変換 | 正常系 | `NullInterpreter.java` 行10-19 | `NullInterpreterTest#testInterpretNullLowerCase`, `NullInterpreterTest#testInterpretNullUpperCase`, `NullInterpreterTest#testInterpretNullCapitalized`, `NullInterpreterTest#testInterpretNotNullValue` | スキーマ根拠: `$defs.table_data.rows.items.additionalProperties` の `type: ["string","null"]` で null 値を許容。`design.md §7` 特殊値の表現 |
-| IV-02 | 8.2 | `QuotationTrimmer`: 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去。片側のみはスルー | 正常系 | `QuotationTrimmer.java` 行18-30 | `QuotationTrimmerTest#testInterpretHalfWidthQuotation`, `QuotationTrimmerTest#testInterpretFullWidthQuotation`, `QuotationTrimmerTest#testInterpretNotQuoted` | スキーマ根拠: `design.md §7` 特殊値の表現（クォーティング記法） |
-| IV-03 | 8.3 | `DateTimeInterpreter`: `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換。部分文字列は変換されない（`CompositeInterpreter` との組み合わせが必要） | 正常系 | `DateTimeInterpreter.java` 行48-94 | テスト追加必要（`DateTimeInterpreter` の完全一致制約を明示するテストなし。実装はあるが独立したテストクラスが見当たらない） | スキーマ根拠: `design.md §22` DateTimeInterpreter の完全一致制約 |
-| IV-04 | 8.2 | `LineSeparatorInterpreter`: `\\r` → CR(0x0D)（デフォルト）、`\\n` → LF(0x0A) に変換 | 正常系 | `LineSeparatorInterpreter.java`、公式解説書 01_Abstract.rst（Doc-7） | `LineSeparatorInterpreterTest#testConvertBackR`, `LineSeparatorInterpreterTest#testDoNotConvertCR`, `LineSeparatorInterpreterTest#testDoNotConvert` | スキーマ根拠: `design.md §7` 特殊値の表現（`\\n`/`\\r` 記法） |
-| IV-05 | 8.2 | `BinaryFileInterpreter`: `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML ファイルが基準ディレクトリになる | 正常系 | `BinaryFileInterpreter.java` 行34-65 | `BinaryFileInterpreterTest#testOk`, `BinaryFileInterpreterTest#testNotApplicable`, `BinaryFileInterpreterTest#testFileNotFound` | スキーマ根拠: `design.md §21` BinaryFileInterpreter のパス基準 |
-| IV-06 | 8.2 | `BasicJapaneseCharacterInterpreter`: `${文字種,文字数}` 形式で文字列生成。書式完全一致のみ動作、文字種未知の場合は `IllegalArgumentException`（書式ミスはスルー） | 正常系 | `BasicJapaneseCharacterInterpreter.java` 行22-45 | `BasicJapaneseCharacterInterpreterTest#testInterpret`, `BasicJapaneseCharacterInterpreterTest#testInterpretUnknownType`, `BasicJapaneseCharacterInterpreterTest#testInterpretNotResponsible` | スキーマ根拠: `design.md §7` / `ntf-testdata-yaml-design.md §BasicJapaneseCharacterInterpreter の有効トークン（14種）` |
-| IV-07 | 8.4 | `BasicJapaneseCharacterGenerator` 有効文字種14種: 半角英字/半角数字/半角記号/半角カナ/全角英字/全角数字/全角ひらがな/全角カタカナ/全角漢字/全角記号その他/中国語/サロゲートペア/改行/外字 | 正常系 | `BasicJapaneseCharacterGenerator.java` 行40-56 | `BasicJapaneseCharacterGeneratorTest#testGenerate`, `BasicJapaneseCharacterGeneratorTest#testGenerateWithUnknownType` | スキーマ根拠: `design.md §BasicJapaneseCharacterInterpreter の有効トークン（14種）` |
-| IV-08 | 8.2 | `CompositeInterpreter`: 文字列中の `${...}` 要素を個別解釈して置換。`${...}` がない場合は次のインタープリタに委譲 | 正常系 | `CompositeInterpreter.java` 行22-42 | `CompositeInterpreterTest#testExpression`, `CompositeInterpreterTest#testCombinationOfNotations`, `CompositeInterpreterTest#testCombinationOfInterpreters`, `CompositeInterpreterTest#testLiteral` | スキーマ根拠: `design.md §23` CompositeInterpreter の DI 設定 |
-| IV-09 | 8.6 | 日付型カラムの記述形式: `yyyyMMddHHmmssSSS`（17文字）、後置0埋め短縮形、JDBC タイムスタンプエスケープ形式（5文字目が `-`）等が有効 | 正常系 | `TableData.java` 行214-273、`design.md §7` | テスト追加必要（日付型カラムの記述形式の境界値テストなし） | スキーマ外・パーサ実装で担保（日付型変換は `TableData.java` のランタイム処理） |
-| IV-10 | 8.6 | `Timestamp` 型カラムの期待値は末尾 `.0` が必要（例: `"2010-01-01 12:34:56.0"`） | 正常系 | 公式解説書 02_DbAccessTest.rst（Doc-3） | テスト追加必要（Timestamp 型の `.0` 必須を明示するテストなし） | スキーマ外仕様・テストで担保する方針（Timestamp 末尾 `.0` は期待値記述ルール。YAML でも文字列として記述） |
-| IV-11 | 8.7 | バイナリデータの直接記述: `0x` プレフィクス付き16進数で記述可能。`0x` がない場合は文字列としてエンコード | 正常系 | 公式解説書 batch.rst（Doc-11） | テスト追加必要（バイナリデータの `0x` プレフィクス記法を明示するテストなし） | スキーマ外仕様・テストで担保する方針（`0x` プレフィクス記法は値記述ルール。YAML でも文字列として記述） |
-| IV-12 | 8.9 | `BasiDataTypeMapping` デフォルトマッピング22種（`半角英字`→`X` 等）。未知の型記号は `IllegalArgumentException` | 正常系 | `BasicDataTypeMapping.java` 行30-73 | `BasicDataTypeMappingTest#testConvertToFrameworkExpression`, `BasicDataTypeMappingTest#testConvertToFrameworkExpressionFail`, `BasicDataTypeMappingTest#testConvertToFrameworkExpressionNull`, `BasicDataTypeMappingTest#testSetMappingTable` | スキーマ根拠: `$defs.field_def.type` の `pattern: "^[A-Z][A-Z0-9_]*$"` と `design.md §5` DataTypeMapping |
-| IV-13 | 8.9 | `TEST_` プレフィクス型の自動優先選択: `TEST_{baseType}` 名のデータ型が存在する場合、自動的に優先使用される | 正常系 | `DataFileFragment.java` 行211-245 | `FileSupportTest#testVariation`（TEST_ プレフィクス型の動作を間接的にテスト） | スキーマ根拠: `$defs.field_def.type` のパターン（`TEST_` プレフィクスも `[A-Z][A-Z0-9_]*` に合致）。`design.md §16` TEST_ プレフィクス型の自動昇格 |
-| IV-14 | 8.5 | `QuotationTrimmer` によるスペース値明示記法: `'"⊔"'` → 半角スペース、`'"""'` → ダブルクォート1文字。ダブルクォートで囲むことで空白値を可視化して記述できる | 正常系 | `design.md §7`、公式解説書 01_Abstract.rst（Doc-8） | `QuotationTrimmerTest#testInterpretHalfWidthQuotation`（スペース値明示記法） | スキーマ根拠: `design.md §7` 特殊値の表現（`'"""'`/`'"⊔"'` 記法） |
-| IV-15 | 8.8 | X9/SX9 型フィールドの記述方法: パディング文字・符号を含めた実際のバイト列表現（固定長フォーマットの実値）をそのまま記載する必要がある | 正常系 | 公式解説書 batch.rst（Doc-12）、`design.md §26` | テスト追加必要（X9/SX9 型の実値記述を直接テストするものなし） | スキーマ根拠: `design.md §26` X9/SX9 型フィールドの記述方法 |
-| IV-16 | 8.4 | `BasicJapaneseCharacterInterpreter` に未知の文字種を指定した場合 `IllegalArgumentException` をスロー | 異常系 | `BasicJapaneseCharacterInterpreter.java` 行22-45（文字種バリデーション） | `BasicJapaneseCharacterInterpreterTest#testInterpretUnknownType`（未知文字種の IllegalArgumentException） | スキーマ外・パーサ実装で担保（文字種バリデーションはインタープリタ実装） |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| IV-01 | `NullInterpreter`: `null`/`NULL`/`Null`（大文字小文字不問）を Java null に変換 | 正常系 | S1-029 | S2-194（NullInterpreter.interpret L16） |
+| IV-02 | `QuotationTrimmer`: 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去。片側のみはスルー | 正常系 | S1-030, S1-031, S1-032, S1-033 | S2-195（QuotationTrimmer.interpret L25-29） |
+| IV-03 | `DateTimeInterpreter`: `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 | 正常系 | S1-034, S1-035, S1-036 | S2-196, S2-197, S2-198（DateTimeInterpreter L49-52） |
+| IV-04 | `LineSeparatorInterpreter`: `\\r` → CR(0x0D)（デフォルト）、`\\n` → LF(0x0A) に変換 | 正常系 | S1-040, S1-041 | S2-203, S2-204, S2-205, S2-206（LineSeparatorInterpreter L31-87） |
+| IV-05 | `BinaryFileInterpreter`: `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML ファイルが基準ディレクトリになる | 正常系 | S1-039 | S2-201（BinaryFileInterpreter L36-55）, S2-040c（YamlSection.addBinaryFileInterpreter L150） |
+| IV-06 | `BasicJapaneseCharacterInterpreter`: `${文字種,文字数}` 形式で文字列生成。書式完全一致のみ動作、文字種未知の場合は `IllegalArgumentException`（書式ミスはスルー） | 正常系 | S1-037, S1-038 | S2-207（BasicJapaneseCharacterInterpreter L24）, S2-207b |
+| IV-07 | `BasicJapaneseCharacterGenerator` 有効文字種14種: 半角英字/半角数字/半角記号/半角カナ/全角英字/全角数字/全角ひらがな/全角カタカナ/全角漢字/全角記号その他/中国語/サロゲートペア/改行/外字 | 正常系 | S1-038 | S2-208（BasicJapaneseCharacterInterpreter 文字種一覧 L41-56） |
+| IV-08 | `CompositeInterpreter`: 文字列中の `${...}` 要素を個別解釈して置換。`${...}` がない場合は次のインタープリタに委譲 | 正常系 | 解説書に記載なし | S2-210, S2-210b, S2-211（CompositeInterpreter L21-42） |
+| IV-09 | 日付型カラムの記述形式: `yyyyMMddHHmmssSSS`（17文字）、後置0埋め短縮形、JDBC タイムスタンプエスケープ形式（5文字目が `-`）等が有効 | 正常系 | S1-025, S1-026, S1-027, S1-028 | S2-132, S2-133, S2-134（TableData.toTimestamp L239-273） |
+| IV-10 | `Timestamp` 型カラムの期待値は末尾 `.0` が必要（例: `"2010-01-01 12:34:56.0"`） | 正常系 | S1-056 | S2-132（TableData.toTimestamp L239） |
+| IV-11 | バイナリデータの直接記述: `0x` プレフィクス付き16進数で記述可能。`0x` がない場合は文字列としてエンコード | 正常系 | S1-084, S1-188 | S2-184（FixedLengthFileFragment.convertValue HexString L82-84）, S2-135（TableData.insert バイナリ L147-158） |
+| IV-12 | `BasicDataTypeMapping` デフォルトマッピング22種（`半角英字`→`X` 等）。未知の型記号は `IllegalArgumentException` | 正常系 | S1-160 | S2-188（BasicDataTypeMapping DEFAULT_TABLE L31-56）, S2-189, S2-190, S2-191 |
+| IV-13 | `TEST_` プレフィクス型の自動優先選択: `TEST_{baseType}` 名のデータ型が存在する場合、自動的に優先使用される | 正常系 | 解説書に記載なし | S2-172（DataFileFragment.getTypeForTest L238-244）, S2-175（DataTypeMapping フォールバック L264-278） |
+| IV-14 | `QuotationTrimmer` によるスペース値明示記法: `'"⊔"'` → 半角スペース、`'"""'` → ダブルクォート1文字 | 正常系 | S1-032, S1-033 | S2-195（QuotationTrimmer.interpret L25-29） |
+| IV-15 | X9/SX9 型フィールドの記述方法: パディング文字・符号を含めた実際のバイト列表現をそのまま記載する必要がある | 正常系 | S1-162 | S2-175b（DataFileFragment.addValueWithId L169-183） |
+| IV-16 | `BasicJapaneseCharacterInterpreter` に未知の文字種を指定した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-209（CharacterGeneratorBase L55-57） |
 
 ---
 
 ### DR: ディレクティブ
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| DR-01 | 9.1 | ディレクティブ行の構成: 先頭列 = キー名、2列目 = 値（最低2列必要） | 正常系 | `DataFileParser.java` 行212-232 | `FileSupportTest#testSetUpFixedLengthFile`（ディレクティブ行読み取り） | スキーマ根拠: `$defs.directives` オブジェクトが `key: value` 形式のディレクティブを表現 |
-| DR-02 | 9.2 | 固定長ファイルで有効なディレクティブキーは `FixedLengthDirective` 列挙型の定義に限定される | 正常系 | `FixedLengthFileParser.java` 行34-38 | `FixedLengthFileParserTest#testInvalidDirectives`（固定長ディレクティブキーの制限） | スキーマ根拠: `$defs.directives.properties` に固定長専用キー（`record-length`, `positive-zone-sign-nibble` 等）を列挙（`additionalProperties: false`） |
-| DR-03 | 9.3 | 可変長ファイルで有効なディレクティブキーは `VariableLengthDirective` 列挙型の定義に限定される | 正常系 | `VariableLengthFileParser.java` 行34-38 | テスト追加必要（可変長ディレクティブキー制限の明示テストなし） | スキーマ根拠: `$defs.directives.properties` に可変長専用キー（`field-separator`, `quoting-delimiter` 等）を列挙 |
-| DR-04 | 9.4 | `defaultDirectives` DI: SystemRepository のこのキーで全ファイル共通デフォルトディレクティブを一括設定できる | 実装内部ロジック | `DataFile.java` 行59-93（旧E-6） | テスト追加必要（`defaultDirectives` DI 設定の YAML 適用確認テストなし。R-3 で作成予定） | スキーマ外・パーサ実装で担保（DI 設定はランタイム。`design.md §14` デフォルトディレクティブの DI） |
-| DR-05 | 9.4 | `fixedLengthDirectives` DI: 固定長ファイル専用デフォルトディレクティブ（`defaultDirectives` より後に上書き適用） | 実装内部ロジック | `FixedLengthFile.java` 行16-27 | テスト追加必要（`fixedLengthDirectives` DI の明示テストなし。R-3 で作成予定） | スキーマ外・パーサ実装で担保（`fixedLengthDirectives` DI はランタイム設定） |
-| DR-06 | 9.4 | `variableLengthDirectives` DI: 可変長ファイル専用デフォルトディレクティブ | 実装内部ロジック | `VariableLengthFile.java` 行19-31 | テスト追加必要（`variableLengthDirectives` DI の明示テストなし。R-3 で作成予定） | スキーマ外・パーサ実装で担保（`variableLengthDirectives` DI はランタイム設定） |
-| DR-07 | 9.2 | `file-type` ディレクティブはサブクラス（固定長=`"Fixed"`、可変長=`"Variable"`）が自動設定するため通常は記述不要 | 正常系 | `DataFile.java` 行83-101、`FixedLengthFile.java` 行29-36 | `FileSupportTest#testSetUpFixedLengthFile`（file-type 自動設定の間接確認） | スキーマ根拠: `$defs.directives.properties.file-type` に説明あり（自動設定のため通常記述不要） |
-| DR-08 | 9.2 | `record-length` ディレクティブはフィールド長合計から自動計算されるため通常は記述不要 | 正常系 | `FixedLengthFile.java` 行60-92 | `FileSupportTest#testSetUpFixedLengthFile`（record-length 自動計算の間接確認） | スキーマ根拠: `$defs.directives.properties.record-length` に説明あり（自動計算のため通常記述不要） |
-| DR-09 | 9.3 | `field-separator`: 可変長ファイルのデフォルトは `","``。`"\\t"` 指定でタブ文字に変換。値は1文字のみ有効 | 正常系 | `VariableLengthFile.java` 行16-82 | `FileSupportTest#testVariation`（field-separator の動作） | スキーマ根拠: `$defs.directives.properties.field-separator` の説明（省略時はカンマ、`\\t` でタブ変換）（`design.md §ディレクティブの field-separator`） |
-| DR-10 | 9.3 | `record-separator`: `NONE`/`CR`/`LF`/`CRLF` または任意リテラル文字列が有効 | 正常系 | `LineSeparator.java`、`DataFile.java` 行318-334 | `LineSeparatorTest#testToString`, `LineSeparatorTest#testEvaluate`（record-separator の評価） | スキーマ根拠: `$defs.directives.properties.record-separator` の説明（NONE/CR/LF/CRLF またはリテラル）（`design.md §ディレクティブの record-separator`） |
-| DR-11 | 9.2 | 無効なディレクティブキーを設定した場合 `IllegalArgumentException` をスロー（固定長・可変長ともに適用） | 異常系 | `DataFile.java` 行298（`setDirective` → `valueOf` で null 判定）、`FixedLengthFileParser.java` 行34-38 | `FixedLengthFileParserTest#testInvalidDirectives`（固定長に無効ディレクティブで IllegalArgumentException） | スキーマ根拠: `$defs.directives.properties` の `additionalProperties: false` に対応するランタイムバリデーション |
-| DR-12 | 9.3 | 可変長ファイルの `field-separator` に2文字以上指定した場合 `IllegalArgumentException` をスロー | 異常系 | `VariableLengthFile.java` 行76（フィールド区切り文字の長さバリデーション） | テスト追加必要（可変長 field-separator 長さバリデーションの専用テストが見当たらない） | スキーマ根拠: `$defs.directives.properties.field-separator` の説明（1文字のみ有効）でスキーマ側の制約も記載 |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| DR-01 | ディレクティブ行の構成: 先頭列 = キー名、2列目 = 値（最低2列必要） | 正常系 | S1-158 | S2-114（DataFileParser.Status 遷移）, S2-116（データ行判定） |
+| DR-02 | 固定長ファイルで有効なディレクティブキーは `FixedLengthDirective` 列挙型の定義に限定される | 正常系 | 解説書に記載なし | S2-119（FixedLengthFileParser.isDirective L37） |
+| DR-03 | 可変長ファイルで有効なディレクティブキーは `VariableLengthDirective` 列挙型の定義に限定される | 正常系 | 解説書に記載なし | S2-120（VariableLengthFileParser.isDirective L37） |
+| DR-04 | `defaultDirectives` DI: SystemRepository のこのキーで全ファイル共通デフォルトディレクティブを一括設定できる | 実装内部ロジック | S1-136 | S2-163（DataFile.prepareDefaultDirectives L68-81）, S2-038（YamlSection.applyDirectives L168-177） |
+| DR-05 | `fixedLengthDirectives` DI: 固定長ファイル専用デフォルトディレクティブ（`defaultDirectives` より後に上書き適用） | 実装内部ロジック | S1-136 | S2-177（FixedLengthFile デフォルトディレクティブキー L18） |
+| DR-06 | `variableLengthDirectives` DI: 可変長ファイル専用デフォルトディレクティブ | 実装内部ロジック | S1-136 | S2-183（VariableLengthFile デフォルトディレクティブキー L21） |
+| DR-07 | `file-type` ディレクティブはサブクラス（固定長=`"Fixed"`、可変長=`"Variable"`）が自動設定するため通常は記述不要 | 正常系 | 解説書に記載なし | S2-176（FixedLengthFile.getFileType L35）, S2-179（VariableLengthFile.getFileType L38） |
+| DR-08 | `record-length` ディレクティブはフィールド長合計から自動計算されるため通常は記述不要 | 正常系 | 解説書に記載なし | S2-178（FixedLengthFile.getRecordLength L109-113） |
+| DR-09 | `field-separator`: 可変長ファイルのデフォルトは `","`. `"\\t"` 指定でタブ文字に変換。値は1文字のみ有効 | 正常系 | S1-082 | S2-180（VariableLengthFile デフォルト区切り L29）, S2-181（\\t→タブ変換 L67-69） |
+| DR-10 | `record-separator`: `NONE`/`CR`/`LF`/`CRLF` または任意リテラル文字列が有効 | 正常系 | 解説書に記載なし | S2-192（LineSeparator 列挙 L11-17）, S2-193（LineSeparator.evaluate L57-65） |
+| DR-11 | 無効なディレクティブキーを設定した場合 `IllegalArgumentException` をスロー（固定長・可変長ともに適用） | 異常系 | 解説書に記載なし | S2-157（DataFile.setDirective L297-299） |
+| DR-12 | 可変長ファイルの `field-separator` に2文字以上指定した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-182（VariableLengthFile.convertDirectiveValue L73-77） |
 
 ---
 
 ### MS: メッセージングテストデータ
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| MS-01 | 7.2 | FW 制御ヘッダフィールドのデフォルト4種: `requestId` / `userId` / `resendFlag` / `resultCode`。`reader.fwHeaderfields` キーで変更可能 | 正常系 | `MessageParser.java` 行95-110 | `MessageParserTest#testParseRequestMessage`（FW制御ヘッダ4種） | スキーマ根拠: `$defs.message_data.records` の `record_fragment` 内のフィールドが FW ヘッダ含む構造。`design.md §1` Excel概念→YAML構造 |
-| MS-02 | 7.4 | `no` 列（先頭列、列番号0）はフレームワークが除去し、データとして保存されない。`errorMode` 値は列番号1に格納される | 正常系 | `SendSyncMessageParser.java` 行94-134 | `SendSyncMessageParserTest#testGetFwHeader`（no列とerrorMode列の扱い） | スキーマ外・パーサ実装で担保（no列除去とerrorMode解釈はパーサ実装。`design.md §18` SendSyncSupport の配置規則） |
-| MS-03 | 7.10 | `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は常に内部で `"default"` に置き換えられる（装飾的なメタデータとして任意の値を書いてよい） | 正常系 | `MessageParser.java` 行60-67 | `MessageParserTest#testParseRequestMessage`（record_type を "default" に置き換え） | スキーマ根拠: `$defs.record_fragment.record_type` の説明（`design.md §12` MESSAGE系の record_type は装飾的） |
-| MS-04 | 7.4 | `errorMode:timeout` および `errorMode:msgException` は `no` 列の次（列番号1）に配置する特殊値。他フィールドはパースされない | 正常系 | `SendSyncMessageParser.java` 行18-44、116-132 | テスト追加必要（`SendSyncMessageParserTest` が `testGetFwHeader` 1メソッドしかなく、errorMode:timeout/msgException の具体的テストなし） | スキーマ外・パーサ実装で担保（errorMode 特殊値はパーサ実装） |
-| MS-05 | 7.3 | `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数（rows 合計）は一致が必須。不一致は `IllegalStateException`（旧E-7） | 異常系 | `RequestTestingMessagingClient.java` 行294-443 | テスト追加必要（行数不一致の `IllegalStateException` を YAML テストデータで確認するテストなし） | スキーマ外仕様・テストで担保する方針（行数一致チェックはランタイム。`design.md §11`） |
-| MS-06 | 7.6 | `GroupMessageParser`: 同一 groupId の複数メッセージプールを収集。セクション識別子 `=` 以降をリクエストIDとして使用 | 正常系 | `GroupMessageParser.java` 行48-65 | テスト追加必要（`GroupMessageParser` の複数メッセージ収集を明示するテストなし） | スキーマ根拠: `$defs.group_message_data` の `group_id` フィールドが groupId 収集を表現 |
-| MS-07 | 7.1 | `sendSyncTestData/{requestId}/message` の配置規則: テストデータファイルは `sendSyncTestData` ベースパス下にリクエストIDと同名ファイルとして配置する（旧E-5） | 正常系 | `SendSyncSupport.java` 行39-49 | テスト追加必要（`sendSyncTestData/{requestId}/message` 配置規則の YAML 動作確認テストなし） | スキーマ外仕様・テストで担保する方針（配置規則はファイルシステムの話。`design.md §18`） |
-| MS-08 | 7.7 | ステータスコード列がない場合はデフォルト `"200"` が使用される | 代替フロー | `RequestTestingMessagingClient.java` 行124-204 | テスト追加必要（ステータスコード列なし時のデフォルト "200" を明示するテストなし） | スキーマ外・パーサ実装で担保（ステータスコードデフォルト "200" はパーサ実装） |
-| MS-09 | 7.5 | マルチレコード送信時: ヘッダ行数とボディ行数を一致させる。N 回送信の場合は各 N 行記述（公式解説書 Doc-13） | 正常系 | 公式解説書 send_sync.rst | テスト追加必要（マルチレコード送信の行数一致を明示するテストなし） | スキーマ外仕様・テストで担保する方針（行数一致ルールは運用規約。`design.md §AI向けプロンプト補助情報 messaging の追加注意事項`） |
-| MS-10 | 7.5 | `no` 列と複数回送信: 同一リクエストIDで複数回送信する場合は `no` 値を変えて連続記述し、送信順序と `no` 値を一致させる（公式解説書 Doc-14） | 正常系 | 公式解説書 send_sync.rst | テスト追加必要（no値変更による複数回送信を明示するテストなし） | スキーマ外仕様・テストで担保する方針（no値による複数回送信は運用規約） |
-| MS-11 | 7.3 | HTTP同期応答メッセージ送信処理のボディ行長制約: `response_body_messages` の各データ行の文字列長が同一であることが必要（JSON/XML形式使用時の制約） | 正常系 | 公式解説書 http_send_sync.rst（Doc-15）、`design.md §11` | テスト追加必要（HTTP同期応答ボディ行長制約を明示するテストなし） | スキーマ外仕様・テストで担保する方針（ボディ行長制約は運用制約。`design.md §11`） |
-| MS-12 | 7.8 | フォーマット定義ファイルの命名規則: 応答電文は `{requestId}_RECEIVE`、要求電文は `{requestId}_SEND` | 正常系 | `RequestTestingMessagingClient.java` 行75-79、`design.md §20` | テスト追加必要（フォーマット定義ファイル命名規則を直接テストするものなし） | スキーマ根拠: `design.md §20` フォーマット定義ファイルの命名規則 |
-| MS-13 | 7.9 | `messaging.assertAsMapFileType` キー: SystemRepository から未設定時はデフォルト `"Fixed"` 形式で項目単位アサート。値により文字列全体アサートに切り替え可能 | 正常系 | `RequestTestingMessagingClient.java` 行81-83、`design.md §19` | テスト追加必要（`messaging.assertAsMapFileType` キーの動作を明示するテストなし） | スキーマ外・パーサ実装で担保（`messaging.assertAsMapFileType` キー参照はパーサ実装。`design.md §19`） |
-| MS-14 | — | `SendSyncMessageParser#getFwHeader()` は `UnsupportedOperationException` をスロー（MessageParser が提供する FW ヘッダ解析機能は使用しない） | 異常系 | `SendSyncMessageParser.java` 行43（`getFwHeader` メソッド） | テスト追加必要（`SendSyncMessageParser#getFwHeader()` の UnsupportedOperationException 専用テストが見当たらない） | スキーマ外・パーサ実装で担保（getFwHeader 無効化はパーサ実装） |
-
----
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
+|---|---|---|---|---|
+| MS-01 | FW 制御ヘッダフィールドのデフォルト4種: `requestId` / `userId` / `resendFlag` / `resultCode`。`reader.fwHeaderfields` キーで変更可能 | 正常系 | S1-094 | S2-059（YamlMessageBuilder FW ヘッダフィールド L64-68）, S2-102（MessageParser.fwHeaderfields L107-110）, S2-103（MessageParser FW ヘッダ抽出 L83-91） |
+| MS-02 | `no` 列（先頭列、列番号0）はフレームワークが除去し、データとして保存されない。`errorMode` 値は列番号1に格納される | 正常系 | S1-099 | S2-104（MessageParser データ行 tail L73-77）, S2-109（SendSyncMessageParser no列 L134） |
+| MS-03 | `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は常に内部で `"default"` に置き換えられる | 正常系 | 解説書に記載なし | S2-101b（MessageParser.onReadingNames L60-65）, S2-052（YamlFileBuilder.buildMessageFile FW_HEADER スキップ L104） |
+| MS-04 | `errorMode:timeout` および `errorMode:msgException` は `no` 列の次（列番号1）に配置する特殊値 | 正常系 | S1-102, S1-103, S1-110, S1-112, S1-113 | S2-105, S2-106（SendSyncMessageParser.ErrorMode L19/21）, S2-108（L123-130）, S2-187（MockMessages.removePadding L63-70） |
+| MS-05 | `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数（rows 合計）は一致が必須。不一致は `IllegalStateException` | 異常系 | S1-093 | 実装に記載なし（RequestTestingMessagingClient で発生） |
+| MS-06 | `GroupMessageParser`: 同一 groupId の複数メッセージプールを収集。セクション識別子 `=` 以降をリクエストIDとして使用 | 正常系 | S1-104 | S2-111, S2-112, S2-113（GroupMessageParser L52-65） |
+| MS-07 | `sendSyncTestData/{requestId}/message` の配置規則: テストデータファイルは `sendSyncTestData` ベースパス下にリクエストIDと同名ファイルとして配置する | 正常系 | S1-105, S1-106 | S2-223b（SendSyncSupport テストデータ配置 L350-354） |
+| MS-08 | ステータスコード列がない場合はデフォルト `"200"` が使用される | 代替フロー | 解説書に記載なし | 実装に記載なし（RequestTestingMessagingClient 内部） |
+| MS-09 | マルチレコード送信時: ヘッダ行数とボディ行数を一致させる。N 回送信の場合は各 N 行記述 | 正常系 | S1-141, S1-142 | S2-058（YamlMessageBuilder.buildSendSyncMessageList requestId L109-112） |
+| MS-10 | `no` 列と複数回送信: 同一リクエストIDで複数回送信する場合は `no` 値を変えて連続記述し、送信順序と `no` 値を一致させる | 正常系 | S1-173 | S2-109（SendSyncMessageParser.addValueWithId L134）, S2-223c（SendSyncSupport.getResponseMessageBinaryByRequestId L283-288） |
+| MS-11 | HTTP同期応答メッセージ送信処理のボディ行長制約: `response_body_messages` の各データ行の文字列長が同一であることが必要 | 正常系 | S1-117 | 実装に記載なし（MessagePool.Comparator による比較） |
+| MS-12 | フォーマット定義ファイルの命名規則: 応答電文は `{requestId}_RECEIVE`、要求電文は `{requestId}_SEND` | 正常系 | S1-100 | 実装に記載なし（RequestTestingMessagingClient L75-79） |
+| MS-13 | `messaging.assertAsMapFileType` キー: SystemRepository から未設定時はデフォルト `"Fixed"` 形式で項目単位アサート | 正常系 | S1-101 | S2-220（MessagePool.Comparator.compareBody L154-184） |
+| MS-14 | `SendSyncMessageParser#getFwHeader()` は `UnsupportedOperationException` をスロー | 異常系 | 解説書に記載なし | S2-107（SendSyncMessageParser.getFwHeader L42-44） |
 
 ---
 
 ### TS: テストサポート層
 
-| 仕様ID | ntf-spec.md 節番号 | 概要 | 分類 | 根拠（コード/ドキュメント） | 既存テストメソッド or テスト追加必要 | スキーマ根拠 or スキーマ外理由 |
-|---|---|---|---|---|---|---|
-| TS-01 | 4.1 | `LIST_MAP=testShots` はテストケース定義の予約ID。1行1テストケースを表し、フレームワークが自動読み込みする（現行ID）。旧ID `testCases` は後方互換性のためフォールバックとして残存 | 正常系 | `AbstractHttpRequestTestTemplate.java` 行68/71、`StandaloneTestSupportTemplate.java` 行27、`EntityTestSupport.java` 行51/54 | テスト追加必要（testShots 予約ID動作を明示するテストなし。SS-19 と同件だが TS として整理） | スキーマ外仕様・テストで担保する方針（testShots は LIST_MAP の予約ID） |
-| TS-02 | 4.2 | `LIST_MAP=requestParams` はHTTPリクエストパラメータの予約ID。testShots の行番号（`no` カラム値 -1 のインデックス）に対応する行が使用される | 正常系 | `AbstractHttpRequestTestTemplate.java` 行74 | テスト追加必要 | スキーマ外仕様（パーサ外の利用規約） |
-| TS-03 | — | `LIST_MAP=responseResult` はHTTPレスポンス（リクエストスコープ）期待値の予約ID | 正常系 | `AbstractHttpRequestTestTemplate.java` 行77 | テスト追加必要 | スキーマ外仕様 |
-| TS-04 | — | `LIST_MAP=params` はエンティティバリデーションテストの入力パラメータ定義の予約ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須 | 正常系 | `EntityTestSupport.java` 行56、行223 | テスト追加必要 | スキーマ外仕様 |
-| TS-05 | 4.4 | `setUpDb` はDB共通初期化シートの予約シート名。テストメソッド開始時（または各ショット毎）に1度だけ `SETUP_TABLE` データを投入する | 正常系 | `AbstractHttpRequestTestTemplate.java` 行65/199–201、`StandaloneTestSupportTemplate.java` 行24/237 | テスト追加必要 | スキーマ外仕様 |
-| TS-06 | 4.2 | testShots の `context` カラムに指定した名前の `LIST_MAP` から `REQUEST_ID`・`USER_ID` を取得する。`context` LIST_MAP は1行のみ有効 | 正常系 | `TestCaseInfo.java` 行40/292–298/432 | テスト追加必要 | スキーマ外仕様 |
-| TS-07 | 4.2 | HTTPテストの testShots 必須カラム: `no`・`description`（または `case`）・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 | `TestCaseInfo.java` 行31/37/48/54/75/40 | テスト追加必要 | スキーマ外仕様 |
-| TS-08 | 4.3 | バッチ/スタンドアロンテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 | `TestShot.java` 行384–387 | テスト追加必要 | スキーマ外仕様 |
-| TS-09 | 4.2 | バッチテストの testShots オプションカラム: `setUpFile`（入力ファイル準備）・`expectedFile`（出力ファイル検証）。空の場合はスキップ | 正常系 | `BatchRequestTestSupport.java` 行125/128、行75–77/89–91 | テスト追加必要 | スキーマ外仕様 |
-| TS-10 | 4.2 | testShots の `setUpTable` カラムに値がある場合、対応グループIDで `setUpDb(sheetName, groupId)` を呼び出してケース固有のDB初期化を行う。空の場合はスキップ | 正常系 | `TestCaseInfo.java` 行51/374–378、`AbstractHttpRequestTestTemplate.java` 行303–307、`TestShot.java` 行150–153 | テスト追加必要 | スキーマ外仕様 |
-| TS-11 | 4.2 | testShots の `expectedTable` カラムに値がある場合、対応グループIDでテーブル期待値を検証する。空の場合はスキップ | 正常系 | `TestCaseInfo.java` 行63/464–466、`TestShot.java` 行201–202 | テスト追加必要 | スキーマ外仕様 |
-| TS-12 | 4.3 | testShots の `expectedLog` カラムに値がある場合、対応 LIST_MAP からログ期待値を読み込む。空の場合はスキップ | 正常系 | `TestShot.java` 行379/172–174 | テスト追加必要 | スキーマ外仕様 |
-| TS-13 | 4.2 | testShots の `cookie` カラムに値がある場合、対応 LIST_MAP から Cookie 値を読み込む。空の場合は Cookie なし | 代替フロー | `TestCaseInfo.java` 行43/316–319、`AbstractHttpRequestTestTemplate.java` 行342 | テスト追加必要 | スキーマ外仕様 |
-| TS-14 | 4.2 | testShots の `queryParams` カラムに値がある場合、対応 LIST_MAP からクエリパラメータを読み込む。空の場合はクエリパラメータなし | 代替フロー | `TestCaseInfo.java` 行45/327–330、`AbstractHttpRequestTestTemplate.java` 行353 | テスト追加必要 | スキーマ外仕様 |
-| TS-15 | 4.2 | testShots の `HTTP_METHOD` カラムが空の場合、デフォルトは `"POST"` | 代替フロー | `TestCaseInfo.java` 行28/307–309 | テスト追加必要 | スキーマ外仕様 |
-| TS-16 | 4.2 | testShots の `expectedContentLength`・`expectedContentType`・`expectedContentFileName` が空の場合、各検証をスキップ | 代替フロー | `TestCaseInfo.java` 行78/81/84、`AbstractHttpRequestTestTemplate.java` 行492/513/530 | テスト追加必要 | スキーマ外仕様 |
-| TS-17 | 4.3 | バッチテストの testShots で `args[n]`（`args[0]`, `args[1]`, ...）カラムはコマンドライン引数として渡される。その他の任意カラムはコマンドラインオプションとして渡される | 正常系 | `TestShot.java` 行255–271/221–232 | テスト追加必要 | スキーマ外仕様 |
-| TS-18 | 4.1 | testShots が空の場合、`IllegalStateException`（HTTPテスト）または `IllegalArgumentException`（バッチテスト）をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行226–229、`StandaloneTestSupportTemplate.java` 行135–138 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-19 | — | `sheetName` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行193–194、`StandaloneTestSupportTemplate.java` 行89–91 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-20 | 4.2 | `context` LIST_MAP の `REQUEST_ID` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | `TestCaseInfo.java` 行293–298 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-21 | 4.2 | `context` LIST_MAP が1行でない場合、`IllegalArgumentException` をスロー（"Context LIST_MAP must be 1 row."） | 異常系 | `TestCaseInfo.java` 行432 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-22 | — | `requestParams` の行数がテストケース番号より少ない場合、`IllegalArgumentException` をスロー | 異常系 | `TestCaseInfo.java` 行346–349 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-23 | — | `testShots` の `no` カラムが空の場合、`IllegalArgumentException` をスロー | 異常系 | `TestCaseInfo.java` 行418–422 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-24 | — | `description` カラムも `case` カラムも未定義の場合、`IllegalStateException` をスロー | 異常系 | `TestCaseInfo.java` 行404–405 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-25 | — | `cookie` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行347–348 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-26 | — | `queryParams` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | `AbstractHttpRequestTestTemplate.java` 行357–359 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-27 | — | バッチテストの必須カラム（`no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId`）が欠けている場合、検証エラー | 異常系 | `TestShot.java` 行73/384–387 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-28 | — | `expectedLog` カラムに値があるが対応 LIST_MAP が空の場合、`IllegalStateException` をスロー（"expected log data must be set."） | 異常系 | `TestShot.java` 行178–181 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-29 | — | `EntityTestSupport` の `testShots` 件数と `params` 件数が一致しない場合、`IllegalArgumentException` をスロー | 異常系 | `EntityTestSupport.java` 行223–228 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-30 | — | `EntityTestSupport` の testShots 必須カラム（`title`・`expectedMessageId1`・`propertyName1`）が欠けている場合、`IllegalArgumentException` をスロー | 異常系 | `EntityTestSupport.java` 行270–276 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-31 | — | `DbAccessTestSupport.getParamMap()` でリストが2件以上の場合、`IllegalArgumentException` をスロー。0件の場合は空 Map を返す | 異常系/代替フロー | `DbAccessTestSupport.java` 行280–288 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-| TS-32 | — | `DbAccessTestSupport.assertTableEquals(failIfNoDataFound=false)` でデータなしの場合、検証をスキップ（例外なし）。`failIfNoDataFound=true` の場合は `IllegalArgumentException` をスロー | 異常系/代替フロー | `DbAccessTestSupport.java` 行363–369 | テスト追加必要 | スキーマ外・パーサ実装で担保 |
-
----
-
-## E-1〜E-9 の昇格/除外判断
-
-設計フェーズの調査で発見された E-1〜E-9 の各ギャップについて、仕様IDとして昇格するか否かを判断する。
-
-| ギャップID | 概要 | 判断 | 理由 | 昇格先仕様ID |
+| 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
 |---|---|---|---|---|
-| E-1 | YAML ネイティブ型→文字列化の変換漏れリスク | **昇格** | YAMLリーダー実装で必ず対処が必要なランタイム仕様。テストで検証可能 | RS-03 / RS-04 / RS-05 |
-| E-2 | 末尾空要素の扱い（Excel は null→"" 補完、YAML は末尾省略されやすい） | **昇格** | YAMLリーダー実装で必ず対処が必要。`HeaderLine` の末尾省略仕様と整合が必要 | RS-06 |
-| E-3 | `readLine() == null` 終了判定タイミングのずれによる最終セクションデータ欠落リスク | **昇格** | YAMLリーダー実装の重要な境界条件。最終セクションデータが欠落しないことをテストで保証が必要 | RS-07 |
-| E-4 | `startsWith` 前方一致マッチングの挙動（YAML schema validation とは独立） | **昇格** | DataType 判定の実装仕様として重要。YAML スキーマのセクションキー設計に影響する | DT-03 |
-| E-5 | sendSyncTestData のディレクトリ配置規則はYAMLスキーマ外 | **昇格** | スキーマ外だが YAML テストデータ運用上必須の配置規則。テストで動作確認が必要 | MS-07 |
-| E-6 | `defaultDirectives` の DI 設定は SystemRepository XML の問題でありYAMLファイルとは独立 | **昇格（スキーマ外）** | YAML ファイルの記述仕様には影響しないが、YAMLリーダーが DI 設定を正しく受け取れることを確認するテストが必要 | DR-04 / DR-05 / DR-06 |
-| E-7 | `EXPECTED_REQUEST_HEADER_BODY_MESSAGES` の行数一致チェックはランタイムのみ | **昇格** | ランタイム制約であり YAML テストデータの記述ルールとして明示が必要。テストで違反時の `IllegalStateException` を検証 | MS-05 |
-| E-8 | `BasicDefaultValues` の DATE カラムの TZ ハザード（JSTとUTCで値が変わる） | **昇格（制約事項）** | CI 環境の TZ 設定に依存するため、テストで TZ を明示するか、制約事項として SS-18 に記載する。TZ 依存が解消できない場合は SS-18 に制約事項として明記する | SS-18（注記） |
-| E-9 | `BasicJapaneseCharacterInterpreter` の「スルー vs 例外」条件の誤記（design.md D-6） | **ドキュメント修正のみ** | `design.md §6` の記述修正のみで対応済み（設計フェーズで反映済み）。新仕様IDは不要。IV-06 に正確な挙動を記載済み | IV-06（修正済み） |
+| TS-01 | `LIST_MAP=testShots` はテストケース定義の予約ID。1行1テストケースを表し、フレームワークが自動読み込みする。旧ID `testCases` は後方互換性のためフォールバックとして残存 | 正常系 | S1-085, S1-167 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L68/71） |
+| TS-02 | `LIST_MAP=requestParams` はHTTPリクエストパラメータの予約ID。testShots の行番号に対応する行が使用される | 正常系 | S1-086, S1-087 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L74） |
+| TS-03 | `LIST_MAP=responseResult` はHTTPレスポンス（リクエストスコープ）期待値の予約ID | 正常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L77） |
+| TS-04 | `LIST_MAP=params` はエンティティバリデーションテストの入力パラメータ定義の予約ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須 | 正常系 | S1-127 | 実装に記載なし（EntityTestSupport.java L56） |
+| TS-05 | `setUpDb` はDB共通初期化シートの予約シート名。テストメソッド開始時（または各ショット毎）に1度だけ `SETUP_TABLE` データを投入する | 正常系 | S1-088 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L65） |
+| TS-06 | testShots の `context` カラムに指定した名前の `LIST_MAP` から `REQUEST_ID`・`USER_ID` を取得する。`context` LIST_MAP は1行のみ有効 | 正常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L40/292-298/432） |
+| TS-07 | HTTPテストの testShots 必須カラム: `no`・`description`（または `case`）・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 | S1-085 | 実装に記載なし（TestCaseInfo.java） |
+| TS-08 | バッチ/スタンドアロンテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 | S1-075 | 実装に記載なし（TestShot.java L384-387） |
+| TS-09 | バッチテストの testShots オプションカラム: `setUpFile`（入力ファイル準備）・`expectedFile`（出力ファイル検証）。空の場合はスキップ | 正常系 | S1-076 | 実装に記載なし（BatchRequestTestSupport.java L75-91） |
+| TS-10 | testShots の `setUpTable` カラムに値がある場合、対応グループIDで `setUpDb(sheetName, groupId)` を呼び出してケース固有のDB初期化を行う | 正常系 | S1-059 | 実装に記載なし（TestCaseInfo.java L374-378） |
+| TS-11 | testShots の `expectedTable` カラムに値がある場合、対応グループIDでテーブル期待値を検証する | 正常系 | S1-060 | 実装に記載なし（TestCaseInfo.java L464-466） |
+| TS-12 | testShots の `expectedLog` カラムに値がある場合、対応 LIST_MAP からログ期待値を読み込む | 正常系 | S1-079 | 実装に記載なし（TestShot.java L172-174） |
+| TS-13 | testShots の `cookie` カラムに値がある場合、対応 LIST_MAP から Cookie 値を読み込む | 代替フロー | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L316-319） |
+| TS-14 | testShots の `queryParams` カラムに値がある場合、対応 LIST_MAP からクエリパラメータを読み込む | 代替フロー | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L327-330） |
+| TS-15 | testShots の `HTTP_METHOD` カラムが空の場合、デフォルトは `"POST"` | 代替フロー | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L307-309） |
+| TS-16 | testShots の `expectedContentLength`・`expectedContentType`・`expectedContentFileName` が空の場合、各検証をスキップ | 代替フロー | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L492/513/530） |
+| TS-17 | バッチテストの testShots で `args[n]`（`args[0]`, `args[1]`, ...）カラムはコマンドライン引数として渡される | 正常系 | S1-077, S1-078, S1-157 | 実装に記載なし（TestShot.java L255-271） |
+| TS-18 | testShots が空の場合、`IllegalStateException`（HTTPテスト）または `IllegalArgumentException`（バッチテスト）をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L226-229） |
+| TS-19 | `sheetName` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-213j（TestSupport.getResourceName L391-394） |
+| TS-20 | `context` LIST_MAP の `REQUEST_ID` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L293-298） |
+| TS-21 | `context` LIST_MAP が1行でない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L432） |
+| TS-22 | `requestParams` の行数がテストケース番号より少ない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L346-349） |
+| TS-23 | `testShots` の `no` カラムが空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L418-422） |
+| TS-24 | `description` カラムも `case` カラムも未定義の場合、`IllegalStateException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L404-405） |
+| TS-25 | `cookie` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L347-348） |
+| TS-26 | `queryParams` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L357-359） |
+| TS-27 | バッチテストの必須カラム（`no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId`）が欠けている場合、検証エラー | 異常系 | 解説書に記載なし | 実装に記載なし（TestShot.java L384-387） |
+| TS-28 | `expectedLog` カラムに値があるが対応 LIST_MAP が空の場合、`IllegalStateException` をスロー | 異常系 | S1-164 | 実装に記載なし（TestShot.java L178-181） |
+| TS-29 | `EntityTestSupport` の `testShots` 件数と `params` 件数が一致しない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（EntityTestSupport.java L223-228） |
+| TS-30 | `EntityTestSupport` の testShots 必須カラム（`title`・`expectedMessageId1`・`propertyName1`）が欠けている場合、`IllegalArgumentException` をスロー | 異常系 | S1-126 | 実装に記載なし（EntityTestSupport.java L270-276） |
+| TS-31 | `DbAccessTestSupport.getParamMap()` でリストが2件以上の場合、`IllegalArgumentException` をスロー。0件の場合は空 Map を返す | 異常系/代替フロー | 解説書に記載なし | 実装に記載なし（DbAccessTestSupport.java L280-288） |
+| TS-32 | `DbAccessTestSupport.assertTableEquals(failIfNoDataFound=false)` でデータなしの場合、検証をスキップ | 異常系/代替フロー | S1-053, S1-054 | 実装に記載なし（DbAccessTestSupport.java L363-369） |
 
 ---
 
-## 仕様一覧サマリー
+## 仕様ID サマリー
 
-| カテゴリ | 仕様ID数 | 正常系 | 異常系 | 代替フロー | 実装内部ロジック |
-|---|---|---|---|---|---|
-| DT | 8件（DT-01〜DT-08） | 7件 | 1件（DT-08） | 0件 | 0件 |
-| SS | 32件（SS-01〜SS-32） | 18件 | 12件（SS-14/16/21〜28） | 2件（SS-31/32） | 0件 |
-| RS | 20件（RS-01〜RS-20） | 8件 | 6件（RS-09〜14） | 6件（RS-15〜20） | 0件 |
-| HC | 7件（HC-01〜HC-07） | 7件 | 0件 | 0件 | 0件 |
-| IV | 16件（IV-01〜IV-16） | 15件 | 1件（IV-16） | 0件 | 0件 |
-| DR | 12件（DR-01〜DR-12） | 7件 | 2件（DR-11/12） | 0件 | 3件（DR-04〜DR-06） |
-| MS | 14件（MS-01〜MS-14） | 11件 | 2件（MS-05/14） | 1件（MS-08） | 0件 |
-| TS | 32件（TS-01〜TS-32） | 17件 | 13件（TS-18〜30） | 4件（TS-13〜16）+2件複合（TS-31/32） | 0件 |
-| **合計** | **141件** | **90件** | **37件** | **13件** | **3件** |
+| カテゴリ | 仕様ID数 |
+|---|---|
+| DT | 8件（DT-01〜DT-08） |
+| SS | 32件（SS-01〜SS-32） |
+| RS | 22件（RS-01〜RS-22） |
+| HC | 7件（HC-01〜HC-07） |
+| IV | 16件（IV-01〜IV-16） |
+| DR | 12件（DR-01〜DR-12） |
+| MS | 14件（MS-01〜MS-14） |
+| TS | 32件（TS-01〜TS-32） |
+| **合計** | **143件** |
 
-> **注**: 旧 SS（DataFile:298 に対応する旧 SS-26、VariableLengthFile:76 に対応する旧 SS-30）を DR-11/DR-12 に統合し、SS を詰め直した。RS-18〜RS-20 を追加（YAML 実装クラスの代替フロー）。TS-01〜TS-32 を追加（テストサポート層の全仕様）。
-
----
-
-## grep 証跡（I-1 やり直し版）
-
-### 対象ファイル一覧
-
-**対象クラス（11ファイル: I-1 steering 指定クラス）**:
-
-| ファイルパス |
-|---|
-| `src/main/java/nablarch/test/core/reader/BasicTestDataParser.java` |
-| `src/main/java/nablarch/test/core/reader/DataFileParser.java` |
-| `src/main/java/nablarch/test/core/db/TableData.java` |
-| `src/main/java/nablarch/test/core/file/DataFileFragment.java` |
-| `src/main/java/nablarch/test/core/file/FixedLengthFileFragment.java` |
-| `src/main/java/nablarch/test/core/file/VariableLengthFileFragment.java` |
-| `src/main/java/nablarch/test/core/file/DataFile.java` |
-| `src/main/java/nablarch/test/core/file/FixedLengthFile.java` |
-| `src/main/java/nablarch/test/core/file/VariableLengthFile.java` |
-| `src/main/java/nablarch/test/core/reader/MessageParser.java` |
-| `src/main/java/nablarch/test/core/reader/SendSyncMessageParser.java` |
-
-**追加対象クラス（6ファイル: R-1/R-1-refactor で新規追加された YAML 実装クラス）**:
-
-| ファイルパス |
-|---|
-| `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java` |
-| `src/main/java/nablarch/test/core/reader/yaml/YamlLoader.java` |
-| `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java` |
-| `src/main/java/nablarch/test/core/reader/yaml/YamlFileBuilder.java` |
-| `src/main/java/nablarch/test/core/reader/yaml/YamlMessageBuilder.java` |
-| `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java` |
-
-### grep 結果
-
-**`throw ` 検索結果（計 25 行）**:
-
-| ファイル | 行番号 | 内容 | 仕様ID分類 |
-|---|---|---|---|
-| `TableData.java` | 204 | `throw new RuntimeException("invalid date format...")` | 登録: SS-30 |
-| `TableData.java` | 420 | `throw new RuntimeException(e)` (Clob変換) | 除外: CLOB変換の SQLException ラップ。外部依存（JDBC）で制御困難。行番号: TableData.java:420 |
-| `TableData.java` | 581 | `throw new RuntimeException("unexpected exception.", e)` (getClone) | 登録: SS-29（到達不能→除外） |
-| `FixedLengthFile.java` | 111 | `throw new IllegalStateException("record-length differs.")` | 登録: SS-16 |
-| `SendSyncMessageParser.java` | 43 | `throw new UnsupportedOperationException("unsupported method was called.")` | 登録: MS-14 |
-| `VariableLengthFile.java` | 76 | `throw new IllegalArgumentException("field-separator must be one character.")` | 登録: DR-12（ディレクティブバリデーションとして DR カテゴリが適切）|
-| `FixedLengthFileFragment.java` | 132 | `throw new IllegalStateException("value size overflowed.")` | 登録: SS-23 |
-| `DataFileFragment.java` | 328 | `throw new IllegalArgumentException("... must not be null or empty.")` | 登録: SS-21 |
-| `DataFileFragment.java` | 342 | `throw new IllegalArgumentException("field name size is ...")` | 登録: SS-22 |
-| `DataFileFragment.java` | 357 | `throw new IllegalArgumentException("Duplicate field names are not permitted...")` | 登録: SS-14 |
-| `DataFileFragment.java` | 446 | `throw new IllegalArgumentException("no such field [...]")` | 登録: SS-24 |
-| `DataFileFragment.java` | 545 | `throw new IllegalStateException("invalid data.")` | 登録: SS-25 |
-| `DataFileParser.java` | 84 | `throw new IllegalStateException("invalid status[...]")` | 登録: SS-27（到達不能→除外） |
-| `DataFileParser.java` | 222 | `throw new IllegalStateException("directive or data names row must have two columns...")` | 登録: SS-28 |
-| `BasicTestDataParser.java` | 264 | `throw new IllegalArgumentException("argument groupId must be one or zero.")` | 登録: DT-08 |
-| `DataFile.java` | 119 | `throw e` (RuntimeException 再スロー) | 除外: catch ブロック内の例外再スロー（書き込み失敗時）。専用の仕様IDは不要。行番号: DataFile.java:119 |
-| `DataFile.java` | 185 | `throw new RuntimeException("read file failed...")` | 登録: SS-26 |
-| `DataFile.java` | 298 | `throw new IllegalArgumentException("invalid directive found...")` | 登録: DR-11（ディレクティブバリデーションとして DR カテゴリが適切）|
-| `YamlTestDataParser.java` | 60 | `throw new UnsupportedOperationException(...)` | 登録: RS-14 |
-| `YamlLoader.java` | 68 | `throw new IllegalStateException("Failed to load YAML file...")` | 登録: RS-09 |
-| `YamlLoader.java` | 70 | `throw new IllegalStateException("Failed to parse YAML file...")` | 登録: RS-09（同一仕様ID） |
-| `YamlTableDataBuilder.java` | 71 | `throw new IllegalStateException("Missing required field 'table'...")` | 登録: RS-10 |
-| `YamlFileBuilder.java` | 71 | `throw new IllegalStateException("Missing required field 'path'...")` | 登録: RS-11 |
-| `YamlMessageBuilder.java` | 152 | `throw new IllegalStateException("FW_HEADER rows must be a list of lists...")` | 登録: RS-12 |
-| `YamlSection.java` | 190 | `throw new IllegalArgumentException("Unsupported DataType for messaging...")` | 登録: RS-13 |
-
-**`return null` / `Collections.emptyList()` / `Collections.empty*` 検索結果（計 15 行）**:
-
-| ファイル | 行番号 | 内容 | 仕様ID分類 |
-|---|---|---|---|
-| `BasicTestDataParser.java` | 54 | `return Collections.emptyList()` (データ不在時) | 登録: RS-15 |
-| `TableData.java` | 198 | `return null` (カラム値が null の場合) | 登録: SS-31 |
-| `TableData.java` | 224 | `return null` (日付型に空文字指定時) | 登録: SS-32 |
-| `DataFile.java` | 77 | `return null` (MapCollector の内部コールバック) | 除外: MapCollector の evaluate() 実装の内部返却値。外部 API 仕様ではなくコレクション処理の実装パターン。行番号: DataFile.java:77 |
-| `MessageParser.java` | 129 | `return null` (データが空の場合) | 登録: RS-16 |
-| `YamlSection.java` | 88 | `return Collections.emptyList()` (`getList` でキーなし or List でない場合) | 除外: `getList` は内部ユーティリティ（安全キャスト用フォールバック）。呼び出し側ビルダーが空リストとして扱う内部実装パターン。行番号: YamlSection.java:88 |
-| `YamlSection.java` | 99 | `return Collections.emptyMap()` (`castMap` でキーなし or Map でない場合) | 除外: `castMap` は内部ユーティリティ（安全キャスト用フォールバック）。内部実装パターン。行番号: YamlSection.java:99 |
-| `YamlSection.java` | 138 | `return null` (`interpret(null, interps)` で入力が null の場合) | 除外: RS-03（YAML ネイティブ null → Java null）の内部実装パス。`objectToString` 経路と同一仕様。行番号: YamlSection.java:138 |
-| `YamlMessageBuilder.java` | 83 | `return null` (`buildMessagePool` で file=null 時) | 登録: RS-16 |
-| `YamlMessageBuilder.java` | 107 | `Collections.emptyMap()` (変数代入、`buildSendSyncMessageList` 内) | 除外: `Map<String, String> emptyHeader = Collections.emptyMap()` は変数への代入（return ではない）。メソッド内の定数的な初期値として使用。行番号: YamlMessageBuilder.java:107 |
-| `YamlMessageBuilder.java` | 169 | `return Collections.emptyMap()` (`extractFwHeader` で FW_HEADER 未発見) | 登録: RS-20 |
-| `YamlFileBuilder.java` | 108 | `return null` (`buildMessageFile` で ID 未発見) | 登録: RS-16 |
-| `YamlLoader.java` | 63 | `result = Collections.emptyMap()` (YAML が空ファイルの場合) | 登録: RS-18（変数代入だが外部から空 Map として返却されるパス） |
-| `YamlTableDataBuilder.java` | 122 | `return Collections.emptyList()` (`buildListMapRows` で ID 未発見) | 登録: RS-19 |
-| `YamlTestDataParser.java` | 99 | `return Collections.emptyList()` (`getSetupTableData` でファイル不在) | 登録: RS-15 |
-
-### 集計
-
-| 種別 | 総行数 | 登録件数 | 除外件数 |
-|---|---|---|---|
-| `throw ` | 25行 | 23行 | 2行（TableData:420, DataFile:119） |
-| `return null/empty` | 15行 | 8行 | 7行 |
-
-- throw 行 25行 = 登録 23行 + 除外 2行
-  - 除外内訳: `TableData.java:420`（JDBC依存の Clob 変換）、`DataFile.java:119`（例外の再スロー）
-  - 到達不能コードとして登録扱い: `TableData.java:581`（SS-29）、`DataFileParser.java:84`（SS-27）
-  - 仕様ID統合: `YamlLoader.java:68` と `YamlLoader.java:70` は RS-09 として1件に統合
-  - `VariableLengthFile.java:76` → DR-12、`DataFile.java:298` → DR-11（ディレクティブカテゴリが適切）
-- return null/empty 行 15行 = 登録 8行 + 除外 7行
-  - 除外内訳: `DataFile.java:77`（MapCollector 内部）、`YamlSection.java:88/99`（内部ユーティリティ）、`YamlSection.java:138`（RS-03 の実装パス）、`YamlMessageBuilder.java:107`（変数代入）
-  - `YamlLoader.java:63` は return ではなく変数代入だが、外部から空 Map として返却されるため RS-18 に登録
-  - `YamlTestDataParser.java:99` は RS-15 と同一仕様（BasicTestDataParser:54 との継承関係）
-- **数値確認**: throw 25行 = 登録23行 + 除外2行 ✓
-- **数値確認**: return null/empty 15行 = 登録8行（仕様ID: RS-15/16/18/19/20/SS-31/32） + 除外7行 ✓
+> **注**: S-3 で RS-21（YAMLキャッシュ LRU/clearCacheForTest）と RS-22（YAML重複キーエラー）を新規追加（S-2 実装分析で判明した YAML 固有仕様）。
 
 ---
 
-## 抜け漏れ確認
+## S-1 / S-2 / 両方 の分類
 
-本仕様一覧は以下の調査結果を統合して作成した。
-
-| 調査元 | 仕様数 | 取り込み状況 |
-|---|---|---|
-| `ntf-coverage-spec-mapping.md`（コード全行走査 29クラス） | S-1〜S-5 / D-1〜D-16 / E-1〜E-4 | 全件取り込み済み。D-10→SS-20 として追加（QA指摘NG-1対応） |
-| `ntf-coverage-doc-check.md`（公式解説書照合 13本） | Doc-1〜Doc-17（うち反映対象17件） | 全件取り込み済み。Doc-5→DT-06、Doc-8→IV-14、Doc-12→IV-15、Doc-15→MS-11（QA指摘対応） |
-| `ntf-testdata-yaml-design.md`（スキーマ設計・設計上の注意点） | 27項目（§1〜§27） | 全件取り込み済み。§19→MS-13、§20→MS-12 として追加（QA指摘対応） |
-| E-1〜E-9 | 9件 | 全件処置済み（8件昇格・1件ドキュメント修正のみ） |
-| I-1 grep 証跡（throw/return null の全行走査） | throw 25行 + return null/empty 15行 = 計40行 | 全件処置済み（登録31件・除外9件）。DT-08/SS-14/16/21〜32/RS-09〜20/DR-11〜12/MS-14 を新規追加 |
+| 分類 | 件数 |
+|---|---|
+| 解説書・実装両方に存在 | 54件 |
+| 解説書のみに存在（S-1 only・実装に記載なし） | 17件 |
+| 実装のみに存在（S-2 only・解説書に記載なし） | 53件 |
+| 解説書・実装ともに記載なし（テストサポート層等の設計レベル仕様） | 19件 |
+| **合計** | **143件** |
