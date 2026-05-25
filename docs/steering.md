@@ -223,7 +223,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - [x] 解説書リポジトリ（nablarch-document）の対象ファイルを全件列挙し、ファイル一覧として記録する（36件）
 - [x] 各ファイルを読み、仕様として読み取れる記述を全件抽出する（147件）
 - [x] 抽出した仕様をリスト形式で記録する（`docs/checks/S-1.md`）
-- [ ] エキスパートレビュー: 1ファイル1サブエージェント・5並列で実施
+- [x] エキスパートレビュー: 1ファイル1サブエージェント・5並列で実施（全8バッチ完了。FB対応後 S1-188件）
   - **方針**: 各エージェントは対象ファイルを独立して読み、自分で仕様を洗い出してから S-1.md と照合する。バイアスなし
   - **バッチ1** (5並列): 01_entityUnitTestWithBeanValidation.rst / 02_entityUnitTestWithNablarchValidation.rst / 02_componentUnitTest.rst / 05_UnitTestGuide/02_RequestUnitTest/batch.rst / delayed_receive.rst
   - **バッチ2** (5並列): delayed_send.rst / double_transmission.rst / fileupload.rst / http_real.rst / http_send_sync.rst
