@@ -2,7 +2,7 @@
 
 <a name="table-data"></a>
 
-## 4.1 テーブルデータの基本形式
+## 5.1 テーブルデータの基本形式
 
 <a name="setup-table"></a>
 

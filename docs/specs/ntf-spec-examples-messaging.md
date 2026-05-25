@@ -2,7 +2,7 @@
 
 <a name="messaging"></a>
 
-## 6.1 MESSAGE セクション（メッセージ送受信）
+## 7.1 MESSAGE セクション（メッセージ送受信）
 
 受信電文と応答電文を定義するケース。実物のデータは `MessageParserTest.xls` の `testParse` シートを参照。
 
@@ -65,7 +65,7 @@ messages:
 
 ---
 
-## 6.2 要求電文・応答電文の期待値（SendSync メッセージング）
+## 7.2 要求電文・応答電文の期待値（SendSync メッセージング）
 
 バッチリクエスト単体テストで電文の送受信をテストするケース。実物のデータは `RequestTestingSendSyncSupportTest.xls` を参照。
 
@@ -124,7 +124,7 @@ expected_request_header_messages:
 
 ---
 
-## 6.3 sendSyncTestData の配置規則
+## 7.3 sendSyncTestData の配置規則
 
 テストデータファイルを `sendSyncTestData/{requestId}/message` に配置するケース。
 
@@ -162,7 +162,7 @@ messages:
 
 ---
 
-## 6.4 ステータスコードのデフォルト値
+## 7.4 ステータスコードのデフォルト値
 
 HTTP 同期応答テストでステータスコードカラムを省略するケース。
 
