@@ -67,8 +67,6 @@ src/test/java/com/example/
 
 読み込み単位（Excelの1シート / YAMLの1ファイル）の中に、テストケース・セットアップ・検証の複数セクションを共存させて記述します。
 
-→ [Excel / YAML Example](ntf-spec-examples-overview.md#basic-structure)
-
 ---
 
 ## 2. セクション識別

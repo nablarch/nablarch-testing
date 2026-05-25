@@ -88,38 +88,6 @@ expected_tables:
 
 ---
 
-<a name="basic-structure"></a>
-
-## 1.2 テストデータの基本構造
-
-テストクラス `FooTest` に対するテストデータの配置例。
-
-### Excel
-
-```
-src/test/java/com/example/
-  FooTest.xls
-    ├── case01    ← シート（読み込み単位）
-    └── case02    ← シート（読み込み単位）
-```
-
-- 1ブック（`.xls` ファイル）= テストクラス1つ分のテストデータ
-- 1シート = 1つの読み込み単位
-
-### YAML
-
-```
-src/test/java/com/example/
-  FooTest/
-    ├── case01.yaml    ← Excelの case01 シートに相当
-    └── case02.yaml    ← Excelの case02 シートに相当
-```
-
-- 1ディレクトリ = テストクラス1つ分のテストデータ
-- 1ファイル（`.yaml`）= 1つの読み込み単位 = Excelの1シートに相当
-
----
-
 <a name="section-identifier"></a>
 
 ## 2. セクション識別: groupId の使い方
