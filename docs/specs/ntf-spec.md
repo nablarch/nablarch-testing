@@ -76,7 +76,6 @@ src/test/java/com/example/
 - **DataType 名**: 後述する14種類のいずれか（例: `SETUP_TABLE`）
 - **識別子の値**: テーブル名・ファイルパス・IDなどセクション種別ごとの識別子
 
-複数テストケースで異なるデータを使い分ける場合は、さらに **groupId** を付加してセクションをグループ化します（→ [3.4 セクションのグループ化](#34-セクションのグループ化groupid)）。
 
 #### Excel での記述
 
@@ -145,37 +144,7 @@ setup_tables:
 
 `LIST_MAP` で同一 ID のエントリが複数ある場合、2件目以降は黙って無視されます。
 
-### 3.4 セクションのグループ化（groupId）
-
-複数のテストケースで異なるセットアップデータや期待値を使い分けたい場合、セクションに **groupId** を付加してグループ化します。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を指定すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。詳細は [4章](#4-テストケース定義) を参照してください。
-
-#### Excel での記述
-
-DataType 名の直後に `[groupId]` と記述します。
-
-```
-SETUP_TABLE[case01]=USER_MASTER
-```
-
-#### YAML での記述
-
-`group_id:` フィールドで指定します。
-
-```yaml
-setup_tables:
-  - group_id: case01
-    table: USER_MASTER
-    rows: ...
-```
-
-#### 制約
-
-- 省略時は空文字扱いです（groupId なし = デフォルトグループ）
-- groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
-
-バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
-
-### 3.5 RESPONSE_HEADER/BODY_MESSAGES の2経路
+### 3.4 RESPONSE_HEADER/BODY_MESSAGES の2経路
 
 `RESPONSE_HEADER_MESSAGES` と `RESPONSE_BODY_MESSAGES` は、以下の2つの経路でアクセスできます。
 
@@ -260,6 +229,38 @@ setup_tables:
 ### 4.4 DB 共通セットアップデータ
 
 `setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
+
+### 4.5 セクションのグループ化（groupId）
+
+複数のテストケースで異なるセットアップデータや期待値を使い分けたい場合、セクションに **groupId** を付加してグループ化します。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を指定すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。
+
+#### Excel での記述
+
+DataType 名の直後に `[groupId]` と記述します。
+
+```
+SETUP_TABLE[case01]=USER_MASTER
+```
+
+#### YAML での記述
+
+`group_id:` フィールドで指定します。
+
+```yaml
+setup_tables:
+  - group_id: case01
+    table: USER_MASTER
+    rows: ...
+```
+
+#### 制約
+
+- 省略時は空文字扱いです（groupId なし = デフォルトグループ）
+- groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
+
+バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
+
+→ [Excel / YAML Example](ntf-spec-examples-overview.md#section-identifier)
 
 ---
 
