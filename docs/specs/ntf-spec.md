@@ -81,11 +81,16 @@ src/test/java/com/example/
 
 #### Excel での記述
 
-Excel ではセクション先頭セルに `DataType名=識別子の値` 形式で記述します。DataType 名で始まれば合致します（前方一致）。groupId を指定する場合は DataType 名の直後に角括弧で記述します。
+Excel ではセクション先頭セルに `DataType名=識別子の値` 形式で記述します。DataType 名で始まれば合致します（前方一致）。
 
+groupId なし:
 ```
-SETUP_TABLE=USER_MASTER          ← groupId なし
-SETUP_TABLE[case01]=USER_MASTER  ← groupId あり（DataType 名直後に [groupId]）
+SETUP_TABLE=USER_MASTER
+```
+
+groupId あり（DataType 名の直後に `[groupId]`）:
+```
+SETUP_TABLE[case01]=USER_MASTER
 ```
 
 #### YAML での記述
@@ -106,14 +111,21 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 | `RESPONSE_HEADER_MESSAGES` | `response_header_messages` |
 | `RESPONSE_BODY_MESSAGES` | `response_body_messages` |
 
+groupId なし:
 ```yaml
 setup_tables:
-  - table: USER_MASTER          # groupId なし
-  - group_id: case01
-    table: USER_MASTER           # groupId あり（group_id: フィールドで指定）
+  - table: USER_MASTER
+    rows: ...
 ```
 
-- groupId は各エントリの `group_id:` フィールドとして記述します
+groupId あり（`group_id:` フィールドで指定）:
+```yaml
+setup_tables:
+  - group_id: case01
+    table: USER_MASTER
+    rows: ...
+```
+
 - 完全なセクションキーを使用するため前方一致は発生しません
 - YAMLでは同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
 
