@@ -140,7 +140,7 @@ setup_tables:
 - **GroupData**: 同じグループに属するセクションをすべて収集します。ファイル全体を最後まで読み込みます（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）
 - **SingleData**: 最初に一致したセクション1件だけを取得して停止します（`LIST_MAP`、`MESSAGE` など）。同一 ID のエントリが複数ある場合、2件目以降は無視されます
 
-グループの指定方法（groupId）については [4.5 セクションのグループ化](#45-セクションのグループ化groupid) を参照してください。
+グループの指定方法（groupId）については [4.3 セクションのグループ化](#43-セクションのグループ化groupid) を参照してください。
 
 ---
 
@@ -157,71 +157,15 @@ setup_tables:
 
 → [Excel / YAML Example](ntf-spec-examples-overview.md#test-shots)
 
-### 4.2 リクエスト単体テスト（ウェブアプリケーション）の testShots カラム
+処理方式ごとの必須カラム・オプションカラム一覧と記述例は以下を参照してください。
 
-リクエスト単体テスト（ウェブアプリケーション）での必須カラムは以下のとおりです。
+→ [処理方式別 testShots カラム一覧](ntf-spec-examples-testshots.md)
 
-| カラム名 | 説明 |
-|---|---|
-| `no` | テストケース番号 |
-| `description` | テストケースの説明（旧名 `case` も可） |
-| `isValidToken` | トークン制御フラグ |
-| `expectedStatusCode` | 期待する HTTP ステータスコード |
-| `forwardUri` | 期待するフォワード先 URI |
-| `context` | リクエスト ID・ユーザ・HTTP メソッドを記載した `LIST_MAP` 名 |
-
-主なオプションカラムは以下のとおりです。
-
-| カラム名 | 説明 | 空の場合 |
-|---|---|---|
-| `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
-| `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
-| `expectedSearch` | 検索結果期待値の groupId（対応する `LIST_MAP` セクションを収集） | スキップ |
-| `expectedMessageId` | 期待するメッセージ ID（カンマ区切りで複数指定可） | スキップ |
-| `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名 | — |
-| `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
-| `queryParams` | クエリパラメータの `LIST_MAP` 名 | パラメータなし |
-| `HTTP_METHOD` | HTTP メソッド | `"POST"` |
-| `expectedContentLength` | 期待する Content-Length | スキップ |
-| `expectedContentType` | 期待する Content-Type | スキップ |
-| `expectedContentFileName` | 期待する Content-Disposition ファイル名 | スキップ |
-| `expectedMessage` | この値と同じ groupId を持つ要求電文セクション（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`）で検証します | スキップ |
-| `responseMessage` | この値と同じ groupId を持つ応答電文セクション（`RESPONSE_HEADER/BODY_MESSAGES`）をレスポンスとして返します | スキップ |
-| `expectedMessageByClient` | HTTP 同期応答メッセージ送信の要求電文グループ ID | スキップ |
-| `responseMessageByClient` | HTTP 同期応答メッセージ送信の応答電文グループ ID | スキップ |
-
-`context` LIST_MAP は1エントリのみ有効です。`REQUEST_ID` が空の場合は例外がスローされます。
-
-### 4.3 リクエスト単体テスト（バッチ処理）の testShots カラム
-
-リクエスト単体テスト（バッチ処理）での必須カラムは以下のとおりです。
-
-| カラム名 | 説明 |
-|---|---|
-| `no` | テストケース番号 |
-| `description` | テストケースの説明 |
-| `expectedStatusCode` | 期待するステータスコード |
-| `diConfig` | DI コンポーネント設定ファイルパス |
-| `requestPath` | リクエストパス |
-| `userId` | 実行ユーザ ID |
-
-主なオプションカラムは以下のとおりです。
-
-| カラム名 | 説明 | 空の場合 |
-|---|---|---|
-| `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
-| `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
-| `setUpFile` | この値と同じ groupId を持つ `SETUP_FIXED`/`SETUP_VARIABLE` セクションを入力ファイルとして配置します | スキップ |
-| `expectedFile` | この値と同じ groupId を持つ `EXPECTED_FIXED`/`EXPECTED_VARIABLE` セクションで出力ファイルを検証します | スキップ |
-| `expectedLog` | 期待ログの `LIST_MAP` 名 | スキップ |
-| `args[0]`, `args[1]`, ... | コマンドライン引数 | — |
-| その他任意カラム | コマンドラインオプション | — |
-
-### 4.4 DB 共通セットアップデータ
+### 4.2 DB 共通セットアップデータ
 
 `setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
 
-### 4.5 セクションのグループ化（groupId）
+### 4.3 セクションのグループ化（groupId）
 
 複数のテストケースで異なるセットアップデータや期待値を使い分けたい場合、セクションに **groupId** を付加してグループ化します。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を指定すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。
 

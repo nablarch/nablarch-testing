@@ -88,7 +88,7 @@ expected_tables:
 
 <a name="groupid"></a>
 
-## 4.5 セクションのグループ化（groupId）
+## 4.3 セクションのグループ化（groupId）
 
 テストケースごとに異なるセットアップデータを使い分けるシナリオ。
 
