@@ -161,9 +161,12 @@ setup_tables:
 
 `LIST_MAP` で同一 ID のエントリが複数ある場合、2件目以降は黙って無視されます。
 
-### 2.4 groupId の制約
+### 2.4 groupId の使い方と制約
 
-- 省略時は空文字扱いです
+groupId の主な用途は、**テストケースごとに使うセクションを切り替えること**です。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を記述すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。詳細は [3章](#3-テストケース定義) を参照してください。
+
+制約:
+- 省略時は空文字扱いです（groupId なし = デフォルトグループ）
 - groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
 - **Excel**: DataType 名の直後に `[case01]` のように角括弧で囲んで記述します（例: `SETUP_TABLE[case01]=テーブル名`）
 - **YAML**: `group_id: case01` フィールドで指定します
@@ -209,9 +212,9 @@ setup_tables:
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
-| `setUpTable` | ケース固有の DB セットアップグループ ID | スキップ |
-| `expectedTable` | テーブル期待値のグループ ID | スキップ |
-| `expectedSearch` | 検索結果期待値のグループ ID | スキップ |
+| `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
+| `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
+| `expectedSearch` | 検索結果期待値の groupId（対応する `LIST_MAP` セクションを収集） | スキップ |
 | `expectedMessageId` | 期待するメッセージ ID（カンマ区切りで複数指定可） | スキップ |
 | `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名 | — |
 | `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
@@ -220,8 +223,8 @@ setup_tables:
 | `expectedContentLength` | 期待する Content-Length | スキップ |
 | `expectedContentType` | 期待する Content-Type | スキップ |
 | `expectedContentFileName` | 期待する Content-Disposition ファイル名 | スキップ |
-| `expectedMessage` | 同期応答メッセージ送信の要求電文グループ ID | スキップ |
-| `responseMessage` | 同期応答メッセージ送信の応答電文グループ ID | スキップ |
+| `expectedMessage` | この値と同じ groupId を持つ要求電文セクション（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`）で検証します | スキップ |
+| `responseMessage` | この値と同じ groupId を持つ応答電文セクション（`RESPONSE_HEADER/BODY_MESSAGES`）をレスポンスとして返します | スキップ |
 | `expectedMessageByClient` | HTTP 同期応答メッセージ送信の要求電文グループ ID | スキップ |
 | `responseMessageByClient` | HTTP 同期応答メッセージ送信の応答電文グループ ID | スキップ |
 
@@ -244,10 +247,10 @@ setup_tables:
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
-| `setUpTable` | ケース固有の DB セットアップグループ ID | スキップ |
-| `expectedTable` | テーブル期待値のグループ ID | スキップ |
-| `setUpFile` | 入力ファイル準備グループ ID | スキップ |
-| `expectedFile` | 出力ファイル期待値グループ ID | スキップ |
+| `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
+| `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
+| `setUpFile` | この値と同じ groupId を持つ `SETUP_FIXED`/`SETUP_VARIABLE` セクションを入力ファイルとして配置します | スキップ |
+| `expectedFile` | この値と同じ groupId を持つ `EXPECTED_FIXED`/`EXPECTED_VARIABLE` セクションで出力ファイルを検証します | スキップ |
 | `expectedLog` | 期待ログの `LIST_MAP` 名 | スキップ |
 | `args[0]`, `args[1]`, ... | コマンドライン引数 | — |
 | その他任意カラム | コマンドラインオプション | — |
