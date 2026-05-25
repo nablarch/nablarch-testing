@@ -524,24 +524,21 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 ## 現在の状態（2026-05-25時点）
 
-- **ブランチ**: `convert-testdata-excel-to-text`（クリーン）
+- **ブランチ**: `convert-testdata-excel-to-text`
 - **次タスク**: **ntf-spec.md + ntf-spec-examples-*.md をまとめてユーザーレビュー1回** → OK 取得後に I-2/I-3 へ
 - **I-1**: 完成（141件・正常系/異常系/代替フロー全件）。QA OK 済み。ユーザーレビュー待ち
   - TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
-  - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列を追加済み（節番号なし = 記載漏れのインジケーター）
+  - `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列あり（節番号なし = 記載漏れのインジケーター）
+  - **注意**: 仕様書の章番号は今後も変わる可能性があるため、`ntf-impl-spec-list.md` の節番号との整合チェックは仕様書のユーザーレビュー OK 後にまとめて1回実施する
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
-- **ntf-spec.md**: 完成。今セッションの主な変更:
-  - 1.2節「テストデータの基本構造」を新設（テストクラスと Excel ブック/YAML ディレクトリの1対1対応を明記）
-  - Excel 混在禁止（EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）を Excel 固有と明記。YAML では混在可と追記
-  - セクションの記述順序自由・YAML トップレベルキー重複禁止を追記
-  - spec/Example の重複を解消（Example は コードブロック + 必要最小限の注釈に整理）
-- **ntf-spec-examples-*.md**: 全5ファイル完成。今セッションの主な修正:
-  - `inFile`/`outFile` → `setUpFile`/`expectedFile` に修正（実装と一致させた）
-  - `list_maps:` 重複キーを解消（同一リストに統合）
-  - `errorMode` の値を `errorMode:timeout`/`errorMode:msgException` に修正
-  - `status_code:` の説明を実行時クライアントの挙動として修正
-  - タイトルから章番号・節名を削除（仕様変更の影響を受けないよう）
-  - YAML セクションの説明を追加（overview/file/messaging）
+- **ntf-spec.md**: レビュー中。今セッションの主な変更:
+  - 「概要」節を廃止し旧1.1/1.2をトップ章（1章/2章）に昇格・全章番号繰り上げ（旧2〜9 → 3〜10章）
+  - 3.1節をセクション識別（DataType名+識別子の値）のみに絞り、groupId を 3.4節「セクションのグループ化」に分離
+  - 3.4節（旧2.4）で groupId の使い方・書き方・制約を一か所にまとめ
+  - testShots オプションカラム表で setUpTable 等の説明を「この値と同じ groupId を持つセクションが収集される」と具体化
+  - groupId Example（ntf-spec-examples-overview.md §3）を testShots との連携が見える例に全面書き直し
+  - 仕様書・Exampleともに形式依存（Excel書式の `=` 等）を概念説明から排除
+- **ntf-spec-examples-*.md**: レビュー中
 - **ntf-spec-examples.md（旧）**: まだ残存。ユーザーレビュー OK 後に削除予定
 
 ### ntf-spec.md / ntf-spec-examples-*.md 構成（完成）
@@ -572,7 +569,9 @@ docs/specs/
 
 1. `git checkout convert-testdata-excel-to-text` でブランチを確認し、`git status` でクリーンであることを確認
 2. **ユーザーレビュー依頼**: `docs/specs/ntf-spec.md` と `docs/specs/ntf-spec-examples-*.md`（5ファイル）をまとめてユーザーに提示し OK を取得する
-3. **ユーザーレビュー OK 後**: `docs/specs/ntf-spec-examples.md`（旧ファイル）を削除する
+3. **ユーザーレビュー OK 後**:
+   - `docs/specs/ntf-spec-examples.md`（旧ファイル）を削除する
+   - `ntf-impl-spec-list.md` の `ntf-spec.md 節番号` 列を仕様書の最終章番号に合わせて一括更新する（仕様書が安定するまで整合チェックは行わない）
 4. **I-2 着手**: `ntf-impl-spec-list.md` の全仕様IDに既存テストメソッドをマッピングする
 5. **I-3 着手**: `ntf-impl-spec-list.md` の全仕様IDにスキーマ根拠またはスキーマ外理由を記載する
 

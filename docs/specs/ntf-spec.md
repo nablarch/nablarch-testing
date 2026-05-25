@@ -71,24 +71,19 @@ src/test/java/com/example/
 
 ### 3.1 セクション識別の構成要素
 
-各セクションは以下の3要素で識別されます。
+各セクションは **DataType 名** と **識別子の値** の2要素で識別されます。
 
 - **DataType 名**: 後述する14種類のいずれか（例: `SETUP_TABLE`）
-- **groupId**: セクションをグループ化するための識別子。省略可能で、省略時は空文字扱いです
 - **識別子の値**: テーブル名・ファイルパス・IDなどセクション種別ごとの識別子
+
+複数テストケースで異なるデータを使い分ける場合は、さらに **groupId** を付加してセクションをグループ化します（→ [3.4 セクションのグループ化](#34-セクションのグループ化groupid)）。
 
 #### Excel での記述
 
 Excel ではセクション先頭セルに `DataType名=識別子の値` 形式で記述します。DataType 名で始まれば合致します（前方一致）。
 
-groupId なし:
 ```
 SETUP_TABLE=USER_MASTER
-```
-
-groupId あり（DataType 名の直後に `[groupId]`）:
-```
-SETUP_TABLE[case01]=USER_MASTER
 ```
 
 #### YAML での記述
@@ -109,18 +104,9 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 | `RESPONSE_HEADER_MESSAGES` | `response_header_messages` |
 | `RESPONSE_BODY_MESSAGES` | `response_body_messages` |
 
-groupId なし:
 ```yaml
 setup_tables:
   - table: USER_MASTER
-    rows: ...
-```
-
-groupId あり（`group_id:` フィールドで指定）:
-```yaml
-setup_tables:
-  - group_id: case01
-    table: USER_MASTER
     rows: ...
 ```
 
@@ -159,15 +145,33 @@ setup_tables:
 
 `LIST_MAP` で同一 ID のエントリが複数ある場合、2件目以降は黙って無視されます。
 
-### 3.4 groupId の使い方と制約
+### 3.4 セクションのグループ化（groupId）
 
-groupId の主な用途は、**テストケースごとに使うセクションを切り替えること**です。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を記述すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。詳細は [4章](#4-テストケース定義) を参照してください。
+複数のテストケースで異なるセットアップデータや期待値を使い分けたい場合、セクションに **groupId** を付加してグループ化します。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を指定すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。詳細は [4章](#4-テストケース定義) を参照してください。
 
-制約:
+#### Excel での記述
+
+DataType 名の直後に `[groupId]` と記述します。
+
+```
+SETUP_TABLE[case01]=USER_MASTER
+```
+
+#### YAML での記述
+
+`group_id:` フィールドで指定します。
+
+```yaml
+setup_tables:
+  - group_id: case01
+    table: USER_MASTER
+    rows: ...
+```
+
+#### 制約
+
 - 省略時は空文字扱いです（groupId なし = デフォルトグループ）
 - groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
-- **Excel**: DataType 名の直後に `[case01]` のように角括弧で囲んで記述します（例: `SETUP_TABLE[case01]=テーブル名`）
-- **YAML**: `group_id: case01` フィールドで指定します
 
 バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
 
