@@ -10,7 +10,7 @@
 
 | LIST_MAP=testShots | | | | | | | | | | |
 |---|---|---|---|---|---|---|---|---|---|---|
-| no | description | expectedStatusCode | setUpTable | expectedTable | inFile | outFile | diConfig | requestPath | userId | expectedLog |
+| no | description | expectedStatusCode | setUpTable | expectedTable | setUpFile | expectedFile | diConfig | requestPath | userId | expectedLog |
 | 1 | 正しく更新されます | 0 | default | default | | | nablarch/test/core/batch/BatchSample.xml | DBtoDBBatchSample | test | expectedLog |
 
 | SETUP_TABLE=BATCH_SAMPLE | | | |
@@ -46,8 +46,8 @@ list_maps:
         expectedStatusCode: "0"
         setUpTable: "default"
         expectedTable: "default"
-        inFile: ""
-        outFile: ""
+        setUpFile: ""
+        expectedFile: ""
         diConfig: "nablarch/test/core/batch/BatchSample.xml"
         requestPath: "DBtoDBBatchSample"
         userId: "test"
@@ -258,12 +258,12 @@ list_maps:
 
 | LIST_MAP=testShots | | | | | | | | | | |
 |---|---|---|---|---|---|---|---|---|---|---|
-| no | description | expectedStatusCode | setUpTable | expectedTable | inFile | outFile | expectedLog | diConfig | requestPath | userId |
+| no | description | expectedStatusCode | setUpTable | expectedTable | setUpFile | expectedFile | expectedLog | diConfig | requestPath | userId |
 | 1 | 正しく更新されます | 0 | default | default | | | | nablarch/test/core/batch/BatchSample.xml | DBtoDBBatchSample | test |
 | 2 | 入力ファイルあり | 0 | | | case2 | case2 | | nablarch/test/core/batch/BatchSample.xml | FileToFileBatchSample | test |
 
 - `setUpTable`・`expectedTable` は groupId を指定します。`default` は groupId なし（デフォルトグループ）に相当します
-- `inFile`・`outFile` には `SETUP_FIXED` / `EXPECTED_FIXED` の groupId を指定します
+- `setUpFile`・`expectedFile` には `SETUP_FIXED` / `EXPECTED_FIXED` の groupId を指定します
 
 #### YAML
 
@@ -276,8 +276,8 @@ list_maps:
         expectedStatusCode: "0"
         setUpTable: "default"
         expectedTable: "default"
-        inFile: ""
-        outFile: ""
+        setUpFile: ""
+        expectedFile: ""
         expectedLog: ""
         diConfig: "nablarch/test/core/batch/BatchSample.xml"
         requestPath: "DBtoDBBatchSample"
@@ -287,8 +287,8 @@ list_maps:
         expectedStatusCode: "0"
         setUpTable: ""
         expectedTable: ""
-        inFile: "case2"
-        outFile: "case2"
+        setUpFile: "case2"
+        expectedFile: "case2"
         expectedLog: ""
         diConfig: "nablarch/test/core/batch/BatchSample.xml"
         requestPath: "FileToFileBatchSample"
