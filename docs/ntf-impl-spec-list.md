@@ -95,13 +95,13 @@
 | RS-12 | `messages`/`expected_request_*_messages` のエントリで `FW_HEADER` の `rows` が List of Lists でない場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-060（YamlMessageBuilder.extractFwHeader L131-170） |
 | RS-13 | メッセージング以外の DataType を `YamlSection#dataTypeToSectionKey` に渡した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-037（YamlSection.dataTypeToSectionKey L182-192） |
 | RS-14 | `setTestDataReader` 呼び出し時は `UnsupportedOperationException` をスロー（YAML 実装は TestDataReader を使わない） | 異常系 | 解説書に記載なし | S2-017（YamlTestDataParser.setTestDataReader L59-63） |
-| RS-15 | `getSetupTableData` のみ、ファイルが存在しない場合は空リストを返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-019（YamlTestDataParser.getSetupTableData L99）, S2-011（BasicTestDataParser.getSetupTableData L54） |
+| RS-15 | `getSetupTableData` のみ、ファイルが存在しない場合は空リストを返す（代替フロー） | 代替フロー | S1-132 | S2-019（YamlTestDataParser.getSetupTableData L99）, S2-011（BasicTestDataParser.getSetupTableData L54） |
 | RS-16 | `getMessage`/`getMessageWithoutCache` で対象 ID が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-056（YamlMessageBuilder.buildMessagePool L79-87）, S2-051（YamlFileBuilder.buildMessageFile L95-109）, S2-101（MessageParser.getResult L127-133） |
 | RS-17 | `getSendSyncMessage` で対象 groupId が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-057（YamlMessageBuilder.buildSendSyncMessageList L98-117） |
 | RS-18 | YAML ファイルの内容が空の場合（`yaml.load()` が null）は空 Map として扱う（代替フロー） | 代替フロー | 解説書に記載なし | S2-025（YamlLoader.load 空ファイル L62-64） |
 | RS-19 | `getListMap` で指定 ID のエントリが存在しない場合は空リストを返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-046（YamlTableDataBuilder.buildListMapRows L113-123） |
 | RS-20 | `messages` エントリで `FW_HEADER` フラグメントが見つからない場合は空 Map を FW ヘッダとして使用する（代替フロー） | 代替フロー | 解説書に記載なし | S2-061（YamlMessageBuilder.extractFwHeader L169） |
-| RS-21 | YAML キャッシュは LRU 最大8件。`clearCacheForTest()` でテスト間汚染防止のためキャッシュをクリアできる | 正常系 | 解説書に記載なし | S2-024（YamlLoader.load LRU 8件 L50）, S2-023（YamlTestDataParser.clearCacheForTest L170）, S2-029b（YamlLoader.clearCacheForTest L97） |
+| RS-21 | YAML キャッシュは LRU 最大8件。`clearCacheForTest()` でテスト間汚染防止のためキャッシュをクリアできる | 正常系 | S1-144 | S2-024（YamlLoader.load LRU 8件 L50）, S2-023（YamlTestDataParser.clearCacheForTest L170）, S2-029b（YamlLoader.clearCacheForTest L97）, S2-214（NablarchTestUtils.createLRUMap）, S2-223f（SendSyncSupport タイムスタンプ変更検知 L358-371） |
 | RS-22 | YAML ファイルに重複キーが存在する場合 `IllegalStateException` をスロー（SnakeYAML の `setAllowDuplicateKeys(false)` で検出） | 異常系 | 解説書に記載なし | S2-028（YamlLoader.load 重複キー L57） |
 
 ---
@@ -153,8 +153,8 @@
 | DR-04 | `defaultDirectives` DI: SystemRepository のこのキーで全ファイル共通デフォルトディレクティブを一括設定できる | 実装内部ロジック | S1-136 | S2-163（DataFile.prepareDefaultDirectives L68-81）, S2-038（YamlSection.applyDirectives L168-177） |
 | DR-05 | `fixedLengthDirectives` DI: 固定長ファイル専用デフォルトディレクティブ（`defaultDirectives` より後に上書き適用） | 実装内部ロジック | S1-136 | S2-177（FixedLengthFile デフォルトディレクティブキー L18） |
 | DR-06 | `variableLengthDirectives` DI: 可変長ファイル専用デフォルトディレクティブ | 実装内部ロジック | S1-136 | S2-183（VariableLengthFile デフォルトディレクティブキー L21） |
-| DR-07 | `file-type` ディレクティブはサブクラス（固定長=`"Fixed"`、可変長=`"Variable"`）が自動設定するため通常は記述不要 | 正常系 | 解説書に記載なし | S2-176（FixedLengthFile.getFileType L35）, S2-179（VariableLengthFile.getFileType L38） |
-| DR-08 | `record-length` ディレクティブはフィールド長合計から自動計算されるため通常は記述不要 | 正常系 | 解説書に記載なし | S2-178（FixedLengthFile.getRecordLength L109-113） |
+| DR-07 | `file-type` ディレクティブはサブクラス（固定長=`"Fixed"`、可変長=`"Variable"`）が自動設定するため通常は記述不要 | 正常系 | S1-108 | S2-176（FixedLengthFile.getFileType L35）, S2-179（VariableLengthFile.getFileType L38） |
+| DR-08 | `record-length` ディレクティブはフィールド長合計から自動計算されるため通常は記述不要 | 正常系 | S1-108 | S2-178（FixedLengthFile.getRecordLength L109-113） |
 | DR-09 | `field-separator`: 可変長ファイルのデフォルトは `","`. `"\\t"` 指定でタブ文字に変換。値は1文字のみ有効 | 正常系 | S1-082 | S2-180（VariableLengthFile デフォルト区切り L29）, S2-181（\\t→タブ変換 L67-69） |
 | DR-10 | `record-separator`: `NONE`/`CR`/`LF`/`CRLF` または任意リテラル文字列が有効 | 正常系 | 解説書に記載なし | S2-192（LineSeparator 列挙 L11-17）, S2-193（LineSeparator.evaluate L57-65） |
 | DR-11 | 無効なディレクティブキーを設定した場合 `IllegalArgumentException` をスロー（固定長・可変長ともに適用） | 異常系 | 解説書に記載なし | S2-157（DataFile.setDirective L297-299） |
@@ -168,7 +168,7 @@
 |---|---|---|---|---|
 | MS-01 | FW 制御ヘッダフィールドのデフォルト4種: `requestId` / `userId` / `resendFlag` / `resultCode`。`reader.fwHeaderfields` キーで変更可能 | 正常系 | S1-094 | S2-059（YamlMessageBuilder FW ヘッダフィールド L64-68）, S2-102（MessageParser.fwHeaderfields L107-110）, S2-103（MessageParser FW ヘッダ抽出 L83-91） |
 | MS-02 | `no` 列（先頭列、列番号0）はフレームワークが除去し、データとして保存されない。`errorMode` 値は列番号1に格納される | 正常系 | S1-099 | S2-104（MessageParser データ行 tail L73-77）, S2-109（SendSyncMessageParser no列 L134） |
-| MS-03 | `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は常に内部で `"default"` に置き換えられる | 正常系 | 解説書に記載なし | S2-101b（MessageParser.onReadingNames L60-65）, S2-052（YamlFileBuilder.buildMessageFile FW_HEADER スキップ L104） |
+| MS-03 | `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は常に内部で `"default"` に置き換えられる | 正常系 | S1-090, S1-091, S1-111 | S2-101b（MessageParser.onReadingNames L60-65）, S2-052（YamlFileBuilder.buildMessageFile FW_HEADER スキップ L104） |
 | MS-04 | `errorMode:timeout` および `errorMode:msgException` は `no` 列の次（列番号1）に配置する特殊値 | 正常系 | S1-102, S1-103, S1-110, S1-112, S1-113 | S2-105, S2-106（SendSyncMessageParser.ErrorMode L19/21）, S2-108（L123-130）, S2-187（MockMessages.removePadding L63-70） |
 | MS-05 | `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数（rows 合計）は一致が必須。不一致は `IllegalStateException` | 異常系 | S1-093 | 実装に記載なし（RequestTestingMessagingClient で発生） |
 | MS-06 | `GroupMessageParser`: 同一 groupId の複数メッセージプールを収集。セクション識別子 `=` 以降をリクエストIDとして使用 | 正常系 | S1-104 | S2-111, S2-112, S2-113（GroupMessageParser L52-65） |
@@ -188,11 +188,11 @@
 | 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
 |---|---|---|---|---|
 | TS-01 | `LIST_MAP=testShots` はテストケース定義の予約ID。1行1テストケースを表し、フレームワークが自動読み込みする。旧ID `testCases` は後方互換性のためフォールバックとして残存 | 正常系 | S1-085, S1-167 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L68/71） |
-| TS-02 | `LIST_MAP=requestParams` はHTTPリクエストパラメータの予約ID。testShots の行番号に対応する行が使用される | 正常系 | S1-086, S1-087 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L74） |
+| TS-02 | `LIST_MAP=requestParams` はHTTPリクエストパラメータの予約ID。testShots の行番号に対応する行が使用される | 正常系 | S1-086, S1-087 | S2-213g（TestSupport.splitWithComma カンマエスケープ L170-202） |
 | TS-03 | `LIST_MAP=responseResult` はHTTPレスポンス（リクエストスコープ）期待値の予約ID | 正常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L77） |
 | TS-04 | `LIST_MAP=params` はエンティティバリデーションテストの入力パラメータ定義の予約ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須 | 正常系 | S1-127 | 実装に記載なし（EntityTestSupport.java L56） |
 | TS-05 | `setUpDb` はDB共通初期化シートの予約シート名。テストメソッド開始時（または各ショット毎）に1度だけ `SETUP_TABLE` データを投入する | 正常系 | S1-088 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L65） |
-| TS-06 | testShots の `context` カラムに指定した名前の `LIST_MAP` から `REQUEST_ID`・`USER_ID` を取得する。`context` LIST_MAP は1行のみ有効 | 正常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L40/292-298/432） |
+| TS-06 | testShots の `context` カラムに指定した名前の `LIST_MAP` から `REQUEST_ID`・`USER_ID` を取得する。`context` LIST_MAP は1行のみ有効 | 正常系 | S1-073 | 実装に記載なし（TestCaseInfo.java L40/292-298/432） |
 | TS-07 | HTTPテストの testShots 必須カラム: `no`・`description`（または `case`）・`isValidToken`・`expectedStatusCode`・`forwardUri`・`context` | 正常系 | S1-085 | 実装に記載なし（TestCaseInfo.java） |
 | TS-08 | バッチ/スタンドアロンテストの testShots 必須カラム: `no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId` | 正常系 | S1-075 | 実装に記載なし（TestShot.java L384-387） |
 | TS-09 | バッチテストの testShots オプションカラム: `setUpFile`（入力ファイル準備）・`expectedFile`（出力ファイル検証）。空の場合はスキップ | 正常系 | S1-076 | 実装に記載なし（BatchRequestTestSupport.java L75-91） |
@@ -208,7 +208,7 @@
 | TS-19 | `sheetName` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-213j（TestSupport.getResourceName L391-394） |
 | TS-20 | `context` LIST_MAP の `REQUEST_ID` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L293-298） |
 | TS-21 | `context` LIST_MAP が1行でない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L432） |
-| TS-22 | `requestParams` の行数がテストケース番号より少ない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L346-349） |
+| TS-22 | `requestParams` の行数がテストケース番号より少ない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-213e（TestSupport.getMap データ行なし IllegalArgumentException L123-125） |
 | TS-23 | `testShots` の `no` カラムが空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L418-422） |
 | TS-24 | `description` カラムも `case` カラムも未定義の場合、`IllegalStateException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L404-405） |
 | TS-25 | `cookie` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L347-348） |
@@ -218,7 +218,9 @@
 | TS-29 | `EntityTestSupport` の `testShots` 件数と `params` 件数が一致しない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（EntityTestSupport.java L223-228） |
 | TS-30 | `EntityTestSupport` の testShots 必須カラム（`title`・`expectedMessageId1`・`propertyName1`）が欠けている場合、`IllegalArgumentException` をスロー | 異常系 | S1-126 | 実装に記載なし（EntityTestSupport.java L270-276） |
 | TS-31 | `DbAccessTestSupport.getParamMap()` でリストが2件以上の場合、`IllegalArgumentException` をスロー。0件の場合は空 Map を返す | 異常系/代替フロー | 解説書に記載なし | 実装に記載なし（DbAccessTestSupport.java L280-288） |
-| TS-32 | `DbAccessTestSupport.assertTableEquals(failIfNoDataFound=false)` でデータなしの場合、検証をスキップ | 異常系/代替フロー | S1-053, S1-054 | 実装に記載なし（DbAccessTestSupport.java L363-369） |
+| TS-32 | `DbAccessTestSupport.assertTableEquals(failIfNoDataFound=false)` でデータなしの場合、検証をスキップ | 異常系/代替フロー | 解説書に記載なし | 実装に記載なし（DbAccessTestSupport.java L363-369） |
+| TS-33 | `assertTableEquals` はレコードの順番が異なっても主キーで突合して比較する（順序不問） | 正常系 | S1-053 | 実装に記載なし（Assertion.java L249-270） |
+| TS-34 | `assertSqlResultSetEquals` はレコードの順序が異なる場合は等価でないとみなす（順序厳格） | 正常系 | S1-054 | 実装に記載なし（Assertion.java L116-120） |
 
 ---
 
@@ -233,10 +235,10 @@
 | IV | 16件（IV-01〜IV-16） |
 | DR | 12件（DR-01〜DR-12） |
 | MS | 14件（MS-01〜MS-14） |
-| TS | 32件（TS-01〜TS-32） |
-| **合計** | **143件** |
+| TS | 34件（TS-01〜TS-34） |
+| **合計** | **145件** |
 
-> **注**: S-3 で RS-21（YAMLキャッシュ LRU/clearCacheForTest）と RS-22（YAML重複キーエラー）を新規追加（S-2 実装分析で判明した YAML 固有仕様）。
+> **注**: S-3 で RS-21（YAMLキャッシュ LRU/clearCacheForTest）と RS-22（YAML重複キーエラー）を新規追加（S-2 実装分析で判明した YAML 固有仕様）。TS-33（assertTableEquals 順序不問）と TS-34（assertSqlResultSetEquals 順序厳格）を追加（S1-053/054 の正確なマッピング先として TS-32 から分離）。
 
 ---
 
@@ -245,7 +247,7 @@
 | 分類 | 件数 |
 |---|---|
 | 解説書・実装両方に存在 | 54件 |
-| 解説書のみに存在（S-1 only・実装に記載なし） | 17件 |
+| 解説書のみに存在（S-1 only・実装に記載なし） | 18件 |
 | 実装のみに存在（S-2 only・解説書に記載なし） | 53件 |
-| 解説書・実装ともに記載なし（テストサポート層等の設計レベル仕様） | 19件 |
-| **合計** | **143件** |
+| 解説書・実装ともに記載なし（テストサポート層等の設計レベル仕様） | 20件 |
+| **合計** | **145件** |
