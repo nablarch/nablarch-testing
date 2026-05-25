@@ -171,7 +171,7 @@ setup_files:
 | | X | X |
 | | value1 | value2 |
 
-- `field-separator` に `\t` を指定するとタブ文字になります
+- Excel セルには `\t`（バックスラッシュ + t の2文字）を入力します。フレームワークがタブ文字（0x09）に変換します
 - `record-separator` には `NONE` / `CR` / `LF` / `CRLF` または任意リテラル文字列が有効です
 - `field-separator` は1文字のみ有効です。2文字以上は `IllegalArgumentException` がスローされます
 

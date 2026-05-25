@@ -18,6 +18,7 @@
 8. [特殊値・インタープリタ](#8-特殊値インタープリタ)
 9. [ディレクティブ](#9-ディレクティブ)
 10. [ヘッダ・コメント・空エントリ](#10-ヘッダコメント空エントリ)
+11. [DB アサート](#11-db-アサート)
 
 ---
 
@@ -70,6 +71,12 @@ src/test/java/com/example/
 - `rows:` 内のテストデータ値（カラム値）は**必ずダブルクォートで囲む**。クォートなしだと SnakeYAML が数値・真偽値に型変換し、先頭ゼロ付き数値（`001` → `1`）や `true`/`false` で意図しない値になる
 - Java null を表す場合のみアンクォートの `null` で記述する。`"null"` とクォートすると文字列として格納される
 - `type:`, `record_type:`, `path:` 等のスキーマ構造値はクォート不要
+
+**YAML ファイルの読み込みルール**
+
+- YAML ファイルが存在しない、または読み込み・パースに失敗した場合は `IllegalStateException` がスローされます
+- YAML ファイルが空（0バイト）の場合は空データとして扱われます（エラーにはなりません）
+- YAML ファイルは LRU キャッシュ（最大8件）で管理されます。テスト間のキャッシュ汚染を防ぐには `YamlTestDataParser.clearCacheForTest()` を呼び出してください
 
 ---
 
@@ -133,10 +140,10 @@ setup_tables:
 | `SETUP_VARIABLE` | 可変長ファイルの入力データ | GroupData（全件収集） |
 | `EXPECTED_VARIABLE` | 可変長ファイルの期待値データ | GroupData（全件収集） |
 | `MESSAGE` | メッセージング電文データ | SingleData（先着一致） |
-| `EXPECTED_REQUEST_HEADER_MESSAGES` | 要求電文ヘッダの期待値 | GroupData または SingleData |
-| `EXPECTED_REQUEST_BODY_MESSAGES` | 要求電文ボディの期待値 | GroupData または SingleData |
-| `RESPONSE_HEADER_MESSAGES` | 応答電文ヘッダデータ | GroupData または SingleData |
-| `RESPONSE_BODY_MESSAGES` | 応答電文ボディデータ | GroupData または SingleData |
+| `EXPECTED_REQUEST_HEADER_MESSAGES` | 要求電文ヘッダの期待値 | GroupData（`testShots` の `expectedMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
+| `EXPECTED_REQUEST_BODY_MESSAGES` | 要求電文ボディの期待値 | GroupData（`testShots` の `expectedMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
+| `RESPONSE_HEADER_MESSAGES` | 応答電文ヘッダデータ | GroupData（`testShots` の `responseMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
+| `RESPONSE_BODY_MESSAGES` | 応答電文ボディデータ | GroupData（`testShots` の `responseMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
 | `DEFAULT` | フレームワーク内部用（通常使用しません） | — |
 
 ### 3.3 GroupData と SingleData
@@ -146,7 +153,7 @@ setup_tables:
 - **GroupData**: 同じグループに属するセクションをすべて収集します。ファイル全体を最後まで読み込みます（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）
 - **SingleData**: 最初に一致したセクション1件だけを取得して停止します（`LIST_MAP`、`MESSAGE` など）。同一 ID のエントリが複数ある場合、2件目以降は無視されます
 
-グループの指定方法（groupId）については [4.3 セクションのグループ化](#43-セクションのグループ化groupid) を参照してください。
+グループの指定方法（groupId）については [4.4 セクションのグループ化](#44-セクションのグループ化groupid) を参照してください。
 
 ---
 
@@ -163,11 +170,46 @@ setup_tables:
 
 → [処理方式別 testShots カラム一覧](ntf-spec-examples-testshots.md)
 
-### 4.2 DB 共通セットアップデータ
+### 4.2 testShots のカラム仕様
+
+testShots の各カラムは処理方式（ウェブアプリケーション / バッチ / メッセージング / エンティティバリデーション）によって異なります。詳細は [処理方式別 testShots カラム一覧](ntf-spec-examples-testshots.md) を参照してください。
+
+#### 全処理方式共通の注意事項
+
+- `no` カラムが空の場合は `IllegalArgumentException` がスローされます
+- `description` カラムと `case` カラムのどちらも未定義の場合は `IllegalStateException` がスローされます
+
+#### 主なカラムの動作
+
+| カラム名 | 対象処理方式 | 動作 |
+|---|---|---|
+| `no` | 全方式（必須） | テストケース番号 |
+| `description` / `case` | 全方式（いずれか必須） | テストケースの説明。`case` は旧称で後方互換として残存 |
+| `context` | HTTP（必須） | `REQUEST_ID`・`USER_ID` 等を含む `LIST_MAP` 名を指定する。1行のみ有効。`REQUEST_ID` が空の場合は `IllegalArgumentException` |
+| `setUpTable` | 全方式 | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT する。空の場合はスキップ |
+| `expectedTable` | 全方式 | この値と同じ groupId を持つ `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` セクションで DB を検証する。空の場合はスキップ |
+| `setUpFile` | バッチ系 | この値と同じ groupId を持つ `SETUP_FIXED` / `SETUP_VARIABLE` セクションを入力ファイルとして配置する。空の場合はスキップ |
+| `expectedFile` | バッチ系 | この値と同じ groupId を持つ `EXPECTED_FIXED` / `EXPECTED_VARIABLE` セクションで出力ファイルを検証する。空の場合はスキップ |
+| `expectedLog` | バッチ系 | 期待ログの `LIST_MAP` 名を指定する。空の場合はスキップ。指定した LIST_MAP が空の場合は `IllegalStateException` |
+| `requestParams` | HTTP | HTTP リクエストパラメータの予約 ID。対応する `LIST_MAP` からパラメータを読み込む。`LIST_MAP` の行数がテストケース数より少ない場合は `IllegalArgumentException` |
+| `responseResult` | HTTP | HTTP レスポンス（リクエストスコープ）期待値の予約 ID |
+| `params` | エンティティバリデーション | 入力パラメータ定義の予約 ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須（不一致で `IllegalArgumentException`） |
+| `title` | エンティティバリデーション（必須） | テストケースの説明 |
+| `expectedMessageId1` | エンティティバリデーション（必須） | 期待するバリデーションメッセージ ID |
+| `propertyName1` | エンティティバリデーション（必須） | バリデーション対象プロパティ名 |
+| `cookie` | HTTP | Cookie 値の `LIST_MAP` 名を指定する。空の場合は Cookie なし。指定した LIST_MAP が空の場合は `IllegalArgumentException` |
+| `queryParams` | HTTP | クエリパラメータの `LIST_MAP` 名を指定する。空の場合はパラメータなし。指定した LIST_MAP が空の場合は `IllegalArgumentException` |
+| `HTTP_METHOD` | HTTP | HTTP メソッド。空の場合は `"POST"` が使用される |
+| `expectedContentLength` | HTTP | 期待する Content-Length。空の場合は検証をスキップ |
+| `expectedContentType` | HTTP | 期待する Content-Type。空の場合は検証をスキップ |
+| `expectedContentFileName` | HTTP | 期待する Content-Disposition ファイル名。空の場合は検証をスキップ |
+| `args[0]`, `args[1]`, ... | バッチ | コマンドライン引数として渡される |
+
+### 4.3 DB 共通セットアップデータ
 
 `setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
 
-### 4.3 セクションのグループ化（groupId）
+### 4.4 セクションのグループ化（groupId）
 
 複数のテストケースで異なるセットアップデータや期待値を使い分けたい場合、セクションに **groupId** を付加してグループ化します。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を指定すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。
 
@@ -226,6 +268,10 @@ setup_tables:
         カラム3: "値3"
 ```
 
+**YAML 記述の必須キー**: `setup_tables` / `expected_tables` / `expected_complete_tables` の各エントリには `table` キーが必須です。省略すると `IllegalStateException` がスローされます。
+
+**ファイル不存在時の動作**: `getSetupTableData` はテストデータファイルが存在しない場合に空リストを返します（他の取得メソッドとは異なる動作です）。
+
 → [Excel / YAML Example](ntf-spec-examples-table.md#table-data)
 
 ### 5.2 SETUP_TABLE
@@ -234,6 +280,10 @@ DB への INSERT 用データです。
 
 - 各エントリのカラム名と値を記述します
 - **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース等）が INSERT されます
+
+**null 値・空文字の動作**:
+- カラム値に `null`（アンクォート）を指定すると Java null として格納されます（`getValue()` が `null` を返します）
+- 日付型カラムに空文字 `""` を指定すると `null` として扱われます
 
 ### 5.3 EXPECTED_TABLE
 
@@ -253,7 +303,7 @@ DB への INSERT 用データです。
 | 数値型 | `"0"` |
 | 固定長文字列型（CHAR, NCHAR） | 半角スペース × カラム長 |
 | 可変長文字列型（VARCHAR 等） | `" "`（半角スペース1文字） |
-| 日付型 | `"1970-01-01 09:00:00.0"`（JVM タイムゾーン依存） |
+| 日付型 | epoch 起点（JVM タイムゾーン依存。JST 環境では `"1970-01-01 09:00:00.0"`） |
 | バイナリ型 | 10バイトのゼロバイト列の HexString |
 | Boolean 型 | `"false"` |
 
@@ -269,6 +319,7 @@ DB への INSERT 用データです。
 
 - ID は完全一致で検索されます
 - 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます
+- 指定した ID のエントリが存在しない場合は `null` ではなく空リストが返されます
 
 主な予約IDは [4章](#4-テストケース定義) を参照してください。
 
@@ -281,6 +332,8 @@ DB への INSERT 用データです。
 ### 6.1 固定長・可変長の統合
 
 `SETUP_FIXED` と `SETUP_VARIABLE` は `getSetupFile()` でまとめて返されます。`EXPECTED_FIXED` / `EXPECTED_VARIABLE` も同様です。ファイル種別はセクション内の属性（固定長 or 可変長）で区別します。
+
+**YAML 記述の必須キー**: `setup_files` / `expected_files` の各エントリには `path` キーが必須です。省略すると `IllegalStateException` がスローされます。
 
 ### 6.2 ファイルセクションの構造
 
@@ -370,7 +423,7 @@ setup_files:
 
 ### 7.1 sendSyncTestData の配置規則
 
-テストデータファイルは `sendSyncTestData` ベースパス下にリクエスト ID と同名のファイルとして配置します。
+テストデータファイルは `sendSyncTestData/{requestId}/message` というパスに配置します（末尾の `message` は固定のパスセグメントです）。
 
 ```
 sendSyncTestData/{requestId}/message
@@ -439,7 +492,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | `QuotationTrimmer` | 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去 |
 | `DateTimeInterpreter` | `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 |
 | `LineSeparatorInterpreter` | `\\r` → CR（0x0D）、`\\n` → LF（0x0A）に変換 |
-| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換 |
+| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML では YAML ファイルが基準ディレクトリになる |
 | `BasicJapaneseCharacterInterpreter` | `${文字種,文字数}` 形式で文字列生成 |
 | `CompositeInterpreter` | 文字列中の `${...}` 要素を個別解釈して置換 |
 
@@ -567,5 +620,22 @@ Excel では、エントリ内の先頭以外の要素をコメントとして�
 ### 10.5 空エントリのスキップ
 
 全要素が null または空文字のエントリは読み飛ばされます。
+
+---
+
+## 11. DB アサート
+
+### 11.1 テーブルアサート（assertTableEquals）
+
+`assertTableEquals` は **主キーで突合**してレコードを比較します。レコードの**順序は問いません**。異なる順序でデータが返ってきてもアサートが成功します。
+
+### 11.2 SQL 結果セットアサート（assertSqlResultSetEquals）
+
+`assertSqlResultSetEquals` は**順序厳格**な比較を行います。期待値と実際の結果セットでレコードの順序が異なる場合は等価でないとみなします。
+
+### 11.3 DbAccessTestSupport のオプション
+
+- `assertTableEquals(failIfNoDataFound=false)` を使用すると、DB にデータが存在しない場合に検証をスキップします
+- `getParamMap()` でリストが0件の場合は空 Map を返します。2件以上の場合は `IllegalArgumentException` がスローされます
 
 ---
