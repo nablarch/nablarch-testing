@@ -2,7 +2,13 @@
 
 処理方式ごとの `testShots` カラムと記述例。どの処理方式でも `testShots` は `LIST_MAP` として記述します。
 
+- [ウェブアプリケーション](#web)
+- [バッチ処理](#batch)
+- [メッセージング](#messaging)
+
 ---
+
+<a name="web"></a>
 
 ## ウェブアプリケーション（HttpRequestTestSupport）
 
@@ -81,6 +87,8 @@ list_maps:
 
 ---
 
+<a name="batch"></a>
+
 ## バッチ処理（BatchRequestTestSupport）
 
 ### 必須カラム
@@ -139,6 +147,8 @@ list_maps:
 ```
 
 ---
+
+<a name="messaging"></a>
 
 ## メッセージング（MessagingRequestTestSupport）
 
