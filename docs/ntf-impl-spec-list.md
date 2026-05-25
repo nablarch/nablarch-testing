@@ -30,7 +30,7 @@
 | DT-01 | DataType 列挙値: `DEFAULT` / `SETUP_TABLE` / `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` / `LIST_MAP` / `SETUP_FIXED` / `EXPECTED_FIXED` / `SETUP_VARIABLE` / `EXPECTED_VARIABLE` / `MESSAGE` / `EXPECTED_REQUEST_HEADER_MESSAGES` / `EXPECTED_REQUEST_BODY_MESSAGES` / `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` の14種 | 正常系 | S1-005, S1-006, S1-007, S1-008, S1-009, S1-010, S1-011, S1-012, S1-013, S1-014, S1-015, S1-016, S1-017, S1-018 | S2-062（DataType 列挙型定義）, S2-063（getName） |
 | DT-02 | セクション識別行の書式: `<DataType名>[groupId]=<値>` (`=` が必須区切り文字。groupId は省略可) | 正常系 | S1-005 | S2-086（getDataType 前方一致）, S2-087（getTypeValue） |
 | DT-03 | DataType 判定は前方一致（`startsWith`）: セル値が DataType の name で始まれば合致 | 正常系 | 解説書に記載なし | S2-086（TestDataParsingTemplate.getDataType L230-242） |
-| DT-04 | GroupData系（SETUP_TABLE 等）は同一 groupId のセクションを全部収集し続ける（`shouldStopOnNextOne() = false`） | 正常系 | S1-063, S1-064, S1-065, S1-066 | S2-088, S2-089（GroupDataParsingTemplate） |
+| DT-04 | GroupData系（SETUP_TABLE 等）は同一 groupId のセクションを全部収集し続ける（`shouldStopOnNextOne() = false`） | 正常系 | S1-064, S1-066 | S2-088, S2-089（GroupDataParsingTemplate） |
 | DT-05 | SingleData系（LIST_MAP / MESSAGE 等）は最初に合致したセクション1つだけを取得して停止する（`shouldStopOnNextOne() = true`） | 正常系 | 解説書に記載なし | S2-090, S2-091（SingleDataParsingTemplate） |
 | DT-06 | groupId 書式: `[groupId]`（省略時は空文字扱い。要素数1時のみ有効・2以上は `IllegalArgumentException`）。バッチ固有: `group_id: "default"` はグループIDなし扱いと同等 | 正常系 | S1-063, S1-064, S1-065, S1-185 | S2-015（BasicTestDataParser.formatGroupId L253-266） |
 | DT-07 | `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` は GroupData（groupId 必須）経路と SingleData（id 一致）経路の2つが存在する | 正常系 | S1-097, S1-098 | S2-002, S2-004（BasicTestDataParser getSendSyncMessage L113）, S2-014 |
@@ -49,7 +49,7 @@
 | SS-05 | `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一ファイル内で混在させると後半データが読み込まれない（まとめて記述が必要） | 正常系 | S1-043, S1-044 | S2-080, S2-081（TestDataParsingTemplate.parse キャッシュ L117-128） |
 | SS-06 | `LIST_MAP=id` セクション: id は完全一致。同一ファイル内で同一 id の重複エントリは後続が黙って無視される（先着一致） | 正常系 | S1-062 | S2-090, S2-091（SingleDataParsingTemplate isTargetType L33-41）, S2-100（ListMapParser キャッシュ L34-53） |
 | SS-07 | `SETUP_FIXED` と `SETUP_VARIABLE` は `BasicTestDataParser#getSetupFile()` でまとめて返される。`EXPECTED_FIXED`/`EXPECTED_VARIABLE` も同様 | 正常系 | S1-010, S1-011, S1-012, S1-013 | S2-011b, S2-011c（BasicTestDataParser.getSetupFile/getExpectedFile L67-80） |
-| SS-08 | ファイルセクションの行順序: ディレクティブ行（0行以上） → フィールド名行 → データ型行 → [フィールド長行（固定長のみ）] → データ行 | 正常系 | S1-080, S1-081, S1-158 | S2-114（DataFileParser.Status 遷移 L38-48） |
+| SS-08 | ファイルセクションの行順序: ディレクティブ行（0行以上） → フィールド名行 → データ型行 → [フィールド長行（固定長のみ）] → データ行 | 正常系 | S1-080, S1-081 | S2-114（DataFileParser.Status 遷移 L38-48） |
 | SS-09 | 固定長フラグメント: `names` / `types` / `lengths` の3リストが同サイズで必須 | 正常系 | S1-080 | S2-165, S2-167, S2-168（DataFileFragment.setNames/setTypes/setLengths） |
 | SS-10 | 可変長フラグメント: `names` / `types` の2リストが同サイズで必須。`lengths` は不要（型行読み取り後に直接 READING_VALUES へ遷移） | 正常系 | S1-081 | S2-121（VariableLengthFileParser.onReadingTypes L42-46） |
 | SS-11 | 1ファイルセクション内に複数レコードレイアウトを連続記述可能: データ行の後ろに新たなフィールド名行を書くと新レコードレイアウトとして扱われる | 正常系 | S1-159 | S2-114（DataFileParser.Status 遷移）, S2-116（データ行判定 L204-210） |
@@ -60,7 +60,7 @@
 | SS-16 | 固定長ファイルは全フラグメントで同一レコード長が必須（違反時 `IllegalStateException`） | 異常系 | 解説書に記載なし | S2-178（FixedLengthFile.getRecordLength L109-113） |
 | SS-17 | `"-"` 長フィールド: 追加された全レコードの最大バイト長に自動拡張 | 正常系 | S1-107 | S2-169（DataFileFragment.setLengths "-" L291-293） |
 | SS-18 | `BasicDefaultValues` のデフォルト値: 数値型=`"0"`、CHAR/NCHAR=スペース×カラム長、VARCHAR等=半角スペース1文字、DATE=epoch（JVM タイムゾーン依存）、バイナリ=10バイトゼロHexString、Boolean=`"false"` | 正常系 | S1-050, S1-051, S1-052, S1-186, S1-187 | S2-146, S2-147, S2-148, S2-149, S2-150, S2-151, S2-151b, S2-152, S2-153（BasicDefaultValues 各デフォルト値）, S2-145（DefaultValues インターフェース） |
-| SS-19 | `testShots` は LIST_MAP の予約ID: バッチリクエスト単体テストでフレームワークがテストケース一覧として自動読み込みする | 正常系 | S1-075, S1-167 | S2-099（ListMapParser L30）, S2-100（LIST_MAP型パース） |
+| SS-19 | `testShots` は LIST_MAP の予約ID: バッチリクエスト単体テストでフレームワークがテストケース一覧として自動読み込みする | 正常系 | S1-167 | S2-099（ListMapParser L30）, S2-100（LIST_MAP型パース） |
 | SS-20 | ファイル系空行の動作差異: 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される | 正常系 | 解説書に記載なし | S2-170（DataFileFragment.addValue L105-109） |
 | SS-21 | `DataFileFragment` のフィールド名リストまたは型リストが null/空の場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-165（DataFileFragment.setNames L327-329） |
 | SS-22 | `DataFileFragment` のフィールド名リストと型/長さリストのサイズ不一致時 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-167, S2-168（DataFileFragment.setTypes/setLengths） |
@@ -114,9 +114,9 @@
 | HC-02 | マーカーカラムは DB 操作から除外される（データとして格納されない） | 正常系 | S1-024 | S2-094, S2-095, S2-096（HeaderLine.getEffectiveColumnNames/getMapExcludingMarkerColumns/excludeMarkerColumns）, S2-098b（TableDataParser.onReadLine） |
 | HC-03 | ヘッダ行末尾の空カラムは除去される（末尾カラム省略可） | 正常系 | 解説書に記載なし | S2-092b（HeaderLine コンストラクタ trimTailCopy L33） |
 | HC-04 | データ行がヘッダより短い場合、不足分は空文字 `""` で補完される | 正常系 | 解説書に記載なし | S2-096（HeaderLine.excludeMarkerColumns L75-85）, S2-170（DataFileFragment.addValue L105-109） |
-| HC-05 | コメント行: 先頭セルが `//` で始まる行は行ごとスキップ | 正常系 | S1-022 | S2-083（TestDataParsingTemplate.isCommentRow L278-280）, S2-074（PoiXlsReader.readLine コメント L124-127） |
+| HC-05 | コメント行: 先頭セルが `//` で始まる行は行ごとスキップ | 正常系 | S1-022 | S2-083（TestDataParsingTemplate.isCommentRow L278-280） |
 | HC-06 | 行内コメント: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て | 正常系 | S1-022 | S2-084（TestDataParsingTemplate.cutComment L299-308） |
-| HC-07 | 空行スキップ: 全要素が null または空文字の行は読み飛ばす | 正常系 | S1-071, S1-072 | S2-073（PoiXlsReader.readLine 空行スキップ L83-98） |
+| HC-07 | 空行スキップ: 全要素が null または空文字の行は読み飛ばす | 正常系 | S1-071, S1-072 | S2-110c（SendSyncMessageParser.onReadingValues 空行スキップ） |
 
 ---
 
@@ -129,7 +129,7 @@
 | IV-03 | `DateTimeInterpreter`: `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 | 正常系 | S1-034, S1-035, S1-036 | S2-196, S2-197, S2-198（DateTimeInterpreter L49-52） |
 | IV-04 | `LineSeparatorInterpreter`: `\\r` → CR(0x0D)（デフォルト）、`\\n` → LF(0x0A) に変換 | 正常系 | S1-040, S1-041 | S2-203, S2-204, S2-205, S2-206（LineSeparatorInterpreter L31-87） |
 | IV-05 | `BinaryFileInterpreter`: `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML ファイルが基準ディレクトリになる | 正常系 | S1-039 | S2-201（BinaryFileInterpreter L36-55）, S2-040c（YamlSection.addBinaryFileInterpreter L150） |
-| IV-06 | `BasicJapaneseCharacterInterpreter`: `${文字種,文字数}` 形式で文字列生成。書式完全一致のみ動作、文字種未知の場合は `IllegalArgumentException`（書式ミスはスルー） | 正常系 | S1-037, S1-038 | S2-207（BasicJapaneseCharacterInterpreter L24）, S2-207b |
+| IV-06 | `BasicJapaneseCharacterInterpreter`: `${文字種,文字数}` 形式で文字列生成。書式完全一致のみ動作、文字種未知の場合は `IllegalArgumentException`（書式ミスはスルー） | 正常系 | S1-037 | S2-207（BasicJapaneseCharacterInterpreter L24）, S2-207b |
 | IV-07 | `BasicJapaneseCharacterGenerator` 有効文字種14種: 半角英字/半角数字/半角記号/半角カナ/全角英字/全角数字/全角ひらがな/全角カタカナ/全角漢字/全角記号その他/中国語/サロゲートペア/改行/外字 | 正常系 | S1-038 | S2-208（BasicJapaneseCharacterInterpreter 文字種一覧 L41-56） |
 | IV-08 | `CompositeInterpreter`: 文字列中の `${...}` 要素を個別解釈して置換。`${...}` がない場合は次のインタープリタに委譲 | 正常系 | 解説書に記載なし | S2-210, S2-210b, S2-211（CompositeInterpreter L21-42） |
 | IV-09 | 日付型カラムの記述形式: `yyyyMMddHHmmssSSS`（17文字）、後置0埋め短縮形、JDBC タイムスタンプエスケープ形式（5文字目が `-`）等が有効 | 正常系 | S1-025, S1-026, S1-027, S1-028 | S2-132, S2-133, S2-134（TableData.toTimestamp L239-273） |
@@ -170,11 +170,11 @@
 | MS-02 | `no` 列（先頭列、列番号0）はフレームワークが除去し、データとして保存されない。`errorMode` 値は列番号1に格納される | 正常系 | S1-099 | S2-104（MessageParser データ行 tail L73-77）, S2-109（SendSyncMessageParser no列 L134） |
 | MS-03 | `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は常に内部で `"default"` に置き換えられる | 正常系 | S1-090, S1-091, S1-111 | S2-101b（MessageParser.onReadingNames L60-65）, S2-052（YamlFileBuilder.buildMessageFile FW_HEADER スキップ L104） |
 | MS-04 | `errorMode:timeout` および `errorMode:msgException` は `no` 列の次（列番号1）に配置する特殊値 | 正常系 | S1-102, S1-103, S1-110, S1-112, S1-113 | S2-105, S2-106（SendSyncMessageParser.ErrorMode L19/21）, S2-108（L123-130）, S2-187（MockMessages.removePadding L63-70） |
-| MS-05 | `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数（rows 合計）は一致が必須。不一致は `IllegalStateException` | 異常系 | S1-093 | 実装に記載なし（RequestTestingMessagingClient で発生） |
+| MS-05 | `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` の行数（rows 合計）は一致が必須。不一致は `IllegalStateException` | 異常系 | S1-174 | 実装に記載なし（RequestTestingMessagingClient で発生） |
 | MS-06 | `GroupMessageParser`: 同一 groupId の複数メッセージプールを収集。セクション識別子 `=` 以降をリクエストIDとして使用 | 正常系 | S1-104 | S2-111, S2-112, S2-113（GroupMessageParser L52-65） |
 | MS-07 | `sendSyncTestData/{requestId}/message` の配置規則: テストデータファイルは `sendSyncTestData` ベースパス下にリクエストIDと同名ファイルとして配置する | 正常系 | S1-105, S1-106 | S2-223b（SendSyncSupport テストデータ配置 L350-354） |
 | MS-08 | ステータスコード列がない場合はデフォルト `"200"` が使用される | 代替フロー | 解説書に記載なし | 実装に記載なし（RequestTestingMessagingClient 内部） |
-| MS-09 | マルチレコード送信時: ヘッダ行数とボディ行数を一致させる。N 回送信の場合は各 N 行記述 | 正常系 | S1-141, S1-142 | S2-058（YamlMessageBuilder.buildSendSyncMessageList requestId L109-112） |
+| MS-09 | マルチレコード送信時: ヘッダ行数とボディ行数を一致させる。N 回送信の場合は各 N 行記述 | 正常系 | S1-109, S1-115, S1-116, S1-140, S1-171 | S2-058（YamlMessageBuilder.buildSendSyncMessageList requestId L109-112） |
 | MS-10 | `no` 列と複数回送信: 同一リクエストIDで複数回送信する場合は `no` 値を変えて連続記述し、送信順序と `no` 値を一致させる | 正常系 | S1-173 | S2-109（SendSyncMessageParser.addValueWithId L134）, S2-223c（SendSyncSupport.getResponseMessageBinaryByRequestId L283-288） |
 | MS-11 | HTTP同期応答メッセージ送信処理のボディ行長制約: `response_body_messages` の各データ行の文字列長が同一であることが必要 | 正常系 | S1-117 | 実装に記載なし（MessagePool.Comparator による比較） |
 | MS-12 | フォーマット定義ファイルの命名規則: 応答電文は `{requestId}_RECEIVE`、要求電文は `{requestId}_SEND` | 正常系 | S1-100 | 実装に記載なし（RequestTestingMessagingClient L75-79） |
@@ -187,7 +187,7 @@
 
 | 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング |
 |---|---|---|---|---|
-| TS-01 | `LIST_MAP=testShots` はテストケース定義の予約ID。1行1テストケースを表し、フレームワークが自動読み込みする。旧ID `testCases` は後方互換性のためフォールバックとして残存 | 正常系 | S1-085, S1-167 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L68/71） |
+| TS-01 | `LIST_MAP=testShots` はテストケース定義の予約ID。1行1テストケースを表し、フレームワークが自動読み込みする。旧ID `testCases` は後方互換性のためフォールバックとして残存 | 正常系 | S1-121, S1-122, S1-167 | 実装に記載なし（AbstractHttpRequestTestTemplate.java L68/71） |
 | TS-02 | `LIST_MAP=requestParams` はHTTPリクエストパラメータの予約ID。testShots の行番号に対応する行が使用される | 正常系 | S1-086, S1-087 | S2-213g（TestSupport.splitWithComma カンマエスケープ L170-202） |
 | TS-03 | `LIST_MAP=responseResult` はHTTPレスポンス（リクエストスコープ）期待値の予約ID | 正常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L77） |
 | TS-04 | `LIST_MAP=params` はエンティティバリデーションテストの入力パラメータ定義の予約ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須 | 正常系 | S1-127 | 実装に記載なし（EntityTestSupport.java L56） |
