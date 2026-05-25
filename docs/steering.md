@@ -446,7 +446,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-1** 解説書からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-2** 既存実装からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | **完了**（ユーザーレビュー OK） | — |
-| **S-4** 仕様書（ntf-spec.md/examples）全件見直し | 未着手 | 着手可 |
+| **S-4** 仕様書（ntf-spec.md/examples）全件見直し | **担当者・QA 完了**（ユーザーレビュー待ち） | ユーザーレビュー依頼・OK 取得 |
 | **S-5** 仕様リストへの章番号マッピング → 仕様 FIX | 未着手 | S-4 ユーザーレビュー OK 後 |
 | **R-1** YamlTestDataParser 実装（TDD） | コード存在・要やり直し | Ph-2 完了後（仕様 FIX 後）に着手 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
@@ -455,14 +455,25 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-4 着手**（S-3 完了済み・仕様リスト 145件確定）:
-   - `docs/ntf-impl-spec-list.md`（145件）を読み、全仕様IDを把握する
-   - `docs/specs/ntf-spec.md`（現行）と `docs/specs/ntf-spec-examples-*.md`（現行）を読み、現状を把握する
-   - 仕様リスト 145件を起点に ntf-spec.md の各節との対応を確認し、記載漏れを全件追記する
-     - 書きっぷりは現行 ntf-spec.md・examples-*.md のスタイルを踏襲する
-     - 推測で書かない。キー名・挙動は実装コードまたは実物 `.xls` で確認すること
-   - 旧 `docs/specs/ntf-spec-examples.md` を削除する
-   - セルフチェック（`docs/checks/S-4.md`）→ QAエンジニアレビュー → ユーザーレビュー
+2. **S-4 ユーザーレビュー依頼**（担当者・QA 完了済み）:
+   - `docs/specs/ntf-spec.md`（更新後）と `docs/checks/S-4.md`（チェック結果）をユーザーに提示する
+   - S-4 の主な変更点（追記内容の概要）:
+     - 2章: YAML ファイルの読み込みルール（不存在時例外・空ファイル・LRU キャッシュ/clearCacheForTest）
+     - 4.2節（新設）: testShots の全カラム仕様（context/setUpTable/expectedTable/cookie/queryParams/HTTP_METHOD 等）
+     - 5.1節: `table` キー必須・getSetupTableData のファイル不存在時空リスト返却
+     - 5.2節: null 値・日付型空文字の動作
+     - 5.5節: 指定 ID 不存在時に null でなく空リストが返ること
+     - 6.1節: `path` キー必須
+     - 8.2節: BinaryFileInterpreter の基準ディレクトリ（YAML ファイル基準）
+     - 11章（新設）: DB アサート仕様（assertTableEquals 順序不問 / assertSqlResultSetEquals 順序厳格）
+     - DataType 表: EXPECTED_REQUEST_HEADER_MESSAGES 等の GroupData/SingleData 切り替え条件
+     - 旧 `docs/specs/ntf-spec-examples.md` を削除
+   - OK が出たら S-5 に着手する
+3. **S-4 ユーザーレビュー OK 後 → S-5 着手**:
+   - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-spec.md` の章番号を記載する
+   - 章番号が記載できない仕様ID（＝仕様書に対応する記述がない）を「記載漏れ」として一覧化する
+   - 記載漏れを全件 `ntf-spec.md` に追記し、S-4 のユーザーレビューを再取得する
+   - セルフチェック（`docs/checks/S-5.md`）→ QAエンジニアレビュー → ユーザーレビュー
 
 ### ソース一覧（確定・2026-05-25時点）
 
