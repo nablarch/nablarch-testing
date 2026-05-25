@@ -139,17 +139,10 @@ setup_tables:
 
 セクションの収集方式は DataType によって異なります。
 
-- **GroupData**: 同一 groupId を持つセクションをすべて収集します。ファイル全体を最後まで読み込みます（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）
-- **SingleData**: 最初に一致したセクション1件だけを取得して停止します（`LIST_MAP`、`MESSAGE` など）
+- **GroupData**: 同じグループに属するセクションをすべて収集します。ファイル全体を最後まで読み込みます（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）
+- **SingleData**: 最初に一致したセクション1件だけを取得して停止します（`LIST_MAP`、`MESSAGE` など）。同一 ID のエントリが複数ある場合、2件目以降は無視されます
 
-`LIST_MAP` で同一 ID のエントリが複数ある場合、2件目以降は黙って無視されます。
-
-### 3.4 RESPONSE_HEADER/BODY_MESSAGES の2経路
-
-`RESPONSE_HEADER_MESSAGES` と `RESPONSE_BODY_MESSAGES` は、以下の2つの経路でアクセスできます。
-
-- **経路A（GroupData）**: groupId を指定して収集する経路
-- **経路B（SingleData）**: ID で一致する経路
+グループの指定方法（groupId）については [4.5 セクションのグループ化](#45-セクションのグループ化groupid) を参照してください。
 
 ---
 

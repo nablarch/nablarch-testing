@@ -533,8 +533,9 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 - **R-1-refactor**: 全レビュー通過済み・ユーザーレビュー待ち（I-2/I-3 完了後に実施）
 - **ntf-spec.md**: レビュー中。今セッションの主な変更:
   - 「概要」節を廃止し旧1.1/1.2をトップ章（1章/2章）に昇格・全章番号繰り上げ（旧2〜9 → 3〜10章）
-  - 3.1節をセクション識別（DataType名+識別子の値）のみに絞り、groupId を 3.4節「セクションのグループ化」に分離
-  - 3.4節（旧2.4）で groupId の使い方・書き方・制約を一か所にまとめ
+  - 3.1節をセクション識別（DataType名+識別子の値）のみに絞り、groupId を 4.5節「セクションのグループ化」に移動
+  - 3章は3.1〜3.3の3節構成（セクション識別・DataType一覧・GroupData/SingleData）
+  - 4.5節でgroupIdの使い方・書き方・制約を一か所にまとめ（testShots との連携が自然に分かる位置）
   - testShots オプションカラム表で setUpTable 等の説明を「この値と同じ groupId を持つセクションが収集される」と具体化
   - groupId Example（ntf-spec-examples-overview.md §3）を testShots との連携が見える例に全面書き直し
   - 仕様書・Exampleともに形式依存（Excel書式の `=` 等）を概念説明から排除
