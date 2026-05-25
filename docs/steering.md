@@ -445,8 +445,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 |---|---|---|
 | **S-1** 解説書からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-2** 既存実装からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
-| **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | 未着手 | S-2 完了後 |
-| **S-4** 仕様書（ntf-spec.md/examples）全件見直し | 要見直し（S-3 後） | S-3 完了後に全件見直し → ユーザーレビュー |
+| **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | **完了**（ユーザーレビュー OK） | — |
+| **S-4** 仕様書（ntf-spec.md/examples）全件見直し | 未着手 | 着手可 |
 | **S-5** 仕様リストへの章番号マッピング → 仕様 FIX | 未着手 | S-4 ユーザーレビュー OK 後 |
 | **R-1** YamlTestDataParser 実装（TDD） | コード存在・要やり直し | Ph-2 完了後（仕様 FIX 後）に着手 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
@@ -455,12 +455,14 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-3 着手**（S-1・S-2 完了済み）:
-   - `docs/checks/S-1.md`（解説書抽出 188件）と `docs/checks/S-2.md`（実装抽出 300件超）を両方読む
-   - 既存 `ntf-impl-spec-list.md`（141件）を出発点として全件見直す
-   - S-1 のみ / S-2 のみ / 両方に存在する項目を明示しながら統合する
-   - 仕様ID採番: DT/SS/HC/IV/DR/MS/TS/RS カテゴリで統一
-   - セルフチェック → QAエンジニアレビュー → ユーザーレビュー
+2. **S-4 着手**（S-3 完了済み・仕様リスト 145件確定）:
+   - `docs/ntf-impl-spec-list.md`（145件）を読み、全仕様IDを把握する
+   - `docs/specs/ntf-spec.md`（現行）と `docs/specs/ntf-spec-examples-*.md`（現行）を読み、現状を把握する
+   - 仕様リスト 145件を起点に ntf-spec.md の各節との対応を確認し、記載漏れを全件追記する
+     - 書きっぷりは現行 ntf-spec.md・examples-*.md のスタイルを踏襲する
+     - 推測で書かない。キー名・挙動は実装コードまたは実物 `.xls` で確認すること
+   - 旧 `docs/specs/ntf-spec-examples.md` を削除する
+   - セルフチェック（`docs/checks/S-4.md`）→ QAエンジニアレビュー → ユーザーレビュー
 
 ### ソース一覧（確定・2026-05-25時点）
 
