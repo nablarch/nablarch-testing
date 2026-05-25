@@ -183,371 +183,237 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ## フェーズ概要
 
-| フェーズ | 目的 | 前提 | 完了条件 |
-|---|---|---|---|
-| Ph-1 | NTF仕様一覧 × 既存テスト × YAMLスキーマの三角マッピング確立 | なし | I-1/I-2/I-3 全完了。`ntf-impl-spec-list.md` の全仕様IDに「分類・スキーマ根拠またはスキーマ外理由・既存テストメソッドまたはテスト追加必要」が記載されること |
-| Ph-2 | YAMLリーダー実装（TDDベース） | Ph-1 完了 | 全仕様IDに対応するテストがグリーンであること |
-| Ph-3 | 既存Excelテストの YAML版並走と差分ゼロ確認 | Ph-2（R-1）完了 | ExcelリーダーとYAMLリーダーで全テストが同一結果でグリーンであること |
-| Ph-4 | 仕様カバレッジ根拠文書の作成 | Ph-2/Ph-3 完了 | 全仕様IDのカバー状況が「済」または「意図的除外（理由付き）」で埋まること |
+**根拠立ての原則**: 仕様を先に固め、実装はその後。「動く」ではなく「全仕様IDに対して根拠で説明できる」状態を目指す。
+
+| フェーズ | 目的 | 完了条件 |
+|---|---|---|
+| **Ph-1: 仕様リスト確定** | 解説書・既存実装の両方から仕様を全件抽出し、仕様リストを確定する | S-1/S-2/S-3 全完了。`ntf-impl-spec-list.md` の全仕様IDに「解説書マッピング・実装マッピング」が1対1で記載されること |
+| **Ph-2: 仕様書作成・FIX** | 仕様リストをベースに仕様書（ntf-spec.md）と記述例（examples）を作成し、仕様リストとの1対1対応を確認してユーザーレビューで FIX する | S-4/S-5 全完了。仕様書の全章・節が仕様リストIDと1対1対応していること。ユーザーレビュー OK 済み |
+| **Ph-3: TDD 実装** | 仕様 FIX 後に YAMLリーダーを TDD で実装する | R-1/R-1-refactor 全完了。全仕様IDに対応するテストがグリーンであること |
+| **Ph-4: テスト網羅確認** | 仕様リストとテストコードの1対1対応を確認し、網羅の根拠を完成させる | T-1 完了。全仕様IDに「対応テストメソッド」が記載され、未対応が0件であること |
+| **Ph-5: Excel 並走確認** | 既存Excelテストと YAML版の等価性を確認する | V-1 完了。Excel/YAML どちらでも同一結果でグリーンであること |
 
 ---
 
-## Ph-1: 三角マッピング確立
+**既存成果物の扱い**:
+- `ntf-coverage-doc-check.md`（解説書照合記録）→ S-1 の出発点として使う。ただし全件突き合わせで検証すること
+- `ntf-coverage-spec-mapping.md`（実装全行走査記録）→ S-2 の出発点として使う。ただし全件突き合わせで検証すること
+- `ntf-impl-spec-list.md`（既存仕様リスト）→ S-3 の出発点として使う。S-1/S-2 の結果で全件見直し
+- `ntf-spec.md` / `examples-*.md` → S-4/S-5 の出発点として使う。S-3 完了後に全件見直し
+- R-1/R-1-refactor のコード → Ph-3 やり直し時の参考。仕様 FIX 前に実装したため再検証が必要
 
-### I-1: 仕様ID一覧の確定と棚卸し
+---
 
-**目的**: 後続タスク全体の基準となる「NTFテストデータ仕様ID一覧」を確定する。正常系・異常系・代替フローの3観点で漏れなく抽出する。
+## Ph-1: 仕様リスト確定
+
+仕様の根拠は「解説書」と「既存実装」の2つ。両方を独立して全件抽出し、突き合わせて仕様リストを確定する。
+既存の調査成果物（`ntf-coverage-doc-check.md` 等）は出発点として使ってよいが、**既存があるからチェックを省略しない**。全件突き合わせで検証すること。
+
+### S-1: 解説書からの仕様抽出
+
+**目的**: 公式解説書（nablarch-document）の全対象ファイルを列挙し、仕様として読み取れる記述を全件抽出する。
 
 **前提**: なし
 
-**仕様抽出の方法（この手順を守ること）**:
-
-仕様IDは以下の3観点で分類・抽出する。観点の定義を先に決めてから抽出に入ること。
-
-- **正常系**: 正しい入力に対して期待されるデータ返却・ファイル構築等の主フロー
-- **異常系**: 不正入力・矛盾した状態に対して例外をスロー
-- **代替フロー**: 正常入力だが条件次第で主フローと異なる結果になる分岐（null 返却・空リスト返却・デフォルト値補完等）
-
-異常系・代替フローの網羅確認は自己申告ではなく以下の grep 証跡で担保する:
-
-1. 対象クラスとその継承ツリー（抽象クラスの全サブクラス含む）を確定し、ファイル一覧として記録する
-2. `grep -rn "throw "` で例外スロー箇所を全件抽出し、出力行を一覧として記録する
-3. `grep -rn "return null\|Collections.emptyList\|Collections.empty"` で代替フロー候補を全件抽出し、同様に記録する
-4. 各行を「仕様ID登録」または「除外（通常到達不能・スコープ外）」に分類する。除外する場合は根拠コードの行番号を付けて理由を明記する
-5. セルフチェックで「grep 行数 = 登録件数 + 除外件数」を数値で示す
-
 **作業内容**:
-- [x] `docs/ntf-coverage-spec-mapping.md` の仕様ID（DT-xx, SS-xx, RS-xx, HC-xx, IV-xx, DR-xx, MS-xx）を全件棚卸し（正常系）
-- [x] 調査で判明したギャップ E-1〜E-9 について、仕様IDとして昇格するか否かを判断し文書に明記する。昇格しない場合は除外理由を記載する
-- [x] 仕様を2つに分類する（テストデータ構造 / 実装内部ロジック）
-- [x] 上記の「仕様抽出の方法」に従い、異常系・代替フローを grep で全件抽出し分類する
-  - 対象: `BasicTestDataParser` / `DataFileParser` / `TableData` / `DataFileFragment` / `FixedLengthFileFragment` / `VariableLengthFileFragment` / `DataFile` / `FixedLengthFile` / `VariableLengthFile` / `MessageParser` / `SendSyncMessageParser` および継承ツリーの全クラス
-- [x] 抽出した異常系・代替フローを仕様IDとして `ntf-impl-spec-list.md` に追加する（正常系と同じ列構成で記載）
-- [x] 出力: `docs/ntf-impl-spec-list.md`（仕様ID / 概要 / 分類 の3列。正常系・異常系・代替フロー全件）
-- [x] セルフチェック（チェック結果: `docs/checks/I-1.md`）
-- [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [ ] ユーザーレビュー依頼・OK取得
-
-**完了条件**:
-- 全仕様IDに「正常系・異常系・代替フロー」のいずれかの分類が明記されていること
-- E-1〜E-9 について「仕様IDとして昇格」または「除外・理由付き」がそれぞれ記載されていること
-- `docs/checks/I-1.md` に grep 対象ファイル一覧・grep 行数・登録件数・除外件数が記載されており数値が一致すること
-- 除外した行はすべて根拠コードの行番号付きで理由が明記されていること
-
----
-
-### I-1b: 仕様ID 漏れの洗い出しと補完
-
-**目的**: I-1 の仕様 ID 抽出プロセスに構造的欠陥があったことが判明した。実装の全行走査（`ntf-coverage-spec-mapping.md`）・解説書照合（`ntf-coverage-doc-check.md`）はいずれも実施済みだが、「走査して『仕様あり』と記録した内容」が `ntf-impl-spec-list.md` の仕様 ID 説明文に1対1で反映されているかの確認が抜けていた。本タスクで全ソースと仕様 ID の1対1対応を確認し漏れを全件補完する。
-
-**前提**: I-1 完了済み
-
-**漏れた根本原因（再発防止のために明記する）**:
-
-- **走査と起票の対応確認が抜けていた**: 全行走査で「仕様あり」と記録した各行が、`ntf-impl-spec-list.md` の仕様 ID 説明文に個別に反映されているかの突き合わせをしなかった。「仕様 ID を作った」で完了とみなし、走査記録→仕様 ID 説明文の変換漏れが残った
-- **全ソースが対象**: この問題は実装走査（`ntf-coverage-spec-mapping.md`）・解説書照合（`ntf-coverage-doc-check.md`）・その他調査文書（`ntf-converter-comparison.md`・`ntf-yaml-impl-evaluation.md` 等）すべてに同様に存在する可能性がある
-
-**作業内容**:
-
-- [ ] **`ntf-coverage-spec-mapping.md` の全「仕様あり」行 → 仕様 ID 対応確認**: 全行走査で「仕様あり」と記録した各行について、対応する仕様 ID が `ntf-impl-spec-list.md` に存在し、その説明文にその内容が反映されているか1行ずつ確認する。対応がない行を「漏れ」として一覧化する
-- [ ] **`ntf-coverage-doc-check.md` の全行 → 仕様 ID 対応確認**: 「反映済み」「未反映」を問わず全行について、対応する仕様 ID が存在するか確認する。「examples.yaml に記載」「design.md に記載」のみで仕様 ID が存在しない行を「漏れ」として一覧化する
-- [ ] **その他調査文書の確認**: `ntf-converter-comparison.md`・`ntf-yaml-impl-evaluation.md`・`ntf-schema-accuracy-basis.md` についても同様に確認する
-- [ ] **漏れの集計**: 各ソース別の漏れ件数を `docs/checks/I-1b.md` に記録する（「走査記録 N 行中 M 件漏れ」の形式で数値で示す）
-- [ ] **漏れた内容を `ntf-impl-spec-list.md` に追補する**
-- [ ] セルフチェック（チェック結果: `docs/checks/I-1b.md`）
+- [ ] 解説書リポジトリ（nablarch-document）の対象ファイルを全件列挙し、ファイル一覧として記録する
+- [ ] 各ファイルを読み、仕様として読み取れる記述（機能・制約・動作・データ構造・エラー条件）を全件抽出する
+  - 既存 `ntf-coverage-doc-check.md` を出発点として使ってよいが、全行を再確認して追記・修正すること
+- [ ] 抽出した仕様をリスト形式で記録する（ファイル名・箇所・仕様概要）
+- [ ] セルフチェック（チェック結果: `docs/checks/S-1.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- `ntf-coverage-spec-mapping.md` の全「仕様あり」行、`ntf-coverage-doc-check.md` の全行、その他調査文書の各項目が `ntf-impl-spec-list.md` の仕様 ID と1対1で対応していること
-- 各ソース別の漏れ件数が数値で記録されており、追補後の総件数が I-1 完了時（141件）から変化していること（増加・変化なしいずれも根拠付きで記録）
-- 「走査記録に存在するが仕様 ID に反映されていない内容」が0件であること
+- 対象ファイル一覧が記録されており、列挙漏れがないこと（ファイル数を明記）
+- 各ファイルの全仕様記述が抽出されており、「このファイルのこの箇所は確認済み」と言える状態であること
+- 抽出結果が `docs/checks/S-1.md` に記録されていること
 
 ---
 
-### I-2: 仕様ID × 既存テストメソッドのマッピング
+### S-2: 既存実装からの仕様抽出
 
-**目的**: 既存テストのどのメソッドがどの仕様IDを検証しているかを明示し、カバーゼロの仕様IDを特定する。
+**目的**: 既存実装（src/main/java）の全対象ファイルを列挙し、仕様として読み取れる振る舞いを全件抽出する。
 
-**前提**: I-1 完了（正常系・異常系・代替フロー全件確定後）
+**前提**: なし（S-1 と並行して実施可能）
 
 **作業内容**:
-- [ ] I-1 の**全仕様ID**（正常系・異常系・代替フロー全件）に対して、以下のテストクラスのテストメソッドをマッピングする
-  - `BasicTestDataParserTest`
-  - `MessageParserTest`
-  - `FileSupportTest`
-  - `SendSyncMessageParserTest`
-  - `reader/` および `reader/yaml/` パッケージのその他テストクラス
-- [ ] マッピングされない仕様ID（カバーゼロ）を「テスト追加必要（理由付き）」として明記する
-- [ ] 出力: `docs/ntf-impl-spec-list.md` に列「既存テストメソッド or テスト追加必要」を追加
-- [ ] セルフチェック（チェック結果: `docs/checks/I-2.md`）
+- [ ] 対象クラスを全件列挙し、ファイル一覧として記録する
+  - 既存 `ntf-coverage-class-list.md` を出発点として使ってよいが、全件を再確認すること
+- [ ] 各クラスの公開メソッド・例外スロー（`grep "throw "`）・代替フロー（`grep "return null\|emptyList\|emptyMap"`）を全件抽出する
+  - 既存 `ntf-coverage-spec-mapping.md` を出発点として使ってよいが、全行を再確認して追記・修正すること
+- [ ] 抽出した振る舞いをリスト形式で記録する（クラス名・行番号・仕様概要・正常系/異常系/代替フロー分類）
+- [ ] セルフチェック（チェック結果: `docs/checks/S-2.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
-**完了条件**: I-1 の全仕様IDに「対応テストメソッド名」または「テスト追加必要（理由付き）」が記載されること。
+**完了条件**:
+- 対象クラス一覧が記録されており、列挙漏れがないこと（クラス数・ファイル数を明記）
+- `throw` / `return null` / `return emptyList` 等の全行が抽出されており、「登録件数 + 除外件数 = grep 行数」が数値で一致すること
+- 除外した行はすべて根拠（行番号・理由）付きで記録されていること
 
 ---
 
-### I-3: 仕様ID × YAMLスキーマ記述のマッピング
+### S-3: 仕様リスト作成（S-1 × S-2 の突き合わせ）
 
-**目的**: YAMLスキーマのどのキー/定義が、どの仕様IDを表現しているかを明示する。
+**目的**: S-1（解説書）と S-2（実装）の抽出結果を突き合わせ、全仕様を網羅した仕様リスト（`ntf-impl-spec-list.md`）を確定する。
 
-**前提**: I-1 完了（正常系・異常系・代替フロー全件確定後）
+**前提**: S-1・S-2 完了
 
 **作業内容**:
-- [ ] I-1 の**全仕様ID**（分類問わず全件）に対して以下のいずれかを記載する
-  - 「テストデータ構造」分類: `ntf-testdata-yaml-schema.json` / `ntf-testdata-yaml-design.md` のどのセクション/キーが対応するかを記載
-  - 「実装内部ロジック」分類: 「スキーマ外・パーサ実装で担保」と明記
-  - スキーマで表現できない仕様: 「スキーマ外仕様・テストで担保する方針」と明記し、後続 R-3 でテスト作成することを記載
-- [ ] 出力: `docs/ntf-impl-spec-list.md` に列「スキーマ根拠 or スキーマ外理由」を追加
-- [ ] セルフチェック（チェック結果: `docs/checks/I-3.md`）
+- [ ] S-1 の全抽出項目と S-2 の全抽出項目を突き合わせ、統合した仕様リストを作成する
+  - 既存 `ntf-impl-spec-list.md` を出発点として使ってよいが、S-1/S-2 の結果で全件見直すこと
+  - S-1 のみに存在する項目・S-2 のみに存在する項目・両方に存在する項目を明示する
+- [ ] 各仕様IDに以下を記載する: 仕様ID / 概要 / 分類（正常系・異常系・代替フロー）/ 解説書マッピング / 実装マッピング
+- [ ] 仕様IDの採番・命名規則を統一する（DT/SS/HC/IV/DR/MS/TS/RS カテゴリ）
+- [ ] セルフチェック（チェック結果: `docs/checks/S-3.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
-**完了条件**: I-1 の全仕様IDに対して「スキーマ根拠箇所」または「スキーマ外理由」が記載されること（分類を問わず全件）。
+**完了条件**:
+- 全仕様IDに「解説書マッピング（該当箇所 or 解説書に記載なし）」と「実装マッピング（クラス名・行番号 or 実装に記載なし）」が記載されていること
+- S-1 の全抽出項目・S-2 の全抽出項目が仕様IDに1対1で対応しており、対応がないものが0件であること（除外する場合は根拠付きで明記）
+- 仕様IDの総件数が記録されていること
 
 ---
 
-## Ph-2: YAMLパーサー実装（TDDベース）
+## Ph-2: 仕様書作成・FIX
 
-**前提**: Ph-1（I-1/I-2/I-3）全完了
+仕様リスト（S-3）が確定したら、それをベースに仕様書と記述例を作成・整備する。
+仕様書と仕様リストの1対1対応を確認してユーザーレビューで FIX する。
 
-### 実装方針（確定）
+### S-4: 仕様書（ntf-spec.md / examples）の作成・整備
 
-```
-YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / DataFile / MessagePool
-```
+**目的**: S-3 の仕様リストをベースに `ntf-spec.md` と `ntf-spec-examples-*.md` を作成・整備する。
 
-- `BasicTestDataParser` を継承し、getter を YAML から直接オーバーライドする
-- `List<List<String>>` 中間フォーマットは使わない
-- 公開API（`TestDataParser` インタフェース・`SendSyncSupport` 等）の変更は不要
-- SnakeYAML は `pom.xml` に追加する（ADR-001/002 参照）
+**前提**: S-3 完了
 
-**根拠**:
-- `TestDataParser` インタフェースは `@Published(tag="architect")` のため変更不可
-- `SendSyncSupport` / `RequestTestingSendSyncSupport` が `BasicTestDataParser` 型に直接依存しているため、`implements TestDataParser` の独立実装への差し替えは不可（キャスト失敗）
-- `BasicTestDataParser` は `public class`・`final` なし → 継承可能
-- `extends BasicTestDataParser` のサブクラスであれば既存のキャストがすべて通る
+**作業内容**:
+- [ ] S-3 の全仕様IDを `ntf-spec.md` の章・節構成に対応させる（どの仕様IDがどの節に記載されるかを決める）
+  - 既存 `ntf-spec.md` / `ntf-spec-examples-*.md` を出発点として使ってよいが、S-3 の全仕様IDを起点に全件見直すこと
+- [ ] S-3 に存在するが `ntf-spec.md` に記載がない仕様IDを全件追記する
+- [ ] `ntf-spec-examples-*.md` の記述例が仕様IDと対応していることを確認する
+  - 推測で書かない。キー名・カラム名・挙動は実装コードまたは実物 `.xls` で確認すること
+- [ ] 旧 `ntf-spec-examples.md` を削除する
+- [ ] セルフチェック（チェック結果: `docs/checks/S-4.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
+
+**完了条件**:
+- S-3 の全仕様IDに対応する記述が `ntf-spec.md` の章・節に存在すること
+- 旧 `ntf-spec-examples.md` が削除されていること
+- ユーザーレビュー OK が取得されていること
 
 ---
+
+### S-5: 仕様リストへの仕様書章番号マッピングと整合確認
+
+**目的**: `ntf-impl-spec-list.md` の各仕様IDに `ntf-spec.md` の章番号をマッピングし、仕様書に記載漏れがないことを確認する。
+
+**前提**: S-4 完了（仕様書 FIX 後）
+
+**作業内容**:
+- [ ] `ntf-impl-spec-list.md` の全仕様IDに `ntf-spec.md` の章番号（例: 3.2節）を記載する
+- [ ] 章番号が記載できない仕様ID（＝仕様書に対応する記述がない）を「記載漏れ」として一覧化する
+- [ ] 記載漏れを全件 `ntf-spec.md` に追記し、S-4 のユーザーレビューを再取得する
+- [ ] セルフチェック（チェック結果: `docs/checks/S-5.md`）
+- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
+- [ ] ユーザーレビュー依頼・OK取得
+
+**完了条件**:
+- 全仕様IDに `ntf-spec.md` の章番号が記載されており、「章番号なし」が0件であること
+- ユーザーレビュー OK が取得されていること（ここで仕様 FIX）
+
+---
+
+## Ph-3: TDD 実装
+
+**前提**: Ph-2（S-5）完了。仕様 FIX 後に着手すること。
 
 ### R-1: `YamlTestDataParser` 実装（`BasicTestDataParser` 継承）
 
-**目的**: `BasicTestDataParser` を継承し、getter を YAML から直接オーバーライドする `YamlTestDataParser` を TDD で実装する。
+**目的**: 確定した仕様リストをベースに `YamlTestDataParser` を TDD で実装する。
 
-**前提**: Ph-1 完了
+**前提**: Ph-2 完了（仕様 FIX 済み）
 
-**作業内容**:
-- [x] TDD: `YamlTestDataParserTest` を先に書いてから実装する（仕様ID RS-01〜RS-08 を網羅）
-- [x] `YamlTestDataParser extends BasicTestDataParser` を実装する
-  - `getSetupTableData` / `getExpectedTableData` / `getListMap` / `getSetupFile` / `getExpectedFile` / `getMessage` / `getMessageWithoutCache` / `getSendSyncMessage` / `isResourceExisting` を `@Override`
-  - `setTestDataReader` は `UnsupportedOperationException` で実装（YAML実装は `TestDataReader` を使わない）
-  - `setDbInfo` / `setInterpreters` / `setDefaultValues` は `super` に委譲
-  - SnakeYAML によるパース・キャッシュは `YamlTestDataParser` 内に閉じ込める
-  - interpreter チェーン（`setInterpreters` で注入）を各 getter 内で値ごとに適用する
-- [x] `pom.xml` に SnakeYAML 依存を追加する
-- [x] **テスト実行・グリーン確認**
-- [x] セルフチェック（チェック結果: `docs/checks/R-1.md`）
-- [x] QAエンジニアレビュー（サブエージェントで実施）
-- [x] Javaエキスパートレビュー（サブエージェントで実施）
-- [x] ソフトウエアエンジニアレビュー（サブエージェントで実施）
-- [ ] ユーザーレビュー依頼・OK取得
-
-**完了条件**:
-- `YamlTestDataParserTest` が全グリーン（RS-01〜RS-08 全網羅）
-- `setTestDataReader` 呼び出し時に `UnsupportedOperationException` がスローされること
-- DI 設定で `class="nablarch.test.core.reader.YamlTestDataParser"` に差し替えたとき `SendSyncSupport` / `RequestTestingSendSyncSupport` のキャストが通ること
-- 実装コードが既存コードのスタイルに準拠していること（Javadoc・`@Override`・型引数等）
-- テストコードに GWT（Given/When/Then）コメントと仕様ID（RS-xx）参照が記載されていること
-
----
-
-### R-1-refactor: `YamlTestDataParser` のクラス分割リファクタリング（TDDベース）
-
-**目的**: 828行のファットクラスを責務ごとに分割し、保守性・可読性・テスト網羅性の判断容易性を向上させる。
-
-**前提**: R-1 完了（ユーザーレビュー OK 取得後に着手）
-
-**設計方針**:
-
+**実装方針（確定）**:
 ```
-nablarch.test.core.reader
-  └─ YamlTestDataParser（公開API・委譲のみ）
-
-nablarch.test.core.reader.yaml（パッケージプライベート）
-  ├─ YamlLoader          … YAMLロード・キャッシュ管理
-  ├─ YamlTableDataBuilder … TableData 構築（setup_tables / expected_tables）
-  ├─ YamlFileBuilder     … DataFile / Fragment 構築（setup_files / expected_files）
-  ├─ YamlMessageBuilder  … MessagePool 構築（messages / *_messages）
-  └─ YamlSection         … セクションキー定数・共通ヘルパー（getList / castMap 等）
+YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / DataFile / MessagePool
 ```
-
-- `YamlTestDataParser` は `reader` パッケージに残し `BasicTestDataParser` 継承を維持する（キャスト互換性のため）
-- 各ビルダーはパッケージプライベート（外部APIは変えない）
-- `util/interpreter/`・`util/generator/` と同様の慣例でサブパッケージに閉じ込める
-
-**作業内容**:
-- [x] TDD: 各ビルダークラスのテストを先に書いてから実装する
-  - `YamlLoaderTest` → `YamlLoader` 実装
-  - `YamlTableDataBuilderTest` → `YamlTableDataBuilder` 実装
-  - `YamlFileBuilderTest` → `YamlFileBuilder` 実装
-  - `YamlMessageBuilderTest` → `YamlMessageBuilder` 実装
-- [x] `YamlTestDataParser` を各ビルダーへの委譲のみに書き換える
-- [x] `YamlTestDataParserTest`（既存37テスト）が引き続き全グリーンであることを確認する
-- [x] セルフチェック（チェック結果: `docs/checks/R-1-refactor.md`）
-- [x] QAエンジニアレビュー（サブエージェントで実施）
-- [x] Javaエキスパートレビュー（サブエージェントで実施）
-- [x] ソフトウエアエンジニアレビュー（サブエージェントで実施）
-- [ ] ユーザーレビュー依頼・OK取得
-
-**完了条件**:
-- `YamlTestDataParser` の行数が 200行以内であること（委譲コードのみ）
-- 各ビルダークラスが単一責務であること（1クラスの行数が 200行以内を目安）
-- `YamlTestDataParserTest` の既存37テストが全グリーンであること
-- 各ビルダーの単体テストが存在し、仕様IDとの対応が明確であること
-- 既存の公開API（`getSetupTableData` 等）のシグネチャが変わっていないこと
-
----
-
-### C-1: JaCoCo カバレッジレポート設定
-
-**目的**: `mvn test` 実行時に行・分岐カバレッジの HTML レポートが生成されるようにし、担当者がテストの網羅性をローカルで確認できるようにする。
-
-**前提**: なし（他タスクと独立して実施可能）
+- `BasicTestDataParser` を継承し、getter を YAML から直接オーバーライドする
+- `TestDataParser` インタフェースは `@Published(tag="architect")` のため変更不可
+- `SendSyncSupport` / `RequestTestingSendSyncSupport` が `BasicTestDataParser` 型に直接依存しているため継承が必要
+- 既存の R-1/R-1-refactor コードは参考にしてよいが、仕様 FIX 後の仕様IDに対して全件検証すること
 
 **作業内容**:
-- [ ] `pom.xml` に JaCoCo Maven プラグインを追加する（`prepare-agent` + `report` ゴール）
-- [ ] `mvn test` 実行後に `target/site/jacoco/index.html` が生成されることを確認する
-- [ ] `YamlTestDataParser` の行カバレッジ・分岐カバレッジを確認し、未達箇所を記録する
-- [ ] セルフチェック（チェック結果: `docs/checks/C-1.md`）
+- [ ] 仕様リストの全仕様IDに対してテストケースを先に設計する（TDD）
+- [ ] `YamlTestDataParserTest` を作成し、全仕様IDをカバーするテストを記述する
+- [ ] `YamlTestDataParser extends BasicTestDataParser` を実装する
+- [ ] クラス分割（yaml サブパッケージ: `YamlLoader` / `YamlTableDataBuilder` / `YamlFileBuilder` / `YamlMessageBuilder` / `YamlSection`）を行う
+- [ ] `pom.xml` に SnakeYAML 依存が追加されていることを確認する（既存）
+- [ ] テスト実行・全グリーン確認
+- [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
 - [ ] Javaエキスパートレビュー（サブエージェントで実施）
 - [ ] ソフトウエアエンジニアレビュー（サブエージェントで実施）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- `mvn test` 実行後に `target/site/jacoco/index.html` が生成されること
-- `YamlTestDataParser` の行カバレッジ・分岐カバレッジが HTML レポートで確認できること
-- カバレッジ未達の行・分岐が存在する場合、その箇所と理由が `docs/checks/C-1.md` に記録されていること
+- 全テストが全グリーンであること
+- `setTestDataReader` 呼び出し時に `UnsupportedOperationException` がスローされること
+- 実装コードが既存コードのスタイルに準拠していること（Javadoc・`@Override`・型引数等）
+- テストコードに GWT（Given/When/Then）コメントと仕様ID参照が記載されていること
 
 ---
 
-### R-2: 既存テスト（BasicTestDataParserTest）のYAML版作成
+## Ph-4: テスト網羅確認
 
-**目的**: 既存の Excel ベーステストと同一結果を `YamlTestDataParser` で再現し、「Excel と YAML が等価である」ことを証明する。
+**前提**: Ph-3（R-1）完了
 
-**前提**: R-1 完了
+### T-1: 仕様リスト × テストコードのマッピングと網羅確認
+
+**目的**: 仕様リストの全仕様IDとテストコードのテストメソッドを1対1でマッピングし、テスト漏れがないことを根拠で示す。
+
+**前提**: Ph-3 完了
 
 **作業内容**:
-- [ ] `BasicTestDataParserTest.xls` の内容を YAML に変換し `BasicTestDataParserTest.yaml` として配置
-- [ ] `BasicTestDataParserTestYaml` を作成し、`YamlTestDataParser` で同一アサーションを実行
-- [ ] 既存16テストメソッド全件をYAML版で実行し、差異がある場合は原因を文書に明記する
-- [ ] セルフチェック（チェック結果: `docs/checks/R-2.md`）
-- [ ] QAエンジニアレビュー（サブエージェントで実施）
-- [ ] ユーザーレビュー依頼・OK取得
-
-**完了条件**:
-- `BasicTestDataParserTestYaml` の16メソッド全グリーン
-- `BasicTestDataParserTest`（Excel版）と `BasicTestDataParserTestYaml`（YAML版）の対応するメソッドが、同一入力データ・同一アサーション内容でグリーンになること
-- 差異が生じた場合は原因を文書に明記すること（差異の存在自体は許容するが、隠蔽は不可）
-
----
-
-### R-3: カバーゼロ仕様の新規テスト作成
-
-**目的**: I-2 で「テスト追加必要」とされた27件の仕様IDに対してテストを作成し、カバーゼロを解消する。
-
-**前提**: R-1 完了、I-2/I-3 完了
-
-**テスト追加対象一覧**（I-2 確定・27件）:
-
-| 仕様ID | 概要 | テスト追加方針 |
-|---|---|---|
-| DT-03 | DataType 前方一致（`startsWith`）判定 | `DataType#getType()` の前方一致動作を直接検証するテストを追加（`DataTypeTest` または新クラス） |
-| DT-07 | RESPONSE_HEADER/BODY_MESSAGES の GroupData 経路 | `GroupMessageParser` 経由の GroupData 取得をテスト |
-| SS-04 | SETUP_TABLE 主キーカラム省略不可 | 主キー省略時に INSERT が失敗または意図しないデフォルト値になることを検証 |
-| SS-05 | EXPECTED_TABLE と EXPECTED_COMPLETE_TABLE の混在 | 同一ファイル内で混在させた場合に後半データが欠落することを検証 |
-| SS-11 | 複数レコードレイアウト連続記述（旧D-14） | `DataFileParser` に複数 record fragment を持つ YAML テストデータでシナリオテストを追加 |
-| SS-19 | `testShots` LIST_MAP 予約ID | バッチリクエスト単体テストで `testShots` が自動読み込みされることを検証 |
-| HC-06 | 行内コメント（先頭以外の `//` 以降切り捨て） | 行内コメントが正しく切り捨てられることを `TestDataParsingTemplate` で検証 |
-| HC-07 | 空行スキップ | 全要素 null/空文字の行がスキップされることを検証 |
-| IV-03 | `DateTimeInterpreter` 完全一致制約 | `${systemTime}` 等の完全一致のみ変換され部分文字列は変換されないことを検証（独立テストクラス作成） |
-| IV-09 | 日付型カラム記述形式の境界値 | `yyyyMMddHHmmssSSS`（17文字）・後置0埋め・JDBC エスケープ形式の各パターンを `TableData` で検証 |
-| IV-10 | Timestamp 型期待値の末尾 `.0` 必須 | `.0` がない期待値と `.0` がある期待値の比較挙動を検証 |
-| IV-11 | バイナリデータの `0x` プレフィクス記法 | `0x` 付き16進数と `0x` なし文字列の扱いの違いを検証 |
-| IV-15 | X9/SX9 型フィールドの実値記述 | パディング文字・符号を含む実値で固定長フィールドが正しく読み書きされることを検証 |
-| DR-03 | 可変長ディレクティブキー制限 | 無効なディレクティブキーで例外が発生することを `VariableLengthFileParser` で検証 |
-| DR-04 | `defaultDirectives` DI（旧E-6） | SystemRepository の `defaultDirectives` キーで設定したディレクティブが YAML テストデータに適用されることを検証。XML設定の正しさはテスト対象外と明記 |
-| DR-05 | `fixedLengthDirectives` DI | 固定長専用デフォルトディレクティブの YAML 適用を検証 |
-| DR-06 | `variableLengthDirectives` DI | 可変長専用デフォルトディレクティブの YAML 適用を検証 |
-| MS-04 | `errorMode:timeout`/`msgException` 特殊値 | `SendSyncMessageParser` に対して YAML テストデータで errorMode 特殊値のパースを検証 |
-| MS-05 | HEADER/BODY MESSAGES 行数一致必須（旧E-7） | 行数不一致時に `IllegalStateException` が発生することを YAML テストデータで検証 |
-| MS-06 | `GroupMessageParser` 複数メッセージ収集 | 同一 groupId の複数メッセージプール収集を YAML テストデータで検証 |
-| MS-07 | `sendSyncTestData` 配置規則（旧E-5） | `sendSyncTestData/{requestId}/message` の配置規則が YAML でも機能することを検証 |
-| MS-08 | ステータスコード列なし時のデフォルト "200" | ステータスコード列が存在しない YAML テストデータで "200" が使われることを検証 |
-| MS-09 | マルチレコード送信の行数一致 | N回送信で各 N 行記述する規約を YAML テストデータで検証 |
-| MS-10 | no 値による複数回送信順序 | `no` 値を変えた連続記述で複数回送信が正しく動作することを検証 |
-| MS-11 | HTTP同期応答ボディ行長制約 | `response_body_messages` の各行長が同一であることを YAML テストデータで検証 |
-| MS-12 | フォーマット定義ファイル命名規則 | `{requestId}_RECEIVE` / `{requestId}_SEND` 命名で正しく解決されることを検証 |
-| MS-13 | `messaging.assertAsMapFileType` キー切り替え | SystemRepository 設定値に応じてアサート方式が切り替わることを検証 |
-
-**作業手順**:
-- [ ] 上記27件を対象テストクラス別に整理し、既存テストクラスへの追加か新規クラス作成かを決定する
-- [ ] 各テストを YAML テストデータを使う形式で実装する（R-1 の `YamlTestDataParser` を使う）
-- [ ] SS-18（DATE型TZハザード・旧E-8）: `EXPECTED_COMPLETE_TABLE` の DATE カラムデフォルト値が CI 環境 TZ で動作することを確認。TZ依存が解消できない場合は制約事項として SS-18 の注記と D-1 に明記する
-- [ ] セルフチェック（チェック結果: `docs/checks/R-3.md`）
+- [ ] `ntf-impl-spec-list.md` の全仕様IDに対して、対応するテストクラス・テストメソッドを記載する
+- [ ] 対応するテストメソッドが存在しない仕様ID（テスト漏れ）を一覧化する
+- [ ] テスト漏れを全件解消する（テスト追加）
+- [ ] 解消後に再度全仕様IDとテストメソッドの1対1対応を確認する
+- [ ] セルフチェック（チェック結果: `docs/checks/T-1.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- 上記27件すべてに対応するテストが全グリーン
-- SS-18（TZハザード）について「TZ依存解消済み」または「制約事項として D-1 に記載済み」のいずれかが確認できること
+- 全仕様IDに「対応テストクラス名・テストメソッド名」が記載されていること
+- 「テスト漏れ」が0件であること
+- テスト追加後に全テストが全グリーンであること
 
 ---
 
-## Ph-3: 既存ExcelテストのYAML版並走と差分ゼロ確認
+## Ph-5: Excel 並走確認
 
-**前提**: R-1（YamlTestDataParser）完了
+**前提**: Ph-3（R-1）完了
 
-### V-1: 全Excelテストファイルの YAML変換と並走実行
+### V-1: 全 Excel テストの YAML 版並走実行
 
-**目的**: リポジトリ内の全59 Excelファイルに対してYAML版を作成し、ExcelリーダーとYAMLリーダーの等価性を確認する。
+**目的**: リポジトリ内の全 Excel ファイルに対して YAML 版を作成し、Excel リーダーと YAML リーダーの等価性を確認する。
+
+**前提**: Ph-3 完了
 
 **作業内容**:
-- [ ] 変換方針を決定する: `nablarch-test-data-converter` を使用するか手動変換するかを明記する
-- [ ] 全59の `.xls`/`.xlsx` ファイルを `.yaml` に変換する
-- [ ] 各テストクラスに YAML版テストを作成する（またはリーダーを差し替えて実行する方式でも可）
-- [ ] 差分が生じた場合の対処方針を明記する: 修正して差分解消するのか、除外して理由を記録するのか
+- [ ] 変換方針を決定する（`nablarch-test-data-converter` 使用 or 手動変換）
+- [ ] 全 `.xls`/`.xlsx` ファイルを `.yaml` に変換する
+- [ ] 各テストクラスに YAML 版テストを作成し、同一アサーションで実行する
+- [ ] 差分が生じた場合の対処方針を明記する（修正して差分解消 or 除外して理由記録）
 - [ ] セルフチェック（チェック結果: `docs/checks/V-1.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
 - 全テストが Excel/YAML どちらでも同一結果でグリーンであること
-- 差分が生じたファイルがある場合、ファイル名・差分内容・原因・対処（修正 or 除外理由）を一覧で記録すること
-
----
-
-## Ph-4: 仕様カバレッジ根拠文書
-
-**前提**: Ph-2/Ph-3 完了
-
-### D-1: カバレッジマトリクスの完成
-
-**目的**: 「YAMLスキーマがNTF仕様を100%カバーする」ことを第三者に説明できる根拠ドキュメントを完成させる。
-
-**作業内容**:
-- [ ] `docs/ntf-impl-spec-list.md`（Ph-1 で作成）に以下の列を追加して完成させる
-  - 仕様ID / 概要 / 分類 / スキーマ根拠 or スキーマ外理由 / 既存テストメソッド / 追加テストメソッド / カバー状況
-- [ ] E-6/E-8 について「TZ依存」「DI設定はXML外」の制約事項欄を設ける
-- [ ] 出力: `docs/ntf-impl-coverage-matrix.md`
-- [ ] セルフチェック（チェック結果: `docs/checks/D-1.md`）
-- [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
-- [ ] ユーザーレビュー依頼・OK取得
-
-**完了条件（主完了条件）**: 全仕様IDのカバー状況が「済」であること。
-**完了条件（許容除外）**: 意図的に除外した仕様IDがある場合は除外理由が明記されていること。
-「除外理由なし・カバー状況空欄」は完了とみなさない。
+- 差分が生じたファイルがある場合、ファイル名・差分内容・原因・対処を一覧で記録すること
 
 ---
 
@@ -557,64 +423,37 @@ nablarch.test.core.reader.yaml（パッケージプライベート）
 
 ### タスク進捗一覧
 
-| タスク | 状態 | ユーザーレビュー | 備考 |
-|---|---|---|---|
-| **ntf-spec.md / examples-*.md** | 作業完了 | **待ち** | 旧 `ntf-spec-examples.md` はレビューOK後に削除 |
-| **I-1** | 担当者・QA OK | **待ち** | 141件確定。steering チェックボックス更新済み |
-| **I-1b** | 未着手 | — | I-1 ユーザーレビュー OK 後に着手 |
-| **I-2** | 未着手 | — | I-1b 完了後（I-1b が不要な場合は I-1 OK 後）に着手 |
-| **I-3** | 未着手 | — | I-1b 完了後（同上）に着手 |
-| **R-1** | 担当者・全レビュー OK | **待ち** | Ph-1 完了後にレビュー実施 |
-| **R-1-refactor** | 担当者・全レビュー OK | **待ち** | I-2/I-3 完了後にレビュー実施 |
+| タスク | 状態 | 次のアクション |
+|---|---|---|
+| **S-1** 解説書からの仕様抽出 | 未着手 | 着手可（S-2 と並行 OK） |
+| **S-2** 既存実装からの仕様抽出 | 未着手 | 着手可（S-1 と並行 OK） |
+| **S-3** 仕様リスト作成 | 未着手 | S-1・S-2 完了後 |
+| **S-4** 仕様書作成・整備 | 作業中（仕様リスト未確定のため見直し必要） | S-3 完了後に全件見直し |
+| **S-5** 仕様書章番号マッピング | 未着手 | S-4 ユーザーレビュー OK 後 |
+| **R-1** YamlTestDataParser 実装 | コード存在（仕様 FIX 前のため再検証必要） | Ph-2 完了後にやり直し |
+| **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
+| **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 次にやること（上から順に）
 
-1. **ユーザーレビュー**: `ntf-spec.md` + `ntf-spec-examples-*.md`（7ファイル）
-   - OK → 旧 `ntf-spec-examples.md` を削除、`ntf-impl-spec-list.md` の節番号列を最終章番号に一括更新
-2. **ユーザーレビュー**: I-1 成果物（`ntf-impl-spec-list.md` 141件）
-   - OK → I-1 完了。I-1b に着手
-3. **I-1b 着手**: 仕様ID漏れ洗い出し・補完
-4. **I-2 着手**: 仕様ID × 既存テストのマッピング
-5. **I-3 着手**: 仕様ID × YAMLスキーマのマッピング
-6. Ph-1 完了後 → **R-1 ユーザーレビュー** → **R-1-refactor ユーザーレビュー**
+1. **S-1・S-2 着手**（並行可）: 解説書・既存実装から仕様を全件抽出
+2. **S-3 着手**: S-1/S-2 の結果を突き合わせて仕様リスト確定
+3. **S-4 見直し**: S-3 の仕様リストをベースに `ntf-spec.md` / `examples-*.md` を全件見直し → ユーザーレビュー
+4. **S-5 着手**: 仕様リストに章番号マッピング → 仕様 FIX
+5. **R-1 やり直し**: 仕様 FIX 後に TDD で実装
+6. **T-1・V-1**: テスト網羅確認・Excel 並走確認
 
-### ntf-spec.md / ntf-spec-examples-*.md 構成
+### 既存成果物の状態（参考）
 
-```
-docs/specs/
-  ntf-spec.md                       # 論理仕様書（形式非依存）
-  ntf-spec-examples-overview.md     # 概要・セクション識別・テストケース定義の記述例
-  ntf-spec-examples-table.md        # テーブルデータの記述例
-  ntf-spec-examples-file.md         # ファイルデータの記述例
-  ntf-spec-examples-messaging.md    # メッセージングテストデータの記述例
-  ntf-spec-examples-special.md      # 特殊値・ディレクティブ・ヘッダの記述例
-  ntf-spec-examples-testshots.md    # testShots の記述例
-  ntf-spec-examples.md              # 旧ファイル（ユーザーレビューOK後に削除）
-  ntf-doc-terms.md                  # v6 解説書から抽出した用語リスト（用語確認用）
-```
+| ファイル | 状態 | S-1/S-2/S-3 での扱い |
+|---|---|---|
+| `ntf-coverage-doc-check.md` | 作成済み（再検証必要） | S-1 の出発点として使う |
+| `ntf-coverage-spec-mapping.md` | 作成済み（再検証必要） | S-2 の出発点として使う |
+| `ntf-impl-spec-list.md` | 141件（S-3 で全件見直し） | S-3 の出発点として使う |
+| `ntf-spec.md` / `examples-*.md` | 作業中（S-3 前のため見直し必要） | S-4 の出発点として使う |
+| R-1/R-1-refactor コード | 存在（仕様 FIX 前） | R-1 やり直し時の参考 |
 
-**Example ファイルの書き方ルール**（次回修正時も守ること）:
-- アプリ開発の現場で参考にできるレベルの実物に近い例を記述する
-- 説明テキストは各 Excel/YAML セクションの直下に箇条書きで記載する（見出しなし）
-- 推測で例を作らない。ローカルの `src/test/java/**/*.xls` を `xlrd` で読んで確認してから書く
-
-**用語ルール**:
-- v6 解説書の表現を使う。不明な用語は `docs/specs/ntf-doc-terms.md` を参照すること
-- DT-03（DataType前方一致）・SS-13（データ先頭要素空）は論理仕様に注記、YAMLでは非適用と明記
-- Excel 固有表現（シート・セル・行・列）は使わない
-
-### Example ファイル修正時の注意
-
-- 仕様書（`ntf-spec.md`）と重複する説明は書かない。ただしコードを読むための指差し注釈（「このキーが〇〇に対応」）は必要
-- 推測で書かない。キー名・カラム名・挙動は必ず実装コードまたは実物 `.xls` で確認する
-- Excel 固有の制約と YAML 固有の制約は明確に区別して記述する
-
-### I-1b に関する補足
-
-- TS カテゴリ（TS-01〜32）を追加済み（テストサポート層 7 クラス全走査）
-- `ntf-impl-spec-list.md` に `ntf-spec.md 節番号` 列あり（節番号なし = 記載漏れのインジケーター）
-- 仕様書の章番号は今後も変わる可能性があるため、節番号との整合チェックは仕様書のユーザーレビュー OK 後にまとめて1回実施する
-
+---
 
 ### 環境情報
 
