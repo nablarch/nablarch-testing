@@ -11,25 +11,25 @@
 | LIST_MAP=testShots | | | | | | | | | | |
 |---|---|---|---|---|---|---|---|---|---|---|
 | no | description | expectedStatusCode | setUpTable | expectedTable | setUpFile | expectedFile | diConfig | requestPath | userId | expectedLog |
-| 1 | 正しく更新されます | 0 | default | default | | | nablarch/test/core/batch/BatchSample.xml | DBtoDBBatchSample | test | expectedLog |
+| 1 | 注文カウンタが正しくインクリメントされます | 0 | default | default | | | nablarch/test/core/batch/BatchSample.xml | DBtoDBBatchSample | test | expectedLog |
 
-| SETUP_TABLE=BATCH_SAMPLE | | | |
+| SETUP_TABLE=ORDER_HEADER | | | |
 |---|---|---|---|
-| ID | COUNTER | MESSAGE | |
-| 10001 | 10 | こんにちは | |
-| 10002 | 20 | さようなら | |
+| ORDER_ID | ITEM_COUNT | REMARKS | |
+| 10001 | 10 | 通常注文 | |
+| 10002 | 20 | まとめ買い | |
 
-| EXPECTED_TABLE=BATCH_SAMPLE | | | |
+| EXPECTED_TABLE=ORDER_HEADER | | | |
 |---|---|---|---|
-| ID | COUNTER | MESSAGE | UPDATE_DATE |
-| 10001 | 11 | こんにちは | 2010-09-13 12:34:56.0 |
-| 10002 | 21 | さようなら | 2010-09-13 12:34:56.0 |
+| ORDER_ID | ITEM_COUNT | REMARKS | UPDATE_DATE |
+| 10001 | 11 | 通常注文 | 2010-09-13 12:34:56.0 |
+| 10002 | 21 | まとめ買い | 2010-09-13 12:34:56.0 |
 
 | LIST_MAP=expectedLog | | |
 |---|---|---|
 | message | logLevel | |
-| 会員ID[10001] | INFO | |
-| 会員ID[10002] | INFO | |
+| 注文ID[10001] | INFO | |
+| 注文ID[10002] | INFO | |
 
 - `LIST_MAP=testShots` がテストケース定義、`SETUP_TABLE` がセットアップ、`EXPECTED_TABLE` が検証、`LIST_MAP=expectedLog` が期待ログ
 
@@ -52,31 +52,31 @@ list_maps:
         expectedLog: "expectedLog"
   - id: expectedLog
     rows:
-      - message: "会員ID[10001]"
+      - message: "注文ID[10001]"
         logLevel: "INFO"
-      - message: "会員ID[10002]"
+      - message: "注文ID[10002]"
         logLevel: "INFO"
 
 setup_tables:
-  - table: BATCH_SAMPLE
+  - table: ORDER_HEADER
     rows:
-      - ID: "10001"
-        COUNTER: "10"
-        MESSAGE: "こんにちは"
-      - ID: "10002"
-        COUNTER: "20"
-        MESSAGE: "さようなら"
+      - ORDER_ID: "10001"
+        ITEM_COUNT: "10"
+        REMARKS: "通常注文"
+      - ORDER_ID: "10002"
+        ITEM_COUNT: "20"
+        REMARKS: "まとめ買い"
 
 expected_tables:
-  - table: BATCH_SAMPLE
+  - table: ORDER_HEADER
     rows:
-      - ID: "10001"
-        COUNTER: "11"
-        MESSAGE: "こんにちは"
+      - ORDER_ID: "10001"
+        ITEM_COUNT: "11"
+        REMARKS: "通常注文"
         UPDATE_DATE: "2010-09-13 12:34:56.0"
-      - ID: "10002"
-        COUNTER: "21"
-        MESSAGE: "さようなら"
+      - ORDER_ID: "10002"
+        ITEM_COUNT: "21"
+        REMARKS: "まとめ買い"
         UPDATE_DATE: "2010-09-13 12:34:56.0"
 ```
 
@@ -90,25 +90,25 @@ expected_tables:
 
 ## 2. セクション識別: groupId の使い方
 
-複数テストケースで異なるセットアップデータを使い分けるため、groupId でセクションを区別します。
+受注管理テーブルのデータをテストケース別（正常注文 / 大量注文）で使い分けるシナリオ。groupId でセクションを区別します。
 
 ### Excel
 
-| SETUP_TABLE[case01]=TEST_TABLE | | | | |
+| SETUP_TABLE[case01]=ORDER_DETAIL | | | | |
 |---|---|---|---|---|
-| PK_COL1 | PK_COL2 | NUMBER_COL | VARCHAR2_COL | NUMBER_COL2 |
-| 0000000005 | IJ | 10000 | なにぬねの | 2.2 |
-| 0000000006 | KL | 100000 | はひふへほ | 2.22 |
+| ORDER_ID | LINE_NO | PRODUCT_CODE | QUANTITY | UNIT_PRICE |
+| 1001 | 1 | P-001 | 5 | 1500 |
+| 1001 | 2 | P-002 | 3 | 2800 |
 
-| SETUP_TABLE[case02]=TEST_TABLE | | | | |
+| SETUP_TABLE[case02]=ORDER_DETAIL | | | | |
 |---|---|---|---|---|
-| PK_COL1 | PK_COL2 | NUMBER_COL | VARCHAR2_COL | NUMBER_COL2 |
-| 0000000007 | MN | 1000000 | まみむめも | 2.222 |
+| ORDER_ID | LINE_NO | PRODUCT_CODE | QUANTITY | UNIT_PRICE |
+| 2001 | 1 | P-003 | 100 | 500 |
 
-| SETUP_TABLE[case02]=TEST_TABLE | | | | |
+| SETUP_TABLE[case02]=ORDER_DETAIL | | | | |
 |---|---|---|---|---|
-| PK_COL1 | PK_COL2 | NUMBER_COL | VARCHAR2_COL | NUMBER_COL2 |
-| 0000000008 | OP | 10000000 | やゆよ | 2.2222 |
+| ORDER_ID | LINE_NO | PRODUCT_CODE | QUANTITY | UNIT_PRICE |
+| 2001 | 2 | P-004 | 200 | 300 |
 
 - `SETUP_TABLE[case01]` と `SETUP_TABLE[case02]` で groupId を使いケースごとに異なるセットアップデータを使い分けます
 - 同一 groupId のセクションを複数記述するとすべて収集されます（case02 が2件）
@@ -118,34 +118,34 @@ expected_tables:
 ```yaml
 setup_tables:
   - group_id: case01
-    table: TEST_TABLE
+    table: ORDER_DETAIL
     rows:
-      - PK_COL1: "0000000005"
-        PK_COL2: "IJ"
-        NUMBER_COL: "10000"
-        VARCHAR2_COL: "なにぬねの"
-        NUMBER_COL2: "2.2"
-      - PK_COL1: "0000000006"
-        PK_COL2: "KL"
-        NUMBER_COL: "100000"
-        VARCHAR2_COL: "はひふへほ"
-        NUMBER_COL2: "2.22"
+      - ORDER_ID: "1001"
+        LINE_NO: "1"
+        PRODUCT_CODE: "P-001"
+        QUANTITY: "5"
+        UNIT_PRICE: "1500"
+      - ORDER_ID: "1001"
+        LINE_NO: "2"
+        PRODUCT_CODE: "P-002"
+        QUANTITY: "3"
+        UNIT_PRICE: "2800"
   - group_id: case02
-    table: TEST_TABLE
+    table: ORDER_DETAIL
     rows:
-      - PK_COL1: "0000000007"
-        PK_COL2: "MN"
-        NUMBER_COL: "1000000"
-        VARCHAR2_COL: "まみむめも"
-        NUMBER_COL2: "2.222"
+      - ORDER_ID: "2001"
+        LINE_NO: "1"
+        PRODUCT_CODE: "P-003"
+        QUANTITY: "100"
+        UNIT_PRICE: "500"
   - group_id: case02
-    table: TEST_TABLE
+    table: ORDER_DETAIL
     rows:
-      - PK_COL1: "0000000008"
-        PK_COL2: "OP"
-        NUMBER_COL: "10000000"
-        VARCHAR2_COL: "やゆよ"
-        NUMBER_COL2: "2.2222"
+      - ORDER_ID: "2001"
+        LINE_NO: "2"
+        PRODUCT_CODE: "P-004"
+        QUANTITY: "200"
+        UNIT_PRICE: "300"
 ```
 
 - `group_id:` フィールドで groupId を指定します。省略するとグループIDなし（デフォルトグループ）扱いです

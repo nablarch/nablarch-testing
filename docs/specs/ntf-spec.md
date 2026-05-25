@@ -79,11 +79,14 @@ src/test/java/com/example/
 - **groupId**: セクションをグループ化するための識別子。省略可能で、省略時は空文字扱いです
 - **識別子の値**: テーブル名・ファイルパス・IDなどセクション種別ごとの識別子
 
-Excel と YAML では記述形式が異なります。具体的な書き方は各形式の Example を参照してください。
-
 #### Excel での記述
 
-Excel ではセクション識別子をセルに直接記述します。DataType 名で始まれば合致します（前方一致）。groupId を指定する場合は DataType 名の直後に記述します。
+Excel ではセクション先頭セルに `DataType名=識別子の値` 形式で記述します。DataType 名で始まれば合致します（前方一致）。groupId を指定する場合は DataType 名の直後に角括弧で記述します。
+
+```
+SETUP_TABLE=USER_MASTER          ← groupId なし
+SETUP_TABLE[case01]=USER_MASTER  ← groupId あり（DataType 名直後に [groupId]）
+```
 
 #### YAML での記述
 
@@ -102,6 +105,13 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 | `EXPECTED_REQUEST_BODY_MESSAGES` | `expected_request_body_messages` |
 | `RESPONSE_HEADER_MESSAGES` | `response_header_messages` |
 | `RESPONSE_BODY_MESSAGES` | `response_body_messages` |
+
+```yaml
+setup_tables:
+  - table: USER_MASTER          # groupId なし
+  - group_id: case01
+    table: USER_MASTER           # groupId あり（group_id: フィールドで指定）
+```
 
 - groupId は各エントリの `group_id:` フィールドとして記述します
 - 完全なセクションキーを使用するため前方一致は発生しません
@@ -143,6 +153,8 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 
 - 省略時は空文字扱いです
 - groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
+- **Excel**: DataType 名の直後に `[case01]` のように角括弧で囲んで記述します（例: `SETUP_TABLE[case01]=テーブル名`）
+- **YAML**: `group_id: case01` フィールドで指定します
 
 バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
 
@@ -159,9 +171,12 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 
 ### 3.1 testShots
 
-`LIST_MAP=testShots` はテストケース定義の予約IDです。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧ID `testCases` は後方互換性のためフォールバックとして残存します。
+`testShots` はテストケース定義の予約IDです。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧ID `testCases` は後方互換性のためフォールバックとして残存します。
 
 テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合は例外がスローされます。
+
+- **Excel**: `LIST_MAP=testShots` セクションに記述します
+- **YAML**: `list_maps:` 下の `id: testShots` エントリに記述します
 
 → [Excel / YAML Example](ntf-spec-examples-overview.md#test-shots)
 
@@ -237,6 +252,25 @@ YAML ではセクション種別ごとに専用のトップレベルキーを使
 
 テーブルデータの各エントリはカラム名と値の組み合わせで記述します。省略したカラムには INSERT 時にデフォルト値が補完されます。
 
+**Excel**: 1行目にカラム名、2行目以降にデータを記述します。
+
+```
+| SETUP_TABLE=テーブル名 | | |
+| カラム1 | カラム2 | カラム3 |
+| 値1     | 値2     | 値3     |
+```
+
+**YAML**: `rows:` 配列に各行をオブジェクトで記述します。
+
+```yaml
+setup_tables:
+  - table: テーブル名
+    rows:
+      - カラム1: "値1"
+        カラム2: "値2"
+        カラム3: "値3"
+```
+
 → [Excel / YAML Example](ntf-spec-examples-table.md#table-data)
 
 ### 4.2 SETUP_TABLE
@@ -304,6 +338,34 @@ DB への INSERT 用データです。
 5. **データ**（1件以上）: 実データ
 
 **Excel 固有の制約**: データの先頭要素は必ず空（null または空文字）にする必要があります。YAML にはこの制約はありません。
+
+**Excel の記述例**（ディレクティブ → レコード種別+フィールド名称 → データ型 → フィールド長 → データ）:
+
+```
+| SETUP_FIXED=work/input.txt | | | |
+| text-encoding | MS932 | | |
+| DATA | USER_ID | AMOUNT | |
+|      | X       | Z      | |
+|      | 10      | 10     | |
+|      | 001     | 5000   | |
+```
+
+**YAML の記述例**:
+
+```yaml
+setup_files:
+  - path: work/input.txt
+    type: fixed
+    directives:
+      text-encoding: MS932
+    records:
+      - record_type: DATA
+        fields:
+          - {name: USER_ID, type: X, length: 10}
+          - {name: AMOUNT,  type: Z, length: 10}
+        rows:
+          - ["001", "5000"]
+```
 
 → [Excel / YAML Example](ntf-spec-examples-file.md#file-data)
 
@@ -479,6 +541,9 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 ディレクティブは「キー名・値」の2要素で記述します（最低2要素必要）。
 
+- **Excel**: ファイルセクションの先頭（レコード定義より前）に `| キー名 | 値 |` の形で記述します
+- **YAML**: `directives:` オブジェクトに `key: value` 形式で記述します
+
 ### 8.2 固定長ファイルのディレクティブ
 
 固定長ファイルで有効なディレクティブキーは `FixedLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます。
@@ -532,11 +597,17 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 
 ### 9.3 エントリ単位のコメント
 
-エントリをコメントとしてマークすると、そのエントリ全体がスキップされます。Excel と YAML でコメント記法は異なります。
+エントリをコメントとしてマークすると、そのエントリ全体がスキップされます。
+
+- **Excel**: 先頭要素が `//` で始まる行はスキップされます
+- **YAML**: `#` がコメント記号です（行頭・行末どちらにも使えます）
 
 ### 9.4 要素途中からのコメント（Excel 固有）
 
 Excel では、エントリ内の先頭以外の要素をコメントとしてマークすると、その要素以降が切り捨てられます。YAML では標準のコメント構文（`#`）を使って同等の記述ができます。
+
+- **Excel**: 先頭以外の要素が `//` で始まる場合、その要素以降が切り捨てられます
+- **YAML**: `#` を行末に書いて同等の記述ができます（例: `NUMBER_COL: "100"  # 数値カラム`）
 
 ### 9.5 空エントリのスキップ
 
