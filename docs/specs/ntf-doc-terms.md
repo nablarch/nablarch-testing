@@ -473,7 +473,7 @@ SETUP_VARIABLE[グループID]=ファイルパス
 
 ---
 
-## 用語まとめ（ntf-spec.md 見直し用）
+## 用語まとめ（ntf-testdata-doc.md 見直し用）
 
 ### データタイプ名（Excel 1 行目に記述するキーワード）
 

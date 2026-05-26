@@ -1,4 +1,4 @@
-# NTF テストデータ記述例
+# NTF テストデータ解説書 — 記述例（概要・groupId）
 
 <a name="overview"></a>
 

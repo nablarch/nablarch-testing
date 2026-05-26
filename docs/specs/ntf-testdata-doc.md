@@ -1,7 +1,7 @@
-# NTF テストデータ仕様書
+# NTF テストデータ解説書
 
-- **対象**: Nablarch Testing Framework（NTF）が読み込むテストデータの構造・ルール・制約
-- **形式非依存**: 本書は論理仕様を記述します。Excel・YAML のどちらで記述する場合も同じルールが適用されます
+- **対象**: Nablarch Testing Framework（NTF）が読み込むテストデータの書き方・構造・ルール
+- **形式非依存**: Excel・YAML のどちらで記述する場合にも共通して適用されるルールを説明します
 - **記述例**: 各節末尾のリンクから Excel 表と YAML コードブロックの対比例を参照できます
 
 ---
@@ -38,7 +38,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 これらは**セクション**という単位で管理され、DataType 名と識別子の値の組み合わせで区別されます。1つのファイルに複数種別のセクションを共存させることができます。セクションの記述順序は問いません。
 
-→ [Excel / YAML Example](ntf-spec-examples-overview.md#overview)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-overview.md#overview)
 
 ---
 
@@ -48,7 +48,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 
 **Excel** では、テストクラスと同名の1つのブック（`.xls` ファイル）にすべてのテストデータを格納します。シートを分割単位とし、1シートが1つの読み込み単位になります。
 
-**YAML** では、テストクラスと同名のディレクトリを作成し、その下にファイルを配置します。1ファイルが1つの読み込み単位になり、Excelの1シートに相当します。
+**YAML** では、テストクラスと同名のディレクトリを作成し、その下にファイルを配置します。1ファイルが1つの読み込み単位になり、Excel の1シートに相当します。
 
 ```
 【Excel】
@@ -60,17 +60,17 @@ src/test/java/com/example/
 【YAML】
 src/test/java/com/example/
   FooTest/             ← テストクラス FooTest に対応するディレクトリ
-    ├── case01.yaml    ← ファイル（読み込み単位）= Excelのcase01シートに相当
-    └── case02.yaml    ← ファイル（読み込み単位）= Excelのcase02シートに相当
+    ├── case01.yaml    ← ファイル（読み込み単位）= Excel の case01 シートに相当
+    └── case02.yaml    ← ファイル（読み込み単位）= Excel の case02 シートに相当
 ```
 
-読み込み単位（Excelの1シート / YAMLの1ファイル）の中に、テストケース・セットアップ・検証の複数セクションを共存させて記述します。
+読み込み単位（Excel の1シート / YAML の1ファイル）の中に、テストケース・セットアップ・検証の複数セクションを共存させて記述します。
 
 **YAML の値のクォートルール**
 
-- `rows:` 内のテストデータ値（カラム値）は**必ずダブルクォートで囲む**。クォートなしだと SnakeYAML が数値・真偽値に型変換し、先頭ゼロ付き数値（`001` → `1`）や `true`/`false` で意図しない値になる
-- Java null を表す場合のみアンクォートの `null` で記述する。`"null"` とクォートすると文字列として格納される
-- `type:`, `record_type:`, `path:` 等のスキーマ構造値はクォート不要
+- `rows:` 内のテストデータ値（カラム値）は**必ずダブルクォートで囲んでください**。クォートなしだと SnakeYAML が数値・真偽値に型変換し、先頭ゼロ付き数値（`001` → `1`）や `true`/`false` で意図しない値になります
+- Java null を表す場合のみアンクォートの `null` で記述します。`"null"` とクォートすると文字列として格納されます
+- `type:`, `record_type:`, `path:` 等のスキーマ構造値はクォート不要です
 
 **YAML ファイルの読み込みルール**
 
@@ -87,7 +87,7 @@ src/test/java/com/example/
 各セクションは **DataType 名** と **識別子の値** の2要素で識別されます。
 
 - **DataType 名**: 後述する14種類のいずれか（例: `SETUP_TABLE`）
-- **識別子の値**: テーブル名・ファイルパス・IDなどセクション種別ごとの識別子
+- **識別子の値**: テーブル名・ファイルパス・ID などセクション種別ごとの識別子
 
 
 #### Excel での記述
@@ -123,7 +123,7 @@ setup_tables:
 ```
 
 - 完全なセクションキーを使用するため前方一致は発生しません
-- YAMLでは同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
+- YAML では同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
 
 ### 3.2 DataType の種類
 
@@ -161,18 +161,18 @@ setup_tables:
 
 ### 4.1 testShots
 
-`testShots` はテストケース定義の予約IDです。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧ID `testCases` は後方互換性のためフォールバックとして残存します。
+`testShots` はテストケース定義の予約 ID です。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧 ID `testCases` は後方互換性のためフォールバックとして残存します。
 
 テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合は例外がスローされます。
 
 - **Excel**: `LIST_MAP=testShots` セクションに記述します
 - **YAML**: `list_maps:` 下の `id: testShots` エントリに記述します
 
-→ [処理方式別 testShots カラム一覧](ntf-spec-examples-testshots.md)
+→ [処理方式別 testShots カラム一覧](ntf-testdata-doc-examples-testshots.md)
 
 ### 4.2 testShots のカラム仕様
 
-testShots の各カラムは処理方式（ウェブアプリケーション / バッチ / メッセージング / エンティティバリデーション）によって異なります。詳細は [処理方式別 testShots カラム一覧](ntf-spec-examples-testshots.md) を参照してください。
+testShots の各カラムは処理方式（ウェブアプリケーション / バッチ / メッセージング / エンティティバリデーション）によって異なります。詳細は [処理方式別 testShots カラム一覧](ntf-testdata-doc-examples-testshots.md) を参照してください。
 
 #### 全処理方式共通の注意事項
 
@@ -185,25 +185,25 @@ testShots の各カラムは処理方式（ウェブアプリケーション / �
 |---|---|---|
 | `no` | 全方式（必須） | テストケース番号 |
 | `description` / `case` | 全方式（いずれか必須） | テストケースの説明。`case` は旧称で後方互換として残存 |
-| `context` | HTTP（必須） | `REQUEST_ID`・`USER_ID` 等を含む `LIST_MAP` 名を指定する。1行のみ有効。`REQUEST_ID` が空の場合は `IllegalArgumentException` |
-| `setUpTable` | 全方式 | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT する。空の場合はスキップ |
-| `expectedTable` | 全方式 | この値と同じ groupId を持つ `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` セクションで DB を検証する。空の場合はスキップ |
-| `setUpFile` | バッチ系 | この値と同じ groupId を持つ `SETUP_FIXED` / `SETUP_VARIABLE` セクションを入力ファイルとして配置する。空の場合はスキップ |
-| `expectedFile` | バッチ系 | この値と同じ groupId を持つ `EXPECTED_FIXED` / `EXPECTED_VARIABLE` セクションで出力ファイルを検証する。空の場合はスキップ |
-| `expectedLog` | バッチ系 | 期待ログの `LIST_MAP` 名を指定する。空の場合はスキップ。指定した LIST_MAP が空の場合は `IllegalStateException` |
-| `requestParams` | HTTP | HTTP リクエストパラメータの予約 ID。対応する `LIST_MAP` からパラメータを読み込む。`LIST_MAP` の行数がテストケース数より少ない場合は `IllegalArgumentException` |
+| `context` | HTTP（必須） | `REQUEST_ID`・`USER_ID` 等を含む `LIST_MAP` 名を指定します。1行のみ有効。`REQUEST_ID` が空の場合は `IllegalArgumentException` がスローされます |
+| `setUpTable` | 全方式 | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します。空の場合はスキップされます |
+| `expectedTable` | 全方式 | この値と同じ groupId を持つ `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` セクションで DB を検証します。空の場合はスキップされます |
+| `setUpFile` | バッチ系 | この値と同じ groupId を持つ `SETUP_FIXED` / `SETUP_VARIABLE` セクションを入力ファイルとして配置します。空の場合はスキップされます |
+| `expectedFile` | バッチ系 | この値と同じ groupId を持つ `EXPECTED_FIXED` / `EXPECTED_VARIABLE` セクションで出力ファイルを検証します。空の場合はスキップされます |
+| `expectedLog` | バッチ系 | 期待ログの `LIST_MAP` 名を指定します。空の場合はスキップされます。指定した LIST_MAP が空の場合は `IllegalStateException` がスローされます |
+| `requestParams` | HTTP | HTTP リクエストパラメータの予約 ID。対応する `LIST_MAP` からパラメータを読み込みます。`LIST_MAP` の行数がテストケース数より少ない場合は `IllegalArgumentException` がスローされます |
 | `responseResult` | HTTP | HTTP レスポンス（リクエストスコープ）期待値の予約 ID |
-| `params` | エンティティバリデーション | 入力パラメータ定義の予約 ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須（不一致で `IllegalArgumentException`） |
+| `params` | エンティティバリデーション | 入力パラメータ定義の予約 ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須です（不一致で `IllegalArgumentException` がスローされます） |
 | `title` | エンティティバリデーション（必須） | テストケースの説明 |
 | `expectedMessageId1` | エンティティバリデーション（必須） | 期待するバリデーションメッセージ ID |
 | `propertyName1` | エンティティバリデーション（必須） | バリデーション対象プロパティ名 |
-| `cookie` | HTTP | Cookie 値の `LIST_MAP` 名を指定する。空の場合は Cookie なし。指定した LIST_MAP が空の場合は `IllegalArgumentException` |
-| `queryParams` | HTTP | クエリパラメータの `LIST_MAP` 名を指定する。空の場合はパラメータなし。指定した LIST_MAP が空の場合は `IllegalArgumentException` |
-| `HTTP_METHOD` | HTTP | HTTP メソッド。空の場合は `"POST"` が使用される |
-| `expectedContentLength` | HTTP | 期待する Content-Length。空の場合は検証をスキップ |
-| `expectedContentType` | HTTP | 期待する Content-Type。空の場合は検証をスキップ |
-| `expectedContentFileName` | HTTP | 期待する Content-Disposition ファイル名。空の場合は検証をスキップ |
-| `args[0]`, `args[1]`, ... | バッチ | コマンドライン引数として渡される |
+| `cookie` | HTTP | Cookie 値の `LIST_MAP` 名を指定します。空の場合は Cookie なし。指定した LIST_MAP が空の場合は `IllegalArgumentException` がスローされます |
+| `queryParams` | HTTP | クエリパラメータの `LIST_MAP` 名を指定します。空の場合はパラメータなし。指定した LIST_MAP が空の場合は `IllegalArgumentException` がスローされます |
+| `HTTP_METHOD` | HTTP | HTTP メソッド。空の場合は `"POST"` が使用されます |
+| `expectedContentLength` | HTTP | 期待する Content-Length。空の場合は検証をスキップします |
+| `expectedContentType` | HTTP | 期待する Content-Type。空の場合は検証をスキップします |
+| `expectedContentFileName` | HTTP | 期待する Content-Disposition ファイル名。空の場合は検証をスキップします |
+| `args[0]`, `args[1]`, ... | バッチ | コマンドライン引数として渡されます |
 
 ### 4.3 DB 共通セットアップデータ
 
@@ -239,7 +239,7 @@ setup_tables:
 
 バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
 
-→ [Excel / YAML Example](ntf-spec-examples-overview.md#groupid)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-overview.md#groupid)
 
 ---
 
@@ -272,11 +272,11 @@ setup_tables:
 
 **ファイル不存在時の動作**: `getSetupTableData` はテストデータファイルが存在しない場合に空リストを返します（他の取得メソッドとは異なる動作です）。
 
-→ [Excel / YAML Example](ntf-spec-examples-table.md#table-data)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-table.md#table-data)
 
 ### 5.2 SETUP_TABLE
 
-DB への INSERT 用データです。
+DB への INSERT 用データを記述します。
 
 - 各エントリのカラム名と値を記述します
 - **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース等）が INSERT されます
@@ -287,13 +287,13 @@ DB への INSERT 用データです。
 
 ### 5.3 EXPECTED_TABLE
 
-テスト後の DB 状態と比較するデータです。
+テスト後の DB 状態と比較するデータを記述します。
 
 - **省略したカラムは比較対象外**になります。検証したいカラムだけを列挙できます
 
 ### 5.4 EXPECTED_COMPLETE_TABLE
 
-省略カラムにデフォルト値を補完してから比較するデータです。
+省略カラムにデフォルト値を補完してから比較するデータを記述します。
 
 - 省略カラムに `BasicDefaultValues` のデフォルト値が自動補完されます
 - デフォルト値は以下のとおりです
@@ -311,7 +311,7 @@ DB への INSERT 用データです。
 
 **Excel 混在禁止**: Excel では `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一シート内で混在させると、後半のデータが読み込まれません。同じ種別のセクションをまとめて記述してください。YAML では `expected_tables` と `expected_complete_tables` は別キーのため混在可能です。
 
-→ [Excel / YAML Example](ntf-spec-examples-table.md#expected-complete-table)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-table.md#expected-complete-table)
 
 ### 5.5 LIST_MAP
 
@@ -321,9 +321,9 @@ DB への INSERT 用データです。
 - 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます
 - 指定した ID のエントリが存在しない場合は `null` ではなく空リストが返されます
 
-主な予約IDは [4章](#4-テストケース定義) を参照してください。
+主な予約 ID は [4章](#4-テストケース定義) を参照してください。
 
-→ [Excel / YAML Example](ntf-spec-examples-table.md#list-map)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-table.md#list-map)
 
 ---
 
@@ -375,7 +375,7 @@ setup_files:
           - ["001", "5000"]
 ```
 
-→ [Excel / YAML Example](ntf-spec-examples-file.md#file-data)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-file.md#file-data)
 
 ### 6.3 固定長ファイル固有の仕様
 
@@ -392,13 +392,13 @@ setup_files:
 
 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます。データの後ろに新たなレコード種別とフィールド名称を書くと、新しいレコードレイアウトとして扱われます。
 
-→ [Excel / YAML Example](ntf-spec-examples-file.md#multi-record)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-file.md#multi-record)
 
 ### 6.6 空ファイル
 
 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します。
 
-→ [Excel / YAML Example](ntf-spec-examples-file.md#empty-file)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-file.md#empty-file)
 
 ### 6.7 `"-"` 長フィールド
 
@@ -474,7 +474,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 `MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は、内部で常に `"default"` に置き換えられます。任意の値を記述できます（装飾的なメタデータとして扱われます）。
 
-→ [Excel / YAML Example](ntf-spec-examples-messaging.md#messaging)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-messaging.md#messaging)
 
 ---
 
@@ -492,7 +492,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | `QuotationTrimmer` | 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去 |
 | `DateTimeInterpreter` | `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 |
 | `LineSeparatorInterpreter` | `\\r` → CR（0x0D）、`\\n` → LF（0x0A）に変換 |
-| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML では YAML ファイルが基準ディレクトリになる |
+| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML では YAML ファイルが基準ディレクトリになります |
 | `BasicJapaneseCharacterInterpreter` | `${文字種,文字数}` 形式で文字列生成 |
 | `CompositeInterpreter` | 文字列中の `${...}` 要素を個別解釈して置換 |
 
@@ -525,7 +525,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 `java.sql.Timestamp` 型カラムの期待値は末尾 `.0` が必須です（例: `"2010-01-01 12:34:56.0"`）。末尾 `.0` がないとアサートが失敗します。
 
-→ [Excel / YAML Example](ntf-spec-examples-special.md#datetime)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-special.md#datetime)
 
 ### 8.7 バイナリデータの記述
 
@@ -571,7 +571,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | ディレクティブキー | 説明 |
 |---|---|
 | `file-type` | 自動設定（`"Variable"`）。通常は記述不要です |
-| `field-separator` | フィールド区切り文字。デフォルトは `","` です。`"\\t"` 指定でタブ文字になります。**1文字のみ有効**（2文字以上は `IllegalArgumentException`） |
+| `field-separator` | フィールド区切り文字。デフォルトは `","` です。`"\\t"` 指定でタブ文字になります。**1文字のみ有効**（2文字以上は `IllegalArgumentException` がスローされます） |
 | `record-separator` | レコード区切り。`NONE` / `CR` / `LF` / `CRLF` または任意リテラル文字列が有効です |
 | `quoting-delimiter` | クォート文字 |
 | その他 | `VariableLengthDirective` 列挙型の定義を参照してください |
@@ -586,7 +586,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 | `fixedLengthDirectives` | 固定長ファイル専用。`defaultDirectives` より後に上書き適用されます |
 | `variableLengthDirectives` | 可変長ファイル専用 |
 
-→ [Excel / YAML Example](ntf-spec-examples-special.md#directive)
+→ [Excel / YAML Example](ntf-testdata-doc-examples-special.md#directive)
 
 ---
 

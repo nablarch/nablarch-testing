@@ -1,4 +1,4 @@
-# NTF テストデータ記述例 — testShots カラム一覧
+# NTF テストデータ解説書 — testShots カラム一覧
 
 処理方式ごとの `testShots` カラムと記述例。どの処理方式でも `testShots` は `LIST_MAP` として記述します。
 

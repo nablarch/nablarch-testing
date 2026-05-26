@@ -188,7 +188,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 | フェーズ | 目的 | 完了条件 |
 |---|---|---|
 | **Ph-1: 仕様リスト確定** | 解説書・既存実装の両方から仕様を全件抽出し、仕様リストを確定する | S-1/S-2/S-3 全完了。`ntf-impl-spec-list.md` の全仕様IDに「解説書マッピング・実装マッピング」が1対1で記載されること |
-| **Ph-2: 仕様書作成・FIX** | 仕様リストをベースに仕様書（ntf-spec.md）と記述例（examples）を作成し、仕様リストとの1対1対応を確認してユーザーレビューで FIX する | S-4/S-5 全完了。仕様書の全章・節が仕様リストIDと1対1対応していること。ユーザーレビュー OK 済み |
+| **Ph-2: 解説書作成・FIX** | 仕様リストをベースに解説書（ntf-testdata-doc.md）と記述例（examples）を作成し、仕様リストとの1対1対応を確認してユーザーレビューで FIX する | S-4/S-5 全完了。解説書の全章・節が仕様リストIDと1対1対応していること。ユーザーレビュー OK 済み |
 | **Ph-3: TDD 実装** | 仕様 FIX 後に YAMLリーダーを TDD で実装する | R-1/R-1-refactor 全完了。全仕様IDに対応するテストがグリーンであること |
 | **Ph-4: テスト網羅確認** | 仕様リストとテストコードの1対1対応を確認し、網羅の根拠を完成させる | T-1 完了。全仕様IDに「対応テストメソッド」が記載され、未対応が0件であること |
 | **Ph-5: Excel 並走確認** | 既存Excelテストと YAML版の等価性を確認する | V-1 完了。Excel/YAML どちらでも同一結果でグリーンであること |
@@ -199,7 +199,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - `ntf-coverage-doc-check.md`（解説書照合記録）→ S-1 の出発点として使う。ただし全件突き合わせで検証すること
 - `ntf-coverage-spec-mapping.md`（実装全行走査記録）→ S-2 の出発点として使う。ただし全件突き合わせで検証すること
 - `ntf-impl-spec-list.md`（既存仕様リスト）→ S-3 の出発点として使う。S-1/S-2 の結果で全件見直し
-- `ntf-spec.md` / `examples-*.md` → S-4/S-5 の出発点として使う。S-3 完了後に全件見直し
+- `ntf-testdata-doc.md` / `examples-*.md` → S-4/S-5 の出発点として使う。S-3 完了後に全件見直し
 - R-1/R-1-refactor のコード → Ph-3 やり直し時の参考。仕様 FIX 前に実装したため再検証が必要
 
 ---
@@ -294,46 +294,46 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 仕様リスト（S-3）が確定したら、それをベースに仕様書と記述例を作成・整備する。
 仕様書と仕様リストの1対1対応を確認してユーザーレビューで FIX する。
 
-### S-4: 仕様書（ntf-spec.md / examples）の作成・整備
+### S-4: 解説書（ntf-testdata-doc.md / examples）の作成・整備
 
-**目的**: S-3 の仕様リストをベースに `ntf-spec.md` と `ntf-spec-examples-*.md` を作成・整備する。
+**目的**: S-3 の仕様リストをベースに `ntf-testdata-doc.md`（解説書）と `ntf-testdata-doc-examples-*.md` を作成・整備する。
 
 **前提**: S-3 完了
 
 **作業内容**:
-- [ ] S-3 の全仕様IDを `ntf-spec.md` の章・節構成に対応させる（どの仕様IDがどの節に記載されるかを決める）
-  - 既存 `ntf-spec.md` / `ntf-spec-examples-*.md` を出発点として使ってよいが、S-3 の全仕様IDを起点に全件見直すこと
-- [ ] S-3 に存在するが `ntf-spec.md` に記載がない仕様IDを全件追記する
-- [ ] `ntf-spec-examples-*.md` の記述例が仕様IDと対応していることを確認する
+- [ ] S-3 の全仕様IDを `ntf-testdata-doc.md` の章・節構成に対応させる（どの仕様IDがどの節に記載されるかを決める）
+  - 既存 `ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` を出発点として使ってよいが、S-3 の全仕様IDを起点に全件見直すこと
+- [ ] S-3 に存在するが `ntf-testdata-doc.md` に記載がない仕様IDを全件追記する
+- [ ] `ntf-testdata-doc-examples-*.md` の記述例が仕様IDと対応していることを確認する
   - 推測で書かない。キー名・カラム名・挙動は実装コードまたは実物 `.xls` で確認すること
-- [ ] 旧 `ntf-spec-examples.md` を削除する
+- [ ] 旧 `ntf-testdata-doc-examples.md` を削除する
 - [ ] セルフチェック（チェック結果: `docs/checks/S-4.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- S-3 の全仕様IDに対応する記述が `ntf-spec.md` の章・節に存在すること
-- 旧 `ntf-spec-examples.md` が削除されていること
+- S-3 の全仕様IDに対応する記述が `ntf-testdata-doc.md` の章・節に存在すること
+- 旧 `ntf-testdata-doc-examples.md` が削除されていること
 - ユーザーレビュー OK が取得されていること
 
 ---
 
 ### S-5: 仕様リストへの仕様書章番号マッピングと整合確認
 
-**目的**: `ntf-impl-spec-list.md` の各仕様IDに `ntf-spec.md` の章番号をマッピングし、仕様書に記載漏れがないことを確認する。
+**目的**: `ntf-impl-spec-list.md` の各仕様IDに `ntf-testdata-doc.md` の章番号をマッピングし、仕様書に記載漏れがないことを確認する。
 
 **前提**: S-4 完了（仕様書 FIX 後）
 
 **作業内容**:
-- [ ] `ntf-impl-spec-list.md` の全仕様IDに `ntf-spec.md` の章番号（例: 3.2節）を記載する
+- [ ] `ntf-impl-spec-list.md` の全仕様IDに `ntf-testdata-doc.md` の章番号（例: 3.2節）を記載する
 - [ ] 章番号が記載できない仕様ID（＝仕様書に対応する記述がない）を「記載漏れ」として一覧化する
-- [ ] 記載漏れを全件 `ntf-spec.md` に追記し、S-4 のユーザーレビューを再取得する
+- [ ] 記載漏れを全件 `ntf-testdata-doc.md` に追記し、S-4 のユーザーレビューを再取得する
 - [ ] セルフチェック（チェック結果: `docs/checks/S-5.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- 全仕様IDに `ntf-spec.md` の章番号が記載されており、「章番号なし」が0件であること
+- 全仕様IDに `ntf-testdata-doc.md` の章番号が記載されており、「章番号なし」が0件であること
 - ユーザーレビュー OK が取得されていること（ここで仕様 FIX）
 
 ---
@@ -446,7 +446,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-1** 解説書からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-2** 既存実装からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | **完了**（ユーザーレビュー OK） | — |
-| **S-4** 仕様書（ntf-spec.md/examples）全件見直し | **担当者・QA 完了**（ユーザーレビュー待ち） | ユーザーレビュー依頼・OK 取得 |
+| **S-4** 仕様書（ntf-testdata-doc.md/examples）全件見直し | **担当者・QA 完了**（ユーザーレビュー待ち） | ユーザーレビュー依頼・OK 取得 |
 | **S-5** 仕様リストへの章番号マッピング → 仕様 FIX | 未着手 | S-4 ユーザーレビュー OK 後 |
 | **R-1** YamlTestDataParser 実装（TDD） | コード存在・要やり直し | Ph-2 完了後（仕様 FIX 後）に着手 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
@@ -456,7 +456,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
 2. **S-4 ユーザーレビュー依頼**（担当者・QA 完了済み）:
-   - `docs/specs/ntf-spec.md`（更新後）と `docs/checks/S-4.md`（チェック結果）をユーザーに提示する
+   - `docs/specs/ntf-testdata-doc.md`（更新後）と `docs/checks/S-4.md`（チェック結果）をユーザーに提示する
    - S-4 の主な変更点（追記内容の概要）:
      - 2章: YAML ファイルの読み込みルール（不存在時例外・空ファイル・LRU キャッシュ/clearCacheForTest）
      - 4.2節（新設）: testShots の全カラム仕様（context/setUpTable/expectedTable/cookie/queryParams/HTTP_METHOD 等）
@@ -467,12 +467,12 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
      - 8.2節: BinaryFileInterpreter の基準ディレクトリ（YAML ファイル基準）
      - 11章（新設）: DB アサート仕様（assertTableEquals 順序不問 / assertSqlResultSetEquals 順序厳格）
      - DataType 表: EXPECTED_REQUEST_HEADER_MESSAGES 等の GroupData/SingleData 切り替え条件
-     - 旧 `docs/specs/ntf-spec-examples.md` を削除
+     - 旧 `docs/specs/ntf-testdata-doc-examples.md` を削除
    - OK が出たら S-5 に着手する
 3. **S-4 ユーザーレビュー OK 後 → S-5 着手**:
-   - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-spec.md` の章番号を記載する
+   - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-testdata-doc.md` の章番号を記載する
    - 章番号が記載できない仕様ID（＝仕様書に対応する記述がない）を「記載漏れ」として一覧化する
-   - 記載漏れを全件 `ntf-spec.md` に追記し、S-4 のユーザーレビューを再取得する
+   - 記載漏れを全件 `ntf-testdata-doc.md` に追記し、S-4 のユーザーレビューを再取得する
    - セルフチェック（`docs/checks/S-5.md`）→ QAエンジニアレビュー → ユーザーレビュー
 
 ### ソース一覧（確定・2026-05-25時点）
@@ -491,7 +491,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | `ntf-coverage-doc-check.md` | 作成済み（再検証必要・当時13ファイル対象） | S-1 の出発点 |
 | `ntf-coverage-spec-mapping.md` | 作成済み（再検証必要・当時29クラス対象） | S-2 の出発点 |
 | `ntf-impl-spec-list.md` | 141件（S-3 で全件見直し） | S-3 の出発点 |
-| `ntf-spec.md` / `examples-*.md` | 作業中（S-3 前のため全件見直し必要） | S-4 の出発点 |
+| `ntf-testdata-doc.md` / `examples-*.md` | 作業中（S-3 前のため全件見直し必要） | S-4 の出発点 |
 | R-1/R-1-refactor コード | 存在（仕様 FIX 前・要再検証） | R-1 やり直し時の参考 |
 
 ---
