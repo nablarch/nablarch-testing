@@ -571,6 +571,57 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: "\""（YAML エスケープ）はダブルクォート1文字になること（8.1/8.2 G-1）。
+     *
+     * <p>
+     * 解説書 8.1/examples-special 8.2: `"\""` → YAML パース後は `"` 1文字。
+     * QuotationTrimmer は前後クォート囲みがない1文字 `"` には適用されず、そのまま `"` が返ること<br>
+     * Given: list_maps に DQ_COL: "\""<br>
+     * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
+     * Then:  DQ_COL の値がダブルクォート1文字（`"`）であること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_escapedDoubleQuoteIsDoubleQuoteChar() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "quotationTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("\"\\\"\" はダブルクォート1文字になること",
+                result.get(0).get("DQ_COL"), is("\""));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること（8.1/8.4 G-2）。
+     *
+     * <p>
+     * 解説書 8.1/8.4: DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
+     * Given: list_maps に UPDATE_COL="${updateTime}", SETUP_COL="${setUpTime}"<br>
+     * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
+     * Then:  両カラムがシステム時刻文字列（"2010-09-14 12:34:56.0"）になること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_updateTimeAndSetUpTimeConverted() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "quotationTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("${updateTime} はシステム時刻に変換されること",
+                result.get(0).get("UPDATE_COL"), is("2010-09-14 12:34:56.0"));
+        assertThat("${setUpTime} はシステム時刻に変換されること",
+                result.get(0).get("SETUP_COL"), is("2010-09-14 12:34:56.0"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>

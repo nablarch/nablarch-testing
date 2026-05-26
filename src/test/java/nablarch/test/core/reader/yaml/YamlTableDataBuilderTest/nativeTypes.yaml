@@ -27,3 +27,9 @@ list_maps:
     rows:
       - ALPHA_COL: "${半角英字,10}"
         NUM_COL: "${半角数字,5}"
+
+  - id: quotationTest
+    rows:
+      - DQ_COL: "\""
+        UPDATE_COL: "${updateTime}"
+        SETUP_COL: "${setUpTime}"

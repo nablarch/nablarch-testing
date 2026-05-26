@@ -322,18 +322,28 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | RS-09〜RS-22 のテスト実装 |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | G-1〜G-6 のテスト実装（`docs/gaps/R-1-coverage-gaps.md` 参照） |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **R-1 継続**:
-   - RS-09〜RS-22 について `docs/specs/ntf-testdata-doc.md` の対応節を読み、テストを先に書いてグリーンにする繰り返し
-   - テストコードには GWT コメントと解説書章番号を記載する
-   - 全仕様IDのテストが揃ったら `docs/ntf-impl-spec-list.md` でマッピングと漏れ確認
+2. **R-1 継続**: `docs/gaps/R-1-coverage-gaps.md` のギャップ一覧 G-1〜G-6 を上から TDD で実装する
+   - G-1: `YamlTableDataBuilderTest` — ダブルクォート1文字 `"\""` → `"` になること（8.1/8.2）
+   - G-2: `YamlTableDataBuilderTest` — `${updateTime}` / `${setUpTime}` → システム時刻変換（8.1/8.4）
+   - G-3: `YamlFileBuilderTest` — 可変長の `field-separator: "\\t"` がタブ文字になること（9.3）
+   - G-4: `YamlMessageBuilderTest` — `id` にパスセグメント含む形式（`sendSyncTestData/REQ001/message`）（7.3）
+   - G-5: `YamlMessageBuilderTest` — `expected_request_header_messages` からの取得（7.2）
+   - G-6: `YamlTableDataBuilderTest` — `testShots` 予約 ID で LIST_MAP 取得（4章）
+   - 各テストを Red → Green の順で実装し、完了したらコミット＆プッシュ
+   - 全 G-1〜G-6 完了後、`docs/ntf-impl-spec-list.md` でマッピングと漏れ確認
    - セルフチェック（`docs/checks/R-1.md`）→ QA/Java/SWE レビュー → ユーザーレビュー
+
+### 実装状況（テスト数）
+
+- 現在: 58 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:22, YamlFileBuilderTest:12, YamlMessageBuilderTest:14）
+- G-1〜G-6 完了後の想定: 約 64〜66 件
 
 ### ソース一覧（確定）
 
