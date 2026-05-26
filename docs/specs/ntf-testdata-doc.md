@@ -268,8 +268,6 @@ setup_tables:
 
 **YAML 記述の必須キー**: `setup_tables` / `expected_tables` / `expected_complete_tables` の各エントリには `table` キーが必須です。省略すると `IllegalStateException` がスローされます。
 
-**セットアップデータなし時の動作**: SETUP_TABLE のデータが存在しない場合、INSERT はスキップされエラーにはなりません。
-
 → [Excel / YAML Example](ntf-testdata-doc-examples-table.md#table-data)
 
 ### 5.2 SETUP_TABLE
