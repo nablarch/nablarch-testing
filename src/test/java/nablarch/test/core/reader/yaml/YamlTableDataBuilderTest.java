@@ -493,6 +493,56 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: "${systemTime}" 完全一致の場合はシステム時刻に変換されること（8.4）。
+     *
+     * <p>
+     * 解説書 8.4: DateTimeInterpreter は完全一致のみ変換する。部分文字列は変換されない<br>
+     * Given: list_maps に EXACT_COL="${systemTime}", PARTIAL_COL="prefix_${systemTime}"<br>
+     * When:  buildListMapRows(yaml, "dateTimeTest", path) を呼ぶ<br>
+     * Then:  EXACT_COL はシステム時刻文字列になり、PARTIAL_COL は変換されないこと
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_dateTimeInterpreterExactMatchOnly() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "dateTimeTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("${systemTime} 完全一致はシステム時刻に変換されること",
+                result.get(0).get("EXACT_COL"), is("2010-09-14 12:34:56.0"));
+        assertThat("部分文字列 prefix_${systemTime} は変換されないこと",
+                result.get(0).get("PARTIAL_COL"), is("prefix_${systemTime}"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: "${binaryFile:path}" はファイル内容の HexString に変換されること（8.6）。
+     *
+     * <p>
+     * 解説書 8.6: BinaryFileInterpreter のパスは YAML ファイルのディレクトリからの相対パス<br>
+     * Given: list_maps に BIN_COL="${binaryFile:YamlTableDataBuilderTest/test.bin}"<br>
+     * When:  buildListMapRows(yaml, "binaryFileTest", path) を呼ぶ<br>
+     * Then:  BIN_COL が test.bin のバイト列 HexString（"414243"）になること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_binaryFileInterpreterResolvesRelativePath() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "binaryFileTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("${binaryFile:path} はファイル内容の HexString に変換されること",
+                result.get(0).get("BIN_COL"), is("414243"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>
