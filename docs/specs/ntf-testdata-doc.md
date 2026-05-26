@@ -297,7 +297,7 @@ DB への INSERT 用データを記述します。
 
 省略カラムにデフォルト値を補完してから比較するデータを記述します。
 
-- 省略カラムに `BasicDefaultValues` のデフォルト値が自動補完されます
+- 省略カラムにはデフォルト値が自動補完されます
 - デフォルト値は以下のとおりです
 
 | カラム型 | デフォルト値 |
@@ -344,7 +344,7 @@ list_maps:
 
 - ID は完全一致で検索されます
 - 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます
-- 指定した ID のエントリが存在しない場合は `null` ではなく空リストが返されます
+- 指定した ID のエントリが存在しない場合は空のデータとして扱われます（エラーにはなりません）
 
 主な予約 ID は [4章](#4-テストケース定義) を参照してください。
 
@@ -356,9 +356,9 @@ list_maps:
 
 ### 6.1 固定長・可変長の統合
 
-`SETUP_FIXED` と `SETUP_VARIABLE` は `getSetupFile()` でまとめて返されます。`EXPECTED_FIXED` / `EXPECTED_VARIABLE` も同様です。ファイル種別はセクション内の属性（固定長 or 可変長）で区別します。
+セットアップ用のファイルデータ（`SETUP_FIXED` / `SETUP_VARIABLE`）は、固定長・可変長の区別なくまとめて収集されます。期待値ファイル（`EXPECTED_FIXED` / `EXPECTED_VARIABLE`）も同様です。固定長か可変長かはセクション内の記述で区別されます。
 
-**YAML 記述の必須キー**: `setup_files` / `expected_files` の各エントリには `path` キーが必須です。省略すると `IllegalStateException` がスローされます。
+**YAML 記述の必須キー**: `setup_files` / `expected_files` の各エントリには `path` キーが必須です。省略するとエラーになります。
 
 ### 6.2 ファイルセクションの構造
 
@@ -524,15 +524,15 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | 値の種類 | Excel での記述 | YAML での記述 | 備考 |
 |---|---|---|---|
 | 通常の文字列 | `abc` | `"abc"` | YAML はクォート必須（型変換防止） |
-| null（Java null） | `null`（大文字小文字不問） | `null`（クォートなし） | YAML の `"null"`（クォートあり）も同じ結果（NullInterpreter が変換） |
+| null（DB に null を格納） | `null`（大文字小文字不問） | `null`（クォートなし） | YAML の `"null"`（クォートあり）も同じ結果 |
 | 空文字 | 空セル | `""` | |
-| 先頭ゼロ付き数値 | `001` | `"001"` | YAML でクォートなしだと SnakeYAML が `1` に型変換する |
-| `true` / `false`（文字列） | `true` | `"true"` | YAML でクォートなしだと SnakeYAML が Boolean に型変換する |
-| 半角スペース1文字 | `" "`（セルに `"` space `"` と入力） | `" "` | QuotationTrimmer が外側クォートを除去してスペースになる |
-| ダブルクォート1文字 | `"""`（セルに `"` `"` `"` と入力） | `'"'`（YAML シングルクォート） | Excel は QuotationTrimmer が除去、YAML はシングルクォートが簡潔 |
+| 先頭ゼロ付き数値 | `001` | `"001"` | YAML でクォートなしだと `1` に型変換される |
+| `true` / `false`（文字列） | `true` | `"true"` | YAML でクォートなしだと真偽値に型変換される |
+| 半角スペース1文字 | `" "`（セルに `"` space `"` と入力） | `" "` | 外側クォートが除去されてスペースになる |
+| ダブルクォート1文字 | `"""`（セルに `"` `"` `"` と入力） | `'"'`（YAML シングルクォート） | |
 | 日時プレースホルダ | `${systemTime}` | `"${systemTime}"` | 完全一致のみ変換。詳細は 8.4 を参照 |
 | バイナリファイル参照 | `${binaryFile:path}` | `"${binaryFile:path}"` | パスはどちらもデータファイルのディレクトリ基準。詳細は 8.6 を参照 |
-| 文字種生成 | `${半角英字,10}` | `"${半角英字,10}"` | CompositeInterpreter が処理。詳細は 8.5 を参照 |
+| 文字種生成 | `${半角英字,10}` | `"${半角英字,10}"` | 詳細は 8.5 を参照 |
 | 改行文字（LF） | `\\n` | `"\\n"` | LineSeparatorInterpreter が変換 |
 | 改行文字（CR） | `\\r` | `"\\r"` | LineSeparatorInterpreter が変換 |
 
@@ -543,7 +543,6 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 **Excel のセル書式**:
 - セルは必ず**文字列書式**で記述してください。数値・日付書式の場合の動作は保証されません
-- インタープリタチェーンにより、NullInterpreter → QuotationTrimmer → その他の順で値が変換されます
 
 ### 8.2 インタープリタチェーンの仕組み
 
@@ -565,11 +564,11 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 `DateTimeInterpreter` は完全一致のみ変換します。部分文字列は変換されません。文字列中の `${...}` を置換するには `CompositeInterpreter` との組み合わせが必要です。
 
-### 8.5 BasicJapaneseCharacterGenerator の有効文字種
+### 8.5 文字種生成の有効文字種
 
 14種類の文字種が使用できます: 半角英字 / 半角数字 / 半角記号 / 半角カナ / 全角英字 / 全角数字 / 全角ひらがな / 全角カタカナ / 全角漢字 / 全角記号その他 / 中国語 / サロゲートペア / 改行 / 外字
 
-未知の文字種を指定すると `IllegalArgumentException` がスローされます。
+上記以外の文字種を指定するとエラーになります。
 
 ### 8.6 BinaryFileInterpreter のパス基準
 
@@ -602,9 +601,9 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 ### 8.10 データ型マッピング
 
-`BasicDataTypeMapping` のデフォルトマッピング22種が使用できます。未知の型記号を指定すると `IllegalArgumentException` がスローされます。
+デフォルトで22種のデータ型記号が使用できます。使用できない型記号を指定するとエラーになります。
 
-`TEST_{baseType}` 名のデータ型が存在する場合、自動的に優先使用されます。
+`TEST_{基底型名}` という名前のデータ型を定義すると、同名の基底型より優先して使用されます（テスト専用の型定義に使います）。
 
 ---
 
@@ -698,15 +697,15 @@ Excel では、エントリ内の先頭以外の要素をコメントとして�
 
 ### 11.1 テーブルアサート（assertTableEquals）
 
-`assertTableEquals` は **主キーで突合**してレコードを比較します。レコードの**順序は問いません**。異なる順序でデータが返ってきてもアサートが成功します。
+テーブルアサートは **主キーで突合**してレコードを比較します。レコードの**順序は問いません**。異なる順序でデータが返ってきてもアサートが成功します。
 
 ### 11.2 SQL 結果セットアサート（assertSqlResultSetEquals）
 
-`assertSqlResultSetEquals` は**順序厳格**な比較を行います。期待値と実際の結果セットでレコードの順序が異なる場合は等価でないとみなします。
+SQL 結果セットアサートは**順序厳格**な比較を行います。期待値と実際の結果セットでレコードの順序が異なる場合はアサートが失敗します。
 
-### 11.3 DbAccessTestSupport のオプション
+### 11.3 DB アサートのオプション
 
-- `assertTableEquals(failIfNoDataFound=false)` を使用すると、DB にデータが存在しない場合に検証をスキップします
-- `getParamMap()` でリストが0件の場合は空 Map を返します。2件以上の場合は `IllegalArgumentException` がスローされます
+- テーブルアサートで `failIfNoDataFound=false` を指定すると、DB にデータが存在しない場合に検証をスキップします
+- パラメータ Map の取得でリストが0件の場合は空データとして扱われます。2件以上ある場合はエラーになります
 
 ---
