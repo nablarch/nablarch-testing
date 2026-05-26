@@ -358,12 +358,14 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - 既存の R-1/R-1-refactor コードは参考にしてよいが、仕様 FIX 後の仕様IDに対して全件検証すること
 
 **作業内容**:
-- [ ] 仕様リストの全仕様IDに対してテストケースを先に設計する（TDD）
-- [ ] `YamlTestDataParserTest` を作成し、全仕様IDをカバーするテストを記述する
+- [ ] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する
+  - テストを先に書き、グリーンにする繰り返し
+  - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
 - [ ] `YamlTestDataParser extends BasicTestDataParser` を実装する
 - [ ] クラス分割（yaml サブパッケージ: `YamlLoader` / `YamlTableDataBuilder` / `YamlFileBuilder` / `YamlMessageBuilder` / `YamlSection`）を行う
 - [ ] `pom.xml` に SnakeYAML 依存が追加されていることを確認する（既存）
 - [ ] テスト実行・全グリーン確認
+- [ ] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）
 - [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
 - [ ] Javaエキスパートレビュー（サブエージェントで実施）
@@ -374,7 +376,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - 全テストが全グリーンであること
 - `setTestDataReader` 呼び出し時に `UnsupportedOperationException` がスローされること
 - 実装コードが既存コードのスタイルに準拠していること（Javadoc・`@Override`・型引数等）
-- テストコードに GWT（Given/When/Then）コメントと仕様ID参照が記載されていること
+- テストコードに GWT（Given/When/Then）コメントと解説書の章番号が記載されていること
+- 仕様リストの全仕様IDにテストメソッドが1対1でマッピングされており、漏れが0件であること
 
 ---
 
