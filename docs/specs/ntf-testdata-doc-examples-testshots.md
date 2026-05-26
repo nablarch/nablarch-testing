@@ -5,6 +5,7 @@
 - [ウェブアプリケーション](#web)
 - [バッチ処理](#batch)
 - [メッセージング](#messaging)
+- [エンティティバリデーション](#entity)
 
 ---
 
@@ -196,4 +197,44 @@ list_maps:
         userId: "batch_user"
         expectedMessage: "case1"
         responseMessage: "res_case1"
+```
+
+---
+
+<a name="entity"></a>
+
+## エンティティバリデーション（EntityTestSupport）
+
+### 必須カラム
+
+| カラム名 | 説明 |
+|---|---|
+| `title` | テストケースの説明 |
+| `expectedMessageId1` | 期待するバリデーションメッセージ ID（複数ある場合は `expectedMessageId2`, `expectedMessageId3`, ... と連番で追加） |
+| `propertyName1` | バリデーション対象プロパティ名（同上、連番で追加可能） |
+
+### 関連予約 ID
+
+| 予約 ID | 説明 |
+|---|---|
+| `params` | 入力パラメータ定義。`testShots` の行数と一致が必須 |
+
+### 記述例
+
+#### Excel
+
+| LIST_MAP=testShots | | | |
+|---|---|---|---|
+| title | expectedMessageId1 | propertyName1 | |
+| 必須チェック | errors.required | userName | |
+
+#### YAML
+
+```yaml
+list_maps:
+  - id: testShots
+    rows:
+      - title: "必須チェック"
+        expectedMessageId1: "errors.required"
+        propertyName1: "userName"
 ```
