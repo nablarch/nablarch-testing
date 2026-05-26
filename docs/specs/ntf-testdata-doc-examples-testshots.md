@@ -17,8 +17,8 @@
 
 | カラム名 | 説明 |
 |---|---|
-| `no` | テストケース番号 |
-| `description` | テストケースの説明（旧名 `case` も可） |
+| `no` | テストケース番号。空の場合はエラーになります |
+| `description` | テストケースの説明（旧名 `case` も可）。`description` も `case` も未定義の場合はエラーになります |
 | `isValidToken` | CSRF トークン制御フラグ（`1`: あり、`0`: なし） |
 | `expectedStatusCode` | 期待する HTTP ステータスコード |
 | `forwardUri` | 期待するフォワード先 URI |
@@ -35,10 +35,10 @@
 | `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
 | `expectedSearch` | 検索結果期待値の groupId（対応する `LIST_MAP` セクションを収集） | スキップ |
 | `expectedMessageId` | 期待するメッセージ ID（カンマ区切りで複数指定可） | スキップ |
-| `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名 | — |
+| `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名。指定した LIST_MAP の行数がテストケース番号より少ない場合はエラーになります | — |
 | `responseResult` | HTTP レスポンス（リクエストスコープ）期待値の `LIST_MAP` 名 | スキップ |
-| `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
-| `queryParams` | クエリパラメータの `LIST_MAP` 名 | パラメータなし |
+| `cookie` | Cookie 値の `LIST_MAP` 名。指定した LIST_MAP が空の場合はエラーになります | Cookie なし |
+| `queryParams` | クエリパラメータの `LIST_MAP` 名。指定した LIST_MAP が空の場合はエラーになります | パラメータなし |
 | `HTTP_METHOD` | HTTP メソッド | `"POST"` |
 | `expectedContentLength` | 期待する Content-Length | スキップ |
 | `expectedContentType` | 期待する Content-Type | スキップ |
@@ -98,8 +98,8 @@ list_maps:
 
 | カラム名 | 説明 |
 |---|---|
-| `no` | テストケース番号 |
-| `description` | テストケースの説明（旧名 `case` も可） |
+| `no` | テストケース番号。空の場合はエラーになります |
+| `description` | テストケースの説明（旧名 `case` も可）。`description` も `case` も未定義の場合はエラーになります |
 | `expectedStatusCode` | 期待するステータスコード |
 | `diConfig` | DI コンポーネント設定ファイルパス |
 | `requestPath` | リクエストパス |
@@ -114,7 +114,7 @@ list_maps:
 | `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
 | `setUpFile` | この値と同じ groupId を持つ `SETUP_FIXED`/`SETUP_VARIABLE` セクションを入力ファイルとして配置します | スキップ |
 | `expectedFile` | この値と同じ groupId を持つ `EXPECTED_FIXED`/`EXPECTED_VARIABLE` セクションで出力ファイルを検証します | スキップ |
-| `expectedLog` | 期待ログの `LIST_MAP` 名 | スキップ |
+| `expectedLog` | 期待ログの `LIST_MAP` 名。指定した LIST_MAP が空の場合はエラーになります | スキップ |
 | `args[0]`, `args[1]`, ... | コマンドライン引数 | — |
 | その他任意カラム | コマンドラインオプション | — |
 
@@ -160,8 +160,8 @@ list_maps:
 
 | カラム名 | 説明 |
 |---|---|
-| `no` | テストケース番号 |
-| `description` | テストケースの説明（旧名 `case` も可） |
+| `no` | テストケース番号。空の場合はエラーになります |
+| `description` | テストケースの説明（旧名 `case` も可）。`description` も `case` も未定義の場合はエラーになります |
 | `expectedStatusCode` | 期待するステータスコード |
 | `diConfig` | DI コンポーネント設定ファイルパス |
 | `requestPath` | リクエストパス |
@@ -176,7 +176,7 @@ list_maps:
 | `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
 | `expectedMessage` | この値と同じ groupId を持つ要求電文セクション（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`）で検証します | スキップ |
 | `responseMessage` | この値と同じ groupId を持つ応答電文セクション（`RESPONSE_HEADER/BODY_MESSAGES`）をレスポンスとして返します | スキップ |
-| `expectedLog` | 期待ログの `LIST_MAP` 名 | スキップ |
+| `expectedLog` | 期待ログの `LIST_MAP` 名。指定した LIST_MAP が空の場合はエラーになります | スキップ |
 
 ### 記述例
 
