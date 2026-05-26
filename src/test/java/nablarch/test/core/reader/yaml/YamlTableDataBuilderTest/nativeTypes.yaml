@@ -22,3 +22,8 @@ list_maps:
   - id: binaryFileTest
     rows:
       - BIN_COL: "${binaryFile:YamlTableDataBuilderTest/test.bin}"
+
+  - id: charGenTest
+    rows:
+      - ALPHA_COL: "${半角英字,10}"
+        NUM_COL: "${半角数字,5}"

@@ -543,6 +543,34 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: "${半角英字,N}" 形式で指定長の文字列が生成されること（8.5）。
+     *
+     * <p>
+     * 解説書 8.5: BasicJapaneseCharacterInterpreter が ${文字種,文字数} を生成する<br>
+     * Given: list_maps に ALPHA_COL="${半角英字,10}", NUM_COL="${半角数字,5}"<br>
+     * When:  buildListMapRows(yaml, "charGenTest", path) を呼ぶ<br>
+     * Then:  ALPHA_COL は 10 文字の半角英字、NUM_COL は 5 文字の半角数字になること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_charTypeGeneratorProducesSpecifiedLength() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "charGenTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        String alphaVal = result.get(0).get("ALPHA_COL");
+        assertThat("${半角英字,10} は 10 文字になること", alphaVal.length(), is(10));
+        assertTrue("${半角英字,10} は半角英字のみであること", alphaVal.matches("[a-zA-Z]{10}"));
+        String numVal = result.get(0).get("NUM_COL");
+        assertThat("${半角数字,5} は 5 文字になること", numVal.length(), is(5));
+        assertTrue("${半角数字,5} は半角数字のみであること", numVal.matches("[0-9]{5}"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>
