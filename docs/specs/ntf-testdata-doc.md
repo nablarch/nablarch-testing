@@ -25,7 +25,9 @@
 
 ## 1. NTF テストデータとは
 
-NTF テストデータファイルには、次の3種類のデータを記述します。
+NTF（Nablarch Testing Framework）では、テストを実行するために必要なデータを専用のファイルに記述します。テストコード（Java）からこのファイルを読み込むことで、DB へのデータ投入・入力ファイルの配置・期待値との比較が行われます。
+
+テストデータファイルには、次の3種類のデータを記述します。
 
 **テストケース**  
 テストの実行条件を1エントリ1ケースで定義します。各エントリが1テストケースを表します。リクエスト単体テスト（ウェブアプリケーション）なら「ユーザ ID・期待ステータスコード・期待フォワード先 URI」など、リクエスト単体テスト（バッチ処理）なら「リクエストパス・ユーザ ID・DI コンフィグ・期待ステータスコード」などを列挙します。
@@ -36,7 +38,7 @@ NTF テストデータファイルには、次の3種類のデータを記述し
 **検証**  
 テスト後の検証に使うデータです。DB の期待値、出力ファイルの期待値、電文の期待値、ログや検索結果等の期待値などを定義します。
 
-これらは**セクション**という単位で管理され、DataType 名と識別子の値の組み合わせで区別されます。1つのファイルに複数種別のセクションを共存させることができます。セクションの記述順序は問いません。
+これらは**セクション**という単位で管理されます。セクションの種別（例: DB 投入用・ファイル期待値用）と識別子（テーブル名・ファイルパス等）の組み合わせで区別します。1つのファイルに複数種別のセクションを共存させることができ、記述順序は問いません。セクションの詳細は [3章](#3-セクション識別) で説明します。
 
 → [Excel / YAML Example](ntf-testdata-doc-examples-overview.md#overview)
 
@@ -72,7 +74,7 @@ src/test/java/com/example/
 |---|---|---|
 | ファイルなし時の動作 | ファイルが存在しない場合はエラーになる | ファイルが存在しない、またはパースに失敗した場合はエラーになる |
 | 空ファイル時の動作 | 空シートは存在しないシート扱いとなる | 空ファイル（0バイト）は空データとして扱われる（エラーにはならない） |
-| キャッシュ | Workbook 単位で LRU キャッシュ（最大1件）で管理される | ファイル単位で LRU キャッシュ（最大8件）で管理される。テスト間のキャッシュ汚染を防ぐには `YamlTestDataParser.clearCacheForTest()` を呼び出す |
+| キャッシュ | テストクラス単位（ブック1冊）でキャッシュされる | ファイル単位でキャッシュされる（最大8ファイル） |
 | セル書式 | セルは必ず**文字列書式**で記述すること。数値・日付書式の場合の動作は保証しない | 値の型変換ルールは [8章](#8-値の書き方) を参照 |
 
 ---
@@ -120,36 +122,36 @@ setup_tables:
 ```
 
 - 完全なセクションキーを使用するため前方一致は発生しません
-- YAML では同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
-- Excel では同一シート内に同種セクションを複数記述できます。GroupData は全件収集、SingleData は先着一致です
+- YAML では同一ファイル内のトップレベルキーの重複は禁止です。同種のデータは同一キーにリストとして並べて記述します（重複した場合はエラーになります）
+- Excel では同一シート内に同種セクションを複数記述できます。DataType によって全件収集または先着一致のどちらかで収集されます（詳細は [3.3節](#33-収集方式のまとめ) を参照）
 
 ### 3.2 DataType の種類
 
 テストデータで使用できる DataType は以下の14種類です。
 
-| DataType名 | 用途 | 収集方式 |
+| DataType名 | 用途 | 同一 ID が複数ある場合 |
 |---|---|---|
-| `SETUP_TABLE` | INSERT 用テーブルデータ | GroupData（全件収集） |
-| `EXPECTED_TABLE` | 比較用テーブルデータ（省略カラムは比較対象外） | GroupData（全件収集） |
-| `EXPECTED_COMPLETE_TABLE` | 比較用テーブルデータ（省略カラムにデフォルト値補完） | GroupData（全件収集） |
-| `LIST_MAP` | キーバリュー形式の汎用データ（テストケース定義・期待値等） | SingleData（先着一致） |
-| `SETUP_FIXED` | 固定長ファイルの入力データ | GroupData（全件収集） |
-| `EXPECTED_FIXED` | 固定長ファイルの期待値データ | GroupData（全件収集） |
-| `SETUP_VARIABLE` | 可変長ファイルの入力データ | GroupData（全件収集） |
-| `EXPECTED_VARIABLE` | 可変長ファイルの期待値データ | GroupData（全件収集） |
-| `MESSAGE` | メッセージング電文データ | SingleData（先着一致） |
-| `EXPECTED_REQUEST_HEADER_MESSAGES` | 要求電文ヘッダの期待値 | GroupData（`testShots` の `expectedMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
-| `EXPECTED_REQUEST_BODY_MESSAGES` | 要求電文ボディの期待値 | GroupData（`testShots` の `expectedMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
-| `RESPONSE_HEADER_MESSAGES` | 応答電文ヘッダデータ | GroupData（`testShots` の `responseMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
-| `RESPONSE_BODY_MESSAGES` | 応答電文ボディデータ | GroupData（`testShots` の `responseMessage` カラムで groupId 指定）または SingleData（ID 直接指定） |
+| `SETUP_TABLE` | INSERT 用テーブルデータ | 同じグループに属するものをすべて収集 |
+| `EXPECTED_TABLE` | 比較用テーブルデータ（省略カラムは比較対象外） | 同じグループに属するものをすべて収集 |
+| `EXPECTED_COMPLETE_TABLE` | 比較用テーブルデータ（省略カラムにデフォルト値補完） | 同じグループに属するものをすべて収集 |
+| `LIST_MAP` | キーバリュー形式の汎用データ（テストケース定義・期待値等） | 最初の1件のみ有効（2件目以降は無視） |
+| `SETUP_FIXED` | 固定長ファイルの入力データ | 同じグループに属するものをすべて収集 |
+| `EXPECTED_FIXED` | 固定長ファイルの期待値データ | 同じグループに属するものをすべて収集 |
+| `SETUP_VARIABLE` | 可変長ファイルの入力データ | 同じグループに属するものをすべて収集 |
+| `EXPECTED_VARIABLE` | 可変長ファイルの期待値データ | 同じグループに属するものをすべて収集 |
+| `MESSAGE` | メッセージング電文データ | 最初の1件のみ有効（2件目以降は無視） |
+| `EXPECTED_REQUEST_HEADER_MESSAGES` | 要求電文ヘッダの期待値 | groupId 指定時は全件収集、ID 直接指定時は最初の1件 |
+| `EXPECTED_REQUEST_BODY_MESSAGES` | 要求電文ボディの期待値 | groupId 指定時は全件収集、ID 直接指定時は最初の1件 |
+| `RESPONSE_HEADER_MESSAGES` | 応答電文ヘッダデータ | groupId 指定時は全件収集、ID 直接指定時は最初の1件 |
+| `RESPONSE_BODY_MESSAGES` | 応答電文ボディデータ | groupId 指定時は全件収集、ID 直接指定時は最初の1件 |
 | `DEFAULT` | フレームワーク内部用（通常使用しません） | — |
 
-### 3.3 GroupData と SingleData
+### 3.3 収集方式のまとめ
 
 セクションの収集方式は DataType によって異なります。
 
-- **GroupData**: 同じグループに属するセクションをすべて収集します。ファイル全体を最後まで読み込みます（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）
-- **SingleData**: 最初に一致したセクション1件だけを取得して停止します（`LIST_MAP`、`MESSAGE` など）。同一 ID のエントリが複数ある場合、2件目以降は無視されます
+- **全件収集**（`SETUP_TABLE`、`EXPECTED_TABLE`、ファイル系など）: 同じグループに属するセクションをすべて収集します。ファイル全体を最後まで読み込みます
+- **先着一致**（`LIST_MAP`、`MESSAGE` など）: 最初に一致したセクション1件だけを取得します。同一 ID のエントリが複数ある場合、2件目以降は無視されます
 
 グループの指定方法（groupId）については [4.4 セクションのグループ化](#44-セクションのグループ化groupid) を参照してください。
 
@@ -159,9 +161,9 @@ setup_tables:
 
 ### 4.1 testShots
 
-`testShots` はテストケース定義の予約 ID です。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧 ID `testCases` は後方互換性のためフォールバックとして残存します。
+`testShots` はテストケース定義の予約 ID です。フレームワークがこの ID を自動的に読み込み、各エントリを1テストケースとして実行します。旧称 `testCases` も動作しますが、新規作成では `testShots` を使用してください。
 
-テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合は例外がスローされます。
+テストが実行されるためには `testShots` に1件以上のエントリが必要です。0件の場合はエラーになります。
 
 - **Excel**: `LIST_MAP=testShots` セクションに記述します
 - **YAML**: `list_maps:` 下の `id: testShots` エントリに記述します
@@ -174,29 +176,29 @@ testShots の各カラムは処理方式（ウェブアプリケーション / �
 
 #### 全処理方式共通の注意事項
 
-- `no` カラムが空の場合は `IllegalArgumentException` がスローされます
-- `description` カラムと `case` カラムのどちらも未定義の場合は `IllegalStateException` がスローされます
+- `no` カラムが空の場合はエラーになります
+- `description` カラムと `case` カラムのどちらも未定義の場合はエラーになります
 
 #### 主なカラムの動作
 
 | カラム名 | 対象処理方式 | 動作 |
 |---|---|---|
-| `no` | 全方式（必須） | テストケース番号 |
-| `description` / `case` | 全方式（いずれか必須） | テストケースの説明。`case` は旧称で後方互換として残存 |
-| `context` | HTTP（必須） | `REQUEST_ID`・`USER_ID` 等を含む `LIST_MAP` 名を指定します。1行のみ有効。`REQUEST_ID` が空の場合は `IllegalArgumentException` がスローされます |
+| `no` | 全方式（必須） | テストケース番号。空の場合はエラーになります |
+| `description` / `case` | 全方式（いずれか必須） | テストケースの説明。`case` は旧称で動作しますが、新規作成では `description` を使用してください。どちらも未定義の場合はエラーになります |
+| `context` | HTTP（必須） | `REQUEST_ID`・`USER_ID` 等を含む `LIST_MAP` 名を指定します。1行のみ有効。`REQUEST_ID` が空の場合はエラーになります |
 | `setUpTable` | 全方式 | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します。空の場合はスキップされます |
 | `expectedTable` | 全方式 | この値と同じ groupId を持つ `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` セクションで DB を検証します。空の場合はスキップされます |
 | `setUpFile` | バッチ系 | この値と同じ groupId を持つ `SETUP_FIXED` / `SETUP_VARIABLE` セクションを入力ファイルとして配置します。空の場合はスキップされます |
 | `expectedFile` | バッチ系 | この値と同じ groupId を持つ `EXPECTED_FIXED` / `EXPECTED_VARIABLE` セクションで出力ファイルを検証します。空の場合はスキップされます |
-| `expectedLog` | バッチ系 | 期待ログの `LIST_MAP` 名を指定します。空の場合はスキップされます。指定した LIST_MAP が空の場合は `IllegalStateException` がスローされます |
-| `requestParams` | HTTP | HTTP リクエストパラメータの予約 ID。対応する `LIST_MAP` からパラメータを読み込みます。`LIST_MAP` の行数がテストケース数より少ない場合は `IllegalArgumentException` がスローされます |
+| `expectedLog` | バッチ系 | 期待ログの `LIST_MAP` 名を指定します。空の場合はスキップされます。指定した LIST_MAP が空の場合はエラーになります |
+| `requestParams` | HTTP | HTTP リクエストパラメータの予約 ID。対応する `LIST_MAP` からパラメータを読み込みます。`LIST_MAP` の行数がテストケース数より少ない場合はエラーになります |
 | `responseResult` | HTTP | HTTP レスポンス（リクエストスコープ）期待値の予約 ID |
-| `params` | エンティティバリデーション | 入力パラメータ定義の予約 ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須です（不一致で `IllegalArgumentException` がスローされます） |
+| `params` | エンティティバリデーション | 入力パラメータ定義の予約 ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須です（不一致でエラーになります） |
 | `title` | エンティティバリデーション（必須） | テストケースの説明 |
 | `expectedMessageId1` | エンティティバリデーション（必須） | 期待するバリデーションメッセージ ID |
 | `propertyName1` | エンティティバリデーション（必須） | バリデーション対象プロパティ名 |
-| `cookie` | HTTP | Cookie 値の `LIST_MAP` 名を指定します。空の場合は Cookie なし。指定した LIST_MAP が空の場合は `IllegalArgumentException` がスローされます |
-| `queryParams` | HTTP | クエリパラメータの `LIST_MAP` 名を指定します。空の場合はパラメータなし。指定した LIST_MAP が空の場合は `IllegalArgumentException` がスローされます |
+| `cookie` | HTTP | Cookie 値の `LIST_MAP` 名を指定します。空の場合は Cookie なし。指定した LIST_MAP が空の場合はエラーになります |
+| `queryParams` | HTTP | クエリパラメータの `LIST_MAP` 名を指定します。空の場合はパラメータなし。指定した LIST_MAP が空の場合はエラーになります |
 | `HTTP_METHOD` | HTTP | HTTP メソッド。空の場合は `"POST"` が使用されます |
 | `expectedContentLength` | HTTP | 期待する Content-Length。空の場合は検証をスキップします |
 | `expectedContentType` | HTTP | 期待する Content-Type。空の場合は検証をスキップします |
@@ -205,7 +207,7 @@ testShots の各カラムは処理方式（ウェブアプリケーション / �
 
 ### 4.3 DB 共通セットアップデータ
 
-`setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッド開始時に1度だけ `SETUP_TABLE` データが投入されます。
+`setUpDb` はテストメソッド共通の DB 初期化データを定義する予約 ID です。テストメソッドの実行開始前に1回だけ `SETUP_TABLE` データが投入されます（テストメソッド内の全テストケース実行より前）。
 
 ### 4.4 セクションのグループ化（groupId）
 
@@ -233,9 +235,9 @@ setup_tables:
 #### 制約
 
 - 省略時は空文字扱いです（groupId なし = デフォルトグループ）
-- groupId の指定は1件のみ有効です。2件以上指定すると `IllegalArgumentException` がスローされます
+- groupId の指定は1件のみ有効です。2件以上指定するとエラーになります
 
-バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります。
+バッチ固有の動作として、groupId に `"default"` を指定するとグループ ID なし扱いと同等になります（HTTP テスト・メッセージングテストではこの動作は適用されません）。
 
 → [Excel / YAML Example](ntf-testdata-doc-examples-overview.md#groupid)
 
@@ -266,7 +268,7 @@ setup_tables:
         カラム3: "値3"
 ```
 
-**YAML 記述の必須キー**: `setup_tables` / `expected_tables` / `expected_complete_tables` の各エントリには `table` キーが必須です。省略すると `IllegalStateException` がスローされます。
+**YAML 記述の必須キー**: `setup_tables` / `expected_tables` / `expected_complete_tables` の各エントリには `table` キーが必須です。省略するとエラーになります。
 
 → [Excel / YAML Example](ntf-testdata-doc-examples-table.md#table-data)
 
@@ -275,7 +277,7 @@ setup_tables:
 DB への INSERT 用データを記述します。
 
 - 各エントリのカラム名と値を記述します
-- **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース等）が INSERT されます
+- **主キーカラムは省略しないでください**。省略すると型に応じたデフォルト値（数値型は `"0"`、文字型はスペース等）が INSERT されます
 
 **null 値・空文字の動作**:
 
@@ -356,7 +358,7 @@ list_maps:
 
 セットアップ用のファイルデータ（`SETUP_FIXED` / `SETUP_VARIABLE`）は、固定長・可変長の区別なくまとめて収集されます。期待値ファイル（`EXPECTED_FIXED` / `EXPECTED_VARIABLE`）も同様です。固定長か可変長かはセクション内の記述で区別されます。
 
-**YAML 記述の必須キー**: `setup_files` / `expected_files` の各エントリには `path` キーが必須です。省略するとエラーになります。
+**YAML 記述の必須キー**: `setup_files` / `expected_files` の各エントリには `path` キーが必須です。省略するとエラーになります（`table` キーと同様）。
 
 ### 6.2 ファイルセクションの構造
 
@@ -405,13 +407,13 @@ setup_files:
 ### 6.3 固定長ファイル固有の仕様
 
 - フィールド名称・データ型・フィールド長の3リストが同サイズで必須です
-- ファイル内の全フラグメントは同一レコード長でなければなりません。違反時は `IllegalStateException` がスローされます
-- フィールド値がフィールド長を超えた場合は `IllegalStateException` がスローされます
+- 1ファイルセクション内の全レコード定義は同一レコード長でなければなりません。違反した場合はエラーになります
+- フィールド値がフィールド長を超えた場合はエラーになります
 
 ### 6.4 可変長ファイル固有の仕様
 
 - フィールド名称・データ型の2リストが同サイズで必須です。フィールド長は不要です
-- **空エントリの動作**: 可変長ファイルの空エントリはスキップされず、全フィールドが `""` のレコードとして保持されます。固定長ファイルの空エントリはスペースパディングされた定長レコードとして書き出されます
+- **空エントリの動作**: ファイルデータの空エントリ（先頭フィールドが空の行）はデータ行として扱われます。可変長ファイルの場合は全フィールドが `""` のレコードとして保持され、固定長ファイルの場合はスペースパディングされた定長レコードとして書き出されます（テーブルデータの空行スキップとは異なる動作です。テーブルデータの空行スキップは [10.5節](#105-空エントリのスキップ) を参照）
 
 ### 6.5 複数レコードレイアウト
 
@@ -429,18 +431,18 @@ setup_files:
 
 フィールド長に `"-"` を指定すると、追加された全レコードの最大バイト長に自動拡張されます。値は改行コードと前後空白が除去されます。
 
-### 6.8 異常系
+### 6.8 エラーになるケース
 
-| 条件 | 例外 |
-|---|---|
-| 同一レコード種別内でフィールド名称が重複 | `IllegalArgumentException` |
-| フィールド名称リストまたはデータ型リストが null/空 | `IllegalArgumentException` |
-| フィールド名称・データ型・フィールド長リストのサイズ不一致 | `IllegalArgumentException` |
-| 存在しないフィールド名称を指定 | `IllegalArgumentException` |
-| データ要素数が不正 | `IllegalStateException` |
-| ディレクティブまたはレコード種別/フィールド名称定義の要素数が2未満 | `IllegalStateException` |
-| ファイル読み込み失敗（IO 例外） | `RuntimeException` |
-| 日付型カラムの値が日付として解析できない | `RuntimeException` |
+| 条件 |
+|---|
+| 同一レコード種別内でフィールド名称が重複している |
+| フィールド名称リストまたはデータ型リストが未指定または空 |
+| フィールド名称・データ型・フィールド長リストのサイズが一致していない |
+| 存在しないフィールド名称を指定している |
+| データ要素数が不正 |
+| ディレクティブまたはレコード種別/フィールド名称定義の要素数が2未満 |
+| ファイルの読み込みに失敗した（IO エラー） |
+| 日付型カラムの値が日付として解析できない |
 
 ---
 
@@ -471,23 +473,23 @@ sendSyncTestData/{requestId}/message
 
 ### 7.3 HEADER / BODY MESSAGES の構造と件数制約
 
-- `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` のエントリ数（rows 合計）は一致が必須です。不一致の場合は `IllegalStateException` がスローされます
+- `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` のエントリ数（rows 合計）は一致が必須です。不一致の場合はエラーになります
 - HTTP 同期応答メッセージ（`response_body_messages`）の各データエントリは文字列長が同一である必要があります
 
 ### 7.4 no カラムと errorMode
 
 - **Excel**: `no` カラム（先頭カラム）はフレームワークが除去し、データとして保存されません。フィールド名称行の先頭セルは空にします
 - **YAML**: `no` フィールドは `rows:` のリスト要素に含めます。フレームワークが除去します
-- `errorMode` の値はカラム番号1に格納されます
+- `errorMode` の値は先頭から2番目のカラム（1始まりで番号1）に格納されます
 - `errorMode:timeout` および `errorMode:msgException` は特殊値です。これらが指定されたエントリでは他フィールドはパースされません
 
 ### 7.5 複数回送信
 
 N 回送信する場合は、ヘッダ件数とボディ件数をともに N 件ずつ記述します。同一リクエスト ID で複数回送信する場合は `no` 値を変えて連続記述し、送信順序と `no` 値を一致させます。
 
-### 7.6 GroupMessageParser
+### 7.6 メッセージの groupId 収集
 
-同一 groupId の複数メッセージプールを収集します。識別子の値をリクエスト ID として使用します。
+同一 groupId を持つ複数のメッセージプールを収集します。識別子の値をリクエスト ID として使用します。
 
 ### 7.7 ステータスコード
 
@@ -599,9 +601,22 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 ### 8.10 データ型マッピング
 
-デフォルトで22種のデータ型記号が使用できます。使用できない型記号を指定するとエラーになります。
+フィールドのデータ型は以下の日本語型名称で指定します。使用できない型名称を指定するとエラーになります。
 
-`TEST_{基底型名}` という名前のデータ型を定義すると、同名の基底型より優先して使用されます（テスト専用の型定義に使います）。
+| 型名称 | 型記号 | 用途 |
+|---|---|---|
+| `半角英字` / `半角数字` / `半角記号` / `半角カナ` / `半角英数字` / `半角英数字記号` / `半角` | `X` | 半角文字 |
+| `全角英字` / `全角数字` / `全角ひらがな` / `全角カタカナ` / `全角漢字` / `全角` | `N` | 全角文字 |
+| `全半角` | `XN` | 全角・半角混在 |
+| `数値` / `符号無ゾーン10進数` | `Z` | ゾーン10進数（符号なし） |
+| `符号付ゾーン10進数` | `SZ` | ゾーン10進数（符号あり） |
+| `符号無パック10進数` | `P` | パック10進数（符号なし） |
+| `符号付パック10進数` | `SP` | パック10進数（符号あり） |
+| `符号無数値` | `X9` | バイナリ表現の数値（符号なし） |
+| `符号付数値` | `SX9` | バイナリ表現の数値（符号あり） |
+| `バイナリ` | `B` | バイナリデータ |
+
+`TEST_{型名称}` という名前のデータ型を定義すると、同名の基底型より優先して使用されます（テスト専用の型定義に使います）。
 
 ---
 
@@ -616,27 +631,37 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 ### 9.2 固定長ファイルのディレクティブ
 
-固定長ファイルで有効なディレクティブキーは `FixedLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます。
+固定長ファイルで有効なディレクティブキーは以下に限定されます。無効なキーを指定するとエラーになります。
 
 | ディレクティブキー | 説明 |
 |---|---|
 | `file-type` | 自動設定（`"Fixed"`）。通常は記述不要です |
-| `record-length` | フィールド長合計から自動計算。通常は記述不要です |
 | `text-encoding` | ファイルの文字エンコーディング |
+| `record-length` | フィールド長合計から自動計算。通常は記述不要です |
+| `record-separator` | レコード区切り文字 |
 | `positive-zone-sign-nibble` | ゾーン10進数の正符号ニブル |
-| その他 | `FixedLengthDirective` 列挙型の定義を参照してください |
+| `negative-zone-sign-nibble` | ゾーン10進数の負符号ニブル |
+| `positive-pack-sign-nibble` | パック10進数の正符号ニブル |
+| `negative-pack-sign-nibble` | パック10進数の負符号ニブル |
+| `required-decimal-point` | 小数点を必須とするか（`true` / `false`） |
+| `fixed-sign-position` | 符号を固定位置に置くか（`true` / `false`） |
+| `required-plus-sign` | 正符号を出力するか（`true` / `false`） |
 
 ### 9.3 可変長ファイルのディレクティブ
 
-可変長ファイルで有効なディレクティブキーは `VariableLengthDirective` 列挙型の定義に限定されます。無効なキーを指定すると `IllegalArgumentException` がスローされます。
+可変長ファイルで有効なディレクティブキーは以下に限定されます。無効なキーを指定するとエラーになります。
 
 | ディレクティブキー | 説明 |
 |---|---|
 | `file-type` | 自動設定（`"Variable"`）。通常は記述不要です |
-| `field-separator` | フィールド区切り文字。デフォルトは `","` です。`"\\t"` 指定でタブ文字になります。**1文字のみ有効**（2文字以上は `IllegalArgumentException` がスローされます） |
+| `text-encoding` | ファイルの文字エンコーディング |
 | `record-separator` | レコード区切り。`NONE` / `CR` / `LF` / `CRLF` または任意リテラル文字列が有効です |
+| `field-separator` | フィールド区切り文字。デフォルトは `","` です。`"\\t"` 指定でタブ文字になります。**1文字のみ有効**（2文字以上はエラーになります） |
 | `quoting-delimiter` | クォート文字 |
-| その他 | `VariableLengthDirective` 列挙型の定義を参照してください |
+| `ignore-blank-lines` | 空行を無視するか |
+| `requires-title` | タイトル行の有無 |
+| `max-record-length` | レコードの最大長 |
+| `title-record-type-name` | タイトルレコードの種別名 |
 
 ### 9.4 デフォルトディレクティブの DI 設定
 
@@ -666,7 +691,7 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 カラム名が `[カラム名]` 形式（角括弧で囲まれた名前）のカラムはマーカーカラムとして扱われ、DB 操作から除外されます。
 
 - **Excel**: `SETUP_TABLE` / `EXPECTED_TABLE` / `LIST_MAP` すべてでマーカーカラムが除外されます
-- **YAML**: `list_maps:` ではマーカーカラムが除外されます。`setup_tables` / `expected_tables` ではマーカーカラムの除外は行われません
+- **YAML**: `setup_tables` / `expected_tables` / `list_maps` すべてでマーカーカラムが除外されます
 
 ### 10.3 エントリ単位のコメント
 
@@ -704,6 +729,6 @@ SQL 結果セットアサートは**順序厳格**な比較を行います。期
 ### 11.3 DB アサートのオプション
 
 - テーブルアサートで `failIfNoDataFound=false` を指定すると、DB にデータが存在しない場合に検証をスキップします
-- パラメータ Map の取得でリストが0件の場合は空データとして扱われます。2件以上ある場合はエラーになります
+- `getParamMap` で `LIST_MAP` を取得する際、該当 ID のエントリが0件の場合は空データとして扱われます。2件以上ある場合はエラーになります
 
 ---
