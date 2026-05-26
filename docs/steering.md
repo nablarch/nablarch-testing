@@ -458,12 +458,14 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-4 完了**（ユーザーレビュー OK 取得済み、2026-05-26）
-3. **S-5 着手中**:
-   - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-testdata-doc.md` の章番号を記載する
-   - 章番号が記載できない仕様ID（＝解説書に対応する記述がない）を「記載漏れ」として一覧化する
-   - 記載漏れを全件 `ntf-testdata-doc.md` に追記し、S-4 のユーザーレビューを再取得する
-   - セルフチェック（`docs/checks/S-5.md`）→ QAエンジニアレビュー → ユーザーレビュー
+2. **Ph-2 完了**（S-4/S-5 ユーザーレビュー OK 取得済み、2026-05-26）
+3. **R-1 着手**:
+   - `docs/specs/ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` を読んで解説書を把握する
+   - 既存コード（R-1/R-1-refactor ブランチ）は参考にしてよいが、ゼロから TDD で書き直す
+   - 解説書の各節を満たすテストを先に書き、グリーンにする繰り返し
+   - テストコードには GWT コメントと解説書章番号を記載する
+   - 実装完了後、`docs/ntf-impl-spec-list.md` の全仕様IDにテストメソッドをマッピングして漏れ確認
+   - セルフチェック（`docs/checks/R-1.md`）→ QA/Java/SWE レビュー → ユーザーレビュー
 
 ### ソース一覧（確定・2026-05-26時点）
 
