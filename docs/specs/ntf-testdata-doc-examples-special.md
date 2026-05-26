@@ -270,3 +270,48 @@ setup_tables:
       - USER_ID: "002"
         NAME: "鈴木花子"
 ```
+
+---
+
+<a name="db-assert"></a>
+
+## 11. DB アサート
+
+### 11.1 テーブルアサート（順序不問・主キー突合）
+
+DB に以下のデータが存在する想定でアサートします（順序が違っても成功）。
+
+#### Excel
+
+| EXPECTED_TABLE=USER | | |
+|---|---|---|
+| USER_ID | NAME | |
+| 001 | 山田太郎 | |
+| 002 | 鈴木花子 | |
+
+#### YAML
+
+```yaml
+expected_tables:
+  - table: USER
+    rows:
+      - USER_ID: "001"
+        NAME: "山田太郎"
+      - USER_ID: "002"
+        NAME: "鈴木花子"
+```
+
+### 11.2 EXPECTED_COMPLETE_TABLE（省略カラムにデフォルト値補完）
+
+省略したカラムにデフォルト値を補完してから比較します。
+
+#### YAML
+
+```yaml
+expected_complete_tables:
+  - table: USER
+    rows:
+      - USER_ID: "001"
+        NAME: "山田太郎"
+        # AGE など省略したカラムはデフォルト値（数値型なら "0"）で補完される
+```
