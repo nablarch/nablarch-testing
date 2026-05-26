@@ -177,19 +177,7 @@ testShots の各カラムは処理方式によって異なります。各処理�
 - [メッセージング（MessagingRequestTestSupport）](ntf-testdata-doc-examples-testshots.md#messaging)
 - [エンティティバリデーション（EntityTestSupport）](ntf-testdata-doc-examples-testshots.md#entity)
 
-### 4.3 予約 ID
-
-テストデータファイルには、フレームワークが特別な意味として認識する予約 ID があります。
-
-| 予約 ID | 用途 |
-|---|---|
-| `testShots` | テストケース定義（4.1参照） |
-| `setUpDb` | テストメソッド共通の DB 初期化データ。テストメソッドの実行開始前に1回だけ `SETUP_TABLE` データが投入されます（テストメソッド内の全テストケース実行より前） |
-| `requestParams` | HTTP リクエストパラメータ（共通カラム表参照） |
-| `responseResult` | HTTP レスポンス期待値（共通カラム表参照） |
-| `params` | エンティティバリデーション入力パラメータ（共通カラム表参照） |
-
-### 4.4 セクションのグループ化（groupId）
+### 4.3 セクションのグループ化（groupId）
 
 複数のテストケースで異なるセットアップデータや期待値を使い分けたい場合、セクションに **groupId** を付加してグループ化します。`testShots` の各カラム（`setUpTable` / `expectedTable` / `setUpFile` / `expectedFile` 等）に groupId の値を指定すると、そのテストケースでは対応する groupId を持つセクションだけが収集されます。
 

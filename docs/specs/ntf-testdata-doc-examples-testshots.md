@@ -30,6 +30,7 @@
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
+| `setUpDb` | この値と同じ名前の `LIST_MAP` を持つシートの全 `SETUP_TABLE` を、テストメソッド開始前に1回だけ INSERT します | スキップ |
 | `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
 | `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
 | `expectedSearch` | 検索結果期待値の groupId（対応する `LIST_MAP` セクションを収集） | スキップ |
@@ -108,6 +109,7 @@ list_maps:
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
+| `setUpDb` | この値と同じ名前の `LIST_MAP` を持つシートの全 `SETUP_TABLE` を、テストメソッド開始前に1回だけ INSERT します | スキップ |
 | `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
 | `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
 | `setUpFile` | この値と同じ groupId を持つ `SETUP_FIXED`/`SETUP_VARIABLE` セクションを入力ファイルとして配置します | スキップ |
@@ -169,6 +171,7 @@ list_maps:
 
 | カラム名 | 説明 | 空の場合 |
 |---|---|---|
+| `setUpDb` | この値と同じ名前の `LIST_MAP` を持つシートの全 `SETUP_TABLE` を、テストメソッド開始前に1回だけ INSERT します | スキップ |
 | `setUpTable` | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します | スキップ |
 | `expectedTable` | この値と同じ groupId を持つ `EXPECTED_TABLE`/`EXPECTED_COMPLETE_TABLE` セクションで DB を検証します | スキップ |
 | `expectedMessage` | この値と同じ groupId を持つ要求電文セクション（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`）で検証します | スキップ |
