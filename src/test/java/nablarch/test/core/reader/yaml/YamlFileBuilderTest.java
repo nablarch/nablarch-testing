@@ -2,6 +2,7 @@ package nablarch.test.core.reader.yaml;
 
 import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.test.core.file.DataFile;
+import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
@@ -13,6 +14,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
@@ -278,6 +280,68 @@ public class YamlFileBuilderTest {
     // ========================================================================
     // 可変長ファイルで length なしのフィールドが正しく扱われること（QA観点2-軽微）
     // ========================================================================
+
+    /**
+     * [YamlFileBuilder] buildFileList: records に複数のレコードレイアウトを記述した場合、全レコードが構築されること。
+     *
+     * <p>
+     * 解説書 6.5: 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます<br>
+     * Given: setup_files の multiRecord グループに HEADER + DATA の 2 レコードを持つエントリ<br>
+     * When:  buildFileList(yaml, "setup_files", "[multiRecord]", path) を呼ぶ<br>
+     * Then:  DataFile の toDataRecords() が HEADER 行 + DATA 行の 2 件を返すこと
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_multipleRecordLayouts() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[multiRecord]", DIR);
+
+        // Then: DataFile の all フィールド（フラグメントリスト）をリフレクションで確認する
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0), instanceOf(FixedLengthFile.class));
+        Field allField = DataFile.class.getDeclaredField("all");
+        allField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<DataFileFragment> fragments = (List<DataFileFragment>) allField.get(result.get(0));
+        assertThat("HEADER + DATA の 2 フラグメントが生成されること", fragments.size(), is(2));
+
+        Field recordTypeField = DataFileFragment.class.getDeclaredField("recordType");
+        recordTypeField.setAccessible(true);
+        assertThat("1つ目のレコード種別が HEADER であること",
+                recordTypeField.get(fragments.get(0)).toString(), is("HEADER"));
+        assertThat("2つ目のレコード種別が DATA であること",
+                recordTypeField.get(fragments.get(1)).toString(), is("DATA"));
+    }
+
+    /**
+     * [YamlFileBuilder] buildFileList: records が空配列のエントリは空ファイルとして扱われること。
+     *
+     * <p>
+     * 解説書 6.6: 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します（records: []）<br>
+     * Given: setup_files の emptyFile グループに records: [] のエントリ<br>
+     * When:  buildFileList(yaml, "setup_files", "[emptyFile]", path) を呼ぶ<br>
+     * Then:  FixedLengthFile が 1 件返り、レコード定義が 0 件でディレクティブが設定されていること
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_emptyRecords() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[emptyFile]", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0), instanceOf(FixedLengthFile.class));
+        assertThat("path が正しく設定されていること", result.get(0).getPath(), is("input/empty.dat"));
+        LayoutDefinition layout = result.get(0).createLayout();
+        assertThat("レコード定義が 0 件であること", layout.getRecords().size(), is(0));
+        assertThat("ディレクティブが設定されていること", layout.getDirective().get("text-encoding"), is("MS932"));
+    }
 
     /**
      * [YamlFileBuilder] buildFileList: 可変長ファイルで length が指定されていない場合、setLengths が呼ばれないこと（QA観点2-軽微）。

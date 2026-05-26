@@ -323,6 +323,82 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: 同一ファイル内で同一 ID のエントリが 2 件ある場合、先着一致で最初の 1 件のみ返ること。
+     *
+     * <p>
+     * 解説書 5.5: 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます<br>
+     * Given: list_maps に id=dupIdFirst が 2 エントリ（1件目 KEY1="first", 2件目 KEY1="second"）<br>
+     * When:  buildListMapRows(yaml, "dupIdFirst", path) を呼ぶ<br>
+     * Then:  1件目の KEY1="first" が返ること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_duplicateIdReturnsFirst() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "dupIdFirst", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("先着一致で最初の 1 件のみ返ること", result.get(0).get("KEY1"), is("first"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: setup_tables のマーカーカラム（[COL] 形式）は除外されること。
+     *
+     * <p>
+     * 解説書 10.2: YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
+     * Given: setup_tables の markerColInTable グループに "[NO]" カラムを含む行<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[markerColInTable]", false, path) を呼ぶ<br>
+     * Then:  "[NO]" カラムが TableData のカラム名に含まれないこと
+     * </p>
+     */
+    @Test
+    public void testBuildTableDataList_markerColumnsExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[markerColInTable]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        String[] columnNames = result.get(0).getColumnNames();
+        for (String col : columnNames) {
+            assertFalse("マーカーカラム [NO] が含まれないこと", col.equals("[NO]"));
+        }
+        assertThat("PK_COL1 は含まれること", result.get(0).getValue(0, "PK_COL1").toString(), is("0000000001"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildTableDataList: expected_tables のマーカーカラム（[COL] 形式）は除外されること。
+     *
+     * <p>
+     * 解説書 10.2: YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
+     * Given: expected_tables の markerColInTable グループに "[NO]" カラムを含む行<br>
+     * When:  buildTableDataList(yaml, "expected_tables", "[markerColInTable]", false, path) を呼ぶ<br>
+     * Then:  "[NO]" カラムが TableData のカラム名に含まれないこと
+     * </p>
+     */
+    @Test
+    public void testBuildTableDataList_markerColumnsExcludedInExpectedTables() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = sut.buildTableDataList(yaml, "expected_tables", "[markerColInTable]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        String[] columnNames = result.get(0).getColumnNames();
+        for (String col : columnNames) {
+            assertFalse("マーカーカラム [NO] が含まれないこと", col.equals("[NO]"));
+        }
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>

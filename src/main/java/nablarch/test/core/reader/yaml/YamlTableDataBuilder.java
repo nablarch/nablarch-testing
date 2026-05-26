@@ -78,7 +78,14 @@ public final class YamlTableDataBuilder {
 
             Map<String, Object> firstRow = castMap(rows.get(0));
             // SnakeYAML はマッピングを LinkedHashMap としてロードするため、keySet() の順序は YAML の記述順と一致する。
-            String[] columnNames = firstRow.keySet().toArray(new String[0]);
+            // マーカーカラム（[COL] 形式）は DB 操作から除外する（解説書 10.2）。
+            List<String> columnNameList = new ArrayList<String>();
+            for (String key : firstRow.keySet()) {
+                if (!(key.startsWith("[") && key.endsWith("]"))) {
+                    columnNameList.add(key);
+                }
+            }
+            String[] columnNames = columnNameList.toArray(new String[0]);
 
             TableData td = new TableData(dbInfo, tableName, columnNames, defaultValues);
 

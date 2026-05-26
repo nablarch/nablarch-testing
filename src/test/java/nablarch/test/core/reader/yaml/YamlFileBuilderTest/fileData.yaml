@@ -66,6 +66,41 @@ setup_files:
         rows:
           - ["HELLO"]
 
+  - group_id: multiRecord
+    path: input/multi.dat
+    type: fixed
+    records:
+      - record_type: HEADER
+        fields:
+          - name: SEQ
+            type: X
+            length: 4
+          - name: TYPE
+            type: X
+            length: 2
+        rows:
+          - ["H001", "01"]
+      - record_type: DATA
+        fields:
+          - name: USER_ID
+            type: X
+            length: 10
+          - name: AMOUNT
+            type: Z
+            length: 10
+          - name: NOTE
+            type: N
+            length: 20
+        rows:
+          - ["001", "5000", "備考"]
+
+  - group_id: emptyFile
+    path: input/empty.dat
+    type: fixed
+    directives:
+      text-encoding: MS932
+    records: []
+
 expected_files:
   - path: dummy/expected_fixed.dat
     type: fixed

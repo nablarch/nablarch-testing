@@ -43,6 +43,16 @@ setup_tables:
       - PK_COL1: "0000000099"
         PK_COL2: "XX"
 
+  - group_id: markerColInTable
+    table: TEST_TABLE
+    rows:
+      - "[NO]": "1"
+        PK_COL1: "0000000001"
+        PK_COL2: "AB"
+        VARCHAR2_COL: "test"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.1"
+
 list_maps:
   - id: testListMap
     rows:
@@ -56,3 +66,22 @@ list_maps:
       - "[NO]": "1"
         KEY1: "val1"
         KEY2: "val2"
+
+  - id: dupIdFirst
+    rows:
+      - KEY1: "first"
+
+  - id: dupIdFirst
+    rows:
+      - KEY1: "second"
+
+expected_tables:
+  - group_id: markerColInTable
+    table: TEST_TABLE
+    rows:
+      - "[NO]": "1"
+        PK_COL1: "0000000001"
+        PK_COL2: "AB"
+        VARCHAR2_COL: "test"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.1"
