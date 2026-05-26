@@ -15,7 +15,7 @@
 5. [テーブルデータ](#5-テーブルデータ)
 6. [ファイルデータ](#6-ファイルデータ)
 7. [メッセージングテストデータ](#7-メッセージングテストデータ)
-8. [特殊値・インタープリタ](#8-特殊値インタープリタ)
+8. [値の書き方](#8-値の書き方)
 9. [ディレクティブ](#9-ディレクティブ)
 10. [ヘッダ・コメント・空エントリ](#10-ヘッダコメント空エントリ)
 11. [DB アサート](#11-db-アサート)
@@ -66,17 +66,14 @@ src/test/java/com/example/
 
 読み込み単位（Excel の1シート / YAML の1ファイル）の中に、テストケース・セットアップ・検証の複数セクションを共存させて記述します。
 
-**YAML の値のクォートルール**
+**ファイルの読み込みルール**
 
-- `rows:` 内のテストデータ値（カラム値）は**必ずダブルクォートで囲んでください**。クォートなしだと SnakeYAML が数値・真偽値に型変換し、先頭ゼロ付き数値（`001` → `1`）や `true`/`false` で意図しない値になります
-- Java null を表す場合のみアンクォートの `null` で記述します。`"null"` とクォートすると文字列として格納されます
-- `type:`, `record_type:`, `path:` 等のスキーマ構造値はクォート不要です
-
-**YAML ファイルの読み込みルール**
-
-- YAML ファイルが存在しない、または読み込み・パースに失敗した場合は `IllegalStateException` がスローされます
-- YAML ファイルが空（0バイト）の場合は空データとして扱われます（エラーにはなりません）
-- YAML ファイルは LRU キャッシュ（最大8件）で管理されます。テスト間のキャッシュ汚染を防ぐには `YamlTestDataParser.clearCacheForTest()` を呼び出してください
+| 項目 | Excel | YAML |
+|---|---|---|
+| ファイルなし時の動作 | `getSetupTableData` は空リストを返す（他メソッドの動作は各節を参照） | ファイルが存在しない、または読み込み・パース失敗時は `IllegalStateException` がスローされる |
+| 空ファイル時の動作 | 空シートは存在しないシート扱いとなる | 空ファイル（0バイト）は空データとして扱われる（エラーにはならない） |
+| キャッシュ | Workbook 単位で LRU キャッシュ（最大1件）で管理される | ファイル単位で LRU キャッシュ（最大8件）で管理される。テスト間のキャッシュ汚染を防ぐには `YamlTestDataParser.clearCacheForTest()` を呼び出す |
+| セル書式 | セルは必ず**文字列書式**で記述すること。数値・日付書式の場合の動作は保証しない | 値の型変換ルールは [8章](#8-値の書き方) を参照 |
 
 ---
 
@@ -124,6 +121,7 @@ setup_tables:
 
 - 完全なセクションキーを使用するため前方一致は発生しません
 - YAML では同一ファイル内のトップレベルキーの重複は禁止です（`IllegalStateException` がスローされます）。同種のデータは同一キーにリストとして並べて記述します
+- Excel では同一シート内に同種セクションを複数記述できます。GroupData は全件収集、SingleData は先着一致です
 
 ### 3.2 DataType の種類
 
@@ -282,8 +280,12 @@ DB への INSERT 用データを記述します。
 - **主キーカラムは省略不可**です。省略するとデフォルト値（`"0"` やスペース等）が INSERT されます
 
 **null 値・空文字の動作**:
-- カラム値に `null`（アンクォート）を指定すると Java null として格納されます（`getValue()` が `null` を返します）
-- 日付型カラムに空文字 `""` を指定すると `null` として扱われます
+
+| 値の指定 | Excel | YAML |
+|---|---|---|
+| null（Java null） | セルに `null`（大文字小文字不問）と記述 | アンクォートの `null` を記述（`"null"` でも同じ結果） |
+| 空文字 | セルを空にする | `""` と記述 |
+| 日付型カラムの空文字 | セルを空にする → `null` 扱い | `""` → `null` 扱い |
 
 ### 5.3 EXPECTED_TABLE
 
@@ -316,6 +318,29 @@ DB への INSERT 用データを記述します。
 ### 5.5 LIST_MAP
 
 キーバリュー形式の汎用データです。テストケース定義（`testShots`）・リクエストパラメータ・期待値オブジェクト・期待ログなど、様々な用途で使用されます。
+
+#### Excel での記述
+
+```
+| LIST_MAP=testShots | | |
+| no | description | status |
+| 1  | 正常系       | active |
+| 2  | 異常系       | error  |
+```
+
+#### YAML での記述
+
+```yaml
+list_maps:
+  - id: testShots
+    rows:
+      - no: "1"
+        description: "正常系"
+        status: "active"
+      - no: "2"
+        description: "異常系"
+        status: "error"
+```
 
 - ID は完全一致で検索されます
 - 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます
@@ -375,6 +400,8 @@ setup_files:
           - ["001", "5000"]
 ```
 
+- YAML の `rows:` 内の各値はダブルクォートで囲んでください（テーブルデータと同じルール。値の書き方の詳細は [8章](#8-値の書き方) を参照）
+
 → [Excel / YAML Example](ntf-testdata-doc-examples-file.md#file-data)
 
 ### 6.3 固定長ファイル固有の仕様
@@ -425,6 +452,9 @@ setup_files:
 
 テストデータファイルは `sendSyncTestData/{requestId}/message` というパスに配置します（末尾の `message` は固定のパスセグメントです）。
 
+- **Excel**: `MESSAGE=sendSyncTestData/{requestId}/message` をセクション識別子として記述します
+- **YAML**: `messages:` の `id:` に `sendSyncTestData/{requestId}/message` を指定します
+
 ```
 sendSyncTestData/{requestId}/message
 ```
@@ -438,6 +468,9 @@ sendSyncTestData/{requestId}/message
 - `resendFlag`
 - `resultCode`
 
+**Excel での記述**: フィールド名称行より前に `| フィールド名 | 値 |` の形式で記述します（ディレクティブ行と同じ位置）。
+**YAML での記述**: `record_type: FW_HEADER` のレコードとして記述します。
+
 ### 7.3 HEADER / BODY MESSAGES の構造と件数制約
 
 - `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` のエントリ数（rows 合計）は一致が必須です。不一致の場合は `IllegalStateException` がスローされます
@@ -445,7 +478,8 @@ sendSyncTestData/{requestId}/message
 
 ### 7.4 no カラムと errorMode
 
-- `no` カラム（先頭カラム）はフレームワークが除去し、データとして保存されません
+- **Excel**: `no` カラム（先頭カラム）はフレームワークが除去し、データとして保存されません。フィールド名称行の先頭セルは空にします
+- **YAML**: `no` フィールドは `rows:` のリスト要素に含めます。フレームワークが除去します
 - `errorMode` の値はカラム番号1に格納されます
 - `errorMode:timeout` および `errorMode:msgException` は特殊値です。これらが指定されたエントリでは他フィールドはパースされません
 
@@ -459,7 +493,7 @@ N 回送信する場合は、ヘッダ件数とボディ件数をともに N 件
 
 ### 7.7 ステータスコード
 
-ステータスコードカラムがない場合はデフォルト値 `"200"` が使用されます。
+ステータスコードカラムがない場合はデフォルト値 `"200"` が使用されます。これは Excel・YAML 両方で共通の動作です。
 
 ### 7.8 フォーマット定義ファイルの命名規則
 
@@ -472,19 +506,50 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 ### 7.10 record_type の扱い
 
-`MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は、内部で常に `"default"` に置き換えられます。任意の値を記述できます（装飾的なメタデータとして扱われます）。
+`MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は、内部で常に `"default"` に置き換えられます。
+
+- **Excel**: フィールド名称行の先頭セルに任意の値を記述できます（装飾的なメタデータとして扱われます）
+- **YAML**: `record_type:` に任意の値を記述できます。ただし `FW_HEADER` は FW 制御ヘッダ抽出に使用されるため、それ以外の用途には使用しないでください
 
 → [Excel / YAML Example](ntf-testdata-doc-examples-messaging.md#messaging)
 
 ---
 
-## 8. 特殊値・インタープリタ
+## 8. 値の書き方
 
-### 8.1 インタープリタチェーンの仕組み
+### 8.1 値の種類と Excel / YAML 対比
+
+テストデータに指定できる値の種類と、各形式での記述方法は以下のとおりです。
+
+| 値の種類 | Excel での記述 | YAML での記述 | 備考 |
+|---|---|---|---|
+| 通常の文字列 | `abc` | `"abc"` | YAML はクォート必須（型変換防止） |
+| null（Java null） | `null`（大文字小文字不問） | `null`（クォートなし） | YAML の `"null"`（クォートあり）も同じ結果（NullInterpreter が変換） |
+| 空文字 | 空セル | `""` | |
+| 先頭ゼロ付き数値 | `001` | `"001"` | YAML でクォートなしだと SnakeYAML が `1` に型変換する |
+| `true` / `false`（文字列） | `true` | `"true"` | YAML でクォートなしだと SnakeYAML が Boolean に型変換する |
+| 半角スペース1文字 | `" "`（セルに `"` space `"` と入力） | `" "` | QuotationTrimmer が外側クォートを除去してスペースになる |
+| ダブルクォート1文字 | `"""`（セルに `"` `"` `"` と入力） | `'"'`（YAML シングルクォート） | Excel は QuotationTrimmer が除去、YAML はシングルクォートが簡潔 |
+| 日時プレースホルダ | `${systemTime}` | `"${systemTime}"` | 完全一致のみ変換。詳細は 8.4 を参照 |
+| バイナリファイル参照 | `${binaryFile:path}` | `"${binaryFile:path}"` | パスはどちらもデータファイルのディレクトリ基準。詳細は 8.6 を参照 |
+| 文字種生成 | `${半角英字,10}` | `"${半角英字,10}"` | CompositeInterpreter が処理。詳細は 8.5 を参照 |
+| 改行文字（LF） | `\\n` | `"\\n"` | LineSeparatorInterpreter が変換 |
+| 改行文字（CR） | `\\r` | `"\\r"` | LineSeparatorInterpreter が変換 |
+
+**YAML のクォートルール**:
+- `rows:` 内のすべてのデータ値は**必ずダブルクォートで囲んでください**。クォートなしだと SnakeYAML が数値・真偽値に型変換します
+- `null` のみクォートなしで記述します（ただし `"null"` でも同じく Java null になります）
+- `type:`, `record_type:`, `path:` 等のスキーマ構造値はクォート不要です
+
+**Excel のセル書式**:
+- セルは必ず**文字列書式**で記述してください。数値・日付書式の場合の動作は保証されません
+- インタープリタチェーンにより、NullInterpreter → QuotationTrimmer → その他の順で値が変換されます
+
+### 8.2 インタープリタチェーンの仕組み
 
 テストデータの値はパース時にインタープリタチェーンを通過し、変換されます。DI 設定で注入されたインタープリタが順番に適用されます。
 
-### 8.2 インタープリタ一覧
+### 8.3 インタープリタ一覧
 
 | インタープリタ | 変換内容 |
 |---|---|
@@ -492,30 +557,30 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | `QuotationTrimmer` | 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去 |
 | `DateTimeInterpreter` | `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 |
 | `LineSeparatorInterpreter` | `\\r` → CR（0x0D）、`\\n` → LF（0x0A）に変換 |
-| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。YAML では YAML ファイルが基準ディレクトリになります |
+| `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。パスはデータファイル（Excel / YAML）のディレクトリからの相対パス |
 | `BasicJapaneseCharacterInterpreter` | `${文字種,文字数}` 形式で文字列生成 |
 | `CompositeInterpreter` | 文字列中の `${...}` 要素を個別解釈して置換 |
 
-### 8.3 DateTimeInterpreter の完全一致制約
+### 8.4 DateTimeInterpreter の完全一致制約
 
 `DateTimeInterpreter` は完全一致のみ変換します。部分文字列は変換されません。文字列中の `${...}` を置換するには `CompositeInterpreter` との組み合わせが必要です。
 
-### 8.4 BasicJapaneseCharacterGenerator の有効文字種
+### 8.5 BasicJapaneseCharacterGenerator の有効文字種
 
 14種類の文字種が使用できます: 半角英字 / 半角数字 / 半角記号 / 半角カナ / 全角英字 / 全角数字 / 全角ひらがな / 全角カタカナ / 全角漢字 / 全角記号その他 / 中国語 / サロゲートペア / 改行 / 外字
 
 未知の文字種を指定すると `IllegalArgumentException` がスローされます。
 
-### 8.5 QuotationTrimmer によるスペース値明示記法
+### 8.6 BinaryFileInterpreter のパス基準
 
-空白値を可視化して記述するための記法です。
+`${binaryFile:パス}` のパスは、**テストデータファイルのディレクトリ**からの相対パスです。これは Excel・YAML 両方で同じ動作です。
 
-| 記述 | 結果 |
+| 形式 | 基準ディレクトリ |
 |---|---|
-| `" "` | 半角スペース1文字 |
-| `"""` | ダブルクォート1文字 |
+| Excel | Excel ファイル（`.xls` / `.xlsx`）が置かれているディレクトリ |
+| YAML | YAML ファイル（`.yaml`）が置かれているディレクトリ |
 
-### 8.6 日付型カラムの記述形式と境界値
+### 8.7 日付型カラムの記述形式と境界値
 
 有効な記述形式は以下のとおりです。
 
@@ -527,15 +592,15 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 → [Excel / YAML Example](ntf-testdata-doc-examples-special.md#datetime)
 
-### 8.7 バイナリデータの記述
+### 8.8 バイナリデータの記述
 
 `0x` プレフィクス付き16進数で記述できます。`0x` がない場合は文字列としてエンコードされます。
 
-### 8.8 X9/SX9 型フィールドの記述
+### 8.9 X9/SX9 型フィールドの記述
 
 パディング文字・符号を含めた実際のバイト列表現（固定長フォーマットの実値）をそのまま記述します。
 
-### 8.9 データ型マッピング
+### 8.10 データ型マッピング
 
 `BasicDataTypeMapping` のデフォルトマッピング22種が使用できます。未知の型記号を指定すると `IllegalArgumentException` がスローされます。
 
@@ -603,6 +668,9 @@ SystemRepository への DI 設定で、全ファイル共通または種別専�
 
 カラム名が `[カラム名]` 形式（角括弧で囲まれた名前）のカラムはマーカーカラムとして扱われ、DB 操作から除外されます。
 
+- **Excel**: `SETUP_TABLE` / `EXPECTED_TABLE` / `LIST_MAP` すべてでマーカーカラムが除外されます
+- **YAML**: `list_maps:` ではマーカーカラムが除外されます。`setup_tables` / `expected_tables` ではマーカーカラムの除外は行われません
+
 ### 10.3 エントリ単位のコメント
 
 エントリをコメントとしてマークすると、そのエントリ全体がスキップされます。
@@ -620,6 +688,9 @@ Excel では、エントリ内の先頭以外の要素をコメントとして�
 ### 10.5 空エントリのスキップ
 
 全要素が null または空文字のエントリは読み飛ばされます。
+
+- **Excel**: 行の全セルが空の場合にスキップされます
+- **YAML**: `rows:` 内の要素が空マッピング（`{}`）またはすべての値が空文字の場合にスキップされます
 
 ---
 
