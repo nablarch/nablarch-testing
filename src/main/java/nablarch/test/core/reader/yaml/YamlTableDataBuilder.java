@@ -91,6 +91,9 @@ public final class YamlTableDataBuilder {
 
             for (Object rowObj : rows) {
                 Map<String, Object> rowMap = castMap(rowObj);
+                if (rowMap.isEmpty()) {
+                    continue;
+                }
                 List<String> rowValues = new ArrayList<String>(columnNames.length);
                 for (String col : columnNames) {
                     Object rawVal = rowMap.get(col);

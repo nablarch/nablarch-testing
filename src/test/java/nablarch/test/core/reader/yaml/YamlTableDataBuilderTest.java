@@ -346,6 +346,31 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildTableDataList: rows 内の空エントリ（{}）は読み飛ばされること。
+     *
+     * <p>
+     * 解説書 10.5: rows 内の要素が空マッピング（{}）の場合にスキップされます<br>
+     * Given: setup_tables の emptyRowMixed グループに 通常行・{} 行・通常行 の 3 エントリ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[emptyRowMixed]", false, path) を呼ぶ<br>
+     * Then:  {} 行がスキップされ、2 行のみ返ること
+     * </p>
+     */
+    @Test
+    public void testBuildTableDataList_emptyRowEntrySkipped() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[emptyRowMixed]", false, DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("空エントリ {} をスキップして 2 行のみ返ること", result.get(0).size(), is(2));
+        assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000020"));
+        assertThat(result.get(0).getValue(1, "PK_COL1").toString(), is("0000000021"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildTableDataList: setup_tables のマーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>

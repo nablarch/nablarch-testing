@@ -53,6 +53,21 @@ setup_tables:
         NUMBER_COL: "1"
         NUMBER_COL2: "1.1"
 
+  - group_id: emptyRowMixed
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000020"
+        PK_COL2: "AA"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "20"
+        NUMBER_COL2: "20.0"
+      - {}
+      - PK_COL1: "0000000021"
+        PK_COL2: "BB"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "21"
+        NUMBER_COL2: "21.0"
+
 list_maps:
   - id: testListMap
     rows:
