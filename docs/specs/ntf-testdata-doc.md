@@ -170,7 +170,12 @@ setup_tables:
 
 ### 4.2 testShots のカラム仕様
 
-testShots の各カラムは処理方式（ウェブアプリケーション / バッチ / メッセージング / エンティティバリデーション）によって異なります。詳細は [処理方式別 testShots カラム一覧](ntf-testdata-doc-examples-testshots.md) を参照してください。
+testShots の各カラムは処理方式によって異なります。各処理方式の詳細は以下を参照してください。
+
+- [ウェブアプリケーション（HttpRequestTestSupport）](ntf-testdata-doc-examples-testshots.md#web)
+- [バッチ処理（BatchRequestTestSupport）](ntf-testdata-doc-examples-testshots.md#batch)
+- [メッセージング（MessagingRequestTestSupport）](ntf-testdata-doc-examples-testshots.md#messaging)
+- [エンティティバリデーション（EntityTestSupport）](ntf-testdata-doc-examples-testshots.md#entity)
 
 ### 4.3 予約 ID
 
