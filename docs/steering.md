@@ -447,8 +447,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-2** 既存実装からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | **完了**（ユーザーレビュー OK） | — |
 | **S-4** 解説書（ntf-testdata-doc.md/examples）全件見直し | **完了**（ユーザーレビュー OK） | — |
-| **S-5** 仕様リストへの章番号マッピング → 解説書 FIX | **進行中** | セルフチェック → QAレビュー → ユーザーレビュー |
-| **R-1** YamlTestDataParser 実装（TDD） | コード存在・要やり直し | Ph-2 完了後（解説書 FIX 後）に着手 |
+| **S-5** 仕様リストへの章番号マッピング → 解説書 FIX | **完了**（ユーザーレビュー OK） | — |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | 仕様 FIX 完了・着手可 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
