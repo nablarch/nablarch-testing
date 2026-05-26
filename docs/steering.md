@@ -456,8 +456,13 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
 2. **S-4 ユーザーレビュー中**（ユーザーからのフィードバック対応中）:
-   - `docs/specs/ntf-testdata-doc.md` がレビュー対象
-   - 直近の主な変更: Excel/YAML 対比形式に全面改訂・内部実装表現をユーザー視点に統一・値の書き方対比表を追加
+   - `docs/specs/ntf-testdata-doc.md` および `docs/specs/ntf-testdata-doc-examples-*.md` がレビュー対象
+   - 直近の主な変更（コミット d0fa602 まで）:
+     - 利用者視点での全面見直し（用語統一・実装クラス名除去・説明補完）
+     - 記述順序制約・収集方式・groupId 省略時動作を正確に記述
+     - 8章データ型マッピングを全型一覧表に、9章ディレクティブを全キー一覧表に置き換え
+     - 10.2 マーカーカラムの YAML/Excel 非対称を解消（YAML 側も全セクションで除外に変更）
+     - 各章末尾に Example リンクを追加、examples-testshots.md にエンティティバリデーション節を追加
    - フィードバックがあれば対応し、OK が出たら S-5 に着手する
 3. **S-4 ユーザーレビュー OK 後 → S-5 着手**:
    - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-testdata-doc.md` の章番号を記載する
@@ -481,7 +486,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | `ntf-coverage-doc-check.md` | 作成済み（再検証必要・当時13ファイル対象） | S-1 の出発点 |
 | `ntf-coverage-spec-mapping.md` | 作成済み（再検証必要・当時29クラス対象） | S-2 の出発点 |
 | `ntf-impl-spec-list.md` | 141件（S-3 で全件見直し） | S-3 の出発点 |
-| `ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` | S-4 完了・ユーザーレビュー待ち | — |
+| `ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` | S-4 完了・ユーザーレビュー中 | — |
 | R-1/R-1-refactor コード | 存在（仕様 FIX 前・要再検証） | R-1 やり直し時の参考 |
 
 ---
