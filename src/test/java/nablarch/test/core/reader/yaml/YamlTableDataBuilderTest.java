@@ -399,6 +399,75 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: クォートあり "null" は Java null として取得されること。
+     *
+     * <p>
+     * 解説書 8.1: YAML の "null"（クォートあり）も Java null になります（NullInterpreter が変換）<br>
+     * Given: list_maps に QUOTED_NULL: "null"（クォートあり）<br>
+     * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
+     * Then:  QUOTED_NULL の値が null であること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_quotedNullIsJavaNull() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "interpreterTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("\"null\"（クォートあり）は Java null になること", result.get(0).get("QUOTED_NULL"), nullValue());
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: " " はクォート除去後にスペース1文字になること。
+     *
+     * <p>
+     * 解説書 8.1: " "（スペースをダブルクォートで囲む）→ QuotationTrimmer が外側クォートを除去してスペース1文字<br>
+     * Given: list_maps に SPACE_COL: " "<br>
+     * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
+     * Then:  SPACE_COL の値がスペース1文字であること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_spaceBetweenQuotesIsSpace() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "interpreterTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("\" \" はスペース1文字になること", result.get(0).get("SPACE_COL"), is(" "));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: "\\r" は CR（キャリッジリターン）文字に変換されること。
+     *
+     * <p>
+     * 解説書 8.1/8.3: "\\r" → LineSeparatorInterpreter が CR（0x0D）に変換（デフォルト設定）<br>
+     * Given: list_maps に CR_COL: "\\r"<br>
+     * When:  buildListMapRows(yaml, "interpreterTest", path) を呼ぶ<br>
+     * Then:  CR_COL の値が CR 文字（"\r"）であること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_escapedCrIsCarriageReturn() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "interpreterTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("\"\\\\r\" は CR 文字に変換されること", result.get(0).get("CR_COL"), is("\r"));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>

@@ -7,3 +7,9 @@ list_maps:
         BOOL_FALSE: false
         INT_COL: 42
         FLOAT_COL: 3.14
+
+  - id: interpreterTest
+    rows:
+      - QUOTED_NULL: "null"
+        SPACE_COL: " "
+        CR_COL: "\\r"
