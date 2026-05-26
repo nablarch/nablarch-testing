@@ -446,7 +446,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-1** 解説書からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-2** 既存実装からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | **完了**（ユーザーレビュー OK） | — |
-| **S-4** 解説書（ntf-testdata-doc.md/examples）全件見直し | **担当者・QA 完了**（ユーザーレビュー待ち） | ユーザーレビュー依頼・OK 取得 |
+| **S-4** 解説書（ntf-testdata-doc.md/examples）全件見直し | **ユーザーレビュー中** | ユーザーレビュー OK 取得 |
 | **S-5** 仕様リストへの章番号マッピング → 解説書 FIX | 未着手 | S-4 ユーザーレビュー OK 後 |
 | **R-1** YamlTestDataParser 実装（TDD） | コード存在・要やり直し | Ph-2 完了後（解説書 FIX 後）に着手 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
@@ -455,10 +455,10 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-4 ユーザーレビュー依頼**（担当者・QA 完了済み）:
-   - `docs/specs/ntf-testdata-doc.md` と `docs/checks/S-4.md` をユーザーに提示する
-   - S-4 の状態: 解説書化対応済み（ファイル名・タイトル・文体を「NTF テストデータ解説書」スタイルに変更。内容・構成・仕様網羅はそのまま維持）
-   - OK が出たら S-5 に着手する
+2. **S-4 ユーザーレビュー中**（ユーザーからのフィードバック対応中）:
+   - `docs/specs/ntf-testdata-doc.md` がレビュー対象
+   - 直近の主な変更: Excel/YAML 対比形式に全面改訂・内部実装表現をユーザー視点に統一・値の書き方対比表を追加
+   - フィードバックがあれば対応し、OK が出たら S-5 に着手する
 3. **S-4 ユーザーレビュー OK 後 → S-5 着手**:
    - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-testdata-doc.md` の章番号を記載する
    - 章番号が記載できない仕様ID（＝解説書に対応する記述がない）を「記載漏れ」として一覧化する
