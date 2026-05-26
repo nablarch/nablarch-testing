@@ -504,8 +504,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | 日時プレースホルダ | `${systemTime}` | `"${systemTime}"` | 完全一致のみ変換。詳細は 8.4 を参照 |
 | バイナリファイル参照 | `${binaryFile:path}` | `"${binaryFile:path}"` | パスはどちらもデータファイルのディレクトリ基準。詳細は 8.6 を参照 |
 | 文字種生成 | `${半角英字,10}` | `"${半角英字,10}"` | 詳細は 8.5 を参照 |
-| 改行文字（LF） | `\\n` | `"\\n"` | LineSeparatorInterpreter が変換 |
-| 改行文字（CR） | `\\r` | `"\\r"` | LineSeparatorInterpreter が変換 |
+| 改行文字（CR） | `\\r` | `"\\r"` | LineSeparatorInterpreter が変換（デフォルト設定は CR のみ） |
 
 **YAML のクォートルール**:
 - `rows:` 内のすべてのデータ値は**必ずダブルクォートで囲んでください**。クォートなしだと SnakeYAML が数値・真偽値に型変換します
@@ -526,7 +525,7 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 | `NullInterpreter` | `null` / `NULL` / `Null`（大文字小文字不問）→ Java null |
 | `QuotationTrimmer` | 半角または全角ダブルクォートで前後が囲まれた場合のみ外側1層を除去 |
 | `DateTimeInterpreter` | `${systemTime}` / `${updateTime}` / `${setUpTime}` の完全一致のみ変換 |
-| `LineSeparatorInterpreter` | `\\r` → CR（0x0D）、`\\n` → LF（0x0A）に変換 |
+| `LineSeparatorInterpreter` | `\\r` → CR（0x0D）に変換（デフォルト設定）。`setMatchPattern` / `setLineSeparator` で変換対象・変換後の改行コードを変更可能 |
 | `BinaryFileInterpreter` | `${binaryFile:パス}` でファイル内容をバイナリ読み込みし HexString に変換。パスはデータファイル（Excel / YAML）のディレクトリからの相対パス |
 | `BasicJapaneseCharacterInterpreter` | `${文字種,文字数}` 形式で文字列生成 |
 | `CompositeInterpreter` | 文字列中の `${...}` 要素を個別解釈して置換 |
