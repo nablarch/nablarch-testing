@@ -446,8 +446,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-1** 解説書からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-2** 既存実装からの仕様抽出 | **完了**（ユーザーレビュー OK） | — |
 | **S-3** 仕様リスト作成（S-1×S-2 突き合わせ） | **完了**（ユーザーレビュー OK） | — |
-| **S-4** 解説書（ntf-testdata-doc.md/examples）全件見直し | **ユーザーレビュー中** | ユーザーレビュー OK 取得 |
-| **S-5** 仕様リストへの章番号マッピング → 解説書 FIX | 未着手 | S-4 ユーザーレビュー OK 後 |
+| **S-4** 解説書（ntf-testdata-doc.md/examples）全件見直し | **完了**（ユーザーレビュー OK） | — |
+| **S-5** 仕様リストへの章番号マッピング → 解説書 FIX | **進行中** | セルフチェック → QAレビュー → ユーザーレビュー |
 | **R-1** YamlTestDataParser 実装（TDD） | コード存在・要やり直し | Ph-2 完了後（解説書 FIX 後）に着手 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
@@ -455,16 +455,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **S-4 ユーザーレビュー中**（ユーザーからのフィードバック対応中）:
-   - `docs/specs/ntf-testdata-doc.md` および `docs/specs/ntf-testdata-doc-examples-*.md` がレビュー対象
-   - 直近の主な変更（コミット d0fa602 まで）:
-     - 利用者視点での全面見直し（用語統一・実装クラス名除去・説明補完）
-     - 記述順序制約・収集方式・groupId 省略時動作を正確に記述
-     - 8章データ型マッピングを全型一覧表に、9章ディレクティブを全キー一覧表に置き換え
-     - 10.2 マーカーカラムの YAML/Excel 非対称を解消（YAML 側も全セクションで除外に変更）
-     - 各章末尾に Example リンクを追加、examples-testshots.md にエンティティバリデーション節を追加
-   - フィードバックがあれば対応し、OK が出たら S-5 に着手する
-3. **S-4 ユーザーレビュー OK 後 → S-5 着手**:
+2. **S-4 完了**（ユーザーレビュー OK 取得済み、2026-05-26）
+3. **S-5 着手中**:
    - `docs/ntf-impl-spec-list.md` の全仕様IDに `ntf-testdata-doc.md` の章番号を記載する
    - 章番号が記載できない仕様ID（＝解説書に対応する記述がない）を「記載漏れ」として一覧化する
    - 記載漏れを全件 `ntf-testdata-doc.md` に追記し、S-4 のユーザーレビューを再取得する
