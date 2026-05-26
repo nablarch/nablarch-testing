@@ -226,7 +226,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ### R-1: `YamlTestDataParser` 実装（`BasicTestDataParser` 継承）
 
-**目的**: 確定した仕様リストをベースに `YamlTestDataParser` を TDD で実装する。
+**目的**: FIX 済み解説書（`ntf-testdata-doc.md`）の各節を満たすように `YamlTestDataParser` を TDD で実装する。
 
 **前提**: Ph-2 完了（仕様 FIX 済み）
 
@@ -243,10 +243,9 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [x] `YamlTestDataParser extends BasicTestDataParser` を実装する
 - [x] クラス分割（yaml サブパッケージ: `YamlLoader` / `YamlTableDataBuilder` / `YamlFileBuilder` / `YamlMessageBuilder` / `YamlSection`）を行う
 - [x] `pom.xml` に SnakeYAML 依存が追加されていることを確認する（既存）
-- [x] 解説書を満たすように TDD で実装する（RS-01〜RS-08 対応、37テスト全グリーン）
+- [ ] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する（進行中：一部実装済み・未対応節あり）
   - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
-- [ ] 解説書を満たすように TDD で実装する（RS-09〜RS-22 対応・未着手）
-- [ ] テスト実行・全グリーン確認（RS-09〜RS-22 追加後）
+- [ ] テスト実行・全グリーン確認
 - [ ] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）
 - [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
