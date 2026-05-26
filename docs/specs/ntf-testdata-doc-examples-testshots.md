@@ -35,6 +35,7 @@
 | `expectedSearch` | 検索結果期待値の groupId（対応する `LIST_MAP` セクションを収集） | スキップ |
 | `expectedMessageId` | 期待するメッセージ ID（カンマ区切りで複数指定可） | スキップ |
 | `requestParams` | HTTP リクエストパラメータの `LIST_MAP` 名 | — |
+| `responseResult` | HTTP レスポンス（リクエストスコープ）期待値の `LIST_MAP` 名 | スキップ |
 | `cookie` | Cookie 値の `LIST_MAP` 名 | Cookie なし |
 | `queryParams` | クエリパラメータの `LIST_MAP` 名 | パラメータなし |
 | `HTTP_METHOD` | HTTP メソッド | `"POST"` |
@@ -97,7 +98,7 @@ list_maps:
 | カラム名 | 説明 |
 |---|---|
 | `no` | テストケース番号 |
-| `description` | テストケースの説明 |
+| `description` | テストケースの説明（旧名 `case` も可） |
 | `expectedStatusCode` | 期待するステータスコード |
 | `diConfig` | DI コンポーネント設定ファイルパス |
 | `requestPath` | リクエストパス |
@@ -158,7 +159,7 @@ list_maps:
 | カラム名 | 説明 |
 |---|---|
 | `no` | テストケース番号 |
-| `description` | テストケースの説明 |
+| `description` | テストケースの説明（旧名 `case` も可） |
 | `expectedStatusCode` | 期待するステータスコード |
 | `diConfig` | DI コンポーネント設定ファイルパス |
 | `requestPath` | リクエストパス |

@@ -172,34 +172,6 @@ setup_tables:
 
 testShots の各カラムは処理方式（ウェブアプリケーション / バッチ / メッセージング / エンティティバリデーション）によって異なります。詳細は [処理方式別 testShots カラム一覧](ntf-testdata-doc-examples-testshots.md) を参照してください。
 
-以下は全処理方式で共通して使用できる主なカラムです。
-
-#### 共通カラム
-
-| カラム名 | 対象処理方式 | 動作 |
-|---|---|---|
-| `no` | 全方式（必須） | テストケース番号。空の場合はエラーになります |
-| `description` / `case` | 全方式（いずれか必須） | テストケースの説明。`case` は旧称で動作しますが、新規作成では `description` を使用してください。どちらも未定義の場合はエラーになります |
-| `context` | HTTP（必須） | `REQUEST_ID`・`USER_ID` 等を含む `LIST_MAP` 名を指定します。1行のみ有効。`REQUEST_ID` が空の場合はエラーになります |
-| `setUpTable` | 全方式 | この値と同じ groupId を持つ `SETUP_TABLE` セクションを収集して INSERT します。空の場合はスキップされます |
-| `expectedTable` | 全方式 | この値と同じ groupId を持つ `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` セクションで DB を検証します。空の場合はスキップされます |
-| `setUpFile` | バッチ系 | この値と同じ groupId を持つ `SETUP_FIXED` / `SETUP_VARIABLE` セクションを入力ファイルとして配置します。空の場合はスキップされます |
-| `expectedFile` | バッチ系 | この値と同じ groupId を持つ `EXPECTED_FIXED` / `EXPECTED_VARIABLE` セクションで出力ファイルを検証します。空の場合はスキップされます |
-| `expectedLog` | バッチ系 | 期待ログの `LIST_MAP` 名を指定します。空の場合はスキップされます。指定した LIST_MAP が空の場合はエラーになります |
-| `requestParams` | HTTP | HTTP リクエストパラメータの予約 ID。対応する `LIST_MAP` からパラメータを読み込みます。`LIST_MAP` の行数がテストケース数より少ない場合はエラーになります |
-| `responseResult` | HTTP | HTTP レスポンス（リクエストスコープ）期待値の予約 ID |
-| `params` | エンティティバリデーション | 入力パラメータ定義の予約 ID（`EntityTestSupport` 専用）。`testShots` の行数と一致が必須です（不一致でエラーになります） |
-| `title` | エンティティバリデーション（必須） | テストケースの説明 |
-| `expectedMessageId1` | エンティティバリデーション（必須） | 期待するバリデーションメッセージ ID |
-| `propertyName1` | エンティティバリデーション（必須） | バリデーション対象プロパティ名 |
-| `cookie` | HTTP | Cookie 値の `LIST_MAP` 名を指定します。空の場合は Cookie なし。指定した LIST_MAP が空の場合はエラーになります |
-| `queryParams` | HTTP | クエリパラメータの `LIST_MAP` 名を指定します。空の場合はパラメータなし。指定した LIST_MAP が空の場合はエラーになります |
-| `HTTP_METHOD` | HTTP | HTTP メソッド。空の場合は `"POST"` が使用されます |
-| `expectedContentLength` | HTTP | 期待する Content-Length。空の場合は検証をスキップします |
-| `expectedContentType` | HTTP | 期待する Content-Type。空の場合は検証をスキップします |
-| `expectedContentFileName` | HTTP | 期待する Content-Disposition ファイル名。空の場合は検証をスキップします |
-| `args[0]`, `args[1]`, ... | バッチ | コマンドライン引数として渡されます |
-
 ### 4.3 予約 ID
 
 テストデータファイルには、フレームワークが特別な意味として認識する予約 ID があります。
