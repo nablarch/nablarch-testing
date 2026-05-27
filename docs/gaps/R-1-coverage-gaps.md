@@ -8,14 +8,14 @@
 
 ## YAMLパーサー層でテストすべき未テスト項目（6件）
 
-| # | 対象節 | 内容 | 追加先テストクラス |
-|---|---|---|---|
-| G-1 | 8.1 / examples-special.md 8.2 | ダブルクォート1文字 `"\""` → `QuotationTrimmer` で `"` 1文字になること | `YamlTableDataBuilderTest` |
-| G-2 | 8.1 / examples-special.md 8.1 | `"${updateTime}"` / `"${setUpTime}"` → `DateTimeInterpreter` でシステム時刻に変換されること | `YamlTableDataBuilderTest` |
-| G-3 | 9.3 / examples-special.md 9.2 | 可変長ファイルの `field-separator: "\\t"` がタブ文字として設定されること | `YamlFileBuilderTest` |
-| G-4 | 7.3 / examples-messaging.md 7.3 | `messages` の `id` にパスセグメントを含む形式（`sendSyncTestData/REQ001/message`）が正しく取得できること | `YamlMessageBuilderTest` |
-| G-5 | 7.2 / examples-messaging.md 7.2 | `expected_request_header_messages` から `buildMessagePool` で正しく取得できること | `YamlMessageBuilderTest` |
-| G-6 | 4章 / examples-testshots.md | `testShots` という予約 ID で `list_maps` が正しく取得でき、Web/Batch/Messaging 各カラムが保持されること | `YamlTableDataBuilderTest` |
+| # | 対象節 | 内容 | 追加先テストクラス | 対応テストメソッド |
+|---|---|---|---|---|
+| G-1 | 8.1 / examples-special.md 8.2 | ダブルクォート1文字 `"\""` → `QuotationTrimmer` で `"` 1文字になること | `YamlTableDataBuilderTest` | `testBuildListMapRows_escapedDoubleQuoteIsDoubleQuoteChar` |
+| G-2 | 8.1 / examples-special.md 8.1 | `"${updateTime}"` / `"${setUpTime}"` → `DateTimeInterpreter` でシステム時刻に変換されること | `YamlTableDataBuilderTest` | `testBuildListMapRows_updateTimeAndSetUpTimeConverted` |
+| G-3 | 9.3 / examples-special.md 9.2 | 可変長ファイルの `field-separator: "\\t"` がタブ文字として設定されること | `YamlFileBuilderTest` | `testBuildFileList_tabFieldSeparatorBecomesTabChar` |
+| G-4 | 7.3 / examples-messaging.md 7.3 | `messages` の `id` にパスセグメントを含む形式（`sendSyncTestData/REQ001/message`）が正しく取得できること | `YamlMessageBuilderTest` | `testBuildMessagePool_idWithPathSegments` |
+| G-5 | 7.2 / examples-messaging.md 7.2 | `expected_request_header_messages` から `buildMessagePool` で正しく取得できること | `YamlMessageBuilderTest` | `testBuildMessagePool_expectedRequestHeaderMessages` |
+| G-6 | 4章 / examples-testshots.md | `testShots` という予約 ID で `list_maps` が正しく取得でき、Web/Batch/Messaging 各カラムが保持されること | `YamlTableDataBuilderTest` | `testBuildListMapRows_testShotsReservedId` |
 
 ---
 

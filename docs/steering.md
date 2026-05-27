@@ -243,9 +243,9 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [x] `YamlTestDataParser extends BasicTestDataParser` を実装する
 - [x] クラス分割（yaml サブパッケージ: `YamlLoader` / `YamlTableDataBuilder` / `YamlFileBuilder` / `YamlMessageBuilder` / `YamlSection`）を行う
 - [x] `pom.xml` に SnakeYAML 依存が追加されていることを確認する（既存）
-- [ ] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する（進行中：一部実装済み・未対応節あり）
+- [x] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する（G-1〜G-6 全完了・67件グリーン）
   - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
-- [ ] テスト実行・全グリーン確認
+- [x] テスト実行・全グリーン確認（67件・Failures: 0, Errors: 0）
 - [ ] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）
 - [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
@@ -313,7 +313,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 ---
 
-## 現在の状態（2026-05-26時点）
+## 現在の状態（2026-05-27時点）
 
 ブランチ: `convert-testdata-excel-to-text`
 
@@ -322,28 +322,21 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | G-1〜G-6 のテスト実装（`docs/gaps/R-1-coverage-gaps.md` 参照） |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | 仕様リストマッピング確認 → セルフチェック → QA/Java/SWE レビュー → ユーザーレビュー |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **R-1 継続**: `docs/gaps/R-1-coverage-gaps.md` のギャップ一覧 G-1〜G-6 を上から TDD で実装する
-   - G-1: `YamlTableDataBuilderTest` — ダブルクォート1文字 `"\""` → `"` になること（8.1/8.2）
-   - G-2: `YamlTableDataBuilderTest` — `${updateTime}` / `${setUpTime}` → システム時刻変換（8.1/8.4）
-   - G-3: `YamlFileBuilderTest` — 可変長の `field-separator: "\\t"` がタブ文字になること（9.3）
-   - G-4: `YamlMessageBuilderTest` — `id` にパスセグメント含む形式（`sendSyncTestData/REQ001/message`）（7.3）
-   - G-5: `YamlMessageBuilderTest` — `expected_request_header_messages` からの取得（7.2）
-   - G-6: `YamlTableDataBuilderTest` — `testShots` 予約 ID で LIST_MAP 取得（4章）
-   - 各テストを Red → Green の順で実装し、完了したらコミット＆プッシュ
-   - 全 G-1〜G-6 完了後、`docs/ntf-impl-spec-list.md` でマッピングと漏れ確認
+2. **R-1 継続**: G-1〜G-6 完了済み（67件グリーン）。次のステップ:
+   - `docs/ntf-impl-spec-list.md` の全仕様 ID にテストメソッドをマッピングし、漏れ確認
    - セルフチェック（`docs/checks/R-1.md`）→ QA/Java/SWE レビュー → ユーザーレビュー
 
 ### 実装状況（テスト数）
 
-- 現在: 58 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:22, YamlFileBuilderTest:12, YamlMessageBuilderTest:14）
-- G-1〜G-6 完了後の想定: 約 64〜66 件
+- 現在: 67 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:25, YamlFileBuilderTest:13, YamlMessageBuilderTest:16, QuotationTrimmerTest:3）
+- G-1〜G-6 全完了（2026-05-27）
 
 ### ソース一覧（確定）
 
