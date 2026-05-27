@@ -347,7 +347,7 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
 2. **C-1-0 調査**: `PoiXlsReader` / `BasicTestDataParser` / `YamlTestDataParser` のデータフローを走査し、中間データと NTF 整合性担保の設計案を `docs/pr75/checks/C-1-0.md` に出力する
 3. **C-1-1〜C-1-7**: 調査結果を踏まえ仕様リスト見直し → 設計書書き直し → レビュー → ユーザーFIX
-4. **C-1-8〜C-1-9**: 実装フェーズ（TDD）
+4. **C-1-8〜C-1-13**: 実装フェーズ（TDD）→ セルフチェック → QA/Java/SWE レビュー → ユーザーレビュー
 
 ### C-1 設計方針の確定事項（ユーザーレビュー 2026-05-27）
 
@@ -357,56 +357,11 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 - `ntf-impl-spec-list.md` の「変換ツール対象」列が設計書スコープの根拠となる（C-1-1 で見直し）
 - セルフチェック（C-1.md）では仕様リスト「対象」全件に設計書章番号を逆マッピングして漏れゼロを確認する
 
-### QAレビュー FB 対応状況（全14件対応済み）
+### 実装状況
 
-G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエージェント3体）。全14件対応完了。
-
-#### 対応済み（14件）
-
-| # | 対象 | 内容 | 状態 |
-|---|---|---|---|
-| SW-1 | ライブラリ切替 | SnakeYAML 2.6 → SnakeYAML Engine 3.0.1（YAML 1.2 Core Schema）に切替。no/yes/on/off の Boolean 変換を根本解決 | ✅ |
-| SW-2 | 根本解決済み | Engine 3.0.1 切替により buildTableDataList の Boolean キー問題も解決。objectToString 防御コードは保持 | ✅ |
-| SW-3 | テスト追加 | `QuotationTrimmerTest` に境界値テスト追加: `"` 1文字→スルー・`""` 2文字→空文字・全角`""` 2文字→空文字 | ✅ |
-| SW-5 | 実装修正 | `buildRows` に Boolean キー変換の理由コメント追加 | ✅ |
-| QA-3 | テスト追加 | `'"'`（YAMLシングルクォート記法）でのダブルクォート1文字テスト追加 | ✅ |
-| QA-4 | テスト追加 | `setSetUpDateTime` 未設定時に `${setUpTime}` が変換されないテスト追加 | ✅ |
-| QA-6 | テスト追加 | `field-separator` 2文字以上で `IllegalArgumentException` 境界値テスト追加 | ✅ |
-| JE-1 | 実装修正 | `QuotationTrimmer.trimQuotation` に null ガード追加 | ✅ |
-| JE-2 | テスト修正 | G-2テストの完全修飾クラス名を import に変更 | ✅ |
-| JE-3 | テスト修正 | `Arrays.<TestDataInterpreter>asList(...)` の型ウィットネス削除 | ✅ |
-| JE-4 | テスト修正 | `sutWithSetUp` 生成理由コメント追加 | ✅ |
-| JE-6 | テスト追加 | `buildTableDataList` 先頭行 `{}` のカラム0件挙動テスト追加 | ✅ |
-| JE-7 | テスト修正 | `assertNull`/`assertThat(..., nullValue())` の統一 | ✅ |
-| QA-9 | テスト修正 | `nativeTypes.yaml` の `SETUP_COL` → `SET_UP_TIME_COL` リネーム | ✅ |
-
-#### 対応不要と判定した指摘（根拠）
-
-| # | 内容 | 理由 |
-|---|---|---|
-| QA-1 | testShots 0件エラー | `buildListMapRows` の責務外。上位層（`AbstractHttpRequestTestTemplate`）が検出 |
-| QA-2 | testCases フォールバック | 切り替えロジックは上位層の責務。ここでは文字列一致の動作確認しかできない |
-| QA-5 | G-5 FW_HEADER以外レコード混在 | `testBuildMessagePool_withFwHeader` で FW_HEADER+BODY 組み合わせ検証済み |
-| QA-7 | 3階層以上パスセグメント | `id.equals(entryId)` 完全一致のため階層数は無関係 |
-| QA-8 | 全角ダブルクォートのYAML経路 | 解説書・examplesに記載なし。単体テスト（QuotationTrimmerTest）でカバー済み |
-| JE-5 | リポジトリ復元の null 値セット | 今回変更していないファイルの既存問題 |
-| SW-4 | `@SuppressWarnings` の範囲 | Java の言語仕様上メソッドレベルが最小スコープ |
-| SW-6 | `objectToString` の Javadoc | 呼び出し側の利用方法をメソッド Javadoc に書くのは設計上誤り |
-
-### 実装状況（テスト数）
-
-- 現在: 138 件グリーン（YamlLoaderTest:11, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:17, QuotationTrimmerTest:5, YamlTestDataParserTest:37, TestCaseInfoTest:7, FixedLengthFileFragmentTest:19）
-- G-1〜G-6 全完了・QAレビューFB 14件対応済み・再レビューFB 17件対応済み・QA/Java/SWE 再レビュー全員 OK（2026-05-27）
-- T-1 QAレビューFB 本質3件・軽微4件対応済み・テスト6件追加（TestCaseInfoTest/FixedLengthFileFragmentTest）（2026-05-27）
-
-### ソース一覧（確定）
-
-| ソース | パス |
-|---|---|
-| 解説書 | `docs/pr75/specs/ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` |
-| 仕様リスト | `docs/pr75/ntf-impl-spec-list.md`（全145件：DT/SS/RS/HC/IV/DR/MS/TS 8カテゴリ） |
-| 実装 | `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java` + `yaml/` サブパッケージ |
-| テスト | `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java` + `yaml/` サブパッケージ |
+- テスト: 138 件グリーン（R-1・T-1 完了時点）
+- 主要ソース: `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java` + `yaml/` サブパッケージ
+- 仕様リスト: `docs/pr75/ntf-impl-spec-list.md`（全145件・変換ツール対象列含む）
 
 **注意**: `/tmp/nablarch-document` は再起動で消える。必要時は `git clone https://github.com/nablarch/nablarch-document.git /tmp/nablarch-document` で再取得。
 
