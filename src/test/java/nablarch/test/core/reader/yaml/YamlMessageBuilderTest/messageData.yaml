@@ -147,6 +147,17 @@ messages_malformed_fw_header:
         rows:
           - requestId: "0000000001"
 
+messages_no_fw_header:
+  - id: bodyOnly001
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: X
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
 response_header_messages:
   - group_id: grp1
     id: resp001

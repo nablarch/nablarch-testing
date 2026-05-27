@@ -407,6 +407,38 @@ public class YamlMessageBuilderTest {
     }
 
     // ========================================================================
+    // RS-20: FW_HEADER フラグメントが存在しない場合は空 Map を FW ヘッダとして使用すること
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: FW_HEADER フラグメントが存在しない場合、
+     * 空 Map を FW ヘッダとして MessagePool が返ること（RS-20）。
+     *
+     * <p>
+     * 解説書: RS-20（FW_HEADER フラグメント不在の代替フロー）<br>
+     * Given: messages_no_fw_header に id=bodyOnly001 の BODY レコードのみ（FW_HEADER レコードなし）<br>
+     * When:  buildMessagePool(yaml, "messages_no_fw_header", "bodyOnly001", path) を呼ぶ<br>
+     * Then:  MessagePool が返り、fwHeader が空 Map であること
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_noFwHeaderFragmentReturnsEmptyFwHeader() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages_no_fw_header", "bodyOnly001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("FW_HEADER フラグメントが存在しない場合は空 Map が使用されること", fwHeader.size(), is(0));
+    }
+
+    // ========================================================================
     // FW_HEADER rows が Map 形式（誤記）のとき IllegalStateException + context（E-3）
     // ========================================================================
 
