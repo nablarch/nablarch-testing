@@ -78,9 +78,19 @@ YAML  → [YamlFormatReader] → TestDataContainer → [XlsFormatWriter]  → Ex
 
 実装クラスは形式名を含めてよい（`XlsFormatReader`、`YamlFormatWriter` 等）。
 
-### 2.3 NTF 内部クラス非依存
+### 2.3 NTF 内部クラス非依存と整合性の検知
 
 変換ツールは NTF テストデータのパース処理（`BasicTestDataParser`、`TableData`、`DataFile` 等）を再利用しない。これらは「テストデータを読み込んでテストを実行する」という別の責務を持っており、変換ツールの「形式間でデータを忠実に変換する」責務とは異なる。変換ツールは独立したデータモデルを持つ。
+
+**整合性の担保は統合テストで行う。** 変換ツールが NTF と静かにズレていくことを防ぐため、以下の統合テストを実装する。
+
+```
+元の Excel を BasicTestDataParser で読んだ結果
+    ==
+変換ツールで Excel → YAML に変換し YamlTestDataParser で読んだ結果
+```
+
+NTF 側の仕様変更（新 DataType の追加、YAML キーの変更等）があった場合、この統合テストが壊れることで検知できる。コードの独立性を保ちつつ、テストが整合性の番人になる。
 
 ### 2.4 上書き禁止デフォルト
 
