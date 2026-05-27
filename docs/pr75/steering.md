@@ -378,14 +378,18 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | ユーザーレビュー待ち（T-1 QAレビューOK取得済み。R-1/T-1 まとめてユーザーレビュー依頼中） |
-| **T-1** トレーサビリティマトリクス完成 | **進行中** | ユーザーレビュー待ち（QAレビューOK取得済み 2026-05-27） |
-| **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | ユーザーレビュー待ち |
+| **T-1** トレーサビリティマトリクス完成 | **進行中** | ユーザーレビュー待ち（QAレビュー OK 2026-05-27） |
+| **V-1** Excel 並走確認 | 未着手 | R-1/T-1 ユーザーレビュー OK 後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **ユーザーレビュー待ち**: R-1 / T-1 の両タスクがユーザーレビュー待ち状態
+2. **R-1 / T-1 ユーザーレビュー依頼**: 両タスクがユーザーレビュー待ち。OK が出たら V-1 に着手する
+   - R-1 チェック: `docs/pr75/checks/R-1.md`
+   - T-1 チェック: `docs/pr75/checks/T-1.md`
+   - 解説書（YAML 1.2 準拠追記済み）: `docs/pr75/specs/ntf-testdata-doc.md`
+3. **V-1 着手**: ユーザーレビュー OK 後、リポジトリ内全 `.xls`/`.xlsx` の YAML 版並走実行
 
 ### QAレビュー FB 対応状況（全14件対応済み）
 
@@ -425,8 +429,9 @@ G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエー
 
 ### 実装状況（テスト数）
 
-- 現在: 75 件グリーン（YamlLoaderTest:11, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:17, QuotationTrimmerTest:5）
+- 現在: 138 件グリーン（YamlLoaderTest:11, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:17, QuotationTrimmerTest:5, YamlTestDataParserTest:37, TestCaseInfoTest:7, FixedLengthFileFragmentTest:19）
 - G-1〜G-6 全完了・QAレビューFB 14件対応済み・再レビューFB 17件対応済み・QA/Java/SWE 再レビュー全員 OK（2026-05-27）
+- T-1 QAレビューFB 本質3件・軽微4件対応済み・テスト6件追加（TestCaseInfoTest/FixedLengthFileFragmentTest）（2026-05-27）
 
 ### ソース一覧（確定）
 
