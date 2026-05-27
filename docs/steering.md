@@ -245,7 +245,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [x] `pom.xml` に SnakeYAML 依存が追加されていることを確認する（既存）
 - [x] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する（G-1〜G-6 全完了・67件グリーン）
   - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
-- [x] テスト実行・全グリーン確認（67件・Failures: 0, Errors: 0）
+- [x] テスト実行・全グリーン確認（67件→72件・Failures: 0, Errors: 0）（FB対応: SnakeYAML Engine 3.0.1切替・テスト追加・実装修正）
 - [ ] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）
 - [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
@@ -322,42 +322,37 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | QAレビュー FB 対応（下記14件）→ 再レビュー → ユーザーレビュー |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | QAレビュー FB 対応済み → 再レビュー（サブエージェント3体）→ ユーザーレビュー |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **R-1 継続**: QAレビュー FB 14件を対応してからレビュー再実施
+2. **R-1 継続**: FB 対応済み。QA/Java/SWE 再レビュー（サブエージェント3体）を実施してからユーザーレビュー依頼
 
-### QAレビュー FB 対応リスト（未対応14件）
+### QAレビュー FB 対応状況（全14件対応済み）
 
-G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエージェント3体）。以下が対応必要と判定した指摘。
+G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエージェント3体）。全14件対応完了。
 
-#### テスト追加・修正（機能）
+#### 対応済み（14件）
 
-| # | 対象 | 内容 |
-|---|---|---|
-| QA-3 | G-1テスト追加 | `'"'`（YAMLシングルクォート記法）でのダブルクォート1文字（解説書8.2） |
-| QA-4 | G-2テスト追加 | `setSetUpDateTime` 未設定時に `${setUpTime}` が変換されないこと |
-| QA-6 | テスト追加 | `field-separator` 2文字以上で `IllegalArgumentException` になる境界値（解説書9.3） |
-| SW-1 | **実装修正（要方針確定）** | `no:` キーが `"false"` に化ける根本問題。`YamlLoader` の SnakeYAML Resolver をカスタマイズして `yes`/`no`/`on`/`off` の Boolean 変換を無効化する（YAML 1.2 準拠）。ユーザーが案A確認済み（案A採用で進める） |
-| SW-2 | 実装修正 | `buildTableDataList` にも同様の Boolean キー問題が残存。`setup_tables`/`expected_tables` の rows キーも `objectToString` で文字列変換する |
-| SW-3 | テスト追加 | `QuotationTrimmerTest` に境界値テスト追加: `"` 1文字→スルー・`""` 2文字→空文字・全角`""` 2文字→空文字 |
-| JE-6 | テスト追加 | `buildTableDataList` で先頭行 `{}` の場合のカラム 0件挙動確認 |
-
-#### コード品質（実装・テスト修正）
-
-| # | 対象 | 内容 |
-|---|---|---|
-| JE-1 | 実装修正 | `QuotationTrimmer.trimQuotation` に null ガード追加（`str == null` の場合 str をそのまま返す） |
-| JE-2 | テスト修正 | G-2テストの完全修飾クラス名をすべて import に変更 |
-| JE-3 | テスト修正 | `Arrays.<TestDataInterpreter>asList(...)` の型ウィットネス削除 |
-| JE-4 | テスト修正 | G-2テストの `sutWithSetUp` 生成理由コメント補足（`@Before`の`sut`が`setSetUpDateTime`未設定のため使えない旨） |
-| JE-7 | テスト修正 | `assertNull`/`assertThat(..., nullValue())` の統一（今回変更したファイル内） |
-| QA-9 | テスト修正 | `nativeTypes.yaml` の `SETUP_COL` → `SET_UP_TIME_COL` にリネームして `${setUpTime}` との対応を明確化 |
-| SW-5 | 実装修正 | `buildRows` に Boolean キー変換の理由コメント追加（SnakeYAML 1.1 の `no`/`yes` Boolean 変換対策である旨） |
+| # | 対象 | 内容 | 状態 |
+|---|---|---|---|
+| SW-1 | ライブラリ切替 | SnakeYAML 2.6 → SnakeYAML Engine 3.0.1（YAML 1.2 Core Schema）に切替。no/yes/on/off の Boolean 変換を根本解決 | ✅ |
+| SW-2 | 根本解決済み | Engine 3.0.1 切替により buildTableDataList の Boolean キー問題も解決。objectToString 防御コードは保持 | ✅ |
+| SW-3 | テスト追加 | `QuotationTrimmerTest` に境界値テスト追加: `"` 1文字→スルー・`""` 2文字→空文字・全角`""` 2文字→空文字 | ✅ |
+| SW-5 | 実装修正 | `buildRows` に Boolean キー変換の理由コメント追加 | ✅ |
+| QA-3 | テスト追加 | `'"'`（YAMLシングルクォート記法）でのダブルクォート1文字テスト追加 | ✅ |
+| QA-4 | テスト追加 | `setSetUpDateTime` 未設定時に `${setUpTime}` が変換されないテスト追加 | ✅ |
+| QA-6 | テスト追加 | `field-separator` 2文字以上で `IllegalArgumentException` 境界値テスト追加 | ✅ |
+| JE-1 | 実装修正 | `QuotationTrimmer.trimQuotation` に null ガード追加 | ✅ |
+| JE-2 | テスト修正 | G-2テストの完全修飾クラス名を import に変更 | ✅ |
+| JE-3 | テスト修正 | `Arrays.<TestDataInterpreter>asList(...)` の型ウィットネス削除 | ✅ |
+| JE-4 | テスト修正 | `sutWithSetUp` 生成理由コメント追加 | ✅ |
+| JE-6 | テスト追加 | `buildTableDataList` 先頭行 `{}` のカラム0件挙動テスト追加 | ✅ |
+| JE-7 | テスト修正 | `assertNull`/`assertThat(..., nullValue())` の統一 | ✅ |
+| QA-9 | テスト修正 | `nativeTypes.yaml` の `SETUP_COL` → `SET_UP_TIME_COL` リネーム | ✅ |
 
 #### 対応不要と判定した指摘（根拠）
 
@@ -374,8 +369,8 @@ G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエー
 
 ### 実装状況（テスト数）
 
-- 現在: 67 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:25, YamlFileBuilderTest:13, YamlMessageBuilderTest:16, QuotationTrimmerTest:3）
-- G-1〜G-6 全完了・QAレビュー実施済み・FB対応中（2026-05-27）
+- 現在: 72 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:16, QuotationTrimmerTest:4）
+- G-1〜G-6 全完了・QAレビューFB 14件対応済み・再レビュー待ち（2026-05-27）
 
 ### ソース一覧（確定）
 
@@ -414,7 +409,7 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 ### ADR（設計判断記録）
 
-- `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML 2.6 採用の根拠
+- `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML Engine 3.0.1 採用の根拠（SnakeYAML 2.6 → Engine 3.0.1 切替記録含む）
 - `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
 
 ---
