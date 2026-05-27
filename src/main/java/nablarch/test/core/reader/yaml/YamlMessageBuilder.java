@@ -2,7 +2,6 @@ package nablarch.test.core.reader.yaml;
 
 import nablarch.core.repository.SystemRepository;
 import nablarch.test.NablarchTestUtils;
-import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.MockMessages;
 import nablarch.test.core.messaging.MessagePool;
@@ -36,6 +35,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
  * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
+ *
+ * @author kiyotis
  */
 public final class YamlMessageBuilder {
 
@@ -119,13 +120,9 @@ public final class YamlMessageBuilder {
     private MockMessages buildMockMessages(Map<String, Object> map, String basePath) {
         String entryId = toStr(map.get(FIELD_ID));
         MockMessages file = new MockMessages(entryId != null ? entryId : "");
-        applyDirectives(file, map);
+        YamlSection.applyDirectives(file, map);
         fileBuilder.buildFragments(file, map, basePath);
         return file;
-    }
-
-    private void applyDirectives(DataFile file, Map<String, Object> map) {
-        YamlSection.applyDirectives(file, map);
     }
 
     private Map<String, String> extractFwHeader(Map<String, Object> yaml, String sectionKey, String id) {

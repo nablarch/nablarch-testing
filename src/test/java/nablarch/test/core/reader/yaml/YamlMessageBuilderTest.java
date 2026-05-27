@@ -502,7 +502,9 @@ public class YamlMessageBuilderTest {
             assertThat("customField が設定されていること", fwHeader.get("customField"), is("CUSTOM_VALUE"));
             assertThat("requestId は含まれないこと", fwHeader.containsKey("requestId"), is(false));
         } finally {
-            // リポジトリを元の状態に戻す
+            // テスト後に reader.fwHeaderfields を null に戻す。
+            // YamlMessageBuilder は isNullOrEmpty(null) を true と判断してデフォルト値にフォールバックするため、
+            // 後続テストが reader.fwHeaderfields の影響を受けないことが保証される。
             SystemRepository.load(new ObjectLoader() {
                 @Override
                 public Map<String, Object> load() {

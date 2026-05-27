@@ -299,7 +299,7 @@ public class YamlFileBuilderTest {
         // When
         List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[multiRecord]", DIR);
 
-        // Then: DataFile の all フィールド（フラグメントリスト）をリフレクションで確認する
+        // Then: DataFile にフラグメント数を返す公開 API がないため、private フィールド "all" をリフレクションで確認する。
         assertThat(result.size(), is(1));
         assertThat(result.get(0), instanceOf(FixedLengthFile.class));
         Field allField = DataFile.class.getDeclaredField("all");

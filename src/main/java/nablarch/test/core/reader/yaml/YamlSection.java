@@ -17,6 +17,8 @@ import java.util.Map;
  * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
  * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
+ *
+ * @author kiyotis
  */
 public final class YamlSection {
 

@@ -37,6 +37,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
  * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
+ *
+ * @author kiyotis
  */
 public final class YamlFileBuilder {
 
@@ -180,6 +182,8 @@ public final class YamlFileBuilder {
             fragment.setNames(names);
             fragment.setTypes(types);
 
+            // メッセージファイル（skipFwHeader=true）は常に固定長のため setLengths が必要。
+            // それ以外は length フィールドが1件以上ある場合のみ setLengths を呼ぶ。
             if (skipFwHeader || hasLength) {
                 List<String> cleanedLengths = new ArrayList<String>(lengths.size());
                 for (String l : lengths) {

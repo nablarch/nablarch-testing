@@ -30,6 +30,8 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
  * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
+ *
+ * @author kiyotis
  */
 public final class YamlTableDataBuilder {
 
@@ -37,6 +39,13 @@ public final class YamlTableDataBuilder {
     private final DefaultValues defaultValues;
     private final List<TestDataInterpreter> interpreters;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param dbInfo        DB 情報
+     * @param defaultValues デフォルト値設定
+     * @param interpreters  インタープリタリスト
+     */
     public YamlTableDataBuilder(DbInfo dbInfo, DefaultValues defaultValues,
                           List<TestDataInterpreter> interpreters) {
         this.dbInfo = dbInfo;
@@ -69,7 +78,7 @@ public final class YamlTableDataBuilder {
             String tableName = toStr(map.get(FIELD_TABLE));
             if (tableName == null) {
                 throw new IllegalStateException(
-                        "Missing required field '" + FIELD_TABLE + "' in " + sectionKey + " entry. file=" + path);
+                        "Missing required field '" + FIELD_TABLE + "' in " + sectionKey + " entry. basePath=" + path);
             }
             List<Object> rows = getList(map, FIELD_ROWS);
             if (rows.isEmpty()) {
@@ -144,7 +153,9 @@ public final class YamlTableDataBuilder {
             Map<Object, Object> rowMap = (Map<Object, Object>) rowObj;
             Map<String, String> row = new TreeMap<String, String>();
             for (Map.Entry<Object, Object> e : rowMap.entrySet()) {
-                // SnakeYAML 1.1 では no/yes/on/off が Boolean キーになる場合があるため objectToString で文字列化する
+                // buildRows の rowMap は Map<Object, Object> 型のため、objectToString でキーを文字列化する。
+                // SnakeYAML Engine 3.x（YAML 1.2 Core Schema）では no/yes/on/off は文字列として扱われるが、
+                // 将来の安全性のために objectToString で統一的に文字列化する。
                 String key = objectToString(e.getKey());
                 if (key == null || (key.startsWith("[") && key.endsWith("]"))) {
                     continue;

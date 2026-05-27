@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -114,7 +115,8 @@ public class YamlLoaderTest {
             YamlLoader.load(DIR, "YamlLoaderTest/duplicateKey");
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
-            // OK
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/duplicateKey"));
         }
     }
 
@@ -138,7 +140,8 @@ public class YamlLoaderTest {
             YamlLoader.load(DIR, "YamlLoaderTest/noSuchFile");
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
-            // OK
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/noSuchFile"));
         }
     }
 
@@ -162,6 +165,31 @@ public class YamlLoaderTest {
 
         // Then
         assertThat(result.isEmpty(), is(true));
+    }
+
+    // ========================================================================
+    // load: YAML ルートがマッピングでない場合は IllegalStateException をスローすること
+    // ========================================================================
+
+    /**
+     * [YamlLoader] load: YAML ルートがリストの場合は IllegalStateException がスローされること。
+     *
+     * <p>
+     * Given: ルートがリスト（- item1, - item2）の YAML ファイル<br>
+     * When:  load を呼ぶ<br>
+     * Then:  IllegalStateException がスローされ、メッセージにファイルパスが含まれること
+     * </p>
+     */
+    @Test
+    public void testLoad_throwsWhenRootIsNotMap() {
+        // Given / When / Then
+        try {
+            YamlLoader.load(DIR, "YamlLoaderTest/rootIsList");
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            assertThat("エラーメッセージにファイルパスが含まれること",
+                    e.getMessage(), containsString("YamlLoaderTest/rootIsList"));
+        }
     }
 
     // ========================================================================

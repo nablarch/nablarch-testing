@@ -370,6 +370,7 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
+        // result.get(0).size() は TableData の行数（addRow された件数）を返す
         assertThat("空エントリ {} をスキップして 2 行のみ返ること", result.get(0).size(), is(2));
         assertThat(result.get(0).getValue(0, "PK_COL1").toString(), is("0000000020"));
         assertThat(result.get(0).getValue(1, "PK_COL1").toString(), is("0000000021"));
@@ -540,6 +541,8 @@ public class YamlTableDataBuilderTest {
         List<Map<String, String>> result = sut.buildListMapRows(yaml, "dateTimeTest", DIR);
 
         // Then
+        // 期待値 "2010-09-14 12:34:56.0" は unit-test-yaml.xml の dateProvider（BasicDateTimeProvider）に
+        // 固定値 "2010-09-14 12:34:56" が設定されているため。
         assertThat(result.size(), is(1));
         assertThat("${systemTime} 完全一致はシステム時刻に変換されること",
                 result.get(0).get("EXACT_COL"), is("2010-09-14 12:34:56.0"));

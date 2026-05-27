@@ -25,6 +25,8 @@ import java.util.Map;
  * 文字列として扱われる（YAML 1.1 の Boolean 変換は行われない）。
  * 重複キーは {@link IllegalStateException} をスローする。
  * </p>
+ *
+ * @author kiyotis
  */
 public final class YamlLoader {
 
@@ -59,11 +61,18 @@ public final class YamlLoader {
                 .build();
         Load loader = new Load(settings);
         try (FileInputStream in = new FileInputStream(new File(filePath))) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> result = (Map<String, Object>) loader.loadFromInputStream(in);
-            if (result == null) {
-                result = Collections.emptyMap();
+            Object loaded = loader.loadFromInputStream(in);
+            if (loaded == null) {
+                YAML_CACHE.put(filePath, Collections.emptyMap());
+                return Collections.emptyMap();
             }
+            if (!(loaded instanceof Map)) {
+                throw new IllegalStateException(
+                        "YAML root must be a mapping, but was "
+                                + loaded.getClass().getSimpleName() + ". file=" + filePath);
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) loaded;
             YAML_CACHE.put(filePath, result);
             return result;
         } catch (IOException e) {
