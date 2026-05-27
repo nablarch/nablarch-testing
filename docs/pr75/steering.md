@@ -376,7 +376,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
-- 設計書（`xls-to-yaml-converter-design.md`）がユーザーレビュー OK 済みであること
+- 設計書（`testdata-converter-design.md`）がユーザーレビュー OK 済みであること
 - 全テストが全グリーンであること
 - 変換ツールが設計書で定義した実行方法で動作すること
 
@@ -403,7 +403,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 ---
 
-## 現在の状態（2026-05-27時点）
+## 現在の状態（2026-05-27 夕時点）
 
 ブランチ: `convert-testdata-excel-to-text`
 
@@ -414,15 +414,15 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
 | **R-1** YamlTestDataParser 実装（TDD） | **完了**（ユーザーレビュー OK 2026-05-27） | — |
 | **T-1** トレーサビリティマトリクス完成 | **完了**（ユーザーレビュー OK 2026-05-27） | — |
-| **C-1** Excel→YAML 変換ツール設計・実装 | **未着手** | 次のタスク |
+| **C-1** Excel→YAML 変換ツール設計・実装 | **進行中** | 設計書 FIX（レビュー待ち） |
 | **V-1** Excel 並走確認 | 未着手 | C-1 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **C-1 着手**: Excel → YAML 変換ツールの設計書（`docs/pr75/specs/xls-to-yaml-converter-design.md`）作成から開始する
-   - 設計書 FIX 後に TDD で実装する
-   - 実行方法（`exec-maven-plugin` 追加 or JUnit テスト実装）はユーザー確認が必要
+2. **C-1 設計書レビュー**: 設計書（`docs/pr75/specs/testdata-converter-design.md`）のユーザーレビューを依頼する
+   - C-1 作業内容チェックリストの「セルフチェック → QA → Java → SWE → ユーザーレビュー」を順に実施する
+   - 設計書 OK 後に TDD で実装に着手する
 3. **V-1 着手**: C-1 完了後、変換ツールを使って全59件を変換・並走確認する
 
 ### QAレビュー FB 対応状況（全14件対応済み）
