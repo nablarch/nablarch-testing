@@ -1,7 +1,7 @@
 # NTF テストデータ形式間変換ツール 設計書
 
 - **作成日**: 2026-05-27
-- **更新日**: 2026-05-27（C-1-5: Javaエキスパートレビュー指摘対応 - 例外設計・データモデル整理・LinkedHashMap明記等）
+- **更新日**: 2026-05-27（C-1-6: SWEレビュー指摘対応 - FW_HEADER判定ロジック・状態遷移EOF・マーカーカラム例等）
 - **対象ブランチ**: convert-testdata-excel-to-text
 
 ---
@@ -159,6 +159,10 @@ Excel ブック内の各シートを個別の YAML ファイルに変換する�
 
 **YAML ディレクトリの定義**: YAML 読み込み時に変換単位となる「YAML ディレクトリ」とは、直下に `.yaml` ファイルを 1 件以上含み、かつ `.yaml` ファイルを含むサブディレクトリを持たないディレクトリを指す（最下位の `.yaml` 保有ディレクトリ）。
 
+- `A/B/C/` に `.yaml` があり `A/B/` に `.yaml` がない場合: `A/B/C/` がYAMLディレクトリ
+- `A/B/` にも `.yaml` があり `A/B/C/` にも `.yaml` がある場合: `A/B/C/` のみがYAMLディレクトリ（`A/B/` は `.yaml` 含むサブディレクトリを持つため対象外）
+- `A/B/C/` と `A/B/D/` の両方に `.yaml` がある場合: `A/B/C/` と `A/B/D/` がそれぞれ独立したYAMLディレクトリ
+
 ### 4.4 resourceName の対応
 
 NTF は形式によって異なる resourceName で識別する。
@@ -265,6 +269,11 @@ ListMapBlock extends ColumnRowDataBlock
 `TableDataBlock` と `ListMapBlock` は `dataType` フィールド（`TestDataBlock` が保持）で区別する。
 
 #### 6.3.4 FileDataBlock（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
+
+```java
+/** ファイルデータブロックの種別。SETUP/EXPECTED を問わず固定長か可変長かを区別する。 */
+enum FileType { FIXED, VARIABLE }
+```
 
 ```
 FileDataBlock extends TestDataBlock
@@ -404,7 +413,7 @@ Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContain
 
 #### XlsFormatWriter
 
-Apache POI を使用して `TestDataContainer` を `.xls` ファイルとして書き出す。
+Apache POI を使用して `TestDataContainer` を `.xls` ファイルとして書き出す。POI の `HSSFWorkbook`（`.xls` 形式、BIFF8）を使用する。NTF の既存テストデータは全て `.xls` 形式のため `.xlsx` 変換は本ツールのスコープ外とする。なお HSSF の制約として 1 ブック最大 65535 行・256 シートがあるが、NTF テストデータのサイズでは超過しない前提とする。
 
 **責務**
 
@@ -481,6 +490,7 @@ SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群と
 - 変換結果サマリー（成功件数・スキップ件数・エラー件数・コメント行ロスト件数）を標準出力に表示する
 - エラーが 1 件以上あった場合は終了コード 1 で終了する
 - `System.exit()` は `main()` メソッドのみから呼び出す。内部ロジックは終了コードを `int` で返す `run(String[])` メソッドに分離し、テスト時は `run()` を直接呼び出して終了コードを検証する
+- `run()` メソッドは各ファイルに対して `reader.read()` および `writer.write()` を `try-catch(ConverterException)` で囲む。`ConverterException` をキャッチした場合はエラー件数を加算してファイルをスキップし、次のファイルの処理を継続する。全ファイルの処理完了後にエラー件数 > 0 であれば終了コード 1 を返す
 
 **引数仕様**
 
@@ -578,7 +588,25 @@ setup_tables:
 - セル値は全て文字列として保持する。空セル（BLANK セル / cell == null）は空文字として扱う。セル値が文字列 `"null"` のときはアンクォートの `null` として YAML に出力する（8.6 節参照）
 - ヘッダ末尾の空カラムは除去する
 - データ行がヘッダより短い場合、不足分は空文字として補完する
-- マーカーカラム（`[カラム名]` 形式）はカラム名をそのまま保持する
+- マーカーカラム（`[カラム名]` 形式）はカラム名を `[` `]` を含めてそのまま保持する。YAML 出力例:
+
+```
+行1: SETUP_TABLE=USER_MASTER  [空]  [空]    [空]
+行2: USER_ID                  NAME  [FLAG]  AGE
+行3: 001                      taro  X       20
+```
+
+↓
+
+```yaml
+setup_tables:
+  - table: "USER_MASTER"
+    rows:
+      - USER_ID: "001"
+        NAME: "taro"
+        "[FLAG]": "X"
+        AGE: "20"
+```
 
 #### YAML → Excel
 
@@ -586,6 +614,7 @@ setup_tables:
 - `group_id:` が存在する場合、識別行を `SETUP_TABLE[group_id]=テーブル名` 形式にする
 - `null` 値はセルに `null` と書き出す
 - 空文字はセルを空にする
+- マーカーカラム（`[カラム名]` 形式）は `[` `]` を含めてそのままカラム名行に書き出す
 
 ### 8.3 LIST_MAP
 
@@ -640,6 +669,8 @@ list_maps:
 | `DATA` | 先頭セルが空 | `DATA` 継続（次のデータ行） |
 | `DATA` | 先頭セルが非空かつ次行の先頭セルが空（新レコード種別名） | `FIELD_NAMES`（新 `RecordLayout` を追加） |
 | いずれかの状態 | DataType 識別行を検出 | 新データブロック開始 |
+| `BLOCK_START` / `DIRECTIVE` / `FIELD_NAMES` / `DATA_TYPES` / `FIELD_LENGTHS` | EOF（次行が存在しない） | ブロック解析を完了して終了。`FIELD_NAMES` / `DATA_TYPES` / `FIELD_LENGTHS` の状態でEOFに達した場合はデータ行なしのレイアウトとして扱い、エラーとして記録する |
+| `DATA` | EOF（次行が存在しない） | データブロック解析を正常に完了する |
 
 固定長 Excel 例（エンコーディング付き）:
 
@@ -677,6 +708,8 @@ setup_files:
 | `SETUP_VARIABLE` / `EXPECTED_VARIABLE` | `variable` |
 
 YAML のキー（`setup_files` / `expected_files`）は DataType を問わず共通。逆変換時は `type:` フィールドを参照して `SETUP_FIXED` か `SETUP_VARIABLE` かを決定する。
+
+`setup_files` リスト内の要素順序は Excel のデータブロック出現順（行順）を保持する。`SETUP_FIXED` と `SETUP_VARIABLE` が混在していても同一リストに順序通り出力される。`YamlFormatReader` は `setup_files` リストを出現順に走査して `TestDataBlock` を生成する（`TestDataSection.blocks` の順序が保証される）。
 
 ```
 setup_files   + type: fixed     → SETUP_FIXED
@@ -743,6 +776,16 @@ messages:
 - `rows:` の先頭要素がフィールド値の配列。フィールド順と値の順序が対応する（`rows[0][fieldIndex]` が `fields[fieldIndex].name` の値）
 - Excel での FW_HEADER 行（`fieldName | value` 形式）は、フィールド名の列挙順を保持して `fields:` に変換し、値を `rows[0]` の対応インデックスに出力する
 
+**FW ヘッダフィールド名の判定**:
+
+NTF の `MessageParser` と `YamlMessageBuilder` は、FW 制御ヘッダとして扱うフィールド名を `SystemRepository` の `reader.fwHeaderfields` キーから取得する。設定がない場合のデフォルトは `{requestId, userId, resendFlag, resultCode}` の 4 フィールド。
+
+変換ツールは NTF 実行コンテキスト（SystemRepository）から独立して動作するため、どのフィールドが FW ヘッダかを動的に判定できない。変換ツールの採用方針は以下のとおり:
+
+- **Excel → YAML**: Excel のディレクティブ行（先頭セルが非空かつ DataType 名で始まらない行の中で、次行先頭セルが非空と判定されたもの）を全て `FW_HEADER` レコードのフィールドとして変換する。これは `MessageParser` が先にディレクティブとして読み込み、フィールド名が `fwHeaderFields` に含まれれば FW ヘッダと判定する動作と同じ変換結果を生む（デフォルト 4 フィールドの場合）
+- **YAML → Excel**: `record_type: FW_HEADER` のレコードを全てディレクティブ行（`fieldName | value` 形式）として書き出す
+- **スコープ外**: `reader.fwHeaderfields` をカスタム設定している場合の変換等価性は保証しない。カスタム設定が必要な場合は手動で変換後データを確認すること
+
 #### FW ヘッダの YAML → Excel 逆変換
 
 YAML の `record_type: FW_HEADER` のレコードを Excel のディレクティブ行に逆変換する。`fields:` の各 `name` を先頭列に、`rows[0]` の対応インデックスの値を 2 列目に配置して、ディレクティブ行（`fieldName | value` 形式）として書き出す。
@@ -771,7 +814,7 @@ userId     usr001
 | Excel セル値 | YAML 出力 |
 |---|---|
 | 空セル（BLANK セル / cell == null） | `""` （空文字列としてダブルクォートで出力する） |
-| セル値が文字列 `"null"`（大文字小文字不問） | アンクォートの `null`（NTF の NullInterpreter が Java null に変換する） |
+| セル値が文字列 `"null"`（大文字小文字不問: `null`/`Null`/`NULL`） | アンクォートの `null`（NTF の NullInterpreter が Java null に変換する） |
 | `"true"` / `"false"` | `"true"` / `"false"` |
 | `"001"` 等の先頭ゼロ付き数値文字列 | `"001"` （ダブルクォートを付けて出力する） |
 | `${systemTime}` 等の特殊値 | `"${systemTime}"` （そのまま文字列として出力する） |
@@ -784,10 +827,12 @@ userId     usr001
 | YAML 値 | Excel 出力 |
 |---|---|
 | `""`（空文字） | 空セル |
-| `null`（アンクォート） | `null`（NTF の `NullInterpreter` が Java null に変換） |
+| `null` / `NULL` / `Null` / `~`（YAML 1.2 Core Schema のアンクォートnull表現、SnakeYAML がJava nullに変換） | `null`（NTF の `NullInterpreter` が Java null に変換） |
 | `"null"`（ダブルクォートあり） | `null`（NTF の `NullInterpreter` は文字列 `"null"` と Java null を等価に扱うため） |
 | `"true"` / `"false"` | `true` / `false` |
 | `"001"` | `001` |
+
+**注意**: YAML の `"null"`（ダブルクォートあり）と `null`（アンクォート）はともに Excel のセル値 `null` に変換される。その後 Excel → YAML 変換すると、どちらの入力もアンクォートの `null` として出力される。この `"null"` → `null` の情報ロストは**意図的な設計**である。NTF の `NullInterpreter` がダブルクォートあり・なし両方を Java null として等価に扱うため、NTF 動作上の等価性は維持される（変換等価性の定義 2.5 節参照）。
 
 ### 8.7 groupId の変換
 
@@ -847,7 +892,7 @@ userId     usr001
 </plugin>
 ```
 
-POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はともに `compile` スコープで宣言済みのため、`classpathScope` は省略（デフォルトの `compile`）でよい。ただし `TestDataConverter` クラスはテストコード（`src/test/java`）に配置するため、`classpathScope` を `test` にしてテストクラスパスを含める。
+`TestDataConverter` クラスは `src/test/java` に配置するため（7.1 節参照）、`classpathScope` を `test` にする。これにより `src/test/java` のクラスと `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）の両方がクラスパスに含まれる。POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はともに `compile` スコープで宣言済みのため、`test` スコープにも自動的に含まれる。
 
 ### 9.2 コマンド例
 
