@@ -322,14 +322,33 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | QAレビュー FB 対応済み → 再レビュー（サブエージェント3体）→ ユーザーレビュー |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | QA/Java/SWE 再レビュー（サブエージェント3体）→ ユーザーレビュー |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **R-1 継続**: FB 対応済み。QA/Java/SWE 再レビュー（サブエージェント3体）を実施してからユーザーレビュー依頼
+2. **R-1 継続**: QA/Java/SWE 再レビューをサブエージェント3体で並行実施する（下記「再レビュー対象ファイル」参照）
+3. FB がなくなったらユーザーレビュー依頼
+
+### 再レビュー対象ファイル
+
+前回レビューから以下が変更された。再レビューはこれら全ファイルを対象とする。
+
+**実装**:
+- `src/main/java/nablarch/test/core/reader/yaml/YamlLoader.java`（SnakeYAML Engine 3.0.1 に切替）
+- `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java`（SW-5 コメント追加）
+- `src/main/java/nablarch/test/core/util/interpreter/QuotationTrimmer.java`（JE-1 null ガード）
+
+**テスト**:
+- `src/test/java/nablarch/test/core/reader/yaml/YamlLoaderTest.java`
+- `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest.java`（QA-3/QA-4/JE-2/JE-3/JE-4/JE-6/JE-7/QA-9）
+- `src/test/java/nablarch/test/core/reader/yaml/YamlFileBuilderTest.java`（QA-6）
+- `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest.java`
+- `src/test/java/nablarch/test/core/util/interpreter/QuotationTrimmerTest.java`（SW-3）
+
+**テスト数**: 72件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:16, QuotationTrimmerTest:4）
 
 ### QAレビュー FB 対応状況（全14件対応済み）
 
