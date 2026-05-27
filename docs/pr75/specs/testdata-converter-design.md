@@ -1,6 +1,7 @@
 # NTF テストデータ形式間変換ツール 設計書
 
 - **作成日**: 2026-05-27
+- **更新日**: 2026-05-27（C-1-2: 命名を TestDataContainer/TestDataSection/TestDataBlock に統一、汎用化）
 - **対象ブランチ**: convert-testdata-excel-to-text
 
 ---
@@ -24,9 +25,9 @@
 
 ### 1.1 目的
 
-`src/test/` 配下に配置されている NTF（Nablarch Testing Framework）テストデータの Excel ファイル（`.xls`）を YAML ファイルに一括変換する。また将来的な逆方向変換（YAML → Excel）にも対応できる設計とする。
+NTF（Nablarch Testing Framework）テストデータの Excel ファイル（`.xls`）を YAML ファイルに変換する。また逆方向変換（YAML → Excel）にも対応する設計とする。
 
-変換後は Excel ファイルを削除し、テストが YAML ファイルのみで動作することを確認する。これにより、Excel に依存しない YAML ベースのテストデータ管理体制へ移行する。
+変換ツールの目標は、Excel 依存を排除して YAML ベースのテストデータ管理体制へ移行することである。
 
 ### 1.2 スコープ
 
@@ -36,15 +37,12 @@
 
 **変換ツールがカバーすること**
 
-- Excel（`.xls`）→ YAML（`.yaml`）への一括変換
-- YAML（`.yaml`）→ Excel（`.xls`）への一括逆変換（将来対応として設計に含める）
-- 変換対象は `src/test/` 配下のテストデータ Excel 59 件
+- Excel（`.xls`）→ YAML（`.yaml`）への変換
+- YAML（`.yaml`）→ Excel（`.xls`）への逆変換
 
 **変換ツールがカバーしないこと**
 
 - テストの実行・検証（NTF 本体の責務）
-- `src/main/resources/nablarch/test/core/http/dump/template.xls`（HTTP ダンプテンプレート）の変換
-- `src/main/script/master_data/MASTER_DATA.xls`（DB 初期データ）の変換
 - Excel のセル書式・色・結合セル・コメントポップアップ等の変換（NTF 本体が無視するため）
 - 仕様リストで「対象外」と記載された NTF 仕様（実行時動作・入力値検証・内部実装）
 
@@ -57,8 +55,8 @@
 変換ツールは「Excel を読む」「YAML を書く」という形で直接変換するのではなく、形式非依存の中間データモデルを中心に設計する。Reader が中間データモデルに変換し、Writer が中間データモデルから出力形式に変換する。これにより、将来 CSV・JSON 等の新形式を追加しても既存の Reader/Writer を変更せずに済む。
 
 ```
-Excel → [XlsFormatReader] → BookModel → [YamlFormatWriter] → YAML
-YAML  → [YamlFormatReader] → BookModel → [XlsFormatWriter] → Excel
+Excel → [XlsFormatReader]  → TestDataContainer → [YamlFormatWriter] → YAML
+YAML  → [YamlFormatReader] → TestDataContainer → [XlsFormatWriter]  → Excel
 ```
 
 ### 2.2 形式名をクラス名に入れない原則
@@ -92,7 +90,7 @@ YAML  → [YamlFormatReader] → BookModel → [XlsFormatWriter] → Excel
 
 ### Ph-1: NTF データモデル変換（基本変換）
 
-NTF が読み込む全セクション種別（`SETUP_TABLE`、`EXPECTED_TABLE`、`EXPECTED_COMPLETE_TABLE`、`LIST_MAP`、`SETUP_FIXED`、`SETUP_VARIABLE`、`EXPECTED_FIXED`、`EXPECTED_VARIABLE`、`MESSAGE`、`EXPECTED_REQUEST_HEADER_MESSAGES`、`EXPECTED_REQUEST_BODY_MESSAGES`、`RESPONSE_HEADER_MESSAGES`、`RESPONSE_BODY_MESSAGES`）について、Excel ↔ YAML 間の変換を実装する。
+NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TABLE`、`EXPECTED_COMPLETE_TABLE`、`LIST_MAP`、`SETUP_FIXED`、`SETUP_VARIABLE`、`EXPECTED_FIXED`、`EXPECTED_VARIABLE`、`MESSAGE`、`EXPECTED_REQUEST_HEADER_MESSAGES`、`EXPECTED_REQUEST_BODY_MESSAGES`、`RESPONSE_HEADER_MESSAGES`、`RESPONSE_BODY_MESSAGES`）について、Excel ↔ YAML 間の変換を実装する。
 
 このフェーズで変換等価性（NTF が同一データオブジェクトを生成すること）を保証する。
 
@@ -113,20 +111,19 @@ NTF が読み込む全セクション種別（`SETUP_TABLE`、`EXPECTED_TABLE`�
 
 ### 4.1 対象ファイル
 
-`src/test/` 配下の `.xls` ファイル 59 件。
+指定入力ルートディレクトリ配下の `.xls` ファイル。ただし 4.2 節の除外パターンに合致するファイルは除く。
 
 ### 4.2 除外ファイル
 
-以下のファイルは変換対象から除外する。
+以下のファイルパターン（絶対パス末尾一致）に合致するファイルは変換対象から除外する。
 
-| ファイルパス | 除外理由 |
+| 除外パターン | 除外理由 |
 |---|---|
-| `src/main/resources/nablarch/test/core/http/dump/template.xls` | HTTP ダンプテンプレート。NTF テストデータではない |
-| `src/main/script/master_data/MASTER_DATA.xls` | DB 初期データ。NTF テストデータではない |
-| `src/test/java/MASTER_DATA.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
-| `src/test/java/MASTER_DATA2.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
-| `src/test/resources/nablarch/test/core/db/masterdata/MASTER_DATA.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
-| `src/test/resources/nablarch/test/core/db/masterdata/MASTER_DATA2.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
+| `template.xls` | HTTP ダンプテンプレート等。NTF テストデータ以外の XLS ファイル |
+| `MASTER_DATA.xls` | DB 初期データ等。NTF テストデータ以外の XLS ファイル |
+| `MASTER_DATA2.xls` | 同上 |
+
+除外パターンはリスト構成とし、実行時に追加指定できるものとする。
 
 ### 4.3 ディレクトリ対応規則
 
@@ -177,8 +174,8 @@ NTF は形式によって異なる resourceName で識別する。
 
 | カテゴリ | 変換ツール対象の主な仕様 |
 |---|---|
-| DT | セクション識別行の解析・生成（DT-01〜DT-03, DT-06） |
-| SS | テーブル・ファイルセクション構造の解析・生成（SS-01, SS-08〜SS-13, SS-15, SS-17） |
+| DT | データブロック識別行の解析・生成（DT-01〜DT-03, DT-06） |
+| SS | テーブル・ファイルデータブロック構造の解析・生成（SS-01, SS-08〜SS-13, SS-15, SS-17） |
 | RS | YAML 出力値のエンコーディングルール・ファイル命名（RS-01, RS-03〜RS-05, RS-10, RS-11, RS-22） |
 | HC | Excel 読み取り時のヘッダ・コメント・空行処理（HC-01, HC-03〜HC-07） |
 | IV | なし（インタープリタはNTF実行時の変換動作。変換ツールは文字列値をそのまま変換する） |
@@ -202,84 +199,84 @@ NTF は形式によって異なる resourceName で識別する。
 
 変換ツールは以下の 3 層のデータモデルを使用する。
 
-### 6.1 BookModel
+### 6.1 TestDataContainer
 
-Excel ブック / YAML ディレクトリに相当するコンテナ。
+Excel ブック / YAML ディレクトリに相当するコンテナ。テストクラスと 1 対 1 に対応する。
 
 ```
-BookModel
-  name: String            // ブック名（拡張子なし）。例: "FooTest"
-  sheets: List<SheetModel>  // シートのリスト
+TestDataContainer
+  name: String                        // ブック名（拡張子なし）。例: "FooTest"
+  sections: List<TestDataSection>     // セクション（読み込み単位）のリスト
 ```
 
-### 6.2 SheetModel
+### 6.2 TestDataSection
 
 Excel シート / YAML ファイル 1 枚に相当する。NTF の読み込み単位。
 
 ```
-SheetModel
-  name: String              // シート名 / YAML ファイル名（拡張子なし）。例: "case01"
-  sections: List<SectionModel>  // セクションのリスト
+TestDataSection
+  name: String                        // シート名 / YAML ファイル名（拡張子なし）。例: "case01"
+  blocks: List<TestDataBlock>         // データブロックのリスト
 ```
 
-### 6.3 SectionModel
+### 6.3 TestDataBlock
 
-NTF の 1 セクションに相当する。セクション種別ごとにサブクラスを持つ。
-
-```
-SectionModel（抽象）
-  dataType: DataType        // セクション種別（DataType 列挙値）
-  groupId: String           // groupId（省略時は空文字）
-  identifier: String        // 識別子の値（テーブル名・ファイルパス・LIST_MAP の ID 等）
-```
-
-#### 6.3.1 TableSectionModel（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
+NTF の 1 データブロックに相当する。データブロック種別ごとにサブクラスを持つ。
 
 ```
-TableSectionModel extends SectionModel
+TestDataBlock（抽象）
+  dataType: DataType                  // データブロック種別（DataType 列挙値）
+  groupId: String                     // groupId（省略時は空文字）
+  identifier: String                  // 識別子の値（テーブル名・ファイルパス・LIST_MAP の ID 等）
+```
+
+#### 6.3.1 TableDataBlock（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
+
+```
+TableDataBlock extends TestDataBlock
   columnNames: List<String>           // カラム名リスト（マーカーカラムを含む）
   rows: List<List<String>>            // データ行のリスト（null・空文字を区別して保持）
 ```
 
-#### 6.3.2 ListMapSectionModel（LIST_MAP）
+#### 6.3.2 ListMapBlock（LIST_MAP）
 
 ```
-ListMapSectionModel extends SectionModel
+ListMapBlock extends TestDataBlock
   columnNames: List<String>           // カラム名リスト
   rows: List<List<String>>            // データ行のリスト
 ```
 
-#### 6.3.3 FileSectionModel（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
+#### 6.3.3 FileDataBlock（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
 
 ```
-FileSectionModel extends SectionModel
+FileDataBlock extends TestDataBlock
   fileType: FileType                  // FIXED / VARIABLE（SETUP_FIXED/EXPECTED_FIXED → FIXED、SETUP_VARIABLE/EXPECTED_VARIABLE → VARIABLE）
   directives: Map<String, String>     // ディレクティブ（キー → 値）
-  records: List<RecordLayoutModel>    // レコードレイアウトのリスト
+  records: List<RecordLayout>         // レコードレイアウトのリスト
 ```
 
 `fileType` は `dataType` から一意に決定できるが、YAML Writer が SETUP/EXPECTED を問わず「FIXED か VARIABLE か」だけを見て type フィールドを出力するために正規化フィールドとして保持する。
 
 ```
-RecordLayoutModel
+RecordLayout
   recordType: String                  // レコード種別名
-  fields: List<FieldModel>            // フィールド定義リスト
+  fields: List<FieldDef>              // フィールド定義リスト
   rows: List<List<String>>            // データ行のリスト
 ```
 
 ```
-FieldModel
+FieldDef
   name: String      // フィールド名
   type: String      // データ型記号（"X", "N", "Z" 等）
   length: String    // フィールド長（固定長のみ。可変長は null。YAML 出力時は null の場合 length キーを省略する）
 ```
 
-#### 6.3.4 MessageSectionModel（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
+#### 6.3.4 MessageDataBlock（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
 
 ```
-MessageSectionModel extends SectionModel
+MessageDataBlock extends TestDataBlock
   fwHeaderFields: Map<String, String>   // FW 制御ヘッダフィールド（FW_HEADER レコード）
-  records: List<RecordLayoutModel>      // レコードレイアウトのリスト（FieldModel は name のみ）
+  records: List<RecordLayout>           // レコードレイアウトのリスト（FieldDef は name のみ）
 ```
 
 ---
@@ -304,17 +301,17 @@ package nablarch.test.core.reader.converter;
 import java.nio.file.Path;
 
 /**
- * テストデータを読み込んで {@link BookModel} に変換するインターフェース。
+ * テストデータを読み込んで {@link TestDataContainer} に変換するインターフェース。
  */
 public interface TestDataFormatReader {
 
     /**
-     * 指定されたパスを読み込み、BookModel として返す。
+     * 指定されたパスを読み込み、TestDataContainer として返す。
      *
      * @param sourcePath 読み込み元パス（Excel ファイル / YAML ディレクトリ）
-     * @return 変換結果の BookModel
+     * @return 変換結果の TestDataContainer
      */
-    BookModel read(Path sourcePath);
+    TestDataContainer read(Path sourcePath);
 }
 ```
 
@@ -328,18 +325,18 @@ package nablarch.test.core.reader.converter;
 import java.nio.file.Path;
 
 /**
- * {@link BookModel} を指定された形式で書き出すインターフェース。
+ * {@link TestDataContainer} を指定された形式で書き出すインターフェース。
  */
 public interface TestDataFormatWriter {
 
     /**
-     * BookModel を指定されたパスに書き出す。
+     * TestDataContainer を指定されたパスに書き出す。
      *
-     * @param book       書き出す BookModel
+     * @param container  書き出す TestDataContainer
      * @param outputPath 書き出し先の基底パス（Excel ファイル / YAML ディレクトリの親）
      * @param overwrite  既存ファイルを上書きするか
      */
-    void write(BookModel book, Path outputPath, boolean overwrite);
+    void write(TestDataContainer container, Path outputPath, boolean overwrite);
 }
 ```
 
@@ -347,7 +344,7 @@ public interface TestDataFormatWriter {
 
 #### XlsFormatReader
 
-Apache POI を使用して `.xls` ファイルを読み込み、`BookModel` に変換する。
+Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContainer` に変換する。
 
 **責務**
 
@@ -357,63 +354,63 @@ Apache POI を使用して `.xls` ファイルを読み込み、`BookModel` に�
 - 先頭セルが `//` で始まる行はコメント行としてスキップし、コメント行数を集計して警告ログに出力する（HC-05）
 - 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨てる（HC-06）
 - 全セルが空の行はスキップする（HC-07）
-- セクション識別行（DataType の前方一致 + `[groupId]=identifier` 形式）を検出し、各セクションを適切な `SectionModel` サブクラスに変換する
+- データブロック識別行（DataType の前方一致 + `[groupId]=identifier` 形式）を検出し、各データブロックを適切な `TestDataBlock` サブクラスに変換する
 
 #### XlsFormatWriter
 
-Apache POI を使用して `BookModel` を `.xls` ファイルとして書き出す。
+Apache POI を使用して `TestDataContainer` を `.xls` ファイルとして書き出す。
 
 **責務**
 
-- `BookModel` の各 `SheetModel` をシートとして書き出す
+- `TestDataContainer` の各 `TestDataSection` をシートとして書き出す
 - 全セルを文字列書式で書き出す（NTF の動作保証条件に合わせる）
-- セクション識別行（`SETUP_TABLE=USER_MASTER` 等）を先頭行に書き出す
+- データブロック識別行（`SETUP_TABLE=USER_MASTER` 等）を先頭行に書き出す
 - テーブルデータのカラム名行・データ行を書き出す
-- ファイルセクションのディレクティブ行・フィールド名行・データ型行・フィールド長行・データ行を正しい順序で書き出す（SS-08）
-- ファイルセクションのデータ行は先頭セルを空にして書き出す（SS-13）
-- メッセージングセクションの FW ヘッダ行（ディレクティブと同じ位置）を書き出す
+- ファイルデータブロックのディレクティブ行・フィールド名行・データ型行・フィールド長行・データ行を正しい順序で書き出す（SS-08）
+- ファイルデータブロックのデータ行は先頭セルを空にして書き出す（SS-13）
+- メッセージングデータブロックの FW ヘッダ行（ディレクティブと同じ位置）を書き出す
 - 既存ファイルが存在し `overwrite=false` の場合は `IllegalStateException` をスローする
 
 #### YamlFormatReader
 
-SnakeYAML Engine を使用して `.yaml` ファイルを読み込み、`BookModel` に変換する。
+SnakeYAML Engine を使用して `.yaml` ファイルを読み込み、`TestDataContainer` に変換する。
 
 **責務**
 
 - YAML ディレクトリ内の全 `.yaml` ファイルをファイル名アルファベット昇順で走査する
 - 各 `.yaml` ファイルをトップレベル Map として読み込む
-- `YamlSection` の定数（`KEY_SETUP_TABLES` 等）を使ってセクションキーを識別する
-- 各エントリを適切な `SectionModel` サブクラスに変換する
-- `BookModel` の `name` にディレクトリ名を設定する
+- `YamlSection` の定数（`KEY_SETUP_TABLES` 等）を使ってデータブロックキーを識別する
+- 各エントリを適切な `TestDataBlock` サブクラスに変換する
+- `TestDataContainer` の `name` にディレクトリ名を設定する
 
 **注意**: 既存の `YamlSection.dataTypeToSectionKey()` はメッセージ系 DataType（`MESSAGE`、`EXPECTED_REQUEST_*`、`RESPONSE_*`）のみ対応しており、テーブル系・ファイル系 DataType では `IllegalArgumentException` をスローする。`YamlFormatReader` は `YamlSection.dataTypeToSectionKey()` に依存せず、以下の変換ツール独自のマッピングテーブルを使用する。
 
-DataType 列は `DataType` enum の定数名（コード上の識別子）を示す。`DataType.getName()` が返す文字列（Excel/YAML のセクション識別名）は別であることに注意（例: `SETUP_TABLE_DATA` の `getName()` は `"SETUP_TABLE"`）。
+DataType 列は `DataType` enum の定数名（コード上の識別子）を示す。`DataType.getName()` が返す文字列（Excel/YAML のデータブロック識別名）は別であることに注意（例: `SETUP_TABLE_DATA` の `getName()` は `"SETUP_TABLE"`）。
 
-| YAML キー | DataType（enum 定数名） | `getName()` 値 | SectionModel サブクラス |
+| YAML キー | DataType（enum 定数名） | `getName()` 値 | TestDataBlock サブクラス |
 |---|---|---|---|
-| `setup_tables` | `SETUP_TABLE_DATA` | `"SETUP_TABLE"` | `TableSectionModel` |
-| `expected_tables` | `EXPECTED_TABLE_DATA` | `"EXPECTED_TABLE"` | `TableSectionModel` |
-| `expected_complete_tables` | `EXPECTED_COMPLETED` | `"EXPECTED_COMPLETE_TABLE"` | `TableSectionModel` |
-| `list_maps` | `LIST_MAP` | `"LIST_MAP"` | `ListMapSectionModel` |
-| `setup_files` + `type: fixed` | `SETUP_FIXED` | `"SETUP_FIXED"` | `FileSectionModel` |
-| `setup_files` + `type: variable` | `SETUP_VARIABLE` | `"SETUP_VARIABLE"` | `FileSectionModel` |
-| `expected_files` + `type: fixed` | `EXPECTED_FIXED` | `"EXPECTED_FIXED"` | `FileSectionModel` |
-| `expected_files` + `type: variable` | `EXPECTED_VARIABLE` | `"EXPECTED_VARIABLE"` | `FileSectionModel` |
-| `messages` | `MESSAGE` | `"MESSAGE"` | `MessageSectionModel` |
-| `expected_request_header_messages` | `EXPECTED_REQUEST_HEADER_MESSAGES` | `"EXPECTED_REQUEST_HEADER_MESSAGES"` | `MessageSectionModel` |
-| `expected_request_body_messages` | `EXPECTED_REQUEST_BODY_MESSAGES` | `"EXPECTED_REQUEST_BODY_MESSAGES"` | `MessageSectionModel` |
-| `response_header_messages` | `RESPONSE_HEADER_MESSAGES` | `"RESPONSE_HEADER_MESSAGES"` | `MessageSectionModel` |
-| `response_body_messages` | `RESPONSE_BODY_MESSAGES` | `"RESPONSE_BODY_MESSAGES"` | `MessageSectionModel` |
+| `setup_tables` | `SETUP_TABLE_DATA` | `"SETUP_TABLE"` | `TableDataBlock` |
+| `expected_tables` | `EXPECTED_TABLE_DATA` | `"EXPECTED_TABLE"` | `TableDataBlock` |
+| `expected_complete_tables` | `EXPECTED_COMPLETED` | `"EXPECTED_COMPLETE_TABLE"` | `TableDataBlock` |
+| `list_maps` | `LIST_MAP` | `"LIST_MAP"` | `ListMapBlock` |
+| `setup_files` + `type: fixed` | `SETUP_FIXED` | `"SETUP_FIXED"` | `FileDataBlock` |
+| `setup_files` + `type: variable` | `SETUP_VARIABLE` | `"SETUP_VARIABLE"` | `FileDataBlock` |
+| `expected_files` + `type: fixed` | `EXPECTED_FIXED` | `"EXPECTED_FIXED"` | `FileDataBlock` |
+| `expected_files` + `type: variable` | `EXPECTED_VARIABLE` | `"EXPECTED_VARIABLE"` | `FileDataBlock` |
+| `messages` | `MESSAGE` | `"MESSAGE"` | `MessageDataBlock` |
+| `expected_request_header_messages` | `EXPECTED_REQUEST_HEADER_MESSAGES` | `"EXPECTED_REQUEST_HEADER_MESSAGES"` | `MessageDataBlock` |
+| `expected_request_body_messages` | `EXPECTED_REQUEST_BODY_MESSAGES` | `"EXPECTED_REQUEST_BODY_MESSAGES"` | `MessageDataBlock` |
+| `response_header_messages` | `RESPONSE_HEADER_MESSAGES` | `"RESPONSE_HEADER_MESSAGES"` | `MessageDataBlock` |
+| `response_body_messages` | `RESPONSE_BODY_MESSAGES` | `"RESPONSE_BODY_MESSAGES"` | `MessageDataBlock` |
 
 #### YamlFormatWriter
 
-SnakeYAML Engine を使用して `BookModel` を YAML ファイル群として書き出す。
+SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群として書き出す。
 
 **責務**
 
-- `BookModel` の各 `SheetModel` を `{bookName}/{sheetName}.yaml` として書き出す
-- `YamlSection` の定数を使って各セクションを正しいキーで書き出す
+- `TestDataContainer` の各 `TestDataSection` を `{containerName}/{sectionName}.yaml` として書き出す
+- `YamlSection` の定数を使って各データブロックを正しいキーで書き出す
 - テーブルデータの `rows:` は `{カラム名: "値"}` 形式で書き出す。`table:` キーを必ず出力する（RS-10）
 - ファイルデータの `fields:` は `{name: X, type: Y, length: Z}` 形式で書き出す。`path:` キーを必ず出力する（RS-11）
 - ファイルデータの `rows:` は配列形式 `["値1", "値2"]` で書き出す
@@ -433,7 +430,7 @@ SnakeYAML Engine を使用して `BookModel` を YAML ファイル群として�
 - `--overwrite` オプションを解析する
 - `--delete-source` オプションを解析する（変換成功後に入力ファイルを削除する）
 - 入力ディレクトリを再帰走査し、変換対象ファイル（`.xls` または YAML ディレクトリ）を列挙する
-- 除外パターン（`template.xls`、`MASTER_DATA.xls`）に合致するファイルをスキップする
+- 除外パターン（`template.xls`、`MASTER_DATA.xls` 等）に合致するファイルをスキップする
 - 各ファイルに対して Reader → Writer の変換処理を実行する
 - 変換結果サマリー（成功件数・スキップ件数・エラー件数・コメント行ロスト件数）を標準出力に表示する
 - エラーが 1 件以上あった場合は終了コード 1 で終了する
@@ -462,7 +459,7 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 **責務**
 
 - 指定ルートディレクトリを再帰走査して変換対象ファイルを列挙する
-- 除外パターン（絶対パス末尾一致）に合致するファイルをスキップする。除外対象は 4.2 節の一覧に定義する。パスの末尾一致でマッチするため、パターン例: `template.xls`、`MASTER_DATA.xls`、`MASTER_DATA2.xls`
+- 除外パターン（絶対パス末尾一致）に合致するファイルをスキップする。除外対象は 4.2 節の一覧に定義する
 - Excel 読み込み時は `.xls` ファイルを、YAML 読み込み時は YAML ディレクトリ（`.yaml` ファイルを含む最下位ディレクトリ）を列挙する
 
 #### ConverterPathResolver
@@ -479,15 +476,15 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 
 ## 8. 変換ルール詳細
 
-### 8.1 セクション識別行
+### 8.1 データブロック識別行
 
 #### Excel → YAML
 
-Excel シートを走査し、セクション識別行（セル値が `DataType.getName()` で前方一致する行）を検出する。
+Excel シートを走査し、データブロック識別行（セル値が `DataType.getName()` で前方一致する行）を検出する。
 
 ```
-SETUP_TABLE=USER_MASTER       → setup_tables: [{table: "USER_MASTER", ...}]
-SETUP_TABLE[case01]=USER_MASTER → setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}]
+SETUP_TABLE=USER_MASTER           → setup_tables: [{table: "USER_MASTER", ...}]
+SETUP_TABLE[case01]=USER_MASTER   → setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}]
 ```
 
 識別行検出のロジック:
@@ -497,11 +494,11 @@ SETUP_TABLE[case01]=USER_MASTER → setup_tables: [{group_id: "case01", table: "
 
 #### YAML → Excel
 
-YAML のトップレベルキーから `DataType` を逆引きし、Excel のセクション識別行を生成する。
+YAML のトップレベルキーから `DataType` を逆引きし、Excel のデータブロック識別行を生成する。
 
 ```
-setup_tables: [{table: "USER_MASTER", ...}]  → SETUP_TABLE=USER_MASTER
-setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}] → SETUP_TABLE[case01]=USER_MASTER
+setup_tables: [{table: "USER_MASTER", ...}]                      → SETUP_TABLE=USER_MASTER
+setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}]  → SETUP_TABLE[case01]=USER_MASTER
 ```
 
 ### 8.2 テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
@@ -572,9 +569,9 @@ list_maps:
 
 #### Excel 構造の解析
 
-ファイルセクションの Excel 構造は以下の順序で読む。
+ファイルデータブロックの Excel 構造は以下の順序で読む。
 
-1. **セクション識別行**: 先頭セルが `SETUP_FIXED=パス` 等の形式
+1. **データブロック識別行**: 先頭セルが `SETUP_FIXED=パス` 等の形式
 2. **ディレクティブ行**（0 行以上）: 先頭セルがレコード種別名でなく、2 列目以降が値の行
 3. **フィールド名行**: 先頭セル = レコード種別名、2 列目以降 = フィールド名
 4. **データ型行**: 先頭セルが空、2 列目以降 = データ型記号
@@ -583,21 +580,21 @@ list_maps:
 
 ディレクティブ行とフィールド名行の区別: 先頭セルが DataType の名前で始まらない非空セルである行はディレクティブ行とみなす。フィールド名行はデータ型行（2列目以降が型記号）が後続するものとして状態機械で解析する。
 
-**ファイルセクション解析の状態遷移**
+**ファイルデータブロック解析の状態遷移**
 
 | 状態 | 遷移条件 | 遷移先 |
 |---|---|---|
-| `SECTION_START`（識別行直後） | 先頭セルが非空かつ DataType 名で始まらない | `DIRECTIVE`（ディレクティブ行として読む） |
-| `SECTION_START` | 先頭セルが非空かつ DataType 名で始まらない → 次行が型記号行 | `FIELD_NAMES`（フィールド名行として読む） |
-| `SECTION_START` / `DIRECTIVE` | 先頭セルが非空かつ DataType 名で始まらない | `DIRECTIVE` 継続 |
+| `BLOCK_START`（識別行直後） | 先頭セルが非空かつ DataType 名で始まらない | `DIRECTIVE`（ディレクティブ行として読む） |
+| `BLOCK_START` | 先頭セルが非空かつ DataType 名で始まらない → 次行が型記号行 | `FIELD_NAMES`（フィールド名行として読む） |
+| `BLOCK_START` / `DIRECTIVE` | 先頭セルが非空かつ DataType 名で始まらない | `DIRECTIVE` 継続 |
 | `DIRECTIVE` | 先頭セルが非空、かつ翌行の先頭が空（型記号行相当） | `FIELD_NAMES` |
 | `FIELD_NAMES` | 先頭セルが空、2 列目以降が型記号 | `DATA_TYPES` |
 | `DATA_TYPES` | 先頭セルが空、固定長の場合 | `FIELD_LENGTHS` |
 | `DATA_TYPES` | 先頭セルが空、可変長の場合（長さ行スキップ） | `DATA` |
 | `FIELD_LENGTHS` | 先頭セルが空 | `DATA` |
 | `DATA` | 先頭セルが空 | `DATA` 継続（次のデータ行） |
-| `DATA` | 先頭セルが非空（新レコード種別名）→ 次行が型記号行 | `FIELD_NAMES`（新 `RecordLayoutModel` 追加） |
-| いずれかの状態 | 次の DataType 識別行を検出 | 新セクション開始 |
+| `DATA` | 先頭セルが非空（新レコード種別名）→ 次行が型記号行 | `FIELD_NAMES`（新 `RecordLayout` 追加） |
+| いずれかの状態 | 次の DataType 識別行を検出 | 新データブロック開始 |
 
 固定長 Excel 例（エンコーディング付き）:
 
@@ -634,22 +631,22 @@ setup_files:
 | `SETUP_FIXED` / `EXPECTED_FIXED` | `fixed` |
 | `SETUP_VARIABLE` / `EXPECTED_VARIABLE` | `variable` |
 
-YAML のセクションキー（`setup_files` / `expected_files`）は DataType を問わず共通。逆変換時は `type:` フィールドを参照して `SETUP_FIXED` か `SETUP_VARIABLE` かを決定する。
+YAML のキー（`setup_files` / `expected_files`）は DataType を問わず共通。逆変換時は `type:` フィールドを参照して `SETUP_FIXED` か `SETUP_VARIABLE` かを決定する。
 
 ```
-setup_files + type: fixed  → SETUP_FIXED
-setup_files + type: variable → SETUP_VARIABLE
-expected_files + type: fixed → EXPECTED_FIXED
+setup_files   + type: fixed     → SETUP_FIXED
+setup_files   + type: variable  → SETUP_VARIABLE
+expected_files + type: fixed    → EXPECTED_FIXED
 expected_files + type: variable → EXPECTED_VARIABLE
 ```
 
 #### 複数レコードレイアウト
 
-Excel でデータ行の後に新たなフィールド名行が来る場合、新しいレコードレイアウトとして `RecordLayoutModel` を追加する。YAML の `records:` 配列に複数の要素として出力される。
+Excel でデータ行の後に新たなフィールド名行が来る場合、新しいレコードレイアウトとして `RecordLayout` を追加する。YAML の `records:` 配列に複数の要素として出力される。
 
 #### 空ファイル表現
 
-ディレクティブのみのファイルセクション（レコード定義なし）は `records: []` として出力する。逆変換時は `records:` が空配列の場合、ディレクティブ行のみを書き出す。
+ディレクティブのみのファイルデータブロック（レコード定義なし）は `records: []` として出力する。逆変換時は `records:` が空配列の場合、ディレクティブ行のみを書き出す。
 
 #### `"-"` フィールド長の変換（SS-17）
 
@@ -793,11 +790,9 @@ POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はとも�
 ```bash
 mvn exec:java \
   -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
-  -Dexec.args="--from xls --to yaml src/test/java src/test/java"
+  -Dexec.args="--from xls --to yaml <入力パス> <出力パス>"
 ```
 
-- `src/test/java` を入力パス兼出力パスとして指定する
-- 変換後の `.yaml` ファイルは元の `.xls` ファイルと同じディレクトリ（またはその直下）に生成される
 - デフォルトでは既存 `.yaml` ファイルがあればエラー（`--overwrite` で上書き許可）
 
 #### 上書き許可での変換
@@ -805,7 +800,7 @@ mvn exec:java \
 ```bash
 mvn exec:java \
   -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
-  -Dexec.args="--from xls --to yaml --overwrite src/test/java src/test/java"
+  -Dexec.args="--from xls --to yaml --overwrite <入力パス> <出力パス>"
 ```
 
 #### 変換後に元 Excel を削除
@@ -813,7 +808,7 @@ mvn exec:java \
 ```bash
 mvn exec:java \
   -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
-  -Dexec.args="--from xls --to yaml --overwrite --delete-source src/test/java src/test/java"
+  -Dexec.args="--from xls --to yaml --overwrite --delete-source <入力パス> <出力パス>"
 ```
 
 #### YAML → Excel 逆変換
@@ -821,7 +816,7 @@ mvn exec:java \
 ```bash
 mvn exec:java \
   -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
-  -Dexec.args="--from yaml --to xls src/test/java src/test/java"
+  -Dexec.args="--from yaml --to xls <入力パス> <出力パス>"
 ```
 
 ### 9.3 引数仕様（再掲）
@@ -864,7 +859,7 @@ TestDataConverter --from <形式> --to <形式> [--overwrite] [--delete-source] 
 | 入力ファイルが存在しない | エラーとして記録し、スキップして続行 |
 | 入力ファイルが読み取れない（IO エラー・破損） | エラーとして記録し、スキップして続行 |
 | 変換先ファイルが存在し `--overwrite` 未指定 | エラーとして記録し、スキップして続行 |
-| セクション識別行の書式が不正 | エラーとして記録し、対象ファイルをスキップして続行 |
+| データブロック識別行の書式が不正 | エラーとして記録し、対象ファイルをスキップして続行 |
 | フィールド名/型/長さリストのサイズ不一致 | エラーとして記録し、対象ファイルをスキップして続行 |
 | 引数が不正（`--from` の値が `xls`/`yaml` 以外等） | 即時終了コード 2 で終了。ヘルプメッセージを出力する |
 
