@@ -132,16 +132,20 @@ public final class YamlTableDataBuilder {
         return Collections.emptyList();
     }
 
+    @SuppressWarnings("unchecked")
     private List<Map<String, String>> buildRows(Map<String, Object> listMapEntry, String path) {
         List<Object> rows = getList(listMapEntry, FIELD_ROWS);
         List<Map<String, String>> result = new ArrayList<Map<String, String>>();
         List<TestDataInterpreter> interps = addBinaryFileInterpreter(path, interpreters);
         for (Object rowObj : rows) {
-            Map<String, Object> rowMap = castMap(rowObj);
+            if (!(rowObj instanceof Map)) {
+                continue;
+            }
+            Map<Object, Object> rowMap = (Map<Object, Object>) rowObj;
             Map<String, String> row = new TreeMap<String, String>();
-            for (Map.Entry<String, Object> e : rowMap.entrySet()) {
-                String key = e.getKey();
-                if (key.startsWith("[") && key.endsWith("]")) {
+            for (Map.Entry<Object, Object> e : rowMap.entrySet()) {
+                String key = objectToString(e.getKey());
+                if (key == null || (key.startsWith("[") && key.endsWith("]"))) {
                     continue;
                 }
                 String val = objectToString(e.getValue());

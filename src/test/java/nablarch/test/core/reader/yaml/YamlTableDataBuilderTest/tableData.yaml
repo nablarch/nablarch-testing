@@ -90,6 +90,19 @@ list_maps:
     rows:
       - KEY1: "second"
 
+  - id: testShots
+    rows:
+      - "no": "1"
+        description: "ケース1"
+        expectedStatusCode: "200"
+        setUpTable: ""
+        expectedTable: ""
+      - "no": "2"
+        description: "ケース2"
+        expectedStatusCode: "400"
+        setUpTable: "case2"
+        expectedTable: "case2"
+
 expected_tables:
   - group_id: markerColInTable
     table: TEST_TABLE

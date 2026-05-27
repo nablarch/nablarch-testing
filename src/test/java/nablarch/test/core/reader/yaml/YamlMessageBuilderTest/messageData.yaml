@@ -107,6 +107,35 @@ messages_empty_fw_header_rows:
         rows:
           - ["SEARCHKEY1"]
 
+messages_path_id:
+  - id: sendSyncTestData/REQ001/message
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["REQ0000001", "pathUser01", "0", "0000"]
+      - record_type: BODY
+        fields:
+          - name: PAYLOAD
+            type: X
+            length: 10
+        rows:
+          - ["PAYLOADDAT"]
+
 messages_malformed_fw_header:
   - id: malformed001
     records:

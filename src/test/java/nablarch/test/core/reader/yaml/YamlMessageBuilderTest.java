@@ -145,6 +145,58 @@ public class YamlMessageBuilderTest {
     }
 
     /**
+     * [YamlMessageBuilder] buildMessagePool: expected_request_header_messages から取得できること（7.2 G-5）。
+     *
+     * <p>
+     * 解説書 7.2: expected_request_header_messages セクションから buildMessagePool で取得できること<br>
+     * Given: expected_request_header_messages に id=req001（FW_HEADER レコード）<br>
+     * When:  buildMessagePool(yaml, "expected_request_header_messages", "req001", path) を呼ぶ<br>
+     * Then:  RequestTestingMessagePool が返ること
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_expectedRequestHeaderMessages() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat(result, instanceOf(RequestTestingMessagePool.class));
+    }
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること（7.3 G-4）。
+     *
+     * <p>
+     * 解説書 7.1/7.3: sendSyncTestData/{requestId}/message という id 形式が正しく取得できること<br>
+     * Given: messages_path_id に id="sendSyncTestData/REQ001/message"<br>
+     * When:  buildMessagePool(yaml, "messages_path_id", "sendSyncTestData/REQ001/message", path) を呼ぶ<br>
+     * Then:  RequestTestingMessagePool が返り、FW ヘッダの requestId="REQ0000001" であること
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_idWithPathSegments() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages_path_id", "sendSyncTestData/REQ001/message", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat(result, instanceOf(RequestTestingMessagePool.class));
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("requestId が正しく設定されていること", fwHeader.get("requestId"), is("REQ0000001"));
+        assertThat("userId が正しく設定されていること", fwHeader.get("userId"), is("pathUser01"));
+    }
+
+    /**
      * [YamlMessageBuilder] buildMessagePool: response_body_messages の id 指定で取得できること。
      *
      * <p>

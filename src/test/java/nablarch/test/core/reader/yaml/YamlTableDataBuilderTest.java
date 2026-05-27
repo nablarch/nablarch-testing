@@ -600,7 +600,8 @@ public class YamlTableDataBuilderTest {
      *
      * <p>
      * 解説書 8.1/8.4: DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
-     * Given: list_maps に UPDATE_COL="${updateTime}", SETUP_COL="${setUpTime}"<br>
+     * Given: list_maps に UPDATE_COL="${updateTime}", SETUP_COL="${setUpTime}"、
+     *        DateTimeInterpreter に setSetUpDateTime("2010-09-14 12:34:56.0") 設定済み<br>
      * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
      * Then:  両カラムがシステム時刻文字列（"2010-09-14 12:34:56.0"）になること
      * </p>
@@ -608,10 +609,20 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_updateTimeAndSetUpTimeConverted() {
         // Given
+        nablarch.test.core.util.interpreter.DateTimeInterpreter dateTimeInterpreter =
+                new nablarch.test.core.util.interpreter.DateTimeInterpreter();
+        dateTimeInterpreter.setSystemTimeProvider(repositoryResource.getComponent("dateProvider"));
+        dateTimeInterpreter.setSetUpDateTime("2010-09-14 12:34:56.0");
+        java.util.List<TestDataInterpreter> interpreters = java.util.Arrays.<TestDataInterpreter>asList(
+                new nablarch.test.core.util.interpreter.NullInterpreter(),
+                new nablarch.test.core.util.interpreter.QuotationTrimmer(),
+                dateTimeInterpreter
+        );
+        YamlTableDataBuilder sutWithSetUp = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "quotationTest", DIR);
+        List<Map<String, String>> result = sutWithSetUp.buildListMapRows(yaml, "quotationTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -619,6 +630,36 @@ public class YamlTableDataBuilderTest {
                 result.get(0).get("UPDATE_COL"), is("2010-09-14 12:34:56.0"));
         assertThat("${setUpTime} はシステム時刻に変換されること",
                 result.get(0).get("SETUP_COL"), is("2010-09-14 12:34:56.0"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: testShots 予約 ID で list_maps が正しく取得できること（4章 G-6）。
+     *
+     * <p>
+     * 解説書 4.1: testShots は予約 ID であり、通常の list_maps エントリと同様に取得できること<br>
+     * Given: list_maps に id=testShots で no/description/expectedStatusCode/setUpTable/expectedTable カラムを持つ2件のエントリ<br>
+     * When:  buildListMapRows(yaml, "testShots", path) を呼ぶ<br>
+     * Then:  2件取得でき、各カラム値が保持されていること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_testShotsReservedId() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "testShots", DIR);
+
+        // Then
+        assertThat("2件取得できること", result.size(), is(2));
+        Map<String, String> row1 = result.get(0);
+        assertThat("no カラムが保持されること", row1.get("no"), is("1"));
+        assertThat("description カラムが保持されること", row1.get("description"), is("ケース1"));
+        assertThat("expectedStatusCode カラムが保持されること", row1.get("expectedStatusCode"), is("200"));
+        assertThat("setUpTable カラムが保持されること", row1.get("setUpTable"), is(""));
+        Map<String, String> row2 = result.get(1);
+        assertThat("2件目の no カラムが保持されること", row2.get("no"), is("2"));
+        assertThat("2件目の setUpTable カラムが保持されること", row2.get("setUpTable"), is("case2"));
     }
 
     /**

@@ -366,4 +366,30 @@ public class YamlFileBuilderTest {
         assertThat("可変長ファイルでは record-length ディレクティブが設定されないこと",
                 layout.getDirective().get("record-length"), nullValue());
     }
+
+    /**
+     * [YamlFileBuilder] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること（9.3 G-3）。
+     *
+     * <p>
+     * 解説書 9.3: field-separator の "\\t" 指定はタブ文字（0x09）として設定される<br>
+     * Given: setup_files の variable エントリで directives.field-separator = "\\t"<br>
+     * When:  buildFileList(yaml, "expected_files", "[tabSeparator]", path) を呼ぶ<br>
+     * Then:  createLayout().getDirective().get("field-separator") がタブ文字（"\t"）であること
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_tabFieldSeparatorBecomesTabChar() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When
+        List<DataFile> result = sut.buildFileList(yaml, "expected_files", "[tabSeparator]", DIR);
+
+        // Then
+        assertThat("1件取得できること", result.size(), is(1));
+        assertThat(result.get(0), instanceOf(VariableLengthFile.class));
+        LayoutDefinition layout = result.get(0).createLayout();
+        assertThat("field-separator \"\\\\t\" はタブ文字になること",
+                layout.getDirective().get("field-separator"), is("\t"));
+    }
 }

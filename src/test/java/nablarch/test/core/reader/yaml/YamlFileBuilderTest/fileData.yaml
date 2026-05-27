@@ -132,3 +132,19 @@ expected_files:
             type: X
         rows:
           - ["鈴木", "200"]
+
+  - group_id: tabSeparator
+    path: dummy/tab_separated.tsv
+    type: variable
+    directives:
+      field-separator: "\\t"
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: X
+          - name: FIELD2
+            type: X
+        rows:
+          - ["A", "B"]
+
