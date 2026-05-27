@@ -490,12 +490,12 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 | ファイル | 内容 |
 |---|---|
 | `docs/pr75/ntf-testdata-yaml-schema.json` | JSON Schema（第5回レビュー対応済み） |
-| `docs/pr75/ntf-testdata-yaml-design.md` | 設計解説ドキュメント（第5回レビュー対応済み） |
-| `docs/pr75/ntf-testdata-yaml-examples.yaml` | 使用例（第5回レビュー対応済み） |
-| `docs/pr75/ntf-testdata-structure.md` | コード調査報告 |
-| `docs/pr75/ntf-coverage-class-list.md` | 対象クラス一覧（src/main + src/test 両方） |
-| `docs/pr75/ntf-coverage-spec-mapping.md` | 仕様マッピング（29クラス全行走査済み） |
-| `docs/pr75/ntf-yaml-impl-evaluation.md` | 実装例リポジトリ評価レポート |
-| `docs/pr75/ntf-coverage-doc-check.md` | 公式解説書 × スキーマ 照合チェック（17件反映済み） |
-| `docs/pr75/ntf-schema-accuracy-basis.md` | スキーマ正確性の根拠資料 |
-| `docs/pr75/ntf-converter-comparison.md` | nablarch-test-data-converter 比較（16件調査・1件反映済み） |
+| `docs/pr75/design/ntf-testdata-yaml-design.md` | 設計解説ドキュメント（第5回レビュー対応済み） |
+| `docs/pr75/design/ntf-testdata-yaml-examples.yaml` | 使用例（第5回レビュー対応済み） |
+| `docs/pr75/design/ntf-testdata-structure.md` | コード調査報告 |
+| `docs/pr75/design/ntf-coverage-class-list.md` | 対象クラス一覧（src/main + src/test 両方） |
+| `docs/pr75/design/ntf-coverage-spec-mapping.md` | 仕様マッピング（29クラス全行走査済み） |
+| `docs/pr75/design/ntf-yaml-impl-evaluation.md` | 実装例リポジトリ評価レポート |
+| `docs/pr75/design/ntf-coverage-doc-check.md` | 公式解説書 × スキーマ 照合チェック（17件反映済み） |
+| `docs/pr75/design/ntf-schema-accuracy-basis.md` | スキーマ正確性の根拠資料 |
+| `docs/pr75/design/ntf-converter-comparison.md` | nablarch-test-data-converter 比較（16件調査・1件反映済み） |
