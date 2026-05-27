@@ -276,6 +276,32 @@ public class FixedLengthFileFragmentTest {
                 bytes, is(new byte[] {0x30, 0x00}));
     }
 
+    /** types のサイズが names のサイズと異なる場合に例外が発生すること */
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetTypesSizeMismatch() {
+        // Given: namesに2要素を設定済みのフラグメント
+        FixedLengthFile container = new FixedLengthFile("path/to/file");
+        container.setDirective(Directive.TEXT_ENCODING.getName(), "utf-8");
+        FixedLengthFileFragment target = new FixedLengthFileFragment(container);
+        target.setNames(asList("field1", "field2"));
+        // When: typesに1要素のみ設定（サイズ不一致）
+        // Then: IllegalArgumentException がスローされる
+        target.setTypes(asList("半角英字"));
+    }
+
+    /** lengths のサイズが names のサイズと異なる場合に例外が発生すること */
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetLengthsSizeMismatch() {
+        // Given: namesに2要素を設定済みのフラグメント
+        FixedLengthFile container = new FixedLengthFile("path/to/file");
+        container.setDirective(Directive.TEXT_ENCODING.getName(), "utf-8");
+        FixedLengthFileFragment target = new FixedLengthFileFragment(container);
+        target.setNames(asList("field1", "field2"));
+        // When: lengthsに1要素のみ設定（サイズ不一致）
+        // Then: IllegalArgumentException がスローされる
+        target.setLengths(asList("10"));
+    }
+
     /** 桁あふれが発生した場合、例外がスローされること。*/
     @Test(expected = IllegalStateException.class)
     public void testConvertBytesFail() {

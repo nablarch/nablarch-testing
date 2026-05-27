@@ -34,7 +34,7 @@
 |---|---|---|---|---|---|
 | DT-01 | DataType 列挙値: `DEFAULT` / `SETUP_TABLE` / `EXPECTED_TABLE` / `EXPECTED_COMPLETE_TABLE` / `LIST_MAP` / `SETUP_FIXED` / `EXPECTED_FIXED` / `SETUP_VARIABLE` / `EXPECTED_VARIABLE` / `MESSAGE` / `EXPECTED_REQUEST_HEADER_MESSAGES` / `EXPECTED_REQUEST_BODY_MESSAGES` / `RESPONSE_HEADER_MESSAGES` / `RESPONSE_BODY_MESSAGES` の14種 | 正常系 | S1-005, S1-006, S1-007, S1-008, S1-009, S1-010, S1-011, S1-012, S1-013, S1-014, S1-015, S1-016, S1-017, S1-018 | S2-062（DataType 列挙型定義）, S2-063（getName） | DataTypeTest#testGetName, DataTypeTest#testGetType |
 | DT-02 | セクション識別行の書式: `<DataType名>[groupId]=<値>` (`=` が必須区切り文字。groupId は省略可) | 正常系 | S1-005 | S2-086（getDataType 前方一致）, S2-087（getTypeValue） | BasicTestDataParserTest#testGetSetupTableData（XLS読み込みで間接確認） |
-| DT-03 | DataType 判定は前方一致（`startsWith`）: セル値が DataType の name で始まれば合致 | 正常系 | 解説書に記載なし | S2-086（TestDataParsingTemplate.getDataType L230-242） | TestDataParsingTemplateTest#testGetDataTypeNull（null→DEFAULT 確認）。前方一致そのものは XLS統合テストで間接確認 |
+| DT-03 | DataType 判定は前方一致（`startsWith`）: セル値が DataType の name で始まれば合致 | 正常系 | 解説書に記載なし | S2-086（TestDataParsingTemplate.getDataType L230-242） | — （前方一致の直接テストなし。null→DEFAULT は TestDataParsingTemplateTest#testGetDataTypeNull で確認。前方一致そのものは XLS 統合テストで間接確認） |
 | DT-04 | GroupData系（SETUP_TABLE 等）は同一 groupId のセクションを全部収集し続ける（`shouldStopOnNextOne() = false`） | 正常系 | S1-064, S1-066 | S2-088, S2-089（GroupDataParsingTemplate） | BasicTestDataParserTest#testGetSetupTableData（複数グループを通じた間接確認） |
 | DT-05 | SingleData系（LIST_MAP / MESSAGE 等）は最初に合致したセクション1つだけを取得して停止する（`shouldStopOnNextOne() = true`） | 正常系 | 解説書に記載なし | S2-090, S2-091（SingleDataParsingTemplate） | SingleDataParsingTemplateTest#testParseSingleData |
 | DT-06 | groupId 書式: `[groupId]`（省略時は空文字扱い。要素数1時のみ有効・2以上は `IllegalArgumentException`）。バッチ固有: `group_id: "default"` はグループIDなし扱いと同等 | 正常系 | S1-063, S1-064, S1-065, S1-185 | S2-015（BasicTestDataParser.formatGroupId L253-266） | BasicTestDataParserTest#testFormatGroupId |
@@ -68,7 +68,7 @@
 | SS-19 | `testShots` は LIST_MAP の予約ID: バッチリクエスト単体テストでフレームワークがテストケース一覧として自動読み込みする | 正常系 | S1-167 | S2-099（ListMapParser L30）, S2-100（LIST_MAP型パース） | BatchRequestTestSupportTest#testTestCasesNotFound（空時の例外で間接確認） |
 | SS-20 | ファイル系空行の動作差異: 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される | 正常系 | 解説書に記載なし | S2-170（DataFileFragment.addValue L105-109） | VariableLengthFileParserTest#testEmptyRowSingleItem, testEmptyRowMultiItems |
 | SS-21 | `DataFileFragment` のフィールド名リストまたは型リストが null/空の場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-165（DataFileFragment.setNames L327-329） | FixedLengthFileFragmentTest#testSetNamesNull, testSetNamesEmpty |
-| SS-22 | `DataFileFragment` のフィールド名リストと型/長さリストのサイズ不一致時 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-167, S2-168（DataFileFragment.setTypes/setLengths） | FixedLengthFileFragmentTest#testSetTypesNull（サイズ不一致含む） |
+| SS-22 | `DataFileFragment` のフィールド名リストと型/長さリストのサイズ不一致時 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-167, S2-168（DataFileFragment.setTypes/setLengths） | FixedLengthFileFragmentTest#testSetTypesSizeMismatch, FixedLengthFileFragmentTest#testSetLengthsSizeMismatch |
 | SS-23 | 固定長フィールド値がフィールド長を超えた場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-186（FixedLengthFileFragment.toBytes L130-135） | FixedLengthFileFragmentTest#testConvertBytesFail |
 | SS-24 | 存在しないフィールド名を指定した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-174（DataFileFragment.getIndexOf L446-448） | — （FixedLengthFileFragmentTest で他の異常系と一体確認） |
 | SS-25 | `DataFileFragment` のデータ要素数が不正な場合 `IllegalStateException` をスロー | 異常系 | 解説書に記載なし | S2-173（DataFileFragment.checkSize L543-546） | — （FixedLengthFileFragmentTest で統合確認） |
@@ -101,8 +101,8 @@
 | RS-13 | メッセージング以外の DataType を `YamlSection#dataTypeToSectionKey` に渡した場合 `IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-037（YamlSection.dataTypeToSectionKey L182-192） | YamlMessageBuilderTest#testDataTypeToSectionKey_unsupportedDataTypeThrowsException |
 | RS-14 | `setTestDataReader` 呼び出し時は `UnsupportedOperationException` をスロー（YAML 実装は TestDataReader を使わない） | 異常系 | 解説書に記載なし | S2-017（YamlTestDataParser.setTestDataReader L59-63） | YamlTestDataParserTest#testSetTestDataReaderThrowsUnsupported |
 | RS-15 | `getSetupTableData` のみ、ファイルが存在しない場合は空リストを返す（代替フロー） | 代替フロー | S1-132 | S2-019（YamlTestDataParser.getSetupTableData L99）, S2-011（BasicTestDataParser.getSetupTableData L54） | YamlTestDataParserTest#testGetSetupTableDataReturnsEmptyWhenFileNotExists |
-| RS-16 | `getMessage`/`getMessageWithoutCache` で対象 ID が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-056（YamlMessageBuilder.buildMessagePool L79-87）, S2-051（YamlFileBuilder.buildMessageFile L95-109）, S2-101（MessageParser.getResult L127-133） | YamlTestDataParserTest#testGetMessageReturnsNullWhenIdNotFound, YamlMessageBuilderTest#testBuildMessagePool_idNotFound |
-| RS-17 | `getSendSyncMessage` で対象 groupId が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-057（YamlMessageBuilder.buildSendSyncMessageList L98-117） | YamlTestDataParserTest#testGetSendSyncMessageReturnsNullForUnknownGroupId |
+| RS-16 | `getMessage`/`getMessageWithoutCache` で対象 ID が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-056（YamlMessageBuilder.buildMessagePool L79-87）, S2-051（YamlFileBuilder.buildMessageFile L95-109）, S2-101（MessageParser.getResult L127-133） | YamlTestDataParserTest#testGetMessageReturnsNullWhenIdNotFound, YamlMessageBuilderTest#testBuildMessagePool_idNotFound, YamlMessageBuilderTest#testBuildMessageFile_idNotFound |
+| RS-17 | `getSendSyncMessage` で対象 groupId が見つからない場合は `null` を返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-057（YamlMessageBuilder.buildSendSyncMessageList L98-117） | YamlTestDataParserTest#testGetSendSyncMessageReturnsNullForUnknownGroupId, YamlMessageBuilderTest#testBuildSendSyncMessageList_groupIdNotFound |
 | RS-18 | YAML ファイルの内容が空の場合（`yaml.load()` が null）は空 Map として扱う（代替フロー） | 代替フロー | 解説書に記載なし | S2-025（YamlLoader.load 空ファイル L62-64） | YamlLoaderTest#testLoad_emptyYamlReturnsEmptyMap |
 | RS-19 | `getListMap` で指定 ID のエントリが存在しない場合は空リストを返す（代替フロー） | 代替フロー | 解説書に記載なし | S2-046（YamlTableDataBuilder.buildListMapRows L113-123） | YamlTestDataParserTest#testGetListMapReturnsEmptyWhenIdNotFound, YamlTableDataBuilderTest#testBuildListMapRows_idNotFound |
 | RS-20 | `messages` エントリで `FW_HEADER` フラグメントが見つからない場合は空 Map を FW ヘッダとして使用する（代替フロー） | 代替フロー | 解説書に記載なし | S2-061（YamlMessageBuilder.extractFwHeader L169） | YamlMessageBuilderTest#testBuildMessagePool_noFwHeaderFragmentReturnsEmptyFwHeader |
@@ -120,7 +120,7 @@
 | HC-03 | ヘッダ行末尾の空カラムは除去される（末尾カラム省略可） | 正常系 | 解説書に記載なし | S2-092b（HeaderLine コンストラクタ trimTailCopy L33） | — （HeaderLineTest で統合確認） |
 | HC-04 | データ行がヘッダより短い場合、不足分は空文字 `""` で補完される | 正常系 | 解説書に記載なし | S2-096（HeaderLine.excludeMarkerColumns L75-85）, S2-170（DataFileFragment.addValue L105-109） | HeaderLineTest#testExcludeMarkerColumnsShort |
 | HC-05 | コメント行: 先頭セルが `//` で始まる行は行ごとスキップ | 正常系 | S1-022 | S2-083（TestDataParsingTemplate.isCommentRow L278-280） | TestDataParsingTemplateTest#testIsCommentRow |
-| HC-06 | 行内コメント: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て | 正常系 | S1-022 | S2-084（TestDataParsingTemplate.cutComment L299-308） | — （TestDataParsingTemplateTest で統合確認） |
+| HC-06 | 行内コメント: 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨て | 正常系 | S1-022 | S2-084（TestDataParsingTemplate.cutComment L299-308） | — （cutComment の直接テストなし。parse() から内部呼び出されるが、行内コメントを含むデータを使った統合テストが未整備のため未確認） |
 | HC-07 | 空行スキップ: 全要素が null または空文字の行は読み飛ばす | 正常系 | S1-071, S1-072 | S2-110c（SendSyncMessageParser.onReadingValues 空行スキップ） | — （SendSyncMessageParser 統合テストで間接確認） |
 
 ---
@@ -211,11 +211,11 @@
 | TS-17 | バッチテストの testShots で `args[n]`（`args[0]`, `args[1]`, ...）カラムはコマンドライン引数として渡される | 正常系 | S1-077, S1-078, S1-157 | 実装に記載なし（TestShot.java L255-271） | — （BatchRequestTestSupportTest 統合テストで間接確認） |
 | TS-18 | testShots が空の場合、`IllegalStateException`（HTTPテスト）または `IllegalArgumentException`（バッチテスト）をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L226-229） | BatchRequestTestSupportTest#testTestCasesNotFound |
 | TS-19 | `sheetName` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-213j（TestSupport.getResourceName L391-394） | BatchRequestTestSupportTest#testExecuteNull |
-| TS-20 | `context` LIST_MAP の `REQUEST_ID` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L293-298） | — （TestCaseInfoTest で間接確認） |
-| TS-21 | `context` LIST_MAP が1行でない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L432） | — （TestCaseInfoTest で間接確認） |
+| TS-20 | `context` LIST_MAP の `REQUEST_ID` が null または空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L293-298） | TestCaseInfoTest#testGetRequestId_throwsWhenRequestIdIsNull, TestCaseInfoTest#testGetRequestId_throwsWhenRequestIdIsEmpty |
+| TS-21 | `context` LIST_MAP が1行でない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L432） | TestCaseInfoTest#testGetUserId_throwsWhenContextHasMultipleRows |
 | TS-22 | `requestParams` の行数がテストケース番号より少ない場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | S2-213e（TestSupport.getMap データ行なし IllegalArgumentException L123-125） | — （AbstractHttpRequestTestTemplateTest で間接確認） |
-| TS-23 | `testShots` の `no` カラムが空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L418-422） | — （TestCaseInfoTest で間接確認） |
-| TS-24 | `description` カラムも `case` カラムも未定義の場合、`IllegalStateException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L404-405） | — （TestCaseInfoTest で間接確認） |
+| TS-23 | `testShots` の `no` カラムが空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L418-422） | TestCaseInfoTest#testGetTestCaseNo_throwsWhenNoIsEmpty |
+| TS-24 | `description` カラムも `case` カラムも未定義の場合、`IllegalStateException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（TestCaseInfo.java L404-405） | TestCaseInfoTest#testGetTestCaseName_throwsWhenNeitherDescriptionNorCaseDefined |
 | TS-25 | `cookie` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L347-348） | AbstractHttpRequestTestTemplateTest#testCookieFailed |
 | TS-26 | `queryParams` カラムに LIST_MAP 名を指定したが対応 LIST_MAP が空の場合、`IllegalArgumentException` をスロー | 異常系 | 解説書に記載なし | 実装に記載なし（AbstractHttpRequestTestTemplate.java L357-359） | AbstractHttpRequestTestTemplateTest#testQueryParamsFailed |
 | TS-27 | バッチテストの必須カラム（`no`・`description`・`expectedStatusCode`・`diConfig`・`requestPath`・`userId`）が欠けている場合、検証エラー | 異常系 | 解説書に記載なし | 実装に記載なし（TestShot.java L384-387） | — （BatchRequestTestSupportTest で統合確認） |
@@ -263,9 +263,8 @@
 
 | テスト状態 | 件数 | 内容 |
 |---|---|---|
-| 直接テストメソッドあり | 約80件 | 具体的なテストクラス・メソッド名を記載 |
-| 間接確認（統合テスト・上位層テスト） | 約50件 | `—` で表記。テスト対象クラスを特定して間接的に確認 |
-| テスト未作成（到達不能コード・利用者記載規約等） | 約15件 | `—` で表記。理由を記載 |
+| 直接テストメソッドあり | 約98件 | 具体的なテストクラス・メソッド名を記載（RS-02 非適用1件含む） |
+| 間接確認・未整備（`—` 表記） | 約47件 | 上位層テスト/統合テストで確認または直接テスト未整備。根拠をセル内に記載 |
 | 非適用（YAMLリーダー責務外） | 1件 | RS-02 |
 
 **`—` の意味**: 「上位層/統合テストに委任・実装内部の到達不能コード・利用者向けデータ記載規約」のいずれかに該当し、YAMLリーダー単体テストでは検証対象外であることを意味する。根拠なしの「テスト漏れ」ではない。

@@ -3,6 +3,7 @@ package nablarch.test.core.http;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,97 @@ public class TestCaseInfoTest {
 
     private List<Map<String,String>> createCookie() {
         return createSimpleListMap("testCookieName1", "testCookieValue1");
+    }
+
+    /**
+     * TS-20: context LIST_MAP の REQUEST_ID が null の場合に IllegalArgumentException がスローされること
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetRequestId_throwsWhenRequestIdIsNull() {
+        // Given: REQUEST_ID が null のコンテキスト
+        List<Map<String, String>> context = createSimpleListMap("REQUEST_ID", null);
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            createTestCaseParams(),
+            context,
+            createRequestParams(),
+            createExpectedResponse());
+        // When / Then: getRequestId() で IllegalArgumentException がスローされる
+        sut.getRequestId();
+    }
+
+    /**
+     * TS-20: context LIST_MAP の REQUEST_ID が空文字の場合に IllegalArgumentException がスローされること
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetRequestId_throwsWhenRequestIdIsEmpty() {
+        // Given: REQUEST_ID が空文字のコンテキスト
+        List<Map<String, String>> context = createSimpleListMap("REQUEST_ID", "");
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            createTestCaseParams(),
+            context,
+            createRequestParams(),
+            createExpectedResponse());
+        // When / Then: getRequestId() で IllegalArgumentException がスローされる
+        sut.getRequestId();
+    }
+
+    /**
+     * TS-21: context LIST_MAP が1行でない（2行以上）場合に IllegalArgumentException がスローされること
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetUserId_throwsWhenContextHasMultipleRows() {
+        // Given: context が2行のリスト
+        List<Map<String, String>> context = new ArrayList<Map<String, String>>();
+        Map<String, String> row1 = new HashMap<String, String>();
+        row1.put("USER_ID", "user1");
+        Map<String, String> row2 = new HashMap<String, String>();
+        row2.put("USER_ID", "user2");
+        context.add(row1);
+        context.add(row2);
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            createTestCaseParams(),
+            context,
+            createRequestParams(),
+            createExpectedResponse());
+        // When / Then: getUserId() で IllegalArgumentException がスローされる
+        sut.getUserId();
+    }
+
+    /**
+     * TS-23: testShots の no カラムが空の場合に IllegalArgumentException がスローされること
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTestCaseNo_throwsWhenNoIsEmpty() {
+        // Given: no カラムが空文字のテストケースパラメータ
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("no", "");
+        params.put("description", "test");
+        params.put("expectedStatusCode", "200");
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            params,
+            createContext(),
+            createRequestParams(),
+            createExpectedResponse());
+        // When / Then: getTestCaseNo() で IllegalArgumentException がスローされる
+        sut.getTestCaseNo();
+    }
+
+    /**
+     * TS-24: description カラムも case カラムも未定義の場合に IllegalStateException がスローされること
+     */
+    @Test(expected = IllegalStateException.class)
+    public void testGetTestCaseName_throwsWhenNeitherDescriptionNorCaseDefined() {
+        // Given: description も case も含まないテストケースパラメータ
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("no", "1");
+        params.put("expectedStatusCode", "200");
+        TestCaseInfo sut = new TestCaseInfo("testSheet",
+            params,
+            createContext(),
+            createRequestParams(),
+            createExpectedResponse());
+        // When / Then: getTestCaseName() で IllegalStateException がスローされる
+        sut.getTestCaseName();
     }
 
 }
