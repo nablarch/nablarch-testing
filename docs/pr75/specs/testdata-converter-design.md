@@ -11,11 +11,11 @@
 1. [目的・スコープ](#1-目的スコープ)
 2. [設計方針](#2-設計方針)
 3. [フェーズ定義](#3-フェーズ定義)
-4. [変換対象ファイル](#4-変換対象ファイル)
+4. [データモデルとファイル構造の対応](#4-データモデルとファイル構造の対応)
 5. [対応 NTF 仕様 ID](#5-対応-ntf-仕様-id)
 6. [データモデル設計](#6-データモデル設計)
 7. [クラス設計](#7-クラス設計)
-8. [変換ルール詳細](#8-変換ルール詳細)
+8. [形式別 IN/OUT 仕様](#8-形式別-inout-仕様)
 9. [実行方法](#9-実行方法)
 10. [エラー処理方針](#10-エラー処理方針)
 
@@ -127,11 +127,19 @@ NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TA
 
 ---
 
-## 4. 変換対象ファイル
+## 4. データモデルとファイル構造の対応
 
-### 4.1 対象ファイル
+### 4.1 データモデルとファイルの対応
 
-デフォルトでは、指定入力ルートディレクトリ配下の全 `.xls` ファイルが変換対象となる。`--include` / `--exclude` オプションでファイル名グロブパターンを指定して対象を絞り込む（4.2 節参照）。
+変換ツールの中間データモデル（6章）は、形式に依存せず以下の意味を持つ。
+
+| データモデル | 意味 | 対応するNTFの読み込み単位 |
+|---|---|---|
+| `TestDataContainer` | 1 テストクラス分のテストデータ全体 | `TestDataParser` に渡す 1 つのリソース（ファイルまたはディレクトリ） |
+| `TestDataSection` | 1 読み込み単位のテストデータ | `TestDataReader.open(path, dataName)` の `dataName` 1 件 |
+| `TestDataBlock` | 1 データブロック（DataType + identifier + 行データ） | `BasicTestDataParser.getSetupTableData()` 等が返す個々のデータオブジェクト |
+
+各形式がこのデータモデルにどのように対応するかは形式ごとに定める（8章参照）。
 
 ### 4.2 include / exclude パターン
 
@@ -156,41 +164,39 @@ NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TA
 --include "*Test.xls" --exclude "template.xls"
 ```
 
-デフォルトは include / exclude なし（全 `.xls` ファイルが対象）。プロジェクト固有の除外ファイル（DB 初期データ、HTTP ダンプテンプレート等）はツール側で決め打ちせず、実行者が `--exclude` で明示的に指定する。
+デフォルトは include / exclude なし（全対象ファイルが候補）。プロジェクト固有の除外ファイル（DB 初期データ、HTTP ダンプテンプレート等）はツール側で決め打ちせず、実行者が `--exclude` で明示的に指定する。
 
-### 4.3 ディレクトリ対応規則
+### 4.3 形式ごとのファイル構造（詳細）
 
-#### Excel → YAML
+各形式がデータモデルにどのようなファイル構造で対応するかを定める。
 
-Excel ブック内の各シートを個別の YAML ファイルに変換する。出力先ディレクトリはブック名（拡張子なし）と同名のディレクトリとする。
+#### XLS 形式
 
-```
-{inputPath}/com/example/FooTest.xls（シート: case01, case02）
-    ↓
-{outputPath}/com/example/FooTest/case01.yaml
-{outputPath}/com/example/FooTest/case02.yaml
-```
+| データモデル | XLS での対応 |
+|---|---|
+| `TestDataContainer` | `.xls` ブック 1 ファイル |
+| `TestDataSection` | ブック内のシート 1 枚（シート名 = セクション名） |
+| `TestDataBlock` | シート内のデータブロック（識別行から始まる行群） |
 
-`inputPath` と `outputPath` が同一の場合、変換後に元の Excel ファイルを残す（`--delete-source` オプション指定時のみ削除する）。
+`TestDataContainer` の名前はファイル名（拡張子なし）。例: `FooTest.xls` → `name = "FooTest"`
 
-#### YAML → Excel
+#### YAML 形式
 
-同一ディレクトリ内の YAML ファイル群をまとめて 1 Excel ブックに変換する。シート順はファイル名のアルファベット昇順とする。
+| データモデル | YAML での対応 |
+|---|---|
+| `TestDataContainer` | YAML ディレクトリ 1 つ |
+| `TestDataSection` | ディレクトリ内の `.yaml` ファイル 1 枚（ファイル名（拡張子なし）= セクション名） |
+| `TestDataBlock` | YAML ファイル内のトップレベルキー配下の各エントリ |
 
-```
-{inputPath}/com/example/FooTest/case01.yaml
-{inputPath}/com/example/FooTest/case02.yaml
-    ↓
-{outputPath}/com/example/FooTest.xls（シート: case01, case02）
-```
+`TestDataContainer` の名前はディレクトリ名。例: `FooTest/` → `name = "FooTest"`
 
-**シート順序の制限**: Excel → YAML 変換時にシート順序は YAML ファイル名に保持されない。YAML → Excel 変換ではシート順はアルファベット昇順になり、元の Excel のシート順は再現されない。シート順序の保持が必要な場合は、YAML ファイル名に連番プレフィクス（例: `01_case01.yaml`、`02_case02.yaml`）を付けることを推奨する。
+**YAML ディレクトリの定義**: 直下に `.yaml` ファイルを 1 件以上含み、かつ `.yaml` ファイルを含むサブディレクトリを持たないディレクトリ（最下位の `.yaml` 保有ディレクトリ）を 1 つの変換単位とする。
 
-**YAML ディレクトリの定義**: YAML 読み込み時に変換単位となる「YAML ディレクトリ」とは、直下に `.yaml` ファイルを 1 件以上含み、かつ `.yaml` ファイルを含むサブディレクトリを持たないディレクトリを指す（最下位の `.yaml` 保有ディレクトリ）。
+- `A/B/C/` に `.yaml` があり `A/B/` に `.yaml` がない場合: `A/B/C/` が変換単位
+- `A/B/` にも `.yaml` があり `A/B/C/` にも `.yaml` がある場合: `A/B/C/` のみが変換単位（`A/B/` は `.yaml` 含むサブディレクトリを持つため対象外）
+- `A/B/C/` と `A/B/D/` の両方に `.yaml` がある場合: それぞれ独立した変換単位
 
-- `A/B/C/` に `.yaml` があり `A/B/` に `.yaml` がない場合: `A/B/C/` がYAMLディレクトリ
-- `A/B/` にも `.yaml` があり `A/B/C/` にも `.yaml` がある場合: `A/B/C/` のみがYAMLディレクトリ（`A/B/` は `.yaml` 含むサブディレクトリを持つため対象外）
-- `A/B/C/` と `A/B/D/` の両方に `.yaml` がある場合: `A/B/C/` と `A/B/D/` がそれぞれ独立したYAMLディレクトリ
+**セクション順序の制限**: YAML 形式ではセクション（ファイル）の順序はファイル名のアルファベット昇順になる。XLS 形式のシート順序を保持したい場合は、YAML ファイル名に連番プレフィクス（例: `01_case01.yaml`）を付けること。
 
 ### 4.4 resourceName の対応
 
@@ -198,7 +204,7 @@ NTF は形式によって異なる resourceName で識別する。
 
 | 形式 | resourceName の形式 | 例 |
 |---|---|---|
-| Excel | `ファイル名/シート名`（拡張子なし） | `FooTest/case01` |
+| XLS | `ファイル名/シート名`（拡張子なし） | `FooTest/case01` |
 | YAML | `ディレクトリ名/ファイル名`（拡張子なし） | `FooTest/case01` |
 
 変換後も resourceName が変わらないよう、ファイル名・シート名・ディレクトリ名・YAML ファイル名を対応させる。
@@ -426,81 +432,23 @@ public interface TestDataFormatWriter {
 
 ### 7.3 実装クラス
 
+各実装クラスの詳細な IN/OUT 仕様は 8 章に定める。本節ではクラスの役割と使用ライブラリを記載する。
+
 #### XlsFormatReader
 
-Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContainer` に変換する。
-
-**責務**
-
-- `.xls` ファイルを開き、全シートを走査する
-- 各シートを行 × 列の文字列リストとして読む（POI の `PoiXlsReader` の動作に相当）
-- セル書式・色・結合セル・コメントポップアップは無視する
-- 先頭セルが `//` で始まる行はコメント行としてスキップし、コメント行数を集計して警告ログに出力する（HC-05）
-- 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨てる（HC-06）。**注意**: 既存の `PoiXlsReader` は先頭カラムが `//` の場合のみ break する実装で、先頭以外のセルの切り捨ては行っていない。しかし NTF の `TestDataParsingTemplate.cutComment()` が最終的に行内コメント切り捨てを担うため、変換ツールは HC-06 仕様（先頭以外のセルも切り捨て）を実装することで変換等価性を保つ
-- 全セルが空の行はスキップする（HC-07）
-- データブロック識別行（DataType の前方一致 + `[groupId]=identifier` 形式）を検出し、各データブロックを適切な `TestDataBlock` サブクラスに変換する
+Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContainer` を生成する（IN仕様: 8.1節）。
 
 #### XlsFormatWriter
 
-Apache POI を使用して `TestDataContainer` を `.xls` ファイルとして書き出す。POI の `HSSFWorkbook`（`.xls` 形式、BIFF8）を使用する。NTF の既存テストデータは全て `.xls` 形式のため `.xlsx` 変換は本ツールのスコープ外とする。なお HSSF の制約として 1 ブック最大 65535 行・256 シートがあるが、NTF テストデータのサイズでは超過しない前提とする。
-
-**責務**
-
-- `TestDataContainer` の各 `TestDataSection` をシートとして書き出す
-- 全セルを文字列書式で書き出す（NTF の動作保証条件に合わせる）
-- データブロック識別行（`SETUP_TABLE=USER_MASTER` 等）を先頭行に書き出す
-- テーブルデータのカラム名行・データ行を書き出す
-- ファイルデータブロックのディレクティブ行・フィールド名行・データ型行・フィールド長行・データ行を正しい順序で書き出す（SS-08）
-- ファイルデータブロックのデータ行は先頭セルを空にして書き出す（SS-13）
-- メッセージングデータブロックの FW ヘッダ行（ディレクティブと同じ位置）を書き出す
-- 既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする
+Apache POI の `HSSFWorkbook` を使用して `TestDataContainer` を `.xls` ファイルとして書き出す（OUT仕様: 8.2節）。NTF の既存テストデータは全て `.xls` 形式のため `.xlsx` 変換は本ツールのスコープ外とする。HSSF の制約として 1 ブック最大 65535 行・256 シートがあるが、NTF テストデータのサイズでは超過しない前提とする。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
 
 #### YamlFormatReader
 
-SnakeYAML Engine を使用して `.yaml` ファイルを読み込み、`TestDataContainer` に変換する。
-
-**責務**
-
-- YAML ディレクトリ内の全 `.yaml` ファイルをファイル名アルファベット昇順で走査する
-- 各 `.yaml` ファイルをトップレベル Map として読み込む
-- `YamlSection` の定数（`KEY_SETUP_TABLES` 等）を使ってデータブロックキーを識別する
-- 各エントリを適切な `TestDataBlock` サブクラスに変換する
-- `TestDataContainer` の `name` にディレクトリ名を設定する
-
-**注意**: 既存の `YamlSection.dataTypeToSectionKey()` はメッセージ系 DataType（`MESSAGE`、`EXPECTED_REQUEST_*`、`RESPONSE_*`）のみ対応しており、テーブル系・ファイル系 DataType では `IllegalArgumentException` をスローする。`YamlFormatReader` は `YamlSection.dataTypeToSectionKey()` に依存せず、以下の変換ツール独自のマッピングテーブルを使用する。
-
-DataType 列は `DataType` enum の定数名（コード上の識別子）を示す。`DataType.getName()` が返す文字列（Excel/YAML のデータブロック識別名）は別であることに注意（例: `SETUP_TABLE_DATA` の `getName()` は `"SETUP_TABLE"`）。
-
-| YAML キー | `YamlSection` 定数名 | DataType（enum 定数名） | `getName()` 値 | TestDataBlock サブクラス |
-|---|---|---|---|---|
-| `setup_tables` | `KEY_SETUP_TABLES` | `SETUP_TABLE_DATA` | `"SETUP_TABLE"` | `TableDataBlock` |
-| `expected_tables` | `KEY_EXPECTED_TABLES` | `EXPECTED_TABLE_DATA` | `"EXPECTED_TABLE"` | `TableDataBlock` |
-| `expected_complete_tables` | `KEY_EXPECTED_COMPLETE_TABLES` | `EXPECTED_COMPLETED` | `"EXPECTED_COMPLETE_TABLE"` | `TableDataBlock` |
-| `list_maps` | `KEY_LIST_MAPS` | `LIST_MAP` | `"LIST_MAP"` | `ListMapBlock` |
-| `setup_files` + `type: fixed` | `KEY_SETUP_FILES` | `SETUP_FIXED` | `"SETUP_FIXED"` | `FileDataBlock` |
-| `setup_files` + `type: variable` | `KEY_SETUP_FILES` | `SETUP_VARIABLE` | `"SETUP_VARIABLE"` | `FileDataBlock` |
-| `expected_files` + `type: fixed` | `KEY_EXPECTED_FILES` | `EXPECTED_FIXED` | `"EXPECTED_FIXED"` | `FileDataBlock` |
-| `expected_files` + `type: variable` | `KEY_EXPECTED_FILES` | `EXPECTED_VARIABLE` | `"EXPECTED_VARIABLE"` | `FileDataBlock` |
-| `messages` | `KEY_MESSAGES` | `MESSAGE` | `"MESSAGE"` | `MessageDataBlock` |
-| `expected_request_header_messages` | `KEY_EXPECTED_REQUEST_HEADER_MESSAGES` | `EXPECTED_REQUEST_HEADER_MESSAGES` | `"EXPECTED_REQUEST_HEADER_MESSAGES"` | `MessageDataBlock` |
-| `expected_request_body_messages` | `KEY_EXPECTED_REQUEST_BODY_MESSAGES` | `EXPECTED_REQUEST_BODY_MESSAGES` | `"EXPECTED_REQUEST_BODY_MESSAGES"` | `MessageDataBlock` |
-| `response_header_messages` | `KEY_RESPONSE_HEADER_MESSAGES` | `RESPONSE_HEADER_MESSAGES` | `"RESPONSE_HEADER_MESSAGES"` | `MessageDataBlock` |
-| `response_body_messages` | `KEY_RESPONSE_BODY_MESSAGES` | `RESPONSE_BODY_MESSAGES` | `"RESPONSE_BODY_MESSAGES"` | `MessageDataBlock` |
+SnakeYAML Engine を使用して YAML ディレクトリ内の `.yaml` ファイル群を読み込み、`TestDataContainer` を生成する（IN仕様: 8.3節）。`YamlSection.dataTypeToSectionKey()` に依存せず、8.3.1節のマッピングテーブルを使用する。
 
 #### YamlFormatWriter
 
-SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群として書き出す。
-
-**責務**
-
-- `TestDataContainer` の各 `TestDataSection` を `{containerName}/{sectionName}.yaml` として書き出す
-- `YamlSection` の定数を使って各データブロックを正しいキーで書き出す
-- テーブルデータの `rows:` は `{カラム名: "値"}` 形式で書き出す。`table:` キーを必ず出力する（RS-10）
-- ファイルデータの `fields:` は `{name: X, type: Y, length: Z}` 形式で書き出す。`path:` キーを必ず出力する（RS-11）
-- ファイルデータの `rows:` は配列形式 `["値1", "値2"]` で書き出す
-- 同一 YAML ファイル内にトップレベルの重複キーを出力しない（RS-22）
-- 出力先ディレクトリが存在しない場合は自動生成する
-- 既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする
+SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群として書き出す（OUT仕様: 8.4節）。出力先ディレクトリが存在しない場合は自動生成する。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
 
 ### 7.4 エントリポイント
 
@@ -562,132 +510,77 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 
 ---
 
-## 8. 変換ルール詳細
+## 8. 形式別 IN/OUT 仕様
 
-### 8.1 データブロック識別行
+各形式の Reader（IN: ファイル → `TestDataContainer`）と Writer（OUT: `TestDataContainer` → ファイル）の仕様を形式ごとに独立して定める。変換は Reader + Writer の組み合わせであり、本章は組み合わせに依存しない。
 
-#### Excel → YAML
+---
 
-Excel シートを走査し、データブロック識別行（セル値が `DataType.getName()` で前方一致する行）を検出する。
+### 8.1 XLS 形式 IN 仕様（`XlsFormatReader`）
 
-```
-SETUP_TABLE=USER_MASTER           → setup_tables: [{table: "USER_MASTER", ...}]
-SETUP_TABLE[case01]=USER_MASTER   → setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}]
-```
+`.xls` ファイルを読み込んで `TestDataContainer` を生成する。
+
+#### 8.1.1 セル値の読み取り規則
+
+- 全セルを `Cell.toString()` で文字列化する（数値書式・日付書式セルは変換精度が落ちる場合がある。1.2節「前提条件」参照）
+- `null` セル（空セル）は空文字 `""` として扱う
+- 先頭セルが `//` で始まる行はコメント行としてスキップし、コメント行数を集計して警告出力する（HC-05）
+- 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨てる（HC-06）。**注意**: 既存の `PoiXlsReader` は先頭カラムが `//` の場合のみ break する実装で、先頭以外のセルの切り捨ては行っていない。しかし NTF の `TestDataParsingTemplate.cutComment()` が最終的に行内コメント切り捨てを担うため、変換ツールは HC-06 仕様（先頭以外のセルも切り捨て）を実装することで変換等価性を保つ
+- 全セルが空の行はスキップする（HC-07）
+
+#### 8.1.2 データブロック識別行の解析
+
+シートを走査し、先頭セルが `DataType.getName()` で前方一致する行をデータブロック識別行として検出する。
 
 識別行検出のロジック:
 1. 行の先頭セルの値を取得する
-2. `DataType` の全列挙値の `getName()` と前方一致（`startsWith`）で比較する。ただし `DataType.DEFAULT`（`getName()` が `"DEFAULT"`）は変換ツールでは処理しない。`DEFAULT` は NTF 内部でデータ行を分類するための列挙値であり、Excel の識別行として現れることはない。先頭セルが `"DEFAULT"` で始まる行が出現した場合はエラーとして記録してスキップする
-3. 合致した場合、`[groupId]=identifier` を解析して `dataType`・`groupId`・`identifier` を抽出する
+2. `DataType` の全列挙値の `getName()` と前方一致（`startsWith`）で比較する。ただし `DataType.DEFAULT`（`getName()` が `"DEFAULT"`）は対象外とする。先頭セルが `"DEFAULT"` で始まる行が出現した場合はエラーとして記録してスキップする
+3. 合致した場合、`[groupId]=identifier` 形式を解析して `dataType`・`groupId`・`identifier` を抽出する
 
-#### YAML → Excel
+#### 8.1.3 テーブルデータブロックの解析（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
 
-YAML のトップレベルキーから `DataType` を逆引きし、Excel のデータブロック識別行を生成する。
-
-```
-setup_tables: [{table: "USER_MASTER", ...}]                      → SETUP_TABLE=USER_MASTER
-setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}]  → SETUP_TABLE[case01]=USER_MASTER
-```
-
-### 8.2 テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
-
-`EXPECTED_COMPLETE_TABLE` は `EXPECTED_TABLE` と同じ変換ルールを適用する。
-
-#### Excel → YAML
+識別行の直後の行をヘッダ行（カラム名リスト）、それ以降の行をデータ行として解析する。
 
 ```
-行1: SETUP_TABLE=USER_MASTER  [空]  [空]
-行2: USER_ID                  NAME  AGE
-行3: 001                      taro  20
-行4: 002                      jiro  30
+行1: SETUP_TABLE=USER_MASTER  [空]   [空]
+行2: USER_ID                  NAME   AGE       ← ヘッダ行
+行3: 001                      taro   20        ← データ行
+行4: 002                      jiro   30        ← データ行
 ```
 
-↓
+解析ルール:
+- ヘッダ末尾の空カラムは除去する（HC-03）
+- データ行がヘッダより短い場合、不足分は空文字 `""` として補完する（HC-04）
+- マーカーカラム（`[カラム名]` 形式）は `[` `]` を含めてそのまま `columnNames` に保持する（HC-01）
 
-```yaml
-setup_tables:
-  - table: "USER_MASTER"
-    rows:
-      - USER_ID: "001"
-        NAME: "taro"
-        AGE: "20"
-      - USER_ID: "002"
-        NAME: "jiro"
-        AGE: "30"
-```
-
-- セル値は全て文字列として保持する。空セル（BLANK セル / cell == null）は空文字として扱う。セル値が文字列 `"null"` のときはアンクォートの `null` として YAML に出力する（8.6 節参照）
-- ヘッダ末尾の空カラムは除去する
-- データ行がヘッダより短い場合、不足分は空文字として補完する
-- マーカーカラム（`[カラム名]` 形式）はカラム名を `[` `]` を含めてそのまま保持する。YAML 出力例:
+`TableDataBlock` に格納:
 
 ```
-行1: SETUP_TABLE=USER_MASTER  [空]  [空]    [空]
-行2: USER_ID                  NAME  [FLAG]  AGE
-行3: 001                      taro  X       20
+TableDataBlock {
+  dataType = SETUP_TABLE_DATA
+  identifier = "USER_MASTER"
+  columnNames = ["USER_ID", "NAME", "AGE"]
+  rows = [["001", "taro", "20"], ["002", "jiro", "30"]]
+}
 ```
 
-↓
+#### 8.1.4 LIST_MAP ブロックの解析
 
-```yaml
-setup_tables:
-  - table: "USER_MASTER"
-    rows:
-      - USER_ID: "001"
-        NAME: "taro"
-        "[FLAG]": "X"
-        AGE: "20"
-```
+テーブルデータブロックと同じ解析規則。`ListMapBlock` に格納する。
 
-#### YAML → Excel
+#### 8.1.5 ファイルデータブロックの解析（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
 
-- `rows:` の各マップを行として書き出す
-- `group_id:` が存在する場合、識別行を `SETUP_TABLE[group_id]=テーブル名` 形式にする
-- `null` 値はセルに `null` と書き出す
-- 空文字はセルを空にする
-- マーカーカラム（`[カラム名]` 形式）は `[` `]` を含めてそのままカラム名行に書き出す
+識別行の後に続く行を以下の順序で解析する。
 
-### 8.3 LIST_MAP
+1. **ディレクティブ行**（0 行以上）: 先頭セルが非空かつ DataType 名で始まらない行の中で、次行の先頭セルも非空なもの
+2. **フィールド名行**: 先頭セルが非空かつ DataType 名で始まらない行の中で、次行の先頭セルが空なもの（先頭セル = レコード種別名、2列目以降 = フィールド名）
+3. **データ型行**: 先頭セルが空、2列目以降 = データ型記号
+4. **フィールド長行**（固定長のみ）: 先頭セルが空、2列目以降 = フィールド長（数値または `"-"`）
+5. **データ行**（1行以上）: 先頭セルが空、2列目以降 = フィールド値
 
-#### Excel → YAML
+ディレクティブ行とフィールド名行の判別は**1行先読み**で行う。次行の先頭セルが空 → フィールド名行、非空 → ディレクティブ行。
 
-```
-行1: LIST_MAP=testShots  [空]   [空]
-行2: no                  case   status
-行3: 1                   正常系  active
-行4: 2                   異常系  error
-```
-
-↓
-
-```yaml
-list_maps:
-  - id: "testShots"
-    rows:
-      - no: "1"
-        case: "正常系"
-        status: "active"
-      - no: "2"
-        case: "異常系"
-        status: "error"
-```
-
-### 8.4 ファイルデータ（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
-
-#### Excel 構造の解析
-
-ファイルデータブロックの Excel 構造は以下の順序で読む。
-
-1. **データブロック識別行**: 先頭セルが `SETUP_FIXED=パス` 等の形式
-2. **ディレクティブ行**（0 行以上）: 先頭セルがレコード種別名でなく、2 列目以降が値の行
-3. **フィールド名行**: 先頭セル = レコード種別名、2 列目以降 = フィールド名
-4. **データ型行**: 先頭セルが空、2 列目以降 = データ型記号
-5. **フィールド長行**（固定長のみ）: 先頭セルが空、2 列目以降 = フィールド長（数値または `"-"`）
-6. **データ行**（1 行以上）: 先頭セルが空、2 列目以降 = フィールド値
-
-ディレクティブ行とフィールド名行の判別アルゴリズム: 先頭セルが非空かつ DataType 名で始まらない行に出会ったとき、**1行先読み**して「次行の先頭セルが空かどうか」を確認する。次行の先頭セルが空であればその行はフィールド名行（レコード種別名 + フィールド名列挙）、先頭セルが非空であればディレクティブ行（キー + 値）と判定する。
-
-**ファイルデータブロック解析の状態遷移**
+**状態遷移**
 
 | 状態 | 現在行の条件 | 遷移先 |
 |---|---|---|
@@ -700,10 +593,10 @@ list_maps:
 | `DATA` | 先頭セルが空 | `DATA` 継続（次のデータ行） |
 | `DATA` | 先頭セルが非空かつ次行の先頭セルが空（新レコード種別名） | `FIELD_NAMES`（新 `RecordLayout` を追加） |
 | いずれかの状態 | DataType 識別行を検出 | 新データブロック開始 |
-| `BLOCK_START` / `DIRECTIVE` / `FIELD_NAMES` / `DATA_TYPES` / `FIELD_LENGTHS` | EOF（次行が存在しない） | ブロック解析を完了して終了。`FIELD_NAMES` / `DATA_TYPES` / `FIELD_LENGTHS` の状態でEOFに達した場合はデータ行なしのレイアウトとして扱い、エラーとして記録する |
-| `DATA` | EOF（次行が存在しない） | データブロック解析を正常に完了する |
+| `BLOCK_START` / `DIRECTIVE` / `FIELD_NAMES` / `DATA_TYPES` / `FIELD_LENGTHS` | EOF | ブロック解析完了。`FIELD_NAMES` / `DATA_TYPES` / `FIELD_LENGTHS` 状態でのEOFはエラーとして記録 |
+| `DATA` | EOF | データブロック解析を正常に完了する |
 
-固定長 Excel 例（エンコーディング付き）:
+入力例（固定長・エンコーディング付き）:
 
 ```
 行1: SETUP_FIXED=input/data.dat  [空]    [空]    [空]
@@ -714,7 +607,175 @@ list_maps:
 行6: [空]                        001     5000   [空]
 ```
 
-↓
+`FileDataBlock` に格納:
+
+```
+FileDataBlock {
+  dataType = SETUP_FIXED
+  fileType = FIXED
+  identifier = "input/data.dat"
+  directives = {"text-encoding": "MS932"}
+  records = [
+    RecordLayout {
+      recordType = "DATA"
+      fields = [FieldDef{name="USER_ID", type="X", length="10"}, FieldDef{name="AMOUNT", type="Z", length="10"}]
+      rows = [["001", "5000"]]
+    }
+  ]
+}
+```
+
+**空ファイル表現**: レコード定義なし（ディレクティブのみ）の場合、`records` は空リスト。
+
+**`"-"` フィールド長（SS-17）**: `"-"` はリテラル文字列として `FieldDef.length` に格納する。NTF実行時の自動拡張は変換ツールの責務外。
+
+#### 8.1.6 メッセージングデータブロックの解析（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
+
+ファイルデータブロック（8.1.5節）と同じ構造で解析するが、FW 制御ヘッダ行の扱いが異なる。
+
+- **FW 制御ヘッダ行**: ディレクティブ行として読み込む（先頭セル = フィールド名、2列目 = 値）。これを `MessageDataBlock.fwHeaderFields` に格納する
+- **`no` 列**: フィールド名行の先頭セルが空（`no` フィールドはフィールド名から省略されている）
+
+```
+MESSAGE=sendSyncTestData/REQ001/message
+requestId  REQ001                          ← FW制御ヘッダ行
+userId     usr001                          ← FW制御ヘッダ行
+[空]  FIELD1  FIELD2                       ← フィールド名行（先頭セル空 = no列）
+[空]  X       X                            ← データ型行
+[空]  req1    data1                        ← データ行
+```
+
+`MessageDataBlock` に格納:
+
+```
+MessageDataBlock {
+  dataType = MESSAGE
+  identifier = "sendSyncTestData/REQ001/message"
+  fwHeaderFields = {"requestId": "REQ001", "userId": "usr001"}  ← LinkedHashMap（行順保持）
+  records = [
+    RecordLayout {
+      recordType = "default"
+      fields = [FieldDef{name="FIELD1", type="X"}, FieldDef{name="FIELD2", type="X"}]
+      rows = [["req1", "data1"]]
+    }
+  ]
+}
+```
+
+**FW ヘッダフィールド名の判定**: NTF の `MessageParser` / `YamlMessageBuilder` は `SystemRepository` の `reader.fwHeaderfields` でどのフィールドが FW ヘッダかを判定するが、変換ツールは SystemRepository から独立して動作する。変換ツールは Excel のディレクティブ行（次行先頭セルが非空の行）を全て FW ヘッダとして扱う（デフォルト4フィールドの場合と同じ結果）。`reader.fwHeaderfields` をカスタム設定している場合の変換等価性は保証しない。
+
+---
+
+### 8.2 XLS 形式 OUT 仕様（`XlsFormatWriter`）
+
+`TestDataContainer` を `.xls` ファイルとして書き出す。POI の `HSSFWorkbook` を使用する。
+
+#### 8.2.1 セル値の書き出し規則
+
+- 全セルを文字列書式で書き出す（NTF の動作保証条件に合わせる）
+- `null` 値はセルに文字列 `"null"` と書き出す
+- 空文字 `""` はセルを空（書き込まない）にする
+
+#### 8.2.2 データブロック識別行の生成
+
+`TestDataBlock` の `dataType`・`groupId`・`identifier` から識別行を生成する。
+
+```
+groupId が空文字 → SETUP_TABLE=USER_MASTER
+groupId が "case01" → SETUP_TABLE[case01]=USER_MASTER
+```
+
+#### 8.2.3 テーブルデータブロックの書き出し
+
+識別行 → ヘッダ行（`columnNames`）→ データ行（`rows` の各行）の順で書き出す。
+
+- マーカーカラム（`[カラム名]` 形式）は `[` `]` を含めてそのままヘッダ行に書き出す（HC-01）
+
+#### 8.2.4 ファイルデータブロックの書き出し
+
+識別行 → ディレクティブ行群 → レコードレイアウト群（フィールド名行 → データ型行 → フィールド長行（固定長のみ）→ データ行群）の順で書き出す（SS-08）。
+
+- データ行の先頭セルは空にする（SS-13）
+- 可変長の場合はフィールド長行を省略する
+- `records` が空リストの場合はディレクティブ行のみを書き出す
+
+#### 8.2.5 メッセージングデータブロックの書き出し
+
+識別行 → FW ヘッダ行群（`fwHeaderFields` の各エントリを `fieldName | value` 形式で書き出す）→ レコードレイアウト群の順で書き出す。
+
+---
+
+### 8.3 YAML 形式 IN 仕様（`YamlFormatReader`）
+
+YAML ディレクトリ内の `.yaml` ファイル群を読み込んで `TestDataContainer` を生成する。
+
+#### 8.3.1 トップレベルキーと DataType の対応
+
+| YAML キー | `YamlSection` 定数名 | DataType（enum 定数名） | TestDataBlock サブクラス |
+|---|---|---|---|
+| `setup_tables` | `KEY_SETUP_TABLES` | `SETUP_TABLE_DATA` | `TableDataBlock` |
+| `expected_tables` | `KEY_EXPECTED_TABLES` | `EXPECTED_TABLE_DATA` | `TableDataBlock` |
+| `expected_complete_tables` | `KEY_EXPECTED_COMPLETE_TABLES` | `EXPECTED_COMPLETED` | `TableDataBlock` |
+| `list_maps` | `KEY_LIST_MAPS` | `LIST_MAP` | `ListMapBlock` |
+| `setup_files` + `type: fixed` | `KEY_SETUP_FILES` | `SETUP_FIXED` | `FileDataBlock` |
+| `setup_files` + `type: variable` | `KEY_SETUP_FILES` | `SETUP_VARIABLE` | `FileDataBlock` |
+| `expected_files` + `type: fixed` | `KEY_EXPECTED_FILES` | `EXPECTED_FIXED` | `FileDataBlock` |
+| `expected_files` + `type: variable` | `KEY_EXPECTED_FILES` | `EXPECTED_VARIABLE` | `FileDataBlock` |
+| `messages` | `KEY_MESSAGES` | `MESSAGE` | `MessageDataBlock` |
+| `expected_request_header_messages` | `KEY_EXPECTED_REQUEST_HEADER_MESSAGES` | `EXPECTED_REQUEST_HEADER_MESSAGES` | `MessageDataBlock` |
+| `expected_request_body_messages` | `KEY_EXPECTED_REQUEST_BODY_MESSAGES` | `EXPECTED_REQUEST_BODY_MESSAGES` | `MessageDataBlock` |
+| `response_header_messages` | `KEY_RESPONSE_HEADER_MESSAGES` | `RESPONSE_HEADER_MESSAGES` | `MessageDataBlock` |
+| `response_body_messages` | `KEY_RESPONSE_BODY_MESSAGES` | `RESPONSE_BODY_MESSAGES` | `MessageDataBlock` |
+
+**注意**: 既存の `YamlSection.dataTypeToSectionKey()` はメッセージ系 DataType のみ対応し、テーブル系・ファイル系では `IllegalArgumentException` をスローする。`YamlFormatReader` はこのメソッドに依存せず、上記マッピングテーブルを使用する。
+
+#### 8.3.2 値の読み取り規則
+
+- SnakeYAML Engine は YAML 1.2 Core Schema に従い、`null`/`NULL`/`Null`/`~` を Java null に変換する。Java null は `TestDataBlock` の行データで `null` として保持する
+- 文字列値（ダブルクォートあり）はそのまま Java String として保持する
+- `group_id:` フィールドが存在する場合、`TestDataBlock.groupId` に設定する。なければ空文字
+
+#### 8.3.3 ファイルデータブロックの解析
+
+- `type: fixed` → `FileType.FIXED`、`type: variable` → `FileType.VARIABLE`
+- `setup_files` / `expected_files` のリスト要素順序は `TestDataSection.blocks` への格納順として保持する
+
+#### 8.3.4 メッセージングデータブロックの解析
+
+- `record_type: FW_HEADER` のレコードの `fields` × `rows[0]` から `fwHeaderFields`（LinkedHashMap）を構築する
+- フィールド名が `fwHeaderFields`（SystemRepository 設定）に含まれるかの検証は行わない
+
+---
+
+### 8.4 YAML 形式 OUT 仕様（`YamlFormatWriter`）
+
+`TestDataContainer` を YAML ファイル群として書き出す。SnakeYAML Engine を使用する。
+
+#### 8.4.1 値の書き出し規則
+
+| `TestDataBlock` の値 | YAML 出力 |
+|---|---|
+| `null`（Java null） | アンクォートの `null` |
+| `""` （空文字列） | `""` （ダブルクォートで出力する） |
+| `"null"` / `"Null"` / `"NULL"` | `"null"`（ダブルクォートあり。YAML 1.2 の null と区別するため） |
+| `"true"` / `"false"` | `"true"` / `"false"`（ダブルクォートあり） |
+| `"001"` 等の先頭ゼロ付き数値文字列 | `"001"`（ダブルクォートあり） |
+| その他の文字列 | ダブルクォートで出力する |
+
+#### 8.4.2 テーブルデータブロックの書き出し
+
+```yaml
+setup_tables:
+  - table: "USER_MASTER"          # groupId なしの場合
+    rows:
+      - USER_ID: "001"
+        NAME: "taro"
+        "[FLAG]": "X"             # マーカーカラムはそのまま
+```
+
+`group_id` が空文字でない場合は `group_id: "case01"` を `table:` の前に出力する。
+
+#### 8.4.3 ファイルデータブロックの書き出し
 
 ```yaml
 setup_files:
@@ -731,59 +792,13 @@ setup_files:
           - ["001", "5000"]
 ```
 
-#### ファイル種別の判定
+- `records` が空リストの場合、`records: []` として出力する
+- 可変長の `FieldDef.length` が `null` の場合、`length` キーを省略する
 
-| DataType | YAML の `type:` |
-|---|---|
-| `SETUP_FIXED` / `EXPECTED_FIXED` | `fixed` |
-| `SETUP_VARIABLE` / `EXPECTED_VARIABLE` | `variable` |
+#### 8.4.4 メッセージングデータブロックの書き出し
 
-YAML のキー（`setup_files` / `expected_files`）は DataType を問わず共通。YAML → Excel 変換時は `type:` フィールドを参照して `SETUP_FIXED` か `SETUP_VARIABLE` かを決定する。
+`fwHeaderFields` を `record_type: FW_HEADER` のレコードとして出力する。
 
-`setup_files` リスト内の要素順序は Excel のデータブロック出現順（行順）を保持する。`SETUP_FIXED` と `SETUP_VARIABLE` が混在していても同一リストに順序通り出力される。`YamlFormatReader` は `setup_files` リストを出現順に走査して `TestDataBlock` を生成する（`TestDataSection.blocks` の順序が保証される）。
-
-```
-setup_files   + type: fixed     → SETUP_FIXED
-setup_files   + type: variable  → SETUP_VARIABLE
-expected_files + type: fixed    → EXPECTED_FIXED
-expected_files + type: variable → EXPECTED_VARIABLE
-```
-
-#### 複数レコードレイアウト
-
-Excel でデータ行の後に新たなフィールド名行が来る場合、新しいレコードレイアウトとして `RecordLayout` を追加する。YAML の `records:` 配列に複数の要素として出力される。
-
-#### 空ファイル表現
-
-ディレクティブのみのファイルデータブロック（レコード定義なし）は `records: []` として出力する。YAML → Excel 変換時は `records:` が空配列の場合、ディレクティブ行のみを書き出す。
-
-#### `"-"` フィールド長の変換（SS-17）
-
-Excel のフィールド長行で `"-"` が記述されている場合、YAML の `length:` フィールドにも文字列 `"-"` としてそのまま出力する。YAML → Excel 変換も同様。NTF 実行時の自動拡張（最大バイト長への伸張）は変換ツールの責務外であり、変換ツールは値を保持するだけでよい。
-
-### 8.5 メッセージングテストデータ
-
-#### MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES
-
-メッセージングデータの Excel 構造はファイルデータと似ているが、以下の違いがある。
-
-- FW 制御ヘッダ: Excel では `| フィールド名 | 値 |` 形式のディレクティブ行として記述され、YAML では `record_type: FW_HEADER` のレコードとして表現される
-- `record_type` 値: NTF が内部で `"default"` に置き換えるが、変換ツールは元の値を保持する（変換後も同じ値が書かれる）
-- `no` 列: Excel ではフィールド名行の先頭セルが空。YAML では `rows:` のリスト要素に含める
-
-#### FW ヘッダの変換
-
-Excel:
-```
-MESSAGE=sendSyncTestData/REQ001/message
-requestId  REQ001
-userId     usr001
-[空]  FIELD1  FIELD2
-[空]  X       X
-[空]  req1    data1
-```
-
-YAML:
 ```yaml
 messages:
   - id: "sendSyncTestData/REQ001/message"
@@ -802,104 +817,27 @@ messages:
           - ["req1", "data1"]
 ```
 
-**FW_HEADER レコードの注意事項**:
-- `YamlMessageBuilder` の実装では、FW_HEADER の `fields:` に含まれる `name` のみを参照してフィールドインデックスを決定する。`type` / `length` は参照しないため、FW_HEADER の `fields:` には `name` のみを出力する
-- `rows:` の先頭要素がフィールド値の配列。フィールド順と値の順序が対応する（`rows[0][fieldIndex]` が `fields[fieldIndex].name` の値）
-- Excel での FW_HEADER 行（`fieldName | value` 形式）は、フィールド名の列挙順を保持して `fields:` に変換し、値を `rows[0]` の対応インデックスに出力する
+`FW_HEADER` の `fields` には `name` のみを出力する（`YamlMessageBuilder` が `type`/`length` を参照しないため）。
 
-**FW ヘッダフィールド名の判定**:
+---
 
-NTF の `MessageParser` と `YamlMessageBuilder` は、FW 制御ヘッダとして扱うフィールド名を `SystemRepository` の `reader.fwHeaderfields` キーから取得する。設定がない場合のデフォルトは `{requestId, userId, resendFlag, resultCode}` の 4 フィールド。
+### 8.5 groupId の表現（全形式共通）
 
-変換ツールは NTF 実行コンテキスト（SystemRepository）から独立して動作するため、どのフィールドが FW ヘッダかを動的に判定できない。変換ツールの採用方針は以下のとおり:
+| `TestDataBlock.groupId` | XLS 識別行 | YAML フィールド |
+|---|---|---|
+| `""` （空文字） | `SETUP_TABLE=USER_MASTER` | `group_id` キーなし |
+| `"case01"` | `SETUP_TABLE[case01]=USER_MASTER` | `group_id: "case01"` |
 
-- **Excel → YAML**: Excel のディレクティブ行（先頭セルが非空かつ DataType 名で始まらない行の中で、次行先頭セルが非空と判定されたもの）を全て `FW_HEADER` レコードのフィールドとして変換する。これは `MessageParser` が先にディレクティブとして読み込み、フィールド名が `fwHeaderFields` に含まれれば FW ヘッダと判定する動作と同じ変換結果を生む（デフォルト 4 フィールドの場合）
-- **YAML → Excel**: `record_type: FW_HEADER` のレコードを全てディレクティブ行（`fieldName | value` 形式）として書き出す
-- **スコープ外**: `reader.fwHeaderfields` をカスタム設定している場合の変換等価性は保証しない。カスタム設定が必要な場合は手動で変換後データを確認すること
+---
 
-#### FW ヘッダの YAML → Excel 変換
+### 8.6 ディレクティブ値の特殊文字（DR-09, DR-10）
 
-YAML の `record_type: FW_HEADER` のレコードを Excel のディレクティブ行に変換する。`fields:` の各 `name` を先頭列に、`rows[0]` の対応インデックスの値を 2 列目に配置して、ディレクティブ行（`fieldName | value` 形式）として書き出す。
+ディレクティブ値は原則として文字列としてそのまま保持する。変換ツールは値の意味解釈を行わない。
 
-```yaml
-records:
-  - record_type: "FW_HEADER"
-    fields:
-      - {name: "requestId"}
-      - {name: "userId"}
-    rows:
-      - ["REQ001", "usr001"]
-```
-
-↓ Excel（`XlsFormatWriter` が書き出す行）
-
-```
-requestId  REQ001
-userId     usr001
-```
-
-### 8.6 値変換ルール
-
-#### Excel → YAML
-
-| Excel セル値 | YAML 出力 |
-|---|---|
-| 空セル（BLANK セル / cell == null） | `""` （空文字列としてダブルクォートで出力する） |
-| セル値が文字列 `"null"`（大文字小文字不問: `null`/`Null`/`NULL`） | アンクォートの `null`（NTF の NullInterpreter が Java null に変換する） |
-| `"true"` / `"false"` | `"true"` / `"false"` |
-| `"001"` 等の先頭ゼロ付き数値文字列 | `"001"` （ダブルクォートを付けて出力する） |
-| `${systemTime}` 等の特殊値 | `"${systemTime}"` （そのまま文字列として出力する） |
-| `"\\"` で始まる値（`\\r` 等） | `"\\r"` 等をそのまま出力する |
-
-- `rows:` 内の値は原則ダブルクォートで囲む。ただし `null`（Java null を表す）はクォートなしで出力する
-
-#### YAML → Excel
-
-| YAML 値 | Excel 出力 |
-|---|---|
-| `""`（空文字） | 空セル |
-| `null` / `NULL` / `Null` / `~`（YAML 1.2 Core Schema のアンクォートnull表現、SnakeYAML がJava nullに変換） | `null`（NTF の `NullInterpreter` が Java null に変換） |
-| `"null"`（ダブルクォートあり） | `null`（NTF の `NullInterpreter` は文字列 `"null"` と Java null を等価に扱うため） |
-| `"true"` / `"false"` | `true` / `false` |
-| `"001"` | `001` |
-
-**注意**: YAML の `"null"`（ダブルクォートあり）と `null`（アンクォート）はともに Excel のセル値 `null` に変換される。その後 Excel → YAML 変換すると、どちらの入力もアンクォートの `null` として出力される。この `"null"` → `null` の情報ロストは**意図的な設計**である。NTF の `NullInterpreter` がダブルクォートあり・なし両方を Java null として等価に扱うため、NTF 動作上の等価性は維持される（変換等価性の定義 2.5 節参照）。
-
-### 8.7 groupId の変換
-
-#### Excel → YAML
-
-| Excel 識別行 | YAML 出力 |
-|---|---|
-| `SETUP_TABLE=USER_MASTER` | `group_id` フィールドなし |
-| `SETUP_TABLE[case01]=USER_MASTER` | `group_id: "case01"` |
-
-#### YAML → Excel
-
-| YAML `group_id` | Excel 識別行 |
-|---|---|
-| なし（フィールド不在） | `SETUP_TABLE=USER_MASTER` |
-| `group_id: "case01"` | `SETUP_TABLE[case01]=USER_MASTER` |
-
-### 8.8 ディレクティブ値の変換ルール（DR-09, DR-10）
-
-ディレクティブ値は原則として文字列としてそのまま変換する。ただし以下の特殊値は変換ツールが両方向で保持すること。
-
-#### `field-separator`（DR-09）
-
-| Excel / YAML 値 | 変換ツールの扱い |
-|---|---|
-| `","` | 文字列としてそのまま変換 |
-| `"\\t"` | 文字列 `"\\t"` としてそのまま変換（タブ文字への変換は NTF 実行時の動作） |
-
-**注意**: `"\\t"` をタブ文字に変換するのは NTF 実行時の責務であり、変換ツールはリテラル文字列 `"\\t"` をそのまま YAML に出力する。
-
-#### `record-separator`（DR-10）
-
-| Excel / YAML 値 | 変換ツールの扱い |
-|---|---|
-| `NONE` / `CR` / `LF` / `CRLF` | 文字列としてそのまま変換 |
-| 任意のリテラル文字列 | 文字列としてそのまま変換 |
+| ディレクティブキー | 値の例 | 変換ツールの扱い |
+|---|---|---|
+| `field-separator` | `","` / `"\\t"` | 文字列としてそのまま保持。タブ文字への変換は NTF 実行時の責務 |
+| `record-separator` | `NONE` / `CR` / `LF` / `CRLF` | 文字列としてそのまま保持 |
 
 ディレクティブ値の有効性検証（未知のキー・不正な値）は変換ツールの責務外。NTF 実行時に検出される。
 
