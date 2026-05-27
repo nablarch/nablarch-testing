@@ -2,11 +2,11 @@
 
 - **作成日**: 2026-05-20（I-1 タスク）
 - **更新日**: 2026-05-27（T-1: テストメソッドマッピング列を追加・全145件記載）
-- **参照元**: `docs/checks/S-1.md`（解説書抽出188件）、`docs/checks/S-2.md`（実装抽出300件超）、`ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-testdata-yaml-design.md`（スキーマ設計）
+- **参照元**: `docs/pr75/checks/S-1.md`（解説書抽出188件）、`docs/pr75/checks/S-2.md`（実装抽出300件超）、`ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-testdata-yaml-design.md`（スキーマ設計）
 
 **マッピング列の記載方針**:
-- `解説書マッピング` 列: その仕様IDを最も直接的に裏付ける S-1 ID を代表的に記載する（同一仕様IDに関連する全 S-1 ID の網羅列挙ではなく代表参照）。全件マッピングは `docs/checks/S-3.md` の S-1 マッピング一覧を参照。
-- `実装マッピング` 列: その仕様IDの動作を実装している主要コード箇所を記載する（1箇所の実装が複数仕様IDにまたがる場合、代表的な仕様IDに記載し他仕様IDからの参照は省略することがある）。全件マッピングは `docs/checks/S-3.md` の S-2 マッピング一覧を参照。
+- `解説書マッピング` 列: その仕様IDを最も直接的に裏付ける S-1 ID を代表的に記載する（同一仕様IDに関連する全 S-1 ID の網羅列挙ではなく代表参照）。全件マッピングは `docs/pr75/checks/S-3.md` の S-1 マッピング一覧を参照。
+- `実装マッピング` 列: その仕様IDの動作を実装している主要コード箇所を記載する（1箇所の実装が複数仕様IDにまたがる場合、代表的な仕様IDに記載し他仕様IDからの参照は省略することがある）。全件マッピングは `docs/pr75/checks/S-3.md` の S-2 マッピング一覧を参照。
 - `テストメソッド` 列: その仕様IDを直接検証するテストクラス・メソッドを記載する。テスト対象外の場合は理由を記載する。`—` は「上位層/統合テストに委任・YAMLリーダーの責務外」を意味する。
 
 ---
@@ -86,7 +86,7 @@
 
 | 仕様ID | 概要 | 分類 | 解説書マッピング | 実装マッピング | テストメソッド |
 |---|---|---|---|---|---|
-| RS-01 | `open(path, dataName)` 規約: `dataName` に対して `{dataName}.yaml` ファイルを検索する | 正常系 | S1-067, S1-068, S1-069 | S2-018（YamlTestDataParser.isResourceExisting L92）, S2-029（YamlLoader.isResourceExisting L81） | YamlTestDataParserTest#testRs01_getSetupTableDataLoadsYamlFile（他 RS-01 対応テスト多数 — docs/checks/R-1.md の対応表参照） |
+| RS-01 | `open(path, dataName)` 規約: `dataName` に対して `{dataName}.yaml` ファイルを検索する | 正常系 | S1-067, S1-068, S1-069 | S2-018（YamlTestDataParser.isResourceExisting L92）, S2-029（YamlLoader.isResourceExisting L81） | YamlTestDataParserTest#testRs01_getSetupTableDataLoadsYamlFile（他 RS-01 対応テスト多数 — docs/pr75/checks/R-1.md の対応表参照） |
 | RS-02 | `readLine()` は文書終端で `null` を返す | 正常系 | 解説書に記載なし | S2-066（TestDataReader.readLine L33）, S2-085（TestDataParsingTemplate.readLine L261-265） | 非適用（YamlTestDataParser は TestDataReader を使用しない） |
 | RS-03 | YAML ネイティブ `null`（アンクォート）は Java `null` として返す | 正常系 | 解説書に記載なし | S2-034（YamlSection.toStr L109）, S2-035（YamlSection.objectToString L129）, S2-036（YamlSection.interpret L136-145） | YamlTestDataParserTest#testRs03_yamlNativeNullIsJavaNull |
 | RS-04 | YAML ネイティブ boolean (`true`/`false`) は文字列 `"true"`/`"false"` として返す | 正常系 | 解説書に記載なし | S2-035（YamlSection.objectToString L129） | YamlTestDataParserTest#testRs04_yamlNativeBooleanIsStringified |

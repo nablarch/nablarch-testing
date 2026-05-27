@@ -5,7 +5,7 @@
   - https://github.com/javajavawhale/nablarch-example-batch-ntf-yaml
   - https://github.com/javajavawhale/nablarch-example-web-ntf-yaml
   - https://github.com/javajavawhale/nablarch-example-rest-ntf-yaml
-- **比較対象スキーマ**: `docs/ntf-testdata-yaml-schema.json` / `docs/ntf-testdata-yaml-design.md`
+- **比較対象スキーマ**: `docs/pr75/ntf-testdata-yaml-schema.json` / `docs/pr75/ntf-testdata-yaml-design.md`
 
 ---
 

@@ -2,6 +2,36 @@
 
 ブランチ: `convert-testdata-excel-to-text`
 
+---
+
+## このドキュメントについて
+
+このファイルは PR #75 の作業全体を管理するステアリングドキュメントである。
+**PR レビュアーはここを起点に品質担保のプロセスと成果物全体を確認できる。**
+
+### 品質担保プロセスの概要
+
+1. **仕様の洗い出し（Ph-1）**: 解説書と既存実装を独立して全走査し、仕様を 188件 + 300件超抽出。突き合わせで 145件の仕様リストを確定（S-1〜S-3）
+2. **仕様書の FIX（Ph-2）**: 仕様リストをベースに解説書と記述例を全件見直し、ユーザーレビューで FIX（S-4〜S-5）
+3. **TDD 実装（Ph-3）**: FIX 済み仕様書から 1仕様1テスト の対応でテストを先に書き、実装を後から追う（R-1）
+4. **トレーサビリティマトリクス（Ph-4）**: 仕様リスト 145件 全件について「洗い出し根拠 × 実装箇所 × テストメソッド」の 3軸を埋め、根拠なしの漏れがゼロであることを確認（T-1）
+5. **各タスクのレビュープロセス**: 担当者セルフチェック → QA エンジニアレビュー（サブエージェント）→ 言語エキスパートレビュー → SWE レビュー → ユーザーレビューの最大 5ステップ。指摘は全件対応（`docs/pr75/checks/{タスクID}.md` に記録）
+
+### 成果物リンク一覧
+
+| 種別 | ファイル | 内容 |
+|---|---|---|
+| **仕様リスト** | [ntf-impl-spec-list.md](ntf-impl-spec-list.md) | 全145件（解説書マッピング × 実装マッピング × テストメソッド） |
+| **解説書** | [specs/ntf-testdata-doc.md](specs/ntf-testdata-doc.md) | YAML テストデータ記述仕様書（FIX 済み） |
+| **解説書 記述例** | [specs/ntf-testdata-doc-examples-overview.md](specs/ntf-testdata-doc-examples-overview.md) ほか | テーブル/ファイル/メッセージング/特殊値の記述例 |
+| **スキーマ** | [ntf-testdata-yaml-schema.json](ntf-testdata-yaml-schema.json) | JSON Schema 定義 |
+| **ADR** | [adrs/ADR-001-yaml-library.md](adrs/ADR-001-yaml-library.md) | SnakeYAML Engine 採用根拠 |
+| **チェック S-1〜S-5** | [checks/S-1.md](checks/S-1.md) 〜 [checks/S-5.md](checks/S-5.md) | 仕様抽出・仕様リスト確定の完了条件チェック |
+| **チェック R-1** | [checks/R-1.md](checks/R-1.md) | YamlTestDataParser TDD 実装の完了条件チェック（RS仕様ID対応表含む） |
+| **チェック T-1** | [checks/T-1.md](checks/T-1.md) | トレーサビリティマトリクス完成の完了条件チェック |
+
+---
+
 ## 背景・品質要求
 
 Nablarch は銀行・保険・官公庁等のミッションクリティカルな大規模基幹系システムで使われるフレームワークである。
@@ -58,7 +88,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 - [ ] 具体的な作業ステップ1
 - [ ] 具体的な作業ステップ2
 - [ ] ...
-- [ ] セルフチェック（チェック結果: `docs/checks/{タスクID}.md`）
+- [ ] セルフチェック（チェック結果: `docs/pr75/checks/{タスクID}.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] （ソースコード変更のタスクの場合）{対象言語}エンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] （ソースコード変更のタスクの場合）ソフトウエアエンジニアレビュー（本質的なFBがなくなるまで改善）
@@ -133,7 +163,7 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
    - 保守性・拡張性の観点で問題のある実装パターンがないか？（重複・深いネスト・マジックナンバー等）
 5. **ユーザーレビュー**（同上）
 
-チェック結果は `docs/checks/{タスクID}.md` に出力する。
+チェック結果は `docs/pr75/checks/{タスクID}.md` に出力する。
 
 ### チェックファイルフォーマット
 
@@ -207,16 +237,16 @@ YAMLスキーマ設計フェーズ（完了済み）で固めたスキーマを�
 
 ## Ph-1: 仕様リスト確定 ✅ 完了
 
-- S-1: 解説書からの仕様抽出 — 完了（ユーザーレビュー OK・S1-188件・`docs/checks/S-1.md`）
-- S-2: 既存実装からの仕様抽出 — 完了（ユーザーレビュー OK・S2-226件・`docs/checks/S-2.md`）
-- S-3: 仕様リスト作成（S-1×S-2 突き合わせ） — 完了（ユーザーレビュー OK・`docs/ntf-impl-spec-list.md`）
+- S-1: 解説書からの仕様抽出 — 完了（ユーザーレビュー OK・S1-188件・`docs/pr75/checks/S-1.md`）
+- S-2: 既存実装からの仕様抽出 — 完了（ユーザーレビュー OK・S2-226件・`docs/pr75/checks/S-2.md`）
+- S-3: 仕様リスト作成（S-1×S-2 突き合わせ） — 完了（ユーザーレビュー OK・`docs/pr75/ntf-impl-spec-list.md`）
 
 ---
 
 ## Ph-2: 仕様書作成・FIX ✅ 完了
 
-- S-4: 解説書（ntf-testdata-doc.md / examples）全件見直し — 完了（ユーザーレビュー OK・`docs/specs/ntf-testdata-doc.md`）
-- S-5: 仕様リストへの章番号マッピング → 解説書 FIX — 完了（ユーザーレビュー OK・`docs/checks/S-5.md`）
+- S-4: 解説書（ntf-testdata-doc.md / examples）全件見直し — 完了（ユーザーレビュー OK・`docs/pr75/specs/ntf-testdata-doc.md`）
+- S-5: 仕様リストへの章番号マッピング → 解説書 FIX — 完了（ユーザーレビュー OK・`docs/pr75/checks/S-5.md`）
 
 ---
 
@@ -247,7 +277,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
   - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
 - [x] テスト実行・全グリーン確認（67件→72件→74件・Failures: 0, Errors: 0）（再レビューFB 17件対応済み）
 - [x] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）（RS-01〜RS-22全22件確認・未対応0件・RS-20テスト追加）
-- [x] セルフチェック（チェック結果: `docs/checks/R-1.md`）（完了条件5件全OK）
+- [x] セルフチェック（チェック結果: `docs/pr75/checks/R-1.md`）（完了条件5件全OK）
 - [x] QAエンジニアレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
 - [x] Javaエキスパートレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
 - [x] ソフトウエアエンジニアレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
@@ -302,7 +332,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [x] 「実装未特定（S2-xxx なし）」の仕様IDを一覧化し、実装コードを特定して記載する（全件記載済み）
 - [x] 全仕様ID（145件）のテストメソッド列・実装マッピング列が埋まっていることを確認する
 - [x] 全テストが全グリーンであることを確認する（75件グリーン・T-1 での新規テスト追加なし）
-- [x] セルフチェック（チェック結果: `docs/checks/T-1.md`）
+- [x] セルフチェック（チェック結果: `docs/pr75/checks/T-1.md`）
 - [x] QAエンジニアレビュー（本質的なFBがなくなるまで改善）→ OK（本質3件・軽微4件対応済み。2026-05-27）
 - [ ] ユーザーレビュー依頼・OK取得
 
@@ -329,7 +359,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [ ] 全 `.xls`/`.xlsx` ファイルを `.yaml` に変換する
 - [ ] 各テストクラスに YAML 版テストを作成し、同一アサーションで実行する
 - [ ] 差分が生じた場合の対処方針を明記する（修正して差分解消 or 除外して理由記録）
-- [ ] セルフチェック（チェック結果: `docs/checks/V-1.md`）
+- [ ] セルフチェック（チェック結果: `docs/pr75/checks/V-1.md`）
 - [ ] QAエンジニアレビュー（本質的なFBがなくなるまで改善）
 - [ ] ユーザーレビュー依頼・OK取得
 
@@ -402,8 +432,8 @@ G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエー
 
 | ソース | パス |
 |---|---|
-| 解説書 | `docs/specs/ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` |
-| 仕様リスト | `docs/ntf-impl-spec-list.md`（全145件：DT/SS/RS/HC/IV/DR/MS/TS 8カテゴリ） |
+| 解説書 | `docs/pr75/specs/ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md` |
+| 仕様リスト | `docs/pr75/ntf-impl-spec-list.md`（全145件：DT/SS/RS/HC/IV/DR/MS/TS 8カテゴリ） |
 | 実装 | `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java` + `yaml/` サブパッケージ |
 | テスト | `src/test/java/nablarch/test/core/reader/YamlTestDataParserTest.java` + `yaml/` サブパッケージ |
 
@@ -435,8 +465,8 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 ### ADR（設計判断記録）
 
-- `docs/adrs/ADR-001-yaml-library.md`: SnakeYAML Engine 3.0.1 採用の根拠（SnakeYAML 2.6 → Engine 3.0.1 切替記録含む）
-- `docs/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
+- `docs/pr75/adrs/ADR-001-yaml-library.md`: SnakeYAML Engine 3.0.1 採用の根拠（SnakeYAML 2.6 → Engine 3.0.1 切替記録含む）
+- `docs/pr75/adrs/ADR-002-yaml-dependency-scope.md`: compile スコープ採用の根拠
 
 ---
 
@@ -454,13 +484,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 | ファイル | 内容 |
 |---|---|
-| `docs/ntf-testdata-yaml-schema.json` | JSON Schema（第5回レビュー対応済み） |
-| `docs/ntf-testdata-yaml-design.md` | 設計解説ドキュメント（第5回レビュー対応済み） |
-| `docs/ntf-testdata-yaml-examples.yaml` | 使用例（第5回レビュー対応済み） |
-| `docs/ntf-testdata-structure.md` | コード調査報告 |
-| `docs/ntf-coverage-class-list.md` | 対象クラス一覧（src/main + src/test 両方） |
-| `docs/ntf-coverage-spec-mapping.md` | 仕様マッピング（29クラス全行走査済み） |
-| `docs/ntf-yaml-impl-evaluation.md` | 実装例リポジトリ評価レポート |
-| `docs/ntf-coverage-doc-check.md` | 公式解説書 × スキーマ 照合チェック（17件反映済み） |
-| `docs/ntf-schema-accuracy-basis.md` | スキーマ正確性の根拠資料 |
-| `docs/ntf-converter-comparison.md` | nablarch-test-data-converter 比較（16件調査・1件反映済み） |
+| `docs/pr75/ntf-testdata-yaml-schema.json` | JSON Schema（第5回レビュー対応済み） |
+| `docs/pr75/ntf-testdata-yaml-design.md` | 設計解説ドキュメント（第5回レビュー対応済み） |
+| `docs/pr75/ntf-testdata-yaml-examples.yaml` | 使用例（第5回レビュー対応済み） |
+| `docs/pr75/ntf-testdata-structure.md` | コード調査報告 |
+| `docs/pr75/ntf-coverage-class-list.md` | 対象クラス一覧（src/main + src/test 両方） |
+| `docs/pr75/ntf-coverage-spec-mapping.md` | 仕様マッピング（29クラス全行走査済み） |
+| `docs/pr75/ntf-yaml-impl-evaluation.md` | 実装例リポジトリ評価レポート |
+| `docs/pr75/ntf-coverage-doc-check.md` | 公式解説書 × スキーマ 照合チェック（17件反映済み） |
+| `docs/pr75/ntf-schema-accuracy-basis.md` | スキーマ正確性の根拠資料 |
+| `docs/pr75/ntf-converter-comparison.md` | nablarch-test-data-converter 比較（16件調査・1件反映済み） |
