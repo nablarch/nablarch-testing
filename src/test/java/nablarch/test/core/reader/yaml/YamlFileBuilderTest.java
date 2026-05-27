@@ -368,6 +368,30 @@ public class YamlFileBuilderTest {
     }
 
     /**
+     * [YamlFileBuilder] buildFileList: field-separator に 2 文字以上を指定すると IllegalArgumentException がスローされること（9.3 QA-6）。
+     *
+     * <p>
+     * 解説書 9.3: field-separator は 1 文字のみ有効。2 文字以上の場合は IllegalArgumentException がスローされる<br>
+     * Given: expected_files の twoCharSeparator グループに field-separator: ",,"（2文字）<br>
+     * When:  buildFileList 後に createLayout() を呼ぶ<br>
+     * Then:  IllegalArgumentException がスローされること
+     * </p>
+     */
+    @Test
+    public void testBuildFileList_twoCharFieldSeparatorThrowsException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+
+        // When / Then: buildFileList 内の directive 設定時に IllegalArgumentException がスローされること
+        try {
+            sut.buildFileList(yaml, "expected_files", "[twoCharSeparator]", DIR);
+            fail("IllegalArgumentException が期待される");
+        } catch (IllegalArgumentException e) {
+            // OK
+        }
+    }
+
+    /**
      * [YamlFileBuilder] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること（9.3 G-3）。
      *
      * <p>

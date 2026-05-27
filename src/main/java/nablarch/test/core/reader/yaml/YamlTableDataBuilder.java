@@ -144,6 +144,7 @@ public final class YamlTableDataBuilder {
             Map<Object, Object> rowMap = (Map<Object, Object>) rowObj;
             Map<String, String> row = new TreeMap<String, String>();
             for (Map.Entry<Object, Object> e : rowMap.entrySet()) {
+                // SnakeYAML 1.1 では no/yes/on/off が Boolean キーになる場合があるため objectToString で文字列化する
                 String key = objectToString(e.getKey());
                 if (key == null || (key.startsWith("[") && key.endsWith("]"))) {
                     continue;

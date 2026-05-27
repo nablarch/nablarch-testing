@@ -4,6 +4,9 @@ import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
+import nablarch.test.core.util.interpreter.DateTimeInterpreter;
+import nablarch.test.core.util.interpreter.NullInterpreter;
+import nablarch.test.core.util.interpreter.QuotationTrimmer;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
@@ -15,6 +18,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +26,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -270,7 +275,7 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
-        assertThat(result.get(0).get("NULL_COL"), nullValue());
+        assertNull(result.get(0).get("NULL_COL"));
     }
 
     /**
@@ -371,6 +376,30 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildTableDataList: 先頭行が空エントリ（{}）の場合はカラム 0 件の TableData が返ること（JE-6）。
+     *
+     * <p>
+     * 解説書 10.5: 先頭行が {} の場合、カラム定義が 0 件の TableData が生成され、行データは 0 件となること<br>
+     * Given: setup_tables の allEmptyRows グループに {} × 2 のみ<br>
+     * When:  buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, path) を呼ぶ<br>
+     * Then:  TableData が 1 件返り、カラム 0 件・行 0 件であること
+     * </p>
+     */
+    @Test
+    public void testBuildTableDataList_allEmptyRowsReturnsTableDataWithZeroColumns() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, DIR);
+
+        // Then
+        assertThat("先頭行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
+        assertThat("カラム数が 0 件であること", result.get(0).getColumnNames().length, is(0));
+        assertThat("行数が 0 件であること", result.get(0).size(), is(0));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildTableDataList: setup_tables のマーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>
@@ -443,7 +472,7 @@ public class YamlTableDataBuilderTest {
 
         // Then
         assertThat(result.size(), is(1));
-        assertThat("\"null\"（クォートあり）は Java null になること", result.get(0).get("QUOTED_NULL"), nullValue());
+        assertNull("\"null\"（クォートあり）は Java null になること", result.get(0).get("QUOTED_NULL"));
     }
 
     /**
@@ -596,11 +625,36 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
+     * [YamlTableDataBuilder] buildListMapRows: '"'（YAML シングルクォート記法）でのダブルクォート1文字になること（8.2 QA-3）。
+     *
+     * <p>
+     * 解説書 8.2: シングルクォートで囲んだ '"' も YAML パース後は " 1文字。
+     * QuotationTrimmer は前後クォート囲みがない1文字 '"' には適用されず、そのまま '"' が返ること<br>
+     * Given: list_maps に DQ_COL: '"'（YAML シングルクォート記法）<br>
+     * When:  buildListMapRows(yaml, "singleQuoteNotationTest", path) を呼ぶ<br>
+     * Then:  DQ_COL の値がダブルクォート1文字（"）であること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_singleQuoteNotationForDoubleQuote() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "singleQuoteNotationTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("'\"'（シングルクォート記法）はダブルクォート1文字になること",
+                result.get(0).get("DQ_COL"), is("\""));
+    }
+
+    /**
      * [YamlTableDataBuilder] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること（8.1/8.4 G-2）。
      *
      * <p>
      * 解説書 8.1/8.4: DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
-     * Given: list_maps に UPDATE_COL="${updateTime}", SETUP_COL="${setUpTime}"、
+     * Given: list_maps に UPDATE_COL="${updateTime}", SET_UP_TIME_COL="${setUpTime}"、
      *        DateTimeInterpreter に setSetUpDateTime("2010-09-14 12:34:56.0") 設定済み<br>
      * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
      * Then:  両カラムがシステム時刻文字列（"2010-09-14 12:34:56.0"）になること
@@ -609,13 +663,13 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_updateTimeAndSetUpTimeConverted() {
         // Given
-        nablarch.test.core.util.interpreter.DateTimeInterpreter dateTimeInterpreter =
-                new nablarch.test.core.util.interpreter.DateTimeInterpreter();
+        // @Before の sut は setSetUpDateTime 未設定のため、ここで専用インスタンスを生成する
+        DateTimeInterpreter dateTimeInterpreter = new DateTimeInterpreter();
         dateTimeInterpreter.setSystemTimeProvider(repositoryResource.getComponent("dateProvider"));
         dateTimeInterpreter.setSetUpDateTime("2010-09-14 12:34:56.0");
-        java.util.List<TestDataInterpreter> interpreters = java.util.Arrays.<TestDataInterpreter>asList(
-                new nablarch.test.core.util.interpreter.NullInterpreter(),
-                new nablarch.test.core.util.interpreter.QuotationTrimmer(),
+        List<TestDataInterpreter> interpreters = Arrays.asList(
+                new NullInterpreter(),
+                new QuotationTrimmer(),
                 dateTimeInterpreter
         );
         YamlTableDataBuilder sutWithSetUp = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
@@ -629,7 +683,31 @@ public class YamlTableDataBuilderTest {
         assertThat("${updateTime} はシステム時刻に変換されること",
                 result.get(0).get("UPDATE_COL"), is("2010-09-14 12:34:56.0"));
         assertThat("${setUpTime} はシステム時刻に変換されること",
-                result.get(0).get("SETUP_COL"), is("2010-09-14 12:34:56.0"));
+                result.get(0).get("SET_UP_TIME_COL"), is("2010-09-14 12:34:56.0"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: setSetUpDateTime 未設定時に "${setUpTime}" が変換されないこと（8.4 QA-4）。
+     *
+     * <p>
+     * 解説書 8.4: setSetUpDateTime を呼ばずに "${setUpTime}" を使った場合、変換されずにそのまま残ること<br>
+     * Given: @Before の sut（setSetUpDateTime 未設定）で list_maps に SET_UP_TIME_COL="${setUpTime}"<br>
+     * When:  buildListMapRows(yaml, "quotationTest", path) を呼ぶ<br>
+     * Then:  SET_UP_TIME_COL の値が "${setUpTime}" のまま変換されないこと
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_setUpTimeNotConvertedWithoutSetSetUpDateTime() {
+        // Given: @Before の sut は setSetUpDateTime 未設定
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "quotationTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertThat("setSetUpDateTime 未設定時は ${setUpTime} が変換されないこと",
+                result.get(0).get("SET_UP_TIME_COL"), is("${setUpTime}"));
     }
 
     /**

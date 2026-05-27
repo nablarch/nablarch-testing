@@ -32,4 +32,8 @@ list_maps:
     rows:
       - DQ_COL: "\""
         UPDATE_COL: "${updateTime}"
-        SETUP_COL: "${setUpTime}"
+        SET_UP_TIME_COL: "${setUpTime}"
+
+  - id: singleQuoteNotationTest
+    rows:
+      - DQ_COL: '"'

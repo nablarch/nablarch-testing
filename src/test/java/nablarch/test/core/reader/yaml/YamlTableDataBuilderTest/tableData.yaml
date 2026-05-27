@@ -53,6 +53,12 @@ setup_tables:
         NUMBER_COL: "1"
         NUMBER_COL2: "1.1"
 
+  - group_id: allEmptyRows
+    table: TEST_TABLE
+    rows:
+      - {}
+      - {}
+
   - group_id: emptyRowMixed
     table: TEST_TABLE
     rows:

@@ -133,6 +133,19 @@ expected_files:
         rows:
           - ["鈴木", "200"]
 
+  - group_id: twoCharSeparator
+    path: dummy/two_char.csv
+    type: variable
+    directives:
+      field-separator: ",,"
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: X
+        rows:
+          - ["A"]
+
   - group_id: tabSeparator
     path: dummy/tab_separated.tsv
     type: variable
