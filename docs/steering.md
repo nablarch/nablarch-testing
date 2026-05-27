@@ -246,8 +246,8 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [x] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する（G-1〜G-6 全完了・67件グリーン）
   - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
 - [x] テスト実行・全グリーン確認（67件→72件→74件・Failures: 0, Errors: 0）（再レビューFB 17件対応済み）
-- [ ] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）
-- [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
+- [x] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）（RS-01〜RS-22全22件確認・未対応0件・RS-20テスト追加）
+- [x] セルフチェック（チェック結果: `docs/checks/R-1.md`）（完了条件5件全OK）
 - [x] QAエンジニアレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
 - [x] Javaエキスパートレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
 - [x] ソフトウエアエンジニアレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
