@@ -87,7 +87,7 @@ YAML  → [YamlFormatReader] → BookModel → [XlsFormatWriter] → Excel
 
 ### Ph-1: NTF データモデル変換（基本変換）
 
-NTF が読み込む全セクション種別（`SETUP_TABLE`、`EXPECTED_TABLE`、`LIST_MAP`、`SETUP_FIXED`、`SETUP_VARIABLE`、`EXPECTED_FIXED`、`EXPECTED_VARIABLE`、`MESSAGE`、`EXPECTED_REQUEST_HEADER_MESSAGES`、`EXPECTED_REQUEST_BODY_MESSAGES`、`RESPONSE_HEADER_MESSAGES`、`RESPONSE_BODY_MESSAGES`）について、Excel ↔ YAML 間の変換を実装する。
+NTF が読み込む全セクション種別（`SETUP_TABLE`、`EXPECTED_TABLE`、`EXPECTED_COMPLETE_TABLE`、`LIST_MAP`、`SETUP_FIXED`、`SETUP_VARIABLE`、`EXPECTED_FIXED`、`EXPECTED_VARIABLE`、`MESSAGE`、`EXPECTED_REQUEST_HEADER_MESSAGES`、`EXPECTED_REQUEST_BODY_MESSAGES`、`RESPONSE_HEADER_MESSAGES`、`RESPONSE_BODY_MESSAGES`）について、Excel ↔ YAML 間の変換を実装する。
 
 このフェーズで変換等価性（NTF が同一データオブジェクトを生成すること）を保証する。
 
@@ -118,6 +118,10 @@ NTF が読み込む全セクション種別（`SETUP_TABLE`、`EXPECTED_TABLE`�
 |---|---|
 | `src/main/resources/nablarch/test/core/http/dump/template.xls` | HTTP ダンプテンプレート。NTF テストデータではない |
 | `src/main/script/master_data/MASTER_DATA.xls` | DB 初期データ。NTF テストデータではない |
+| `src/test/java/MASTER_DATA.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
+| `src/test/java/MASTER_DATA2.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
+| `src/test/resources/nablarch/test/core/db/masterdata/MASTER_DATA.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
+| `src/test/resources/nablarch/test/core/db/masterdata/MASTER_DATA2.xls` | テスト用 DB マスタデータ。変換ツールの対象となる NTF テストデータではない |
 
 ### 4.3 ディレクトリ対応規則
 
@@ -166,7 +170,7 @@ NTF は形式によって異なる resourceName で識別する。
 
 | カテゴリ | 仕様 ID | 概要 |
 |---|---|---|
-| DT | DT-01 | DataType 14 種の列挙（変換ツールはすべての種別を変換対象とする） |
+| DT | DT-01 | DataType は `DEFAULT` を含む 14 エントリ。変換ツールが変換対象とするのは `DEFAULT` を除く 13 種（SETUP_TABLE〜RESPONSE_BODY_MESSAGES） |
 | DT | DT-02 | セクション識別行の書式 `<DataType名>[groupId]=<値>` |
 | DT | DT-03 | DataType 判定は前方一致（`startsWith`）|
 | DT | DT-06 | groupId 書式 `[groupId]`（省略時は空文字扱い） |
@@ -247,10 +251,12 @@ ListMapSectionModel extends SectionModel
 
 ```
 FileSectionModel extends SectionModel
-  fileType: FileType                  // FIXED / VARIABLE
+  fileType: FileType                  // FIXED / VARIABLE（SETUP_FIXED/EXPECTED_FIXED → FIXED、SETUP_VARIABLE/EXPECTED_VARIABLE → VARIABLE）
   directives: Map<String, String>     // ディレクティブ（キー → 値）
   records: List<RecordLayoutModel>    // レコードレイアウトのリスト
 ```
+
+`fileType` は `dataType` から一意に決定できるが、YAML Writer が SETUP/EXPECTED を問わず「FIXED か VARIABLE か」だけを見て type フィールドを出力するために正規化フィールドとして保持する。
 
 ```
 RecordLayoutModel
@@ -263,7 +269,7 @@ RecordLayoutModel
 FieldModel
   name: String      // フィールド名
   type: String      // データ型記号（"X", "N", "Z" 等）
-  length: String    // フィールド長（固定長のみ。可変長は null）
+  length: String    // フィールド長（固定長のみ。可変長は null。YAML 出力時は null の場合 length キーを省略する）
 ```
 
 #### 6.3.4 MessageSectionModel（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
@@ -376,6 +382,26 @@ SnakeYAML Engine を使用して `.yaml` ファイルを読み込み、`BookMode
 - 各エントリを適切な `SectionModel` サブクラスに変換する
 - `BookModel` の `name` にディレクトリ名を設定する
 
+**注意**: 既存の `YamlSection.dataTypeToSectionKey()` はメッセージ系 DataType（`MESSAGE`、`EXPECTED_REQUEST_*`、`RESPONSE_*`）のみ対応しており、テーブル系・ファイル系 DataType では `IllegalArgumentException` をスローする。`YamlFormatReader` は `YamlSection.dataTypeToSectionKey()` に依存せず、以下の変換ツール独自のマッピングテーブルを使用する。
+
+DataType 列は `DataType` enum の定数名（コード上の識別子）を示す。`DataType.getName()` が返す文字列（Excel/YAML のセクション識別名）は別であることに注意（例: `SETUP_TABLE_DATA` の `getName()` は `"SETUP_TABLE"`）。
+
+| YAML キー | DataType（enum 定数名） | `getName()` 値 | SectionModel サブクラス |
+|---|---|---|---|
+| `setup_tables` | `SETUP_TABLE_DATA` | `"SETUP_TABLE"` | `TableSectionModel` |
+| `expected_tables` | `EXPECTED_TABLE_DATA` | `"EXPECTED_TABLE"` | `TableSectionModel` |
+| `expected_complete_tables` | `EXPECTED_COMPLETED` | `"EXPECTED_COMPLETE_TABLE"` | `TableSectionModel` |
+| `list_maps` | `LIST_MAP` | `"LIST_MAP"` | `ListMapSectionModel` |
+| `setup_files` + `type: fixed` | `SETUP_FIXED` | `"SETUP_FIXED"` | `FileSectionModel` |
+| `setup_files` + `type: variable` | `SETUP_VARIABLE` | `"SETUP_VARIABLE"` | `FileSectionModel` |
+| `expected_files` + `type: fixed` | `EXPECTED_FIXED` | `"EXPECTED_FIXED"` | `FileSectionModel` |
+| `expected_files` + `type: variable` | `EXPECTED_VARIABLE` | `"EXPECTED_VARIABLE"` | `FileSectionModel` |
+| `messages` | `MESSAGE` | `"MESSAGE"` | `MessageSectionModel` |
+| `expected_request_header_messages` | `EXPECTED_REQUEST_HEADER_MESSAGES` | `"EXPECTED_REQUEST_HEADER_MESSAGES"` | `MessageSectionModel` |
+| `expected_request_body_messages` | `EXPECTED_REQUEST_BODY_MESSAGES` | `"EXPECTED_REQUEST_BODY_MESSAGES"` | `MessageSectionModel` |
+| `response_header_messages` | `RESPONSE_HEADER_MESSAGES` | `"RESPONSE_HEADER_MESSAGES"` | `MessageSectionModel` |
+| `response_body_messages` | `RESPONSE_BODY_MESSAGES` | `"RESPONSE_BODY_MESSAGES"` | `MessageSectionModel` |
+
 #### YamlFormatWriter
 
 SnakeYAML Engine を使用して `BookModel` を YAML ファイル群として書き出す。
@@ -431,7 +457,7 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 **責務**
 
 - 指定ルートディレクトリを再帰走査して変換対象ファイルを列挙する
-- 除外パターン（絶対パス末尾一致）に合致するファイルをスキップする
+- 除外パターン（絶対パス末尾一致）に合致するファイルをスキップする。除外対象は 4.2 節の一覧に定義する。パスの末尾一致でマッチするため、パターン例: `template.xls`、`MASTER_DATA.xls`、`MASTER_DATA2.xls`
 - Excel 読み込み時は `.xls` ファイルを、YAML 読み込み時は YAML ディレクトリ（`.yaml` ファイルを含む最下位ディレクトリ）を列挙する
 
 #### ConverterPathResolver
@@ -475,6 +501,8 @@ setup_tables: [{group_id: "case01", table: "USER_MASTER", ...}] → SETUP_TABLE[
 
 ### 8.2 テーブルデータ（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
 
+`EXPECTED_COMPLETE_TABLE` は `EXPECTED_TABLE` と同じ変換ルールを適用する。
+
 #### Excel → YAML
 
 ```
@@ -498,7 +526,7 @@ setup_tables:
         AGE: "30"
 ```
 
-- セル値は文字列として保持する（null セルは `null` として保持する）
+- セル値は全て文字列として保持する。空セル（BLANK セル / cell == null）は空文字として扱う。セル値が文字列 `"null"` のときはアンクォートの `null` として YAML に出力する（8.6 節参照）
 - ヘッダ末尾の空カラムは除去する
 - データ行がヘッダより短い場合、不足分は空文字として補完する
 - マーカーカラム（`[カラム名]` 形式）はカラム名をそのまま保持する
@@ -549,6 +577,22 @@ list_maps:
 6. **データ行**（1 行以上）: 先頭セルが空、2 列目以降 = フィールド値
 
 ディレクティブ行とフィールド名行の区別: 先頭セルが DataType の名前で始まらない非空セルである行はディレクティブ行とみなす。フィールド名行はデータ型行（2列目以降が型記号）が後続するものとして状態機械で解析する。
+
+**ファイルセクション解析の状態遷移**
+
+| 状態 | 遷移条件 | 遷移先 |
+|---|---|---|
+| `SECTION_START`（識別行直後） | 先頭セルが非空かつ DataType 名で始まらない | `DIRECTIVE`（ディレクティブ行として読む） |
+| `SECTION_START` | 先頭セルが非空かつ DataType 名で始まらない → 次行が型記号行 | `FIELD_NAMES`（フィールド名行として読む） |
+| `SECTION_START` / `DIRECTIVE` | 先頭セルが非空かつ DataType 名で始まらない | `DIRECTIVE` 継続 |
+| `DIRECTIVE` | 先頭セルが非空、かつ翌行の先頭が空（型記号行相当） | `FIELD_NAMES` |
+| `FIELD_NAMES` | 先頭セルが空、2 列目以降が型記号 | `DATA_TYPES` |
+| `DATA_TYPES` | 先頭セルが空、固定長の場合 | `FIELD_LENGTHS` |
+| `DATA_TYPES` | 先頭セルが空、可変長の場合（長さ行スキップ） | `DATA` |
+| `FIELD_LENGTHS` | 先頭セルが空 | `DATA` |
+| `DATA` | 先頭セルが空 | `DATA` 継続（次のデータ行） |
+| `DATA` | 先頭セルが非空（新レコード種別名）→ 次行が型記号行 | `FIELD_NAMES`（新 `RecordLayoutModel` 追加） |
+| いずれかの状態 | 次の DataType 識別行を検出 | 新セクション開始 |
 
 固定長 Excel 例（エンコーディング付き）:
 
@@ -630,9 +674,11 @@ messages:
   - id: "sendSyncTestData/REQ001/message"
     records:
       - record_type: "FW_HEADER"
+        fields:
+          - {name: "requestId"}
+          - {name: "userId"}
         rows:
-          - ["requestId", "REQ001"]
-          - ["userId",    "usr001"]
+          - ["REQ001", "usr001"]
       - record_type: "default"
         fields:
           - {name: "FIELD1", type: "X"}
@@ -641,29 +687,33 @@ messages:
           - ["req1", "data1"]
 ```
 
+**FW_HEADER レコードの注意事項**:
+- `YamlMessageBuilder` の実装では、FW_HEADER の `fields:` に含まれる `name` のみを参照してフィールドインデックスを決定する。`type` / `length` は参照しないため、FW_HEADER の `fields:` には `name` のみを出力する
+- `rows:` の先頭要素がフィールド値の配列。フィールド順と値の順序が対応する（`rows[0][fieldIndex]` が `fields[fieldIndex].name` の値）
+- Excel での FW_HEADER 行（`fieldName | value` 形式）は、フィールド名の列挙順を保持して `fields:` に変換し、値を `rows[0]` の対応インデックスに出力する
+
 ### 8.6 値変換ルール
 
 #### Excel → YAML
 
 | Excel セル値 | YAML 出力 |
 |---|---|
-| null（空セル） | `""` （空文字。テーブルデータの空エントリはスキップ対象だが値として空文字を保持する） |
-| `"null"`（文字列） | `"null"` |
+| 空セル（BLANK セル / cell == null） | `""` （空文字列としてダブルクォートで出力する） |
+| セル値が文字列 `"null"`（大文字小文字不問） | アンクォートの `null`（NTF の NullInterpreter が Java null に変換する） |
 | `"true"` / `"false"` | `"true"` / `"false"` |
 | `"001"` 等の先頭ゼロ付き数値文字列 | `"001"` （ダブルクォートを付けて出力する） |
 | `${systemTime}` 等の特殊値 | `"${systemTime}"` （そのまま文字列として出力する） |
 | `"\\"` で始まる値（`\\r` 等） | `"\\r"` 等をそのまま出力する |
 
-- `rows:` 内の全値はダブルクォートで囲む
-- `null` セル（テーブルデータの null 値）はアンクォートの `null` として出力する
+- `rows:` 内の値は原則ダブルクォートで囲む。ただし `null`（Java null を表す）はクォートなしで出力する
 
 #### YAML → Excel
 
 | YAML 値 | Excel 出力 |
 |---|---|
 | `""`（空文字） | 空セル |
-| `null`（アンクォート） | `null` |
-| `"null"`（ダブルクォートあり） | `null` |
+| `null`（アンクォート） | `null`（NTF の `NullInterpreter` が Java null に変換） |
+| `"null"`（ダブルクォートあり） | `null`（NTF の `NullInterpreter` は文字列 `"null"` と Java null を等価に扱うため） |
 | `"true"` / `"false"` | `true` / `false` |
 | `"001"` | `001` |
 
@@ -703,7 +753,7 @@ messages:
 </plugin>
 ```
 
-`classpathScope` を `test` にすることで、`test` スコープの POI 依存ライブラリと `compile` スコープの SnakeYAML Engine 依存ライブラリを両方クラスパスに含める。
+POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はともに `compile` スコープで宣言済みのため、`classpathScope` は省略（デフォルトの `compile`）でよい。ただし `TestDataConverter` クラスはテストコード（`src/test/java`）に配置するため、`classpathScope` を `test` にしてテストクラスパスを含める。
 
 ### 9.2 コマンド例
 
