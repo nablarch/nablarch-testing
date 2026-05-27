@@ -245,12 +245,12 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 - [x] `pom.xml` に SnakeYAML 依存が追加されていることを確認する（既存）
 - [x] 解説書（`ntf-testdata-doc.md` / `ntf-testdata-doc-examples-*.md`）を満たすように TDD で実装する（G-1〜G-6 全完了・67件グリーン）
   - テストコードには GWT（Given/When/Then）コメントと解説書の章番号を記載する
-- [x] テスト実行・全グリーン確認（67件→72件・Failures: 0, Errors: 0）（FB対応: SnakeYAML Engine 3.0.1切替・テスト追加・実装修正）
+- [x] テスト実行・全グリーン確認（67件→72件→74件・Failures: 0, Errors: 0）（再レビューFB 17件対応済み）
 - [ ] 仕様リスト（`ntf-impl-spec-list.md`）の全仕様IDに対応するテストメソッドをマッピングし、漏れがないことを確認する（T-1 相当をここで実施）
 - [ ] セルフチェック（チェック結果: `docs/checks/R-1.md`）
-- [ ] QAエンジニアレビュー（サブエージェントで実施）
-- [ ] Javaエキスパートレビュー（サブエージェントで実施）
-- [ ] ソフトウエアエンジニアレビュー（サブエージェントで実施）
+- [x] QAエンジニアレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
+- [x] Javaエキスパートレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
+- [x] ソフトウエアエンジニアレビュー（サブエージェントで実施）→ OK（2026-05-27 再レビュー）
 - [ ] ユーザーレビュー依頼・OK取得
 
 **完了条件**:
@@ -322,33 +322,14 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | QA/Java/SWE 再レビュー（サブエージェント3体）→ ユーザーレビュー |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | ユーザーレビュー依頼 |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **R-1 継続**: QA/Java/SWE 再レビューをサブエージェント3体で並行実施する（下記「再レビュー対象ファイル」参照）
-3. FB がなくなったらユーザーレビュー依頼
-
-### 再レビュー対象ファイル
-
-前回レビューから以下が変更された。再レビューはこれら全ファイルを対象とする。
-
-**実装**:
-- `src/main/java/nablarch/test/core/reader/yaml/YamlLoader.java`（SnakeYAML Engine 3.0.1 に切替）
-- `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java`（SW-5 コメント追加）
-- `src/main/java/nablarch/test/core/util/interpreter/QuotationTrimmer.java`（JE-1 null ガード）
-
-**テスト**:
-- `src/test/java/nablarch/test/core/reader/yaml/YamlLoaderTest.java`
-- `src/test/java/nablarch/test/core/reader/yaml/YamlTableDataBuilderTest.java`（QA-3/QA-4/JE-2/JE-3/JE-4/JE-6/JE-7/QA-9）
-- `src/test/java/nablarch/test/core/reader/yaml/YamlFileBuilderTest.java`（QA-6）
-- `src/test/java/nablarch/test/core/reader/yaml/YamlMessageBuilderTest.java`
-- `src/test/java/nablarch/test/core/util/interpreter/QuotationTrimmerTest.java`（SW-3）
-
-**テスト数**: 72件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:16, QuotationTrimmerTest:4）
+2. **R-1 継続**: ユーザーレビュー依頼（QA/Java/SWE 再レビュー全員 OK 済み）
 
 ### QAレビュー FB 対応状況（全14件対応済み）
 
@@ -388,8 +369,8 @@ G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエー
 
 ### 実装状況（テスト数）
 
-- 現在: 72 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:16, QuotationTrimmerTest:4）
-- G-1〜G-6 全完了・QAレビューFB 14件対応済み・再レビュー待ち（2026-05-27）
+- 現在: 74 件グリーン（YamlLoaderTest:11, YamlTableDataBuilderTest:28, YamlFileBuilderTest:14, YamlMessageBuilderTest:16, QuotationTrimmerTest:5）
+- G-1〜G-6 全完了・QAレビューFB 14件対応済み・再レビューFB 17件対応済み・QA/Java/SWE 再レビュー全員 OK（2026-05-27）
 
 ### ソース一覧（確定）
 
