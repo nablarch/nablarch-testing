@@ -29,6 +29,8 @@
 | **チェック S-1〜S-5** | [checks/S-1.md](checks/S-1.md) 〜 [checks/S-5.md](checks/S-5.md) | 仕様抽出・仕様リスト確定の完了条件チェック |
 | **チェック R-1** | [checks/R-1.md](checks/R-1.md) | YamlTestDataParser TDD 実装の完了条件チェック（RS仕様ID対応表含む） |
 | **チェック T-1** | [checks/T-1.md](checks/T-1.md) | トレーサビリティマトリクス完成の完了条件チェック |
+| **C-1 設計書** | [specs/testdata-converter-design.md](specs/testdata-converter-design.md) | Excel↔YAML変換ツール設計書（QAレビュー対応済み・ユーザーレビュー待ち） |
+| **チェック C-1** | [checks/C-1.md](checks/C-1.md) | Excel↔YAML変換ツール 完了条件チェック |
 
 ---
 
@@ -366,10 +368,12 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 **設計書**: `docs/pr75/specs/xls-to-yaml-converter-design.md`（C-1 着手時に作成）
 
 **作業内容**:
-- [ ] `docs/pr75/specs/xls-to-yaml-converter-design.md` を作成する（仕様・クラス設計・実行方法・対象外ファイルの定義）
-- [ ] セルフチェック・QAレビュー・Javaエキスパートレビュー・SWEレビュー・ユーザーレビューで設計書を FIX する
-- [ ] 設計書に従い `XlsToYamlConverter` を TDD で実装する
-- [ ] セルフチェック（チェック結果: `docs/pr75/checks/C-1.md`）
+- [x] `docs/pr75/specs/testdata-converter-design.md` を作成する（仕様・クラス設計・実行方法・対象外ファイルの定義）
+- [x] セルフチェック（チェック結果: `docs/pr75/checks/C-1.md`）
+- [x] QAレビュー（サブエージェントで実施）→ OK（QA 10件・N 4件対応済み。2026-05-27）
+- [ ] ユーザーレビューで設計書を FIX する
+- [ ] 設計書に従い `TestDataConverter` を TDD で実装する
+- [ ] セルフチェック（実装フェーズ）
 - [ ] QAエンジニアレビュー（サブエージェントで実施）
 - [ ] Javaエキスパートレビュー（サブエージェントで実施）
 - [ ] ソフトウエアエンジニアレビュー（サブエージェントで実施）
@@ -403,7 +407,7 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 
 ---
 
-## 現在の状態（2026-05-27 夕時点）
+## 現在の状態（2026-05-27）
 
 ブランチ: `convert-testdata-excel-to-text`
 
@@ -414,15 +418,14 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
 | **R-1** YamlTestDataParser 実装（TDD） | **完了**（ユーザーレビュー OK 2026-05-27） | — |
 | **T-1** トレーサビリティマトリクス完成 | **完了**（ユーザーレビュー OK 2026-05-27） | — |
-| **C-1** Excel→YAML 変換ツール設計・実装 | **進行中** | 設計書 FIX（レビュー待ち） |
+| **C-1** Excel↔YAML 変換ツール設計・実装 | **進行中** | 設計書ユーザーレビュー待ち |
 | **V-1** Excel 並走確認 | 未着手 | C-1 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **C-1 設計書レビュー**: 設計書（`docs/pr75/specs/testdata-converter-design.md`）のユーザーレビューを依頼する
-   - C-1 作業内容チェックリストの「セルフチェック → QA → Java → SWE → ユーザーレビュー」を順に実施する
-   - 設計書 OK 後に TDD で実装に着手する
+2. **C-1 設計書ユーザーレビュー**: `docs/pr75/specs/testdata-converter-design.md` のユーザーレビューを依頼する
+   - OK が出たら TDD で実装に着手する（クラス構成・実行方法は設計書 7〜9 章を参照）
 3. **V-1 着手**: C-1 完了後、変換ツールを使って全59件を変換・並走確認する
 
 ### QAレビュー FB 対応状況（全14件対応済み）
