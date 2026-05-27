@@ -1,7 +1,7 @@
 # NTF テストデータ 実装仕様一覧（ntf-impl-spec-list.md）
 
 - **作成日**: 2026-05-20（I-1 タスク）
-- **更新日**: 2026-05-27（C-1: 変換ツール対象列を追加・全145件記載）
+- **更新日**: 2026-05-27（C-1-1: DR-07 変換ツール対象列の旧命名 FileSectionModel → TestDataBlock に修正）
 - **参照元**: `docs/pr75/checks/S-1.md`（解説書抽出188件）、`docs/pr75/checks/S-2.md`（実装抽出300件超）、`ntf-coverage-spec-mapping.md`（コード全行走査）、`ntf-testdata-yaml-design.md`（スキーマ設計）
 
 **マッピング列の記載方針**:
@@ -159,7 +159,7 @@
 | DR-04 | `defaultDirectives` DI: SystemRepository のこのキーで全ファイル共通デフォルトディレクティブを一括設定できる | 実装内部ロジック | S1-136 | S2-163（DataFile.prepareDefaultDirectives L68-81）, S2-038（YamlSection.applyDirectives L168-177） | FixedLengthFileTest#testPrepareDefaultDirectives, VariableLengthFileTest#testPrepareDefaultDirectives | 対象外（実行時）（defaultDirectives DI設定はNTF実行時の動作） |
 | DR-05 | `fixedLengthDirectives` DI: 固定長ファイル専用デフォルトディレクティブ（`defaultDirectives` より後に上書き適用） | 実装内部ロジック | S1-136 | S2-177（FixedLengthFile デフォルトディレクティブキー L18） | FixedLengthFileTest#testPrepareDefaultDirectives | 対象外（実行時）（fixedLengthDirectives DI設定はNTF実行時の動作） |
 | DR-06 | `variableLengthDirectives` DI: 可変長ファイル専用デフォルトディレクティブ | 実装内部ロジック | S1-136 | S2-183（VariableLengthFile デフォルトディレクティブキー L21） | VariableLengthFileTest#testPrepareDefaultDirectives | 対象外（実行時）（variableLengthDirectives DI設定はNTF実行時の動作） |
-| DR-07 | `file-type` ディレクティブはサブクラス（固定長=`"Fixed"`、可変長=`"Variable"`）が自動設定するため通常は記述不要 | 正常系 | S1-108 | S2-176（FixedLengthFile.getFileType L35）, S2-179（VariableLengthFile.getFileType L38） | — （getFileType は他テストで間接確認） | 対象（FileSectionModelのfileTypeフィールドとしてYAMLのtype: fixed/variable設定に使用） |
+| DR-07 | `file-type` ディレクティブはサブクラス（固定長=`"Fixed"`、可変長=`"Variable"`）が自動設定するため通常は記述不要 | 正常系 | S1-108 | S2-176（FixedLengthFile.getFileType L35）, S2-179（VariableLengthFile.getFileType L38） | — （getFileType は他テストで間接確認） | 対象（TestDataBlockのfileTypeフィールドとしてYAMLのtype: fixed/variable設定に使用） |
 | DR-08 | `record-length` ディレクティブはフィールド長合計から自動計算されるため通常は記述不要 | 正常系 | S1-108 | S2-178（FixedLengthFile.getRecordLength L109-113） | FixedLengthFileTest#testRecordLengthDiffers（自動計算と比較で間接確認） | 対象外（実行時）（record-length自動計算はNTF実行時の動作） |
 | DR-09 | `field-separator`: 可変長ファイルのデフォルトは `","`. `"\\t"` 指定でタブ文字に変換。値は1文字のみ有効 | 正常系 | S1-082 | S2-180（VariableLengthFile デフォルト区切り L29）, S2-181（\\t→タブ変換 L67-69） | VariableLengthFileTest#testConvertTab, testConvertDirectiveValue | 対象（ディレクティブ値field-separatorの変換） |
 | DR-10 | `record-separator`: `NONE`/`CR`/`LF`/`CRLF` または任意リテラル文字列が有効 | 正常系 | 解説書に記載なし | S2-192（LineSeparator 列挙 L11-17）, S2-193（LineSeparator.evaluate L57-65） | LineSeparatorTest#testToString, testEvaluate | 対象（ディレクティブ値record-separatorの変換） |
