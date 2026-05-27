@@ -1,10 +1,9 @@
 package nablarch.test.core.reader.yaml;
 
 import nablarch.test.NablarchTestUtils;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-import org.yaml.snakeyaml.error.YAMLException;
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
+import org.snakeyaml.engine.v2.exceptions.YamlEngineException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,7 +20,9 @@ import java.util.Map;
  * </p>
  *
  * <p>
- * SnakeYAML 2.x の {@link SafeConstructor} を使用し、型変換を制限して安全にロードする。
+ * SnakeYAML Engine 3.x の {@link Load} を使用する。
+ * デフォルトの Core Schema（YAML 1.2）が適用されるため、{@code no}/{@code yes}/{@code on}/{@code off} は
+ * 文字列として扱われる（YAML 1.1 の Boolean 変換は行われない）。
  * 重複キーは {@link IllegalStateException} をスローする。
  * </p>
  */
@@ -53,12 +54,13 @@ public final class YamlLoader {
         if (cached != null) {
             return cached;
         }
-        LoaderOptions options = new LoaderOptions();
-        options.setAllowDuplicateKeys(false);
-        Yaml yaml = new Yaml(new SafeConstructor(options));
+        LoadSettings settings = LoadSettings.builder()
+                .setAllowDuplicateKeys(false)
+                .build();
+        Load loader = new Load(settings);
         try (FileInputStream in = new FileInputStream(new File(filePath))) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> result = (Map<String, Object>) yaml.load(in);
+            Map<String, Object> result = (Map<String, Object>) loader.loadFromInputStream(in);
             if (result == null) {
                 result = Collections.emptyMap();
             }
@@ -66,7 +68,7 @@ public final class YamlLoader {
             return result;
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load YAML file: " + filePath, e);
-        } catch (YAMLException e) {
+        } catch (YamlEngineException e) {
             throw new IllegalStateException("Failed to parse YAML file: " + filePath, e);
         }
     }

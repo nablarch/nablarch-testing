@@ -92,12 +92,12 @@ list_maps:
 
   - id: testShots
     rows:
-      - "no": "1"
+      - no: "1"
         description: "ケース1"
         expectedStatusCode: "200"
         setUpTable: ""
         expectedTable: ""
-      - "no": "2"
+      - no: "2"
         description: "ケース2"
         expectedStatusCode: "400"
         setUpTable: "case2"
