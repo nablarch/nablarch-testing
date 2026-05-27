@@ -273,8 +273,14 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 
 **設計方針（ユーザーレビューで確定済み）**:
 - Excel IN/OUT、YAML IN/OUT の 4方向を全て対応する（Reader/Writer の組み合わせ）
-- 中間データの設計は調査タスク（C-1-0）で決定する
+- 中間データの設計は調査タスク（C-1-0）で決定する（結論: 独自モデル採用）
 - 設計書は特定リポジトリの運用情報（59件・具体パス等）を含めない汎用ツールとして書く
+
+**中間データモデルの命名（ユーザーレビューで確定済み）**:
+- 上位（テストクラスと1対1のコンテナ）: `TestDataContainer`
+- 中位（読み込み単位。Excel の1シート / YAML の1ファイル）: `TestDataSection`
+- 下位（DataType + 識別子 + データ行の塊）: `TestDataBlock`
+- 解説書（`ntf-testdata-doc.md`）の「セクション」という語は `TestDataBlock` に統一して書き直す
 
 **設計書**: `docs/pr75/specs/testdata-converter-design.md`（C-1-1 で書き直し）
 
