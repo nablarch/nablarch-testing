@@ -44,7 +44,7 @@ NTF（Nablarch Testing Framework）のテストデータを特定の形式に依
 **変換ツールがカバーすること**
 
 - Excel（`.xls`）→ YAML（`.yaml`）への変換
-- YAML（`.yaml`）→ Excel（`.xls`）への逆変換
+- YAML（`.yaml`）→ Excel（`.xls`）への変換
 
 **変換ツールがカバーしないこと**
 
@@ -92,7 +92,7 @@ YAML  → [YamlFormatReader] → TestDataContainer → [XlsFormatWriter]  → Ex
 
 - コメント行（`//`）: NTF が読み捨てるため、変換でもロストしてよい（[3章](#3-フェーズ定義) 参照）
 - Excel のセル書式・色・結合セル: NTF が無視するため、変換ツールも無視する
-- YAML ファイル内のコメント（`#`）: SnakeYAML がパース時に破棄するため、逆変換でロストしてよい
+- YAML ファイル内のコメント（`#`）: SnakeYAML がパース時に破棄するため、YAML → Excel 変換でロストしてよい
 
 ---
 
@@ -161,7 +161,7 @@ Excel ブック内の各シートを個別の YAML ファイルに変換する�
 {outputPath}/com/example/FooTest.xls（シート: case01, case02）
 ```
 
-**シート順序の制限**: Excel → YAML 変換時にシート順序は YAML ファイル名に保持されない。YAML → Excel 逆変換ではシート順はアルファベット昇順になり、元の Excel のシート順は再現されない。シート順序の保持が必要な場合は、YAML ファイル名に連番プレフィクス（例: `01_case01.yaml`、`02_case02.yaml`）を付けることを推奨する。
+**シート順序の制限**: Excel → YAML 変換時にシート順序は YAML ファイル名に保持されない。YAML → Excel 変換ではシート順はアルファベット昇順になり、元の Excel のシート順は再現されない。シート順序の保持が必要な場合は、YAML ファイル名に連番プレフィクス（例: `01_case01.yaml`、`02_case02.yaml`）を付けることを推奨する。
 
 **YAML ディレクトリの定義**: YAML 読み込み時に変換単位となる「YAML ディレクトリ」とは、直下に `.yaml` ファイルを 1 件以上含み、かつ `.yaml` ファイルを含むサブディレクトリを持たないディレクトリを指す（最下位の `.yaml` 保有ディレクトリ）。
 
@@ -713,7 +713,7 @@ setup_files:
 | `SETUP_FIXED` / `EXPECTED_FIXED` | `fixed` |
 | `SETUP_VARIABLE` / `EXPECTED_VARIABLE` | `variable` |
 
-YAML のキー（`setup_files` / `expected_files`）は DataType を問わず共通。逆変換時は `type:` フィールドを参照して `SETUP_FIXED` か `SETUP_VARIABLE` かを決定する。
+YAML のキー（`setup_files` / `expected_files`）は DataType を問わず共通。YAML → Excel 変換時は `type:` フィールドを参照して `SETUP_FIXED` か `SETUP_VARIABLE` かを決定する。
 
 `setup_files` リスト内の要素順序は Excel のデータブロック出現順（行順）を保持する。`SETUP_FIXED` と `SETUP_VARIABLE` が混在していても同一リストに順序通り出力される。`YamlFormatReader` は `setup_files` リストを出現順に走査して `TestDataBlock` を生成する（`TestDataSection.blocks` の順序が保証される）。
 
@@ -730,11 +730,11 @@ Excel でデータ行の後に新たなフィールド名行が来る場合、�
 
 #### 空ファイル表現
 
-ディレクティブのみのファイルデータブロック（レコード定義なし）は `records: []` として出力する。逆変換時は `records:` が空配列の場合、ディレクティブ行のみを書き出す。
+ディレクティブのみのファイルデータブロック（レコード定義なし）は `records: []` として出力する。YAML → Excel 変換時は `records:` が空配列の場合、ディレクティブ行のみを書き出す。
 
 #### `"-"` フィールド長の変換（SS-17）
 
-Excel のフィールド長行で `"-"` が記述されている場合、YAML の `length:` フィールドにも文字列 `"-"` としてそのまま出力する。逆変換も同様。NTF 実行時の自動拡張（最大バイト長への伸張）は変換ツールの責務外であり、変換ツールは値を保持するだけでよい。
+Excel のフィールド長行で `"-"` が記述されている場合、YAML の `length:` フィールドにも文字列 `"-"` としてそのまま出力する。YAML → Excel 変換も同様。NTF 実行時の自動拡張（最大バイト長への伸張）は変換ツールの責務外であり、変換ツールは値を保持するだけでよい。
 
 ### 8.5 メッセージングテストデータ
 
@@ -792,9 +792,9 @@ NTF の `MessageParser` と `YamlMessageBuilder` は、FW 制御ヘッダとし�
 - **YAML → Excel**: `record_type: FW_HEADER` のレコードを全てディレクティブ行（`fieldName | value` 形式）として書き出す
 - **スコープ外**: `reader.fwHeaderfields` をカスタム設定している場合の変換等価性は保証しない。カスタム設定が必要な場合は手動で変換後データを確認すること
 
-#### FW ヘッダの YAML → Excel 逆変換
+#### FW ヘッダの YAML → Excel 変換
 
-YAML の `record_type: FW_HEADER` のレコードを Excel のディレクティブ行に逆変換する。`fields:` の各 `name` を先頭列に、`rows[0]` の対応インデックスの値を 2 列目に配置して、ディレクティブ行（`fieldName | value` 形式）として書き出す。
+YAML の `record_type: FW_HEADER` のレコードを Excel のディレクティブ行に変換する。`fields:` の各 `name` を先頭列に、`rows[0]` の対応インデックスの値を 2 列目に配置して、ディレクティブ行（`fieldName | value` 形式）として書き出す。
 
 ```yaml
 records:
@@ -928,7 +928,7 @@ mvn exec:java \
   -Dexec.args="--from xls --to yaml --overwrite --delete-source <入力パス> <出力パス>"
 ```
 
-#### YAML → Excel 逆変換
+#### YAML → Excel
 
 ```bash
 mvn exec:java \
