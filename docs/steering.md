@@ -322,21 +322,60 @@ YAML → YamlTestDataParser（BasicTestDataParser を継承）→ TableData / Da
 | タスク | 状態 | 次のアクション |
 |---|---|---|
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
-| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | 仕様リストマッピング確認 → セルフチェック → QA/Java/SWE レビュー → ユーザーレビュー |
+| **R-1** YamlTestDataParser 実装（TDD） | **進行中** | QAレビュー FB 対応（下記14件）→ 再レビュー → ユーザーレビュー |
 | **T-1** テスト網羅確認 | 未着手 | Ph-3 完了後 |
 | **V-1** Excel 並走確認 | 未着手 | Ph-3 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **R-1 継続**: G-1〜G-6 完了済み（67件グリーン）。次のステップ:
-   - `docs/ntf-impl-spec-list.md` の全仕様 ID にテストメソッドをマッピングし、漏れ確認
-   - セルフチェック（`docs/checks/R-1.md`）→ QA/Java/SWE レビュー → ユーザーレビュー
+2. **R-1 継続**: QAレビュー FB 14件を対応してからレビュー再実施
+
+### QAレビュー FB 対応リスト（未対応14件）
+
+G-1〜G-6実装に対してQA/Java/SWEレビューを実施済み（サブエージェント3体）。以下が対応必要と判定した指摘。
+
+#### テスト追加・修正（機能）
+
+| # | 対象 | 内容 |
+|---|---|---|
+| QA-3 | G-1テスト追加 | `'"'`（YAMLシングルクォート記法）でのダブルクォート1文字（解説書8.2） |
+| QA-4 | G-2テスト追加 | `setSetUpDateTime` 未設定時に `${setUpTime}` が変換されないこと |
+| QA-6 | テスト追加 | `field-separator` 2文字以上で `IllegalArgumentException` になる境界値（解説書9.3） |
+| SW-1 | **実装修正（要方針確定）** | `no:` キーが `"false"` に化ける根本問題。`YamlLoader` の SnakeYAML Resolver をカスタマイズして `yes`/`no`/`on`/`off` の Boolean 変換を無効化する（YAML 1.2 準拠）。ユーザーが案A確認済み（案A採用で進める） |
+| SW-2 | 実装修正 | `buildTableDataList` にも同様の Boolean キー問題が残存。`setup_tables`/`expected_tables` の rows キーも `objectToString` で文字列変換する |
+| SW-3 | テスト追加 | `QuotationTrimmerTest` に境界値テスト追加: `"` 1文字→スルー・`""` 2文字→空文字・全角`""` 2文字→空文字 |
+| JE-6 | テスト追加 | `buildTableDataList` で先頭行 `{}` の場合のカラム 0件挙動確認 |
+
+#### コード品質（実装・テスト修正）
+
+| # | 対象 | 内容 |
+|---|---|---|
+| JE-1 | 実装修正 | `QuotationTrimmer.trimQuotation` に null ガード追加（`str == null` の場合 str をそのまま返す） |
+| JE-2 | テスト修正 | G-2テストの完全修飾クラス名をすべて import に変更 |
+| JE-3 | テスト修正 | `Arrays.<TestDataInterpreter>asList(...)` の型ウィットネス削除 |
+| JE-4 | テスト修正 | G-2テストの `sutWithSetUp` 生成理由コメント補足（`@Before`の`sut`が`setSetUpDateTime`未設定のため使えない旨） |
+| JE-7 | テスト修正 | `assertNull`/`assertThat(..., nullValue())` の統一（今回変更したファイル内） |
+| QA-9 | テスト修正 | `nativeTypes.yaml` の `SETUP_COL` → `SET_UP_TIME_COL` にリネームして `${setUpTime}` との対応を明確化 |
+| SW-5 | 実装修正 | `buildRows` に Boolean キー変換の理由コメント追加（SnakeYAML 1.1 の `no`/`yes` Boolean 変換対策である旨） |
+
+#### 対応不要と判定した指摘（根拠）
+
+| # | 内容 | 理由 |
+|---|---|---|
+| QA-1 | testShots 0件エラー | `buildListMapRows` の責務外。上位層（`AbstractHttpRequestTestTemplate`）が検出 |
+| QA-2 | testCases フォールバック | 切り替えロジックは上位層の責務。ここでは文字列一致の動作確認しかできない |
+| QA-5 | G-5 FW_HEADER以外レコード混在 | `testBuildMessagePool_withFwHeader` で FW_HEADER+BODY 組み合わせ検証済み |
+| QA-7 | 3階層以上パスセグメント | `id.equals(entryId)` 完全一致のため階層数は無関係 |
+| QA-8 | 全角ダブルクォートのYAML経路 | 解説書・examplesに記載なし。単体テスト（QuotationTrimmerTest）でカバー済み |
+| JE-5 | リポジトリ復元の null 値セット | 今回変更していないファイルの既存問題 |
+| SW-4 | `@SuppressWarnings` の範囲 | Java の言語仕様上メソッドレベルが最小スコープ |
+| SW-6 | `objectToString` の Javadoc | 呼び出し側の利用方法をメソッド Javadoc に書くのは設計上誤り |
 
 ### 実装状況（テスト数）
 
 - 現在: 67 件グリーン（YamlLoaderTest:10, YamlTableDataBuilderTest:25, YamlFileBuilderTest:13, YamlMessageBuilderTest:16, QuotationTrimmerTest:3）
-- G-1〜G-6 全完了（2026-05-27）
+- G-1〜G-6 全完了・QAレビュー実施済み・FB対応中（2026-05-27）
 
 ### ソース一覧（確定）
 
