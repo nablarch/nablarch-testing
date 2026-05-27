@@ -1,7 +1,7 @@
 # NTF テストデータ形式間変換ツール 設計書
 
 - **作成日**: 2026-05-27
-- **更新日**: 2026-05-27（C-1-6: SWEレビュー指摘対応 - FW_HEADER判定ロジック・状態遷移EOF・マーカーカラム例等）
+- **更新日**: 2026-05-27（C-1-7: フェーズ定義章を廃止し設計方針に統合）
 - **対象ブランチ**: convert-testdata-excel-to-text
 
 ---
@@ -10,14 +10,13 @@
 
 1. [目的・スコープ](#1-目的スコープ)
 2. [設計方針](#2-設計方針)
-3. [フェーズ定義](#3-フェーズ定義)
-4. [データモデルとファイル構造の対応](#4-データモデルとファイル構造の対応)
-5. [対応 NTF 仕様 ID](#5-対応-ntf-仕様-id)
-6. [データモデル設計](#6-データモデル設計)
-7. [クラス設計](#7-クラス設計)
-8. [形式別 IN/OUT 仕様](#8-形式別-inout-仕様)
-9. [実行方法](#9-実行方法)
-10. [エラー処理方針](#10-エラー処理方針)
+3. [データモデルとファイル構造の対応](#3-データモデルとファイル構造の対応)
+4. [対応 NTF 仕様 ID](#4-対応-ntf-仕様-id)
+5. [データモデル設計](#5-データモデル設計)
+6. [クラス設計](#6-クラス設計)
+7. [形式別 IN/OUT 仕様](#7-形式別-inout-仕様)
+8. [実行方法](#8-実行方法)
+9. [エラー処理方針](#9-エラー処理方針)
 
 ---
 
@@ -38,7 +37,7 @@ NTF（Nablarch Testing Framework）のテストデータを特定の形式に依
 
 **変換ツールのスコープ**
 
-変換ツールが対応する NTF 仕様 ID の全一覧は `docs/pr75/ntf-impl-spec-list.md` の「変換ツール対象」列を参照すること。仕様リスト全 145 件のうち「対象」と記載された仕様が変換ツールの実装範囲である（[5章](#5-対応-ntf-仕様-id) 参照）。
+変換ツールが対応する NTF 仕様 ID の全一覧は `docs/pr75/ntf-impl-spec-list.md` の「変換ツール対象」列を参照すること。仕様リスト全 145 件のうち「対象」と記載された仕様が変換ツールの実装範囲である（[4章](#4-対応-ntf-仕様-id) 参照）。
 
 **変換ツールがカバーすること**
 
@@ -99,38 +98,17 @@ NTF 側の仕様変更（新 DataType の追加、YAML キーの変更等）が�
 
 変換における「等価」とは「NTF が読み込んだとき同じデータオブジェクトが生成されること」と定義する。以下は等価の範囲外とする。
 
-- コメント行（`//`）: NTF が読み捨てるため、変換でもロストしてよい（[3章](#3-フェーズ定義) 参照）
+- コメント行（`//`）: NTF が読み捨てるため、変換でもロストしてよい。Excel → YAML 変換では `//` 行を読み捨てる。YAML → Excel 変換では YAML コメント（`#`）を SnakeYAML がパース時に破棄するため、双方向でロストとなる。変換実行時にコメント行数を警告として標準エラー出力する
 - Excel のセル書式・色・結合セル: NTF が無視するため、変換ツールも無視する
 - YAML ファイル内のコメント（`#`）: SnakeYAML がパース時に破棄するため、YAML → Excel 変換でロストしてよい
 
 ---
 
-## 3. フェーズ定義
+## 3. データモデルとファイル構造の対応
 
-### Ph-1: NTF データモデル変換（基本変換）
+### 3.1 データモデルとファイルの対応
 
-NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TABLE`、`EXPECTED_COMPLETE_TABLE`、`LIST_MAP`、`SETUP_FIXED`、`SETUP_VARIABLE`、`EXPECTED_FIXED`、`EXPECTED_VARIABLE`、`MESSAGE`、`EXPECTED_REQUEST_HEADER_MESSAGES`、`EXPECTED_REQUEST_BODY_MESSAGES`、`RESPONSE_HEADER_MESSAGES`、`RESPONSE_BODY_MESSAGES`）について、Excel ↔ YAML 間の変換を実装する。
-
-このフェーズで変換等価性（NTF が同一データオブジェクトを生成すること）を保証する。
-
-### Ph-2: コメント行のロスト（両方向）
-
-コメント行（Excel の `//` 行）は NTF の動作に影響しないが、変換時にロストする。
-
-**方針: 両方向でロストする**
-
-- Excel → YAML 変換: `//` 行を読み捨てる（YAML に出力しない）
-- YAML → Excel 変換: YAML コメント（`#`）は SnakeYAML がパース時に破棄するため、Excel に出力できない
-
-一方向だけ保持すると変換の対称性が崩れ、ツールの動作が混乱する。両方向でロストとすることで動作を単純化する。変換実行時に対象ファイルのコメント行数を警告メッセージとして標準エラー出力し、処理は継続する。
-
----
-
-## 4. データモデルとファイル構造の対応
-
-### 4.1 データモデルとファイルの対応
-
-変換ツールの中間データモデル（6章）は、形式に依存せず以下の意味を持つ。
+変換ツールの中間データモデル（5章）は、形式に依存せず以下の意味を持つ。
 
 | データモデル | 意味 | 対応するNTFの読み込み単位 |
 |---|---|---|
@@ -138,9 +116,9 @@ NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TA
 | `TestDataSection` | 1 読み込み単位のテストデータ | `TestDataReader.open(path, dataName)` の `dataName` 1 件 |
 | `TestDataBlock` | 1 データブロック（DataType + identifier + 行データ） | `BasicTestDataParser.getSetupTableData()` 等が返す個々のデータオブジェクト |
 
-各形式がこのデータモデルにどのように対応するかは形式ごとに定める（8章参照）。
+各形式がこのデータモデルにどのように対応するかは形式ごとに定める（7章参照）。
 
-### 4.2 include / exclude パターン
+### 3.2 include / exclude パターン
 
 変換対象ファイルは `--include` / `--exclude` オプションで制御する。どちらも**ファイル名に対するグロブパターン**（`*` = 任意の文字列、`?` = 任意の 1 文字）で指定する。ディレクトリパスは評価しない。
 
@@ -165,7 +143,7 @@ NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TA
 
 デフォルトは include / exclude なし（全対象ファイルが候補）。プロジェクト固有の除外ファイル（DB 初期データ、HTTP ダンプテンプレート等）はツール側で決め打ちせず、実行者が `--exclude` で明示的に指定する。
 
-### 4.3 形式ごとのファイル構造（詳細）
+### 3.3 形式ごとのファイル構造（詳細）
 
 各形式がデータモデルにどのようなファイル構造で対応するかを定める。
 
@@ -197,7 +175,7 @@ NTF が読み込む全データブロック種別（`SETUP_TABLE`、`EXPECTED_TA
 
 **セクション順序の制限**: YAML 形式ではセクション（ファイル）の順序はファイル名のアルファベット昇順になる。XLS 形式のシート順序を保持したい場合は、YAML ファイル名に連番プレフィクス（例: `01_case01.yaml`）を付けること。
 
-### 4.4 resourceName の対応
+### 3.4 resourceName の対応
 
 NTF は形式によって異なる resourceName で識別する。
 
@@ -210,11 +188,11 @@ NTF は形式によって異なる resourceName で識別する。
 
 ---
 
-## 5. 対応 NTF 仕様 ID
+## 4. 対応 NTF 仕様 ID
 
 変換ツールが正しく動作するために準拠する NTF 仕様 ID の網羅的な一覧は `docs/pr75/ntf-impl-spec-list.md` の「変換ツール対象」列を参照すること。同列が `対象` となっている仕様 ID が変換ツールの実装範囲である。
 
-### 5.1 対象仕様の分類サマリー
+### 4.1 対象仕様の分類サマリー
 
 仕様リスト全 145 件のうち変換ツールが「対象」とする仕様は以下のカテゴリから選定される。
 
@@ -229,7 +207,7 @@ NTF は形式によって異なる resourceName で識別する。
 | MS | メッセージングFW制御ヘッダ・no列構造（MS-01, MS-02） |
 | TS | なし（テストサポート層の実行時動作） |
 
-### 5.2 対象外仕様の理由区分
+### 4.2 対象外仕様の理由区分
 
 「対象外」と分類した仕様は以下のいずれかに該当する。
 
@@ -241,11 +219,11 @@ NTF は形式によって異なる resourceName で識別する。
 
 ---
 
-## 6. データモデル設計
+## 5. データモデル設計
 
 変換ツールは以下の 3 層のデータモデルを使用する。
 
-### 6.1 TestDataContainer
+### 5.1 TestDataContainer
 
 Excel ブック / YAML ディレクトリに相当するコンテナ。テストクラスと 1 対 1 に対応する。
 
@@ -255,7 +233,7 @@ TestDataContainer
   sections: List<TestDataSection>     // セクション（読み込み単位）のリスト
 ```
 
-### 6.2 TestDataSection
+### 5.2 TestDataSection
 
 Excel シート / YAML ファイル 1 枚に相当する。NTF の読み込み単位。
 
@@ -265,7 +243,7 @@ TestDataSection
   blocks: List<TestDataBlock>         // データブロックのリスト
 ```
 
-### 6.3 TestDataBlock
+### 5.3 TestDataBlock
 
 NTF の 1 データブロックに相当する。データブロック種別ごとにサブクラスを持つ。
 
@@ -276,7 +254,7 @@ TestDataBlock（抽象）
   identifier: String                  // 識別子の値（テーブル名・ファイルパス・LIST_MAP の ID 等）
 ```
 
-#### 6.3.1 ColumnRowDataBlock（テーブル・LIST_MAP の共通基底）
+#### 5.3.1 ColumnRowDataBlock（テーブル・LIST_MAP の共通基底）
 
 `TableDataBlock` と `ListMapBlock` はカラム名リストとデータ行リストを共有するため、共通フィールドを抽象クラスに括り出す。
 
@@ -286,14 +264,14 @@ ColumnRowDataBlock extends TestDataBlock（抽象）
   rows: List<List<String>>            // データ行のリスト（null・空文字を区別して保持）
 ```
 
-#### 6.3.2 TableDataBlock（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
+#### 5.3.2 TableDataBlock（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
 
 ```
 TableDataBlock extends ColumnRowDataBlock
   （追加フィールドなし）
 ```
 
-#### 6.3.3 ListMapBlock（LIST_MAP）
+#### 5.3.3 ListMapBlock（LIST_MAP）
 
 ```
 ListMapBlock extends ColumnRowDataBlock
@@ -302,7 +280,7 @@ ListMapBlock extends ColumnRowDataBlock
 
 `TableDataBlock` と `ListMapBlock` は `dataType` フィールド（`TestDataBlock` が保持）で区別する。
 
-#### 6.3.4 FileDataBlock（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
+#### 5.3.4 FileDataBlock（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
 
 ```java
 /** ファイルデータブロックの種別。SETUP/EXPECTED を問わず固定長か可変長かを区別する。 */
@@ -334,7 +312,7 @@ FieldDef
 
 `length` を `String` 型にする理由: `"-"`（SS-17: 自動拡張指示）や `null`（可変長の長さなし）を区別せずにリテラルとして保持するため、数値型への変換は行わない。NTF 実行時に数値解釈が行われる。`FieldDef` は不変オブジェクトとして扱い、全フィールドを `final` で宣言する。
 
-#### 6.3.5 MessageDataBlock（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
+#### 5.3.5 MessageDataBlock（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
 
 ```
 MessageDataBlock extends TestDataBlock
@@ -344,9 +322,9 @@ MessageDataBlock extends TestDataBlock
 
 ---
 
-## 7. クラス設計
+## 6. クラス設計
 
-### 7.1 パッケージと配置
+### 6.1 パッケージと配置
 
 **パッケージ**
 
@@ -356,11 +334,11 @@ nablarch.test.core.reader.converter
 
 **ソースディレクトリ**
 
-変換ツールは `src/test/java` に配置する（プロダクション向けの成果物ではなく、テスト移行を支援するツールとして位置づけるため）。`exec-maven-plugin` の `classpathScope` を `test` にすることでテストクラスパスを含め、変換ツールから `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）を参照できる（9.1 節参照）。
+変換ツールは `src/test/java` に配置する（プロダクション向けの成果物ではなく、テスト移行を支援するツールとして位置づけるため）。`exec-maven-plugin` の `classpathScope` を `test` にすることでテストクラスパスを含め、変換ツールから `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）を参照できる（8.1 節参照）。
 
 パッケージは `nablarch.test.core.reader.converter` を使う（変換ツールが参照する `DataType` / `YamlSection` と同じ最上位パッケージに揃えることで IDE のパッケージツリーを整理するため）。
 
-### 7.2 インターフェース
+### 6.2 インターフェース
 
 #### ConverterException
 
@@ -429,27 +407,27 @@ public interface TestDataFormatWriter {
 }
 ```
 
-### 7.3 実装クラス
+### 6.3 実装クラス
 
-各実装クラスの詳細な IN/OUT 仕様は 8 章に定める。本節ではクラスの役割と使用ライブラリを記載する。
+各実装クラスの詳細な IN/OUT 仕様は 7 章に定める。本節ではクラスの役割と使用ライブラリを記載する。
 
 #### XlsFormatReader
 
-Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContainer` を生成する（IN仕様: 8.1節）。
+Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContainer` を生成する（IN仕様: 7.1節）。
 
 #### XlsFormatWriter
 
-Apache POI の `HSSFWorkbook` を使用して `TestDataContainer` を `.xls` ファイルとして書き出す（OUT仕様: 8.2節）。NTF の既存テストデータは全て `.xls` 形式のため `.xlsx` 変換は本ツールのスコープ外とする。HSSF の制約として 1 ブック最大 65535 行・256 シートがあるが、NTF テストデータのサイズでは超過しない前提とする。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
+Apache POI の `HSSFWorkbook` を使用して `TestDataContainer` を `.xls` ファイルとして書き出す（OUT仕様: 7.2節）。NTF の既存テストデータは全て `.xls` 形式のため `.xlsx` 変換は本ツールのスコープ外とする。HSSF の制約として 1 ブック最大 65535 行・256 シートがあるが、NTF テストデータのサイズでは超過しない前提とする。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
 
 #### YamlFormatReader
 
-SnakeYAML Engine を使用して YAML ディレクトリ内の `.yaml` ファイル群を読み込み、`TestDataContainer` を生成する（IN仕様: 8.3節）。`YamlSection.dataTypeToSectionKey()` に依存せず、8.3.1節のマッピングテーブルを使用する。
+SnakeYAML Engine を使用して YAML ディレクトリ内の `.yaml` ファイル群を読み込み、`TestDataContainer` を生成する（IN仕様: 7.3節）。`YamlSection.dataTypeToSectionKey()` に依存せず、7.3.1節のマッピングテーブルを使用する。
 
 #### YamlFormatWriter
 
-SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群として書き出す（OUT仕様: 8.4節）。出力先ディレクトリが存在しない場合は自動生成する。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
+SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群として書き出す（OUT仕様: 7.4節）。出力先ディレクトリが存在しない場合は自動生成する。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
 
-### 7.4 エントリポイント
+### 6.4 エントリポイント
 
 #### TestDataConverter
 
@@ -478,14 +456,14 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 |---|---|---|
 | `--from <形式>` | 必須 | 入力形式。`xls` または `yaml`。`--to` と同一形式は不可（終了コード 2） |
 | `--to <形式>` | 必須 | 出力形式。`xls` または `yaml`。`--from` と異なる形式を指定すること |
-| `--include <パターン>` | 任意（複数可） | 変換対象に含めるファイル名グロブパターン（4.2 節参照）。複数指定可 |
-| `--exclude <パターン>` | 任意（複数可） | 変換対象から除外するファイル名グロブパターン（4.2 節参照）。複数指定可 |
+| `--include <パターン>` | 任意（複数可） | 変換対象に含めるファイル名グロブパターン（3.2 節参照）。複数指定可 |
+| `--exclude <パターン>` | 任意（複数可） | 変換対象から除外するファイル名グロブパターン（3.2 節参照）。複数指定可 |
 | `--overwrite` | 任意 | 既存ファイルを上書きする（デフォルト: 上書き禁止） |
 | `--delete-source` | 任意 | 変換成功後に入力ファイルを削除する |
 | `<入力パス>` | 必須 | 変換対象のルートディレクトリ |
 | `<出力パス>` | 必須 | 変換結果の出力先ルートディレクトリ |
 
-### 7.5 ユーティリティクラス
+### 6.5 ユーティリティクラス
 
 #### ConverterFileFilter
 
@@ -494,8 +472,8 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 **責務**
 
 - 指定ルートディレクトリを再帰走査して変換対象ファイルを列挙する
-- `--include` / `--exclude` で指定されたファイル名グロブパターン（4.2 節参照）に従って変換対象を絞り込む。グロブ評価には `java.nio.file.PathMatcher`（`glob:` 構文）をファイル名部分に適用する
-- Excel 読み込み時は `.xls` ファイルを、YAML 読み込み時は YAML ディレクトリ（4.3 節「YAML ディレクトリの定義」参照: 直下に `.yaml` ファイルを 1 件以上含み、`.yaml` ファイルを含むサブディレクトリを持たない最下位ディレクトリ）を列挙する
+- `--include` / `--exclude` で指定されたファイル名グロブパターン（3.2 節参照）に従って変換対象を絞り込む。グロブ評価には `java.nio.file.PathMatcher`（`glob:` 構文）をファイル名部分に適用する
+- Excel 読み込み時は `.xls` ファイルを、YAML 読み込み時は YAML ディレクトリ（3.3 節「YAML ディレクトリの定義」参照: 直下に `.yaml` ファイルを 1 件以上含み、`.yaml` ファイルを含むサブディレクトリを持たない最下位ディレクトリ）を列挙する
 
 #### ConverterPathResolver
 
@@ -509,17 +487,17 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 
 ---
 
-## 8. 形式別 IN/OUT 仕様
+## 7. 形式別 IN/OUT 仕様
 
 各形式の Reader（IN: ファイル → `TestDataContainer`）と Writer（OUT: `TestDataContainer` → ファイル）の仕様を形式ごとに独立して定める。変換は Reader + Writer の組み合わせであり、本章は組み合わせに依存しない。
 
 ---
 
-### 8.1 XLS 形式 IN 仕様（`XlsFormatReader`）
+### 7.1 XLS 形式 IN 仕様（`XlsFormatReader`）
 
 `.xls` ファイルを読み込んで `TestDataContainer` を生成する。
 
-#### 8.1.1 セル値の読み取り規則
+#### 7.1.1 セル値の読み取り規則
 
 - 全セルを `Cell.toString()` で文字列化する（数値書式・日付書式セルは変換精度が落ちる場合がある。1.2節「前提条件」参照）
 - `null` セル（空セル）は空文字 `""` として扱う
@@ -527,7 +505,7 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 - 先頭以外のセルが `//` で始まる場合、そのセル以降を切り捨てる（HC-06）。**注意**: 既存の `PoiXlsReader` は先頭カラムが `//` の場合のみ break する実装で、先頭以外のセルの切り捨ては行っていない。しかし NTF の `TestDataParsingTemplate.cutComment()` が最終的に行内コメント切り捨てを担うため、変換ツールは HC-06 仕様（先頭以外のセルも切り捨て）を実装することで変換等価性を保つ
 - 全セルが空の行はスキップする（HC-07）
 
-#### 8.1.2 データブロック識別行の解析
+#### 7.1.2 データブロック識別行の解析
 
 シートを走査し、先頭セルが `DataType.getName()` で前方一致する行をデータブロック識別行として検出する。
 
@@ -536,7 +514,7 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 2. `DataType` の全列挙値の `getName()` と前方一致（`startsWith`）で比較する。ただし `DataType.DEFAULT`（`getName()` が `"DEFAULT"`）は対象外とする。先頭セルが `"DEFAULT"` で始まる行が出現した場合はエラーとして記録してスキップする
 3. 合致した場合、`[groupId]=identifier` 形式を解析して `dataType`・`groupId`・`identifier` を抽出する
 
-#### 8.1.3 テーブルデータブロックの解析（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
+#### 7.1.3 テーブルデータブロックの解析（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE）
 
 識別行の直後の行をヘッダ行（カラム名リスト）、それ以降の行をデータ行として解析する。
 
@@ -563,11 +541,11 @@ TableDataBlock {
 }
 ```
 
-#### 8.1.4 LIST_MAP ブロックの解析
+#### 7.1.4 LIST_MAP ブロックの解析
 
 テーブルデータブロックと同じ解析規則。`ListMapBlock` に格納する。
 
-#### 8.1.5 ファイルデータブロックの解析（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
+#### 7.1.5 ファイルデータブロックの解析（SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE）
 
 識別行の後に続く行を以下の順序で解析する。
 
@@ -628,9 +606,9 @@ FileDataBlock {
 
 **`"-"` フィールド長（SS-17）**: `"-"` はリテラル文字列として `FieldDef.length` に格納する。NTF実行時の自動拡張は変換ツールの責務外。
 
-#### 8.1.6 メッセージングデータブロックの解析（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
+#### 7.1.6 メッセージングデータブロックの解析（MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES）
 
-ファイルデータブロック（8.1.5節）と同じ構造で解析するが、FW 制御ヘッダ行の扱いが異なる。
+ファイルデータブロック（7.1.5節）と同じ構造で解析するが、FW 制御ヘッダ行の扱いが異なる。
 
 - **FW 制御ヘッダ行**: ディレクティブ行として読み込む（先頭セル = フィールド名、2列目 = 値）。これを `MessageDataBlock.fwHeaderFields` に格納する
 - **`no` 列**: フィールド名行の先頭セルが空（`no` フィールドはフィールド名から省略されている）
@@ -665,17 +643,17 @@ MessageDataBlock {
 
 ---
 
-### 8.2 XLS 形式 OUT 仕様（`XlsFormatWriter`）
+### 7.2 XLS 形式 OUT 仕様（`XlsFormatWriter`）
 
 `TestDataContainer` を `.xls` ファイルとして書き出す。POI の `HSSFWorkbook` を使用する。
 
-#### 8.2.1 セル値の書き出し規則
+#### 7.2.1 セル値の書き出し規則
 
 - 全セルを文字列書式で書き出す（NTF の動作保証条件に合わせる）
 - `null` 値はセルに文字列 `"null"` と書き出す
 - 空文字 `""` はセルを空（書き込まない）にする
 
-#### 8.2.2 データブロック識別行の生成
+#### 7.2.2 データブロック識別行の生成
 
 `TestDataBlock` の `dataType`・`groupId`・`identifier` から識別行を生成する。
 
@@ -684,13 +662,13 @@ groupId が空文字 → SETUP_TABLE=USER_MASTER
 groupId が "case01" → SETUP_TABLE[case01]=USER_MASTER
 ```
 
-#### 8.2.3 テーブルデータブロックの書き出し
+#### 7.2.3 テーブルデータブロックの書き出し
 
 識別行 → ヘッダ行（`columnNames`）→ データ行（`rows` の各行）の順で書き出す。
 
 - マーカーカラム（`[カラム名]` 形式）は `[` `]` を含めてそのままヘッダ行に書き出す（HC-01）
 
-#### 8.2.4 ファイルデータブロックの書き出し
+#### 7.2.4 ファイルデータブロックの書き出し
 
 識別行 → ディレクティブ行群 → レコードレイアウト群（フィールド名行 → データ型行 → フィールド長行（固定長のみ）→ データ行群）の順で書き出す（SS-08）。
 
@@ -698,17 +676,17 @@ groupId が "case01" → SETUP_TABLE[case01]=USER_MASTER
 - 可変長の場合はフィールド長行を省略する
 - `records` が空リストの場合はディレクティブ行のみを書き出す
 
-#### 8.2.5 メッセージングデータブロックの書き出し
+#### 7.2.5 メッセージングデータブロックの書き出し
 
 識別行 → FW ヘッダ行群（`fwHeaderFields` の各エントリを `fieldName | value` 形式で書き出す）→ レコードレイアウト群の順で書き出す。
 
 ---
 
-### 8.3 YAML 形式 IN 仕様（`YamlFormatReader`）
+### 7.3 YAML 形式 IN 仕様（`YamlFormatReader`）
 
 YAML ディレクトリ内の `.yaml` ファイル群を読み込んで `TestDataContainer` を生成する。
 
-#### 8.3.1 トップレベルキーと DataType の対応
+#### 7.3.1 トップレベルキーと DataType の対応
 
 | YAML キー | `YamlSection` 定数名 | DataType（enum 定数名） | TestDataBlock サブクラス |
 |---|---|---|---|
@@ -728,29 +706,29 @@ YAML ディレクトリ内の `.yaml` ファイル群を読み込んで `TestDat
 
 **注意**: 既存の `YamlSection.dataTypeToSectionKey()` はメッセージ系 DataType のみ対応し、テーブル系・ファイル系では `IllegalArgumentException` をスローする。`YamlFormatReader` はこのメソッドに依存せず、上記マッピングテーブルを使用する。
 
-#### 8.3.2 値の読み取り規則
+#### 7.3.2 値の読み取り規則
 
 - SnakeYAML Engine は YAML 1.2 Core Schema に従い、`null`/`NULL`/`Null`/`~` を Java null に変換する。Java null は `TestDataBlock` の行データで `null` として保持する
 - 文字列値（ダブルクォートあり）はそのまま Java String として保持する
 - `group_id:` フィールドが存在する場合、`TestDataBlock.groupId` に設定する。なければ空文字
 
-#### 8.3.3 ファイルデータブロックの解析
+#### 7.3.3 ファイルデータブロックの解析
 
 - `type: fixed` → `FileType.FIXED`、`type: variable` → `FileType.VARIABLE`
 - `setup_files` / `expected_files` のリスト要素順序は `TestDataSection.blocks` への格納順として保持する
 
-#### 8.3.4 メッセージングデータブロックの解析
+#### 7.3.4 メッセージングデータブロックの解析
 
 - `record_type: FW_HEADER` のレコードの `fields` × `rows[0]` から `fwHeaderFields`（LinkedHashMap）を構築する
 - フィールド名が `fwHeaderFields`（SystemRepository 設定）に含まれるかの検証は行わない
 
 ---
 
-### 8.4 YAML 形式 OUT 仕様（`YamlFormatWriter`）
+### 7.4 YAML 形式 OUT 仕様（`YamlFormatWriter`）
 
 `TestDataContainer` を YAML ファイル群として書き出す。SnakeYAML Engine を使用する。
 
-#### 8.4.1 値の書き出し規則
+#### 7.4.1 値の書き出し規則
 
 | `TestDataBlock` の値 | YAML 出力 |
 |---|---|
@@ -761,7 +739,7 @@ YAML ディレクトリ内の `.yaml` ファイル群を読み込んで `TestDat
 | `"001"` 等の先頭ゼロ付き数値文字列 | `"001"`（ダブルクォートあり） |
 | その他の文字列 | ダブルクォートで出力する |
 
-#### 8.4.2 テーブルデータブロックの書き出し
+#### 7.4.2 テーブルデータブロックの書き出し
 
 ```yaml
 setup_tables:
@@ -774,7 +752,7 @@ setup_tables:
 
 `group_id` が空文字でない場合は `group_id: "case01"` を `table:` の前に出力する。
 
-#### 8.4.3 ファイルデータブロックの書き出し
+#### 7.4.3 ファイルデータブロックの書き出し
 
 ```yaml
 setup_files:
@@ -794,7 +772,7 @@ setup_files:
 - `records` が空リストの場合、`records: []` として出力する
 - 可変長の `FieldDef.length` が `null` の場合、`length` キーを省略する
 
-#### 8.4.4 メッセージングデータブロックの書き出し
+#### 7.4.4 メッセージングデータブロックの書き出し
 
 `fwHeaderFields` を `record_type: FW_HEADER` のレコードとして出力する。
 
@@ -820,7 +798,7 @@ messages:
 
 ---
 
-### 8.5 groupId の表現（全形式共通）
+### 7.5 groupId の表現（全形式共通）
 
 | `TestDataBlock.groupId` | XLS 識別行 | YAML フィールド |
 |---|---|---|
@@ -829,7 +807,7 @@ messages:
 
 ---
 
-### 8.6 ディレクティブ値の特殊文字（DR-09, DR-10）
+### 7.6 ディレクティブ値の特殊文字（DR-09, DR-10）
 
 ディレクティブ値は原則として文字列としてそのまま保持する。変換ツールは値の意味解釈を行わない。
 
@@ -842,9 +820,9 @@ messages:
 
 ---
 
-## 9. 実行方法
+## 8. 実行方法
 
-### 9.1 pom.xml 設定
+### 8.1 pom.xml 設定
 
 `exec-maven-plugin` を `pom.xml` に追加する。
 
@@ -860,9 +838,9 @@ messages:
 </plugin>
 ```
 
-`TestDataConverter` クラスは `src/test/java` に配置するため（7.1 節参照）、`classpathScope` を `test` にする。これにより `src/test/java` のクラスと `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）の両方がクラスパスに含まれる。POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はともに `compile` スコープで宣言済みのため、`test` スコープにも自動的に含まれる。
+`TestDataConverter` クラスは `src/test/java` に配置するため（6.1 節参照）、`classpathScope` を `test` にする。これにより `src/test/java` のクラスと `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）の両方がクラスパスに含まれる。POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はともに `compile` スコープで宣言済みのため、`test` スコープにも自動的に含まれる。
 
-### 9.2 コマンド例
+### 8.2 コマンド例
 
 #### Excel → YAML 変換
 
@@ -898,7 +876,7 @@ mvn exec:java \
   -Dexec.args="--from yaml --to xls <入力パス> <出力パス>"
 ```
 
-### 9.3 引数仕様（再掲）
+### 8.3 引数仕様（再掲）
 
 ```
 TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [--exclude <パターン>]... [--overwrite] [--delete-source] <入力パス> <出力パス>
@@ -908,14 +886,14 @@ TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [-
 |---|---|---|
 | `--from` | `xls` / `yaml` | 入力形式（`--to` と同一形式は不可） |
 | `--to` | `xls` / `yaml` | 出力形式（`--from` と異なる形式を指定） |
-| `--include` | グロブパターン（複数可） | 変換対象に含めるファイル名パターン（4.2 節参照） |
-| `--exclude` | グロブパターン（複数可） | 変換対象から除外するファイル名パターン（4.2 節参照） |
+| `--include` | グロブパターン（複数可） | 変換対象に含めるファイル名パターン（3.2 節参照） |
+| `--exclude` | グロブパターン（複数可） | 変換対象から除外するファイル名パターン（3.2 節参照） |
 | `--overwrite` | フラグ | 既存ファイルを上書きする |
 | `--delete-source` | フラグ | 変換成功後に入力ファイルを削除する |
 | `<入力パス>` | パス文字列 | 変換対象のルートディレクトリ |
 | `<出力パス>` | パス文字列 | 変換結果の出力先ルートディレクトリ |
 
-### 9.4 終了コード
+### 8.4 終了コード
 
 | 終了コード | 意味 |
 |---|---|
@@ -925,15 +903,15 @@ TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [-
 
 ---
 
-## 10. エラー処理方針
+## 9. エラー処理方針
 
-### 10.1 基本方針
+### 9.1 基本方針
 
 - 1 ファイルのエラーで全体を停止しない。エラーが発生したファイルをスキップして次のファイルの変換を継続する
 - 全ファイルの処理完了後にサマリーを出力し、エラーがあれば終了コード 1 で終了する
 - エラーメッセージにはファイルパスと原因を含める
 
-### 10.2 エラーケースと対処
+### 9.2 エラーケースと対処
 
 | エラーケース | 対処 |
 |---|---|
@@ -945,16 +923,16 @@ TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [-
 | YAML の `records:` 内で `rows:` 要素数と `fields:` 件数が不一致 | エラーとして記録し、対象ファイルをスキップして続行 |
 | 引数が不正（`--from` の値が `xls`/`yaml` 以外、`--from` と `--to` が同一形式等） | 即時終了コード 2 で終了。ヘルプメッセージを出力する |
 
-### 10.3 警告ケースと対処
+### 9.3 警告ケースと対処
 
 | 警告ケース | 対処 |
 |---|---|
-| コメント行（`//`）が存在する（Ph-2 相当） | 標準エラー出力に警告を出力し、コメント行を読み捨てて処理を継続する |
+| コメント行（`//`）が存在する | 標準エラー出力に警告を出力し、コメント行を読み捨てて処理を継続する |
 | `--exclude` パターンに合致するファイル（または `--include` パターンに合致しないファイル） | 標準出力にスキップメッセージを出力し、スキップして続行 |
 | 数値書式・日付書式セルが検出された（1.2 節「前提条件」違反） | 標準エラー出力に警告を出力する（セル値は POI の `Cell.toString()` 結果をそのまま使用し、処理は継続する） |
 | データブロックが 0 件の TestDataSection（空シート / コメント行のみのシート） | 標準エラー出力に警告を出力し、YAML ファイルの生成をスキップする |
 
-### 10.4 変換サマリー出力例
+### 9.4 変換サマリー出力例
 
 ```
 === TestDataConverter 変換サマリー ===
