@@ -34,10 +34,22 @@ public class TestDataConverter {
             return 2;
         }
 
+        if (!opts.from.equals("xls") && !opts.from.equals("yaml")) {
+            System.err.println("Invalid --from value: " + opts.from + ". Must be 'xls' or 'yaml'.");
+            System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
+            return 2;
+        }
+        if (!opts.to.equals("xls") && !opts.to.equals("yaml")) {
+            System.err.println("Invalid --to value: " + opts.to + ". Must be 'xls' or 'yaml'.");
+            System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
+            return 2;
+        }
+
+        XlsFormatReader xlsReader = opts.from.equals("xls") ? new XlsFormatReader() : null;
         TestDataFormatReader reader;
         TestDataFormatWriter writer;
         if (opts.from.equals("xls")) {
-            reader = new XlsFormatReader();
+            reader = xlsReader;
             writer = new YamlFormatWriter();
         } else {
             reader = new YamlFormatReader();
@@ -58,10 +70,37 @@ public class TestDataConverter {
 
         int errorCount = 0;
         int successCount = 0;
+        int totalCommentLines = 0;
+        int commentLineFiles = 0;
 
         for (Path target : targets) {
             try {
                 TestDataContainer container = reader.read(target);
+
+                if (xlsReader != null) {
+                    int commentLines = xlsReader.getLastCommentLineCount();
+                    if (commentLines > 0) {
+                        totalCommentLines += commentLines;
+                        commentLineFiles++;
+                    }
+                }
+
+                // Warn and skip if no blocks in any section (NG-5)
+                boolean hasAnyBlock = false;
+                for (TestDataSection section : container.getSections()) {
+                    if (!section.getBlocks().isEmpty()) {
+                        hasAnyBlock = true;
+                        break;
+                    }
+                }
+                if (!hasAnyBlock && !container.getSections().isEmpty()) {
+                    System.err.println("WARN: " + target + ": no data blocks found (empty sheet or comment-only). Skipping output.");
+                    successCount++;
+                    if (opts.deleteSource) {
+                        deleteSource(target);
+                    }
+                    continue;
+                }
 
                 // Calculate output path
                 Path outputBase;
@@ -87,7 +126,12 @@ public class TestDataConverter {
             }
         }
 
-        System.out.println("Conversion complete. success=" + successCount + " error=" + errorCount);
+        System.out.println("=== TestDataConverter 変換サマリー ===");
+        System.out.println("変換成功: " + successCount + " 件");
+        System.out.println("エラー:   " + errorCount + " 件");
+        if (totalCommentLines > 0) {
+            System.out.println("コメント行ロスト: " + totalCommentLines + " 行（" + commentLineFiles + " ファイル）");
+        }
         return errorCount > 0 ? 1 : 0;
     }
 

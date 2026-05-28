@@ -23,6 +23,11 @@ public class XlsFormatWriter implements TestDataFormatWriter {
 
     @Override
     public void write(TestDataContainer container, Path outputPath, boolean overwrite) throws ConverterException {
+        try {
+            Files.createDirectories(outputPath);
+        } catch (IOException e) {
+            throw new ConverterException("Failed to create output directory: " + outputPath, e);
+        }
         Path xlsFile = outputPath.resolve(container.getName() + ".xls");
         if (!overwrite && Files.exists(xlsFile)) {
             throw new ConverterException("File already exists (use overwrite=true): " + xlsFile);

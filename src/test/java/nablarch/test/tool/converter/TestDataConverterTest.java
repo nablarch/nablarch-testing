@@ -139,6 +139,36 @@ public class TestDataConverterTest {
     }
 
     /**
+     * [Given] --from に不正値を指定
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void invalidFromValueReturnsCode2() throws Exception {
+        File dir = temporaryFolder.newFolder("dir");
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "csv", "--to", "yaml",
+                dir.getAbsolutePath(), dir.getAbsolutePath()
+        });
+        assertThat(exitCode, is(2));
+    }
+
+    /**
+     * [Given] --to に不正値を指定
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void invalidToValueReturnsCode2() throws Exception {
+        File dir = temporaryFolder.newFolder("dir");
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "json",
+                dir.getAbsolutePath(), dir.getAbsolutePath()
+        });
+        assertThat(exitCode, is(2));
+    }
+
+    /**
      * [Given] --delete-source オプション付き
      * [When]  run() を呼び出す
      * [Then]  変換後に入力ファイルが削除される

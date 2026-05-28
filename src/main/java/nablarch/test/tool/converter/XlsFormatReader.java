@@ -20,37 +20,47 @@ import java.util.Map;
  */
 public class XlsFormatReader implements TestDataFormatReader {
 
+    /** 直前の read() 呼び出しで検出したコメント行数。 */
+    private int lastCommentLineCount = 0;
+
+    /** 直前の read() 呼び出しで検出したコメント行数を返す。 */
+    public int getLastCommentLineCount() {
+        return lastCommentLineCount;
+    }
+
     @Override
     public TestDataContainer read(Path sourcePath) throws ConverterException {
         String fileName = sourcePath.getFileName().toString();
         String name = fileName.endsWith(".xls") ? fileName.substring(0, fileName.length() - 4) : fileName;
+        lastCommentLineCount = 0;
 
         try {
             FileInputStream fis = new FileInputStream(sourcePath.toFile());
+            Workbook wb;
             try {
-                Workbook wb = new HSSFWorkbook(fis);
-                List<TestDataSection> sections = new ArrayList<>();
-                for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-                    Sheet sheet = wb.getSheetAt(i);
-                    sections.add(parseSheet(sheet));
-                }
-                return new TestDataContainer(name, sections);
+                wb = new HSSFWorkbook(fis);
             } finally {
                 fis.close();
             }
+            List<TestDataSection> sections = new ArrayList<>();
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                Sheet sheet = wb.getSheetAt(i);
+                sections.add(parseSheet(sheet, sourcePath));
+            }
+            return new TestDataContainer(name, sections);
         } catch (IOException e) {
             throw new ConverterException("Failed to read XLS file: " + sourcePath, e);
         }
     }
 
-    private TestDataSection parseSheet(Sheet sheet) {
-        List<List<String>> rows = readRows(sheet);
+    private TestDataSection parseSheet(Sheet sheet, Path sourcePath) {
+        List<List<String>> rows = readRows(sheet, sourcePath);
         List<TestDataBlock> blocks = parseBlocks(rows);
         return new TestDataSection(sheet.getSheetName(), blocks);
     }
 
     /** シートの全行を読み込み、コメント行スキップ・行内コメント切り捨て・空行スキップを適用する。 */
-    private List<List<String>> readRows(Sheet sheet) {
+    private List<List<String>> readRows(Sheet sheet, Path sourcePath) {
         List<List<String>> result = new ArrayList<>();
         int lastRow = sheet.getLastRowNum();
         for (int r = 0; r <= lastRow; r++) {
@@ -58,12 +68,16 @@ public class XlsFormatReader implements TestDataFormatReader {
             if (row == null) {
                 continue;
             }
-            List<String> cells = readCells(row);
+            List<String> cells = readCells(row, sourcePath, r + 1);
             if (cells.isEmpty()) {
                 continue;  // HC-07: 空行スキップ
             }
             if (cells.get(0).startsWith("//")) {
-                continue;  // HC-05: コメント行スキップ
+                // HC-05: コメント行スキップ（警告出力・カウント）
+                lastCommentLineCount++;
+                System.err.println("WARN: " + sourcePath + " sheet=" + sheet.getSheetName()
+                        + " row=" + (r + 1) + ": comment line skipped (HC-05)");
+                continue;
             }
             result.add(cells);
         }
@@ -71,12 +85,22 @@ public class XlsFormatReader implements TestDataFormatReader {
     }
 
     /** 1行のセルを読み込む。行内コメント（HC-06）を切り捨て、末尾の空セルは保持する。 */
-    private List<String> readCells(Row row) {
+    private List<String> readCells(Row row, Path sourcePath, int rowNum) {
         int lastCell = row.getLastCellNum();
         List<String> cells = new ArrayList<>();
         for (int c = 0; c < lastCell; c++) {
             Cell cell = row.getCell(c);
-            String value = cell == null ? "" : cell.toString();
+            String value;
+            if (cell == null) {
+                value = "";
+            } else {
+                // 数値書式・日付書式セルは警告出力（NG-4）
+                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+                    System.err.println("WARN: " + sourcePath + " row=" + rowNum + " col=" + (c + 1)
+                            + ": numeric/date cell detected. Cell.toString() result used.");
+                }
+                value = cell.toString();
+            }
             if (c > 0 && value.startsWith("//")) {
                 // HC-06: 先頭以外のセルが "//" で始まる場合、そのセル以降を切り捨て
                 break;
