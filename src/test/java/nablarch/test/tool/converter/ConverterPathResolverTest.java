@@ -56,4 +56,19 @@ public class ConverterPathResolverTest {
         );
         assertThat(result, is(Paths.get("out/FooTest")));
     }
+
+    /**
+     * [Given] XLS ファイルが .xls 拡張子を持たないファイル名
+     * [When]  xlsToYamlDir() を呼び出す
+     * [Then]  ファイル名そのままが YAML ディレクトリ名になる
+     */
+    @Test
+    public void xlsToYamlDirNoXlsExtension() {
+        java.nio.file.Path result = ConverterPathResolver.xlsToYamlDir(
+                Paths.get("src"),
+                Paths.get("src/foo/FooTestNoExt"),
+                Paths.get("out")
+        );
+        assertThat(result, is(Paths.get("out/foo/FooTestNoExt")));
+    }
 }

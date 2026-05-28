@@ -14,10 +14,15 @@ import nablarch.test.tool.converter.model.TestDataSection;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.MockedStatic;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -29,6 +34,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * {@link YamlFormatWriter} のテスト。
@@ -577,6 +584,124 @@ public class YamlFormatWriterTest {
         assertThat(yaml, containsString("{name: \"FIELD1\"}"));
         // FieldDef の type が null の場合、field 行に ", type:" が含まれない
         assertThat(yaml, not(containsString(", type:")));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_HEADER_MESSAGES ブロック
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "expected_request_header_messages:" が含まれる
+     */
+    @Test
+    public void writeExpectedRequestHeaderMessages() throws Exception {
+        // Given
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "", "req/hdr",
+                new LinkedHashMap<>(),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("expected_request_header_messages:"));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_BODY_MESSAGES ブロック
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "expected_request_body_messages:" が含まれる
+     */
+    @Test
+    public void writeExpectedRequestBodyMessages() throws Exception {
+        // Given
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.EXPECTED_REQUEST_BODY_MESSAGES, "", "req/body",
+                new LinkedHashMap<>(),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("expected_request_body_messages:"));
+    }
+
+    /**
+     * [Given] RESPONSE_HEADER_MESSAGES ブロック
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "response_header_messages:" が含まれる
+     */
+    @Test
+    public void writeResponseHeaderMessages() throws Exception {
+        // Given
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.RESPONSE_HEADER_MESSAGES, "", "res/hdr",
+                new LinkedHashMap<>(),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("response_header_messages:"));
+    }
+
+    /**
+     * [Given] RESPONSE_BODY_MESSAGES ブロック
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "response_body_messages:" が含まれる
+     */
+    @Test
+    public void writeResponseBodyMessages() throws Exception {
+        // Given
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.RESPONSE_BODY_MESSAGES, "", "res/body",
+                new LinkedHashMap<>(),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("response_body_messages:"));
+    }
+
+    /**
+     * [Given] Files.newBufferedWriter が IOException をスローする状況
+     * [When]  write() を呼び出す
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void iOExceptionOnWriterThrowsConverterException() throws Exception {
+        // Given
+        TestDataBlock block = new TableDataBlock(
+                DataType.SETUP_TABLE_DATA, "", "T1",
+                Arrays.asList("C1"), Arrays.asList(Arrays.asList("v1"))
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            // createDirectories は実際に実行させる
+            filesMock.when(() -> Files.createDirectories(any(Path.class)))
+                    .thenCallRealMethod();
+            // exists は実際に実行させる
+            filesMock.when(() -> Files.exists(any(Path.class)))
+                    .thenCallRealMethod();
+            // newBufferedWriter は IOException をスロー
+            filesMock.when(() -> Files.newBufferedWriter(any(Path.class), any(java.nio.charset.Charset.class)))
+                    .thenThrow(new IOException("Simulated write failure"));
+
+            sut.write(container, outputDir.toPath(), false);
+        }
     }
 
     // -------------------------------------------------------------------------

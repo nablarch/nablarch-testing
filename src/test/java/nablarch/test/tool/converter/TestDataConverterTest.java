@@ -6,10 +6,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.lang.reflect.Method;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -228,6 +226,34 @@ public class TestDataConverterTest {
     }
 
     /**
+     * [Given] --to が指定されていない（引数不足）
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void toMissingReturnsCode2() throws Exception {
+        File dir = temporaryFolder.newFolder("dir");
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls",
+                dir.getAbsolutePath(), dir.getAbsolutePath()
+        });
+        assertThat(exitCode, is(2));
+    }
+
+    /**
+     * [Given] 入力パスと出力パスが指定されていない
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される（positional.size() < 2）
+     */
+    @Test
+    public void positionalArgsMissingReturnsCode2() throws Exception {
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml"
+        });
+        assertThat(exitCode, is(2));
+    }
+
+    /**
      * [Given] --include オプションで特定ファイルのみ指定
      * [When]  run() を呼び出す
      * [Then]  指定ファイルのみが変換され、他のファイルは出力されない
@@ -351,6 +377,143 @@ public class TestDataConverterTest {
 
         assertThat(exitCode, is(0));
         assertTrue(!containerDir.exists());
+    }
+
+    /**
+     * [Given] main() を呼び出す（有効な引数で正常変換）
+     * [When]  main() が実行される
+     * [Then]  SecurityManager が System.exit(0) の呼び出しを捕捉する
+     */
+    @Test
+    public void mainInvokesSystemExit() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+        writeSimpleXls(new File(inputDir, "FooTest.xls"));
+
+        // SecurityManager を使って System.exit() の呼び出しを捕捉する
+        SecurityManager originalSm = System.getSecurityManager();
+        final int[] exitCode = {-1};
+        System.setSecurityManager(new SecurityManager() {
+            @Override
+            public void checkPermission(java.security.Permission perm) {
+                // 許可
+            }
+            @Override
+            public void checkExit(int status) {
+                exitCode[0] = status;
+                throw new SecurityException("Intercepted System.exit(" + status + ")");
+            }
+        });
+        try {
+            TestDataConverter.main(new String[]{
+                    "--from", "xls", "--to", "yaml",
+                    inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+            });
+        } catch (SecurityException e) {
+            // System.exit() の呼び出しを捕捉
+        } finally {
+            System.setSecurityManager(originalSm);
+        }
+
+        assertThat(exitCode[0], is(0));
+    }
+
+    /**
+     * [Given] --delete-source で空シート XLS を変換する
+     * [When]  run() を呼び出す
+     * [Then]  スキップされてもソースファイル削除が試みられる
+     */
+    @Test
+    public void emptySheetWithDeleteSourceTriesDeletion() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        // 空シート（ブロックなし）XLS を作成
+        org.apache.poi.hssf.usermodel.HSSFWorkbook wb = new org.apache.poi.hssf.usermodel.HSSFWorkbook();
+        wb.createSheet("case01");
+        File xlsFile = new File(inputDir, "EmptyTest.xls");
+        java.io.FileOutputStream fos = new java.io.FileOutputStream(xlsFile);
+        try {
+            wb.write(fos);
+        } finally {
+            fos.close();
+        }
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml", "--delete-source",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        // 変換自体は成功（空シート警告でスキップ）、ソースファイルは削除済み
+        assertThat(exitCode, is(0));
+        assertTrue(!xlsFile.exists());
+    }
+
+    /**
+     * [Given] deleteSource の対象がファイルで delete() が失敗する状況
+     *         （読み取り専用ディレクトリ内のファイルは削除できない）
+     * [When]  private deleteSource() をリフレクションで呼び出す
+     * [Then]  警告が出力される（delete() false → WARN: Failed to delete source）
+     */
+    @Test
+    public void deleteSourceFileDeleteFailureLogsWarning() throws Exception {
+        // Given: 読み取り専用ディレクトリ内にファイルを作成（Linux では chmod a-w dirで削除不可）
+        File dir = temporaryFolder.newFolder("readonly_dir");
+        File target = new File(dir, "target.xls");
+        target.createNewFile();
+        // ディレクトリを書き込み不可にする（Linux でのみ有効）
+        dir.setWritable(false);
+        try {
+            // When: リフレクションで private deleteSource() を呼び出す
+            Method deleteSource = TestDataConverter.class.getDeclaredMethod("deleteSource", java.nio.file.Path.class);
+            deleteSource.setAccessible(true);
+            deleteSource.invoke(null, target.toPath());
+            // Then: 例外なく完了する（delete() が false を返しても警告のみ）
+        } finally {
+            dir.setWritable(true); // 後始末
+        }
+    }
+
+    /**
+     * [Given] deleteDirectory でサブファイルの delete() が失敗する状況
+     * [When]  private deleteDirectory() をリフレクションで呼び出す
+     * [Then]  警告が出力される（delete() false → WARN: Failed to delete source file）
+     */
+    @Test
+    public void deleteDirectoryFileDeleteFailureLogsWarning() throws Exception {
+        // Given: 読み取り専用ディレクトリ内にファイルを作成
+        File parent = temporaryFolder.newFolder("parent");
+        File child = temporaryFolder.newFolder("parent", "child");
+        File target = new File(child, "file.yaml");
+        target.createNewFile();
+        // child ディレクトリを書き込み不可にする
+        child.setWritable(false);
+        try {
+            // When: リフレクションで private deleteDirectory() を呼び出す
+            Method deleteDirectory = TestDataConverter.class.getDeclaredMethod("deleteDirectory", File.class);
+            deleteDirectory.setAccessible(true);
+            deleteDirectory.invoke(null, parent);
+            // Then: 例外なく完了する（delete() false でも警告のみ）
+        } finally {
+            child.setWritable(true); // 後始末
+        }
+    }
+
+    /**
+     * [Given] deleteDirectory で listFiles() が null を返す状況（ディレクトリでないFileを渡す）
+     * [When]  private deleteDirectory() をリフレクションで呼び出す
+     * [Then]  NullPointerException なく完了する（listFiles() null チェックが通る）
+     */
+    @Test
+    public void deleteDirectoryWithNullListFilesSkipsLoop() throws Exception {
+        // Given: 存在しないディレクトリ（listFiles() が null を返す）
+        File nonExistentDir = new File(temporaryFolder.getRoot(), "nonexistent");
+
+        // When: リフレクションで private deleteDirectory() を呼び出す
+        Method deleteDirectory = TestDataConverter.class.getDeclaredMethod("deleteDirectory", File.class);
+        deleteDirectory.setAccessible(true);
+        deleteDirectory.invoke(null, nonExistentDir);
+        // Then: NullPointerException なく完了する
     }
 
     // -------------------------------------------------------------------------

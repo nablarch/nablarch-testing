@@ -19,9 +19,12 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.MockedConstruction;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -31,6 +34,9 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockConstruction;
 
 /**
  * {@link XlsFormatWriter} のテスト（7.2節）。
@@ -359,6 +365,36 @@ public class XlsFormatWriterTest {
         // その前に Files.createDirectories(outputPath) を試みる。
         // outFile がファイルなので createDirectories は IOException を投げる。
         sut.write(container, outFile.toPath(), false);
+    }
+
+    /**
+     * [Given] FileOutputStream のコンストラクタが IOException をスローする状況
+     * [When]  write() を呼び出す
+     * [Then]  ConverterException がスローされる（wb.write() の IOException catch を通過）
+     */
+    @Test(expected = ConverterException.class)
+    public void iOExceptionOnFileOutputStreamThrowsConverterException() throws Exception {
+        // Given
+        TestDataBlock block = new TableDataBlock(
+                DataType.SETUP_TABLE_DATA, "", "T1",
+                Arrays.asList("C1"), Arrays.asList(Arrays.asList("v1"))
+        );
+        TestDataContainer container = container("case01", block);
+        File outputDir = temporaryFolder.newFolder("out");
+
+        // When: FileOutputStream のコンストラクタ時に IOException をスローさせる
+        // MockedConstruction に initializer を指定するとコンストラクタ後の初期化として実行されるが、
+        // コンストラクタ自体を失敗させるには withSettings().useConstructor() が不要なため
+        // 代わりに write(byte[], int, int) を呼ぶと IOException をスローする mock を使う
+        try (MockedConstruction<FileOutputStream> fosMock = mockConstruction(FileOutputStream.class,
+                (mock, context) -> {
+                    doThrow(new IOException("Simulated write failure"))
+                            .when(mock).write(any(byte[].class), any(int.class), any(int.class));
+                    doThrow(new IOException("Simulated write failure"))
+                            .when(mock).write(any(byte[].class));
+                })) {
+            sut.write(container, outputDir.toPath(), false);
+        }
     }
 
     // -------------------------------------------------------------------------

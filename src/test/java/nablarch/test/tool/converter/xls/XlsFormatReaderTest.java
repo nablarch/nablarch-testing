@@ -870,6 +870,303 @@ public class XlsFormatReaderTest {
         assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("only_val", "")));
     }
 
+    /**
+     * [Given] Row オブジェクトが null（getRow() が null を返す行番号）の XLS ファイル
+     * [When]  read() を呼び出す
+     * [Then]  null 行はスキップされ、他の行は正常に読み込まれる
+     */
+    @Test
+    public void nullRowInSheetIsSkipped() throws Exception {
+        // Given: row 0 を作成せず row 1 のみ作成する（row 0 が null になる）
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        // row 0 を作成しない → sheet.getRow(0) は null
+        row(sheet, 1, "SETUP_TABLE=T1", "");
+        row(sheet, 2, "COL1", "");
+        row(sheet, 3, "v1", "");
+        FileOutputStream out = new FileOutputStream(xls);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: null 行がスキップされ 1 ブロックが解析される
+        assertThat(result.getSections().get(0).getBlocks().size(), is(1));
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().get(0), is(Arrays.asList("v1")));
+    }
+
+    /**
+     * [Given] DataType.DEFAULT プレフィックスに合致しない DataType が識別行に来た場合（未サポート DataType）
+     * [When]  read() を呼び出す
+     * [Then]  その行はスキップされ後続ブロックが正常に解析される
+     *
+     * <p>DataType.DEFAULT は detectDataType で除外されるが、
+     * isColumnRowType/isFileType/isMessageType のいずれにも該当しない DataType が
+     * 将来追加された場合でも else ブランチで i++ スキップされることを確認する。
+     * 現状では DEFAULT がその候補だが DataType.DEFAULT は getName() 呼び出し時に
+     * startsWith 判定を通過しないため、代わりにヘッダ行（非識別行）連続ケースで
+     * parseBlocks の全 null ブランチを確認する。</p>
+     */
+    @Test
+    public void multipleUnknownRowsBetweenBlocksAreSkipped() throws Exception {
+        // Given: 不明行が複数続いた後に有効なブロックがある
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"UNKNOWN_TYPE=something", ""},
+                {"anotherUnknown", ""},
+                {"SETUP_TABLE=T1", ""},
+                {"COL1", ""},
+                {"v1", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: SETUP_TABLE ブロックのみが解析される
+        List<TestDataBlock> blocks = result.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(1));
+        assertThat(blocks.get(0).getDataType(), is(DataType.SETUP_TABLE_DATA));
+    }
+
+    /**
+     * [Given] ファイルデータブロックで先頭空行がディレクティブ後に来る（フィールド名行への遷移）
+     * [When]  read() を呼び出す
+     * [Then]  ディレクティブとレコードレイアウトが正しく解析される
+     */
+    @Test
+    public void fileBlockDirectivesFollowedByEmptyFirstCellRow() throws Exception {
+        // Given: ディレクティブ行（非空先頭）の直後に先頭空のフィールド名行がある
+        // これにより parseFileBlock ディレクティブループの
+        // "nextFirstEmpty → break" ブランチを通過させる
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_VARIABLE=data.csv", "", "", ""},
+                {"field-separator", ",", "", ""},
+                {"DATA", "FIELD1", "FIELD2", ""},
+                {"", "X", "X", ""},
+                {"", "aaa", "bbb", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("field-separator"), is(","));
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getRecordType(), is("DATA"));
+    }
+
+    /**
+     * [Given] ファイルデータブロックで新しいブロックがレコードレイアウト解析中に来る
+     * [When]  read() を呼び出す
+     * [Then]  ファイルブロック内レコードループが新 DataType で break される
+     */
+    @Test
+    public void fileBlockRecordLoopBreaksOnNextDataType() throws Exception {
+        // Given: SETUP_FIXED の後に EXPECTED_TABLE が来る
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_FIXED=data.dat", "", ""},
+                {"REC1", "F1", ""},
+                {"", "X", ""},
+                {"", "5", ""},
+                {"", "v1", ""},
+                {"EXPECTED_TABLE=T2", ""},
+                {"COL2", ""},
+                {"v2", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        List<TestDataBlock> blocks = result.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(2));
+        assertThat(blocks.get(0), instanceOf(FileDataBlock.class));
+        assertThat(blocks.get(1), instanceOf(TableDataBlock.class));
+    }
+
+    /**
+     * [Given] メッセージングブロックで FW ヘッダ行の後に新しい DataType ブロックが来る
+     * [When]  read() を呼び出す
+     * [Then]  メッセージブロックが空レコードで終了し次のブロックが解析される
+     */
+    @Test
+    public void messageBlockFwHeaderBreaksOnNextDataType() throws Exception {
+        // Given: MESSAGE の FW ヘッダ行解析中に EXPECTED_TABLE が来る
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/id/msg", ""},
+                {"requestId", "REQ001"},
+                {"EXPECTED_TABLE=T1", ""},
+                {"COL1", ""},
+                {"v1", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: MESSAGEブロックと EXPECTED_TABLE ブロックの2つが解析される
+        List<TestDataBlock> blocks = result.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(2));
+        assertThat(blocks.get(0), instanceOf(MessageDataBlock.class));
+        assertThat(blocks.get(1), instanceOf(TableDataBlock.class));
+    }
+
+    /**
+     * [Given] メッセージングブロックで先頭非空行がレコードレイアウト解析中に来る
+     * [When]  read() を呼び出す
+     * [Then]  レコードレイアウトループが break される
+     */
+    @Test
+    public void messageBlockRecordLoopBreaksOnNonEmptyFirstCell() throws Exception {
+        // Given: MESSAGE のレコードレイアウト解析中に先頭非空行（識別子でない）が来る
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/id/msg", ""},
+                {"requestId", "REQ001"},
+                {"", "FIELD1", "FIELD2"},
+                {"", "X", "X"},
+                {"", "req1", "data1"},
+                {"FW_HEADER_EXTRA", "VALUE"}  // 先頭非空の非識別行
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: MESSAGEブロックが解析される（後続の非識別先頭非空行でループ break）
+        List<TestDataBlock> blocks = result.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(1));
+        assertThat(blocks.get(0), instanceOf(MessageDataBlock.class));
+        MessageDataBlock msg = (MessageDataBlock) blocks.get(0);
+        assertThat(msg.getRecords().size(), is(1));
+    }
+
+    /**
+     * [Given] メッセージングデータブロックのデータ行がフィールド数より短い（HC-04 for message blocks）
+     * [When]  read() を呼び出す
+     * [Then]  不足分は空文字で補完される
+     */
+    @Test
+    public void messageBlockDataRowShorterThanFieldCount() throws Exception {
+        // Given: 2フィールドに対してデータ行は1値のみ
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/id/msg", ""},
+                {"requestId", "REQ001"},
+                {"", "FIELD1", "FIELD2"},
+                {"", "X", "X"},
+                {"", "only_val", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: データ行が ["only_val", ""] に補完される
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("only_val", "")));
+    }
+
+    /**
+     * [Given] メッセージングデータブロックで複数データ行の後に新しいブロックが来る
+     * [When]  read() を呼び出す
+     * [Then]  データ行の先頭非空チェックによりループが break される
+     */
+    @Test
+    public void messageBlockDataRowBreaksOnNextRecord() throws Exception {
+        // Given: MESSAGE のデータ行解析中に先頭非空行（FW ヘッダまたは次のレコード種別）が来る
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/id/msg", ""},
+                {"requestId", "REQ001"},
+                {"", "FIELD1"},
+                {"", "X"},
+                {"", "val1"},
+                {"", "val2"},  // 2行目データ
+                {"EXPECTED_TABLE=T1", ""},
+                {"COL1", ""},
+                {"v1", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: MESSAGE と EXPECTED_TABLE の2ブロック
+        List<TestDataBlock> blocks = result.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(2));
+        assertThat(blocks.get(0), instanceOf(MessageDataBlock.class));
+        assertThat(blocks.get(1), instanceOf(TableDataBlock.class));
+    }
+
+    /**
+     * [Given] trimTrailingEmpty で末尾に空文字が複数ある行
+     * [When]  read() を呼び出す
+     * [Then]  末尾の空文字が除去される
+     */
+    @Test
+    public void trimTrailingEmptyRemovesMultipleTrailingEmpty() throws Exception {
+        // Given: ヘッダ行の末尾に空カラムが 3 つある
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_TABLE=T1", "", "", "", ""},
+                {"COL1", "", "", "", ""},
+                {"v1", "", "", "", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: 空のヘッダ列が削除され COL1 のみ残る
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getColumnNames(), is(Arrays.asList("COL1")));
+        assertThat(block.getRows().get(0), is(Arrays.asList("v1")));
+    }
+
+    /**
+     * [Given] ファイルデータブロックのフィールド名行末尾に空セルがある
+     * [When]  read() を呼び出す
+     * [Then]  trimTrailingEmpty によって末尾の空フィールド名が除去される
+     */
+    @Test
+    public void fileBlockFieldNameTrailingEmptyRemoved() throws Exception {
+        // Given: フィールド名行（subList を通じて trimTrailingEmpty が呼ばれる）で末尾に空がある
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        row(sheet, 0, "SETUP_FIXED=data.dat", "", "", "");
+        // フィールド名行: col0=レコード種別, col1=FIELD1, col2=FIELD2, col3="" (末尾空)
+        row(sheet, 1, "DATA", "FIELD1", "FIELD2", "");
+        // データ型行
+        row(sheet, 2, "", "X", "X", "");
+        // フィールド長行
+        row(sheet, 3, "", "5", "5", "");
+        // データ行
+        row(sheet, 4, "", "val1", "val2", "");
+        FileOutputStream out = new FileOutputStream(xls);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: 末尾の空フィールドが trimTrailingEmpty によって除去される
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getFields().size(), is(2));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+        assertThat(block.getRecords().get(0).getFields().get(1).getName(), is("FIELD2"));
+    }
+
     // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------

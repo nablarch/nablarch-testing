@@ -543,6 +543,109 @@ public class YamlFormatReaderTest {
         sut.read(dir.toPath());
     }
 
+    /**
+     * [Given] expected_files セクションを含む YAML（固定長）
+     * [When]  read() を呼び出す
+     * [Then]  DataType が EXPECTED_FIXED の FileDataBlock が取得できる
+     */
+    @Test
+    public void readExpectedFilesFixed() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "expected_files:",
+                "  - path: \"output/data.dat\"",
+                "    type: fixed",
+                "    records:",
+                "      - record_type: DATA",
+                "        fields:",
+                "          - {name: FIELD1, type: X, length: \"10\"}",
+                "        rows:",
+                "          - [\"val1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.EXPECTED_FIXED));
+        assertThat(block.getFileType(), is(FileDataBlock.FileType.FIXED));
+        assertThat(block.getIdentifier(), is("output/data.dat"));
+    }
+
+    /**
+     * [Given] expected_files セクションを含む YAML（可変長）
+     * [When]  read() を呼び出す
+     * [Then]  DataType が EXPECTED_VARIABLE の FileDataBlock が取得できる
+     */
+    @Test
+    public void readExpectedFilesVariable() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "expected_files:",
+                "  - path: \"output/data.csv\"",
+                "    type: variable",
+                "    records:",
+                "      - record_type: DATA",
+                "        fields:",
+                "          - {name: FIELD1, type: X}",
+                "        rows:",
+                "          - [\"val1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.EXPECTED_VARIABLE));
+        assertThat(block.getFileType(), is(FileDataBlock.FileType.VARIABLE));
+    }
+
+    /**
+     * [Given] YAML に rows: null（リストでない値）が設定されたブロック
+     * [When]  read() を呼び出す
+     * [Then]  castList が空リストにフォールバックし、例外なく解析できる
+     */
+    @Test
+    public void castListFallbackOnNonListValue() throws Exception {
+        // Given: rows に文字列（リストでない）を設定するとcastListが空リストを返す
+        // setup_tables ブロックで rows をスカラーにする
+        File dir = makeDir("FooTest", "case01",
+                "setup_tables:",
+                "  - table: TBL",
+                "    rows: \"not_a_list\""
+        );
+
+        // When: castList が非List値に対して emptyList を返し、例外なく処理される
+        TestDataContainer result = sut.read(dir.toPath());
+
+        // Then: ブロックが解析され rows が空（castList フォールバック）
+        assertThat(result.getSections().get(0).getBlocks().size(), is(1));
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().size(), is(0));
+    }
+
+    /**
+     * [Given] YAML に records に非マッピング値が含まれるブロック
+     * [When]  read() を呼び出す
+     * [Then]  castMap が空マップにフォールバックし、例外なく解析できる
+     */
+    @Test
+    public void castMapFallbackOnNonMapValue() throws Exception {
+        // Given: records リストの要素に文字列（マッピングでない）を設定
+        File dir = makeDir("FooTest", "case01",
+                "setup_files:",
+                "  - path: \"data.dat\"",
+                "    type: variable",
+                "    records:",
+                "      - \"not_a_map\""
+        );
+
+        // When: castMap が非Map値に対して emptyMap を返し、例外なく処理される
+        TestDataContainer result = sut.read(dir.toPath());
+
+        // Then: ブロックが解析され、不正エントリが空マップとして扱われる
+        assertThat(result.getSections().get(0).getBlocks().size(), is(1));
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        // 非マップエントリは空マップとして処理され、recordType="" の RecordLayout になる
+        assertThat(block.getRecords().size(), is(1));
+    }
+
     // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
