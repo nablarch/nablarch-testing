@@ -1,4 +1,4 @@
-package nablarch.test.tool.converter;
+package nablarch.test.tool.converter.model;
 
 import java.util.List;
 
