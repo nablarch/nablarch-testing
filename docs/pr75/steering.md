@@ -358,14 +358,59 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **C-1-14**: Mockitoを使った残カバレッジ未達テストを追加する
-3. **C-1-15**: ユーザーにレビューを依頼し OK を取得する
+2. **C-1-14** に着手する（下記「C-1-14 作業詳細」参照）
+3. C-1-14 完了後、**C-1-15**（ユーザーレビュー）を依頼する
 4. C-1-15 OK 後、V-1 に着手する
 
 ### C-1 実装状況（2026-05-28）
 
 171テスト全グリーン。`src/main/java/nablarch/test/tool/converter/` に 20 クラス（model/xls/yamlサブパッケージ分割済み）実装済み。  
 レビュー記録: `docs/pr75/checks/C-1.md`（C-1-9〜C-1-12 の全指摘・対応記録）
+
+### C-1-14 作業詳細
+
+**目的**: PRで変更した全クラスのカバレッジを、Mockito 5.3.0 を使った意味のあるテストで可能な限り 100% にする。
+
+**Mockito 5.3.0 は `pom.xml` の `test` スコープに既存。`mockito-inline` は不要（Mockito 5 に統合済み）。**
+
+#### 残カバレッジ未達一覧（2026-05-28 時点）
+
+| クラス | 未達箇所 | 再現方法 | 対応方針 |
+|---|---|---|---|
+| `TestDataConverter` | `System.exit(run(args))` | `mockStatic(System.class)` | テスト追加 |
+| `TestDataConverter` | `deleteSource()` の `delete()` 失敗警告 | `mockConstruction(File.class)` | テスト追加 |
+| `TestDataConverter` | `deleteDirectory()` の `delete()` 失敗 / `listFiles()` null | `mockConstruction(File.class)` | テスト追加 |
+| `XlsFormatWriter` | `write()` の `IOException` catch（書き込み失敗） | `mockConstruction(FileOutputStream.class)` | テスト追加 |
+| `XlsFormatWriter` | `write()` の `return rowNum`（未知ブロック型） | 到達不可（防御ガード） | C-1.md に記録 |
+| `XlsFormatReader` | `parseFileBlock` 内の複数 `break`/`continue`/`padded.add` | 追加テストケースで対応可能 | テスト追加 |
+| `YamlFormatWriter` | `write()` の `IOException` catch（書き込み失敗） | `mockStatic(Files.class)` | テスト追加 |
+| `YamlFormatWriter` | `sectionKey()` の `throw IllegalArgumentException` | 到達不可（防御ガード） | C-1.md に記録 |
+| `YamlFormatReader` | `read()` の `IOException` catch（YAMLファイル読み込み失敗） | `mockConstruction(FileInputStream.class)` | テスト追加 |
+| `YamlFormatReader` | `sectionKeyToDataType()` の `expected_files` / `default` | 到達不可（防御ガード） | C-1.md に記録 |
+| `ConverterFileFilter` | `findXlsFiles`/`findYamlDirs` の `IOException` catch | `mockStatic(Files.class)` の `walkFileTree` | テスト追加 |
+| `ConverterFileFilter` | `isYamlDir()` の `return false` | 追加テストケースで対応可能 | テスト追加 |
+| `ConverterPathResolver` | `.xls` 拡張子なしのファイル名分岐 | 通常テストで対応可能 | テスト追加 |
+
+#### 到達不可な防御ガード（テスト不要・C-1.md に理由記録）
+
+- `XlsFormatWriter.writeBlock()` の `return rowNum`：`TestDataBlock` サブクラスは固定のため未知型は渡らない
+- `YamlFormatWriter.sectionKey()` の `throw`：同上
+- `YamlFormatReader.sectionKeyToDataType()` の `expected_files`：`isFileType()` で先に分岐されるため到達しない
+- `YamlFormatReader.sectionKeyToDataType()` の `default`：`SECTION_KEY_ORDER` 定数からのみ呼ばれるため到達しない
+
+#### 作業手順
+
+1. `XlsFormatReaderTest` に未達の `parseFileBlock` 境界ケーステストを追加
+2. `ConverterPathResolver` の `.xls` なし分岐テストを追加
+3. `ConverterFileFilter` の `isYamlDir() false` テストを追加
+4. Mockito `mockStatic`/`mockConstruction` を使った IOException / delete失敗 / System.exit テストを各テストクラスに追加
+5. 到達不可な防御ガードの理由を `docs/pr75/checks/C-1.md` に追記
+6. カバレッジ再取得して確認：
+   ```bash
+   mvn clean jacoco:instrument test jacoco:restore-instrumented-classes \
+     -Dtest="ConverterFileFilterTest,ConverterPathResolverTest,TestDataConverterTest,XlsFormatReaderTest,XlsFormatWriterTest,YamlFormatReaderTest,YamlFormatWriterTest" -q
+   mvn jacoco:report -Djacoco.dataFile=/home/tie303177/work/nablarch-testing/jacoco.exec -q
+   ```
 
 #### C-1-9〜C-1-12 で実施した主な修正
 - **NG-2**: `--from`/`--to` 値バリデーション追加
