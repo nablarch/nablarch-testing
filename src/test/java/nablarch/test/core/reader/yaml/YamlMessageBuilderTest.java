@@ -17,7 +17,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -489,6 +493,148 @@ public class YamlMessageBuilderTest {
         } catch (IllegalArgumentException e) {
             // OK: 不正な DataType に対して例外がスローされること
         }
+    }
+
+    // ========================================================================
+    // buildSendSyncMessageList: id なしエントリで requestId が設定されないこと
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: group_id があるが id がないエントリの場合、
+     * MessagePool の requestId が null のまま返ること。
+     *
+     * <p>
+     * Given: response_body_messages に group_id=grp2 のエントリが id フィールドなしで定義されている<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "grp2", path) を呼ぶ<br>
+     * Then:  RequestTestingMessagePool が 1 件返り、getRequestId() が null であること
+     * </p>
+     */
+    @Test
+    public void testBuildSendSyncMessageList_noIdEntryReturnsPoolWithNullRequestId() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+                yaml, "response_body_messages", "grp2", DIR);
+
+        // Then
+        assertNotNull(result);
+        assertThat("id なしエントリは 1 件返ること", result.size(), is(1));
+        assertNull("id なしエントリの requestId は null であること", result.get(0).getRequestId());
+    }
+
+    // ========================================================================
+    // extractFwHeader: FW_HEADER の行がフィールド数より少ない場合はスキップされること
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildMessagePool: FW_HEADER の row 値がフィールド数より少ない場合、
+     * 範囲外のフィールドはスキップされ、範囲内のフィールドのみ fwHeader に設定されること。
+     *
+     * <p>
+     * Given: messages_short_fw_header_row に id=shortRow001 の FW_HEADER が
+     *        fields=[requestId, userId] だが rows に値が 1 つ（requestId のみ）<br>
+     * When:  buildMessagePool(yaml, "messages_short_fw_header_row", "shortRow001", path) を呼ぶ<br>
+     * Then:  fwHeader に requestId のみ設定され、userId は含まれないこと
+     * </p>
+     */
+    @Test
+    public void testBuildMessagePool_shortFwHeaderRowOnlyCoversAvailableFields() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages_short_fw_header_row", "shortRow001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("範囲内の requestId は設定されること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("範囲外の userId は設定されないこと", fwHeader.containsKey("userId"), is(false));
+    }
+
+    // ========================================================================
+    // extractFwHeader: 一致する ID なし → 空 Map が返ること（防衛的ガード）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] extractFwHeader: セクション内にマッチする ID が存在しない場合、
+     * 空 Map が返ること（防衛的ガード — 通常フローでは到達不能だが実装として定義されている）。
+     *
+     * <p>
+     * Given: 1 エントリ（id="existing"）のみを持つ yaml Map を直接組み立て、
+     *        存在しない id="nonExistent" で extractFwHeader をリフレクション経由で呼ぶ<br>
+     * When:  extractFwHeader(yaml, "messages", "nonExistent") を呼ぶ<br>
+     * Then:  空 Map が返ること
+     * </p>
+     */
+    @Test
+    public void testExtractFwHeader_idNotFoundReturnsEmptyMap() throws Exception {
+        // Given: yaml を直接構築（エントリの id と検索 id が食い違う）
+        Map<String, Object> fieldEntry = new LinkedHashMap<String, Object>();
+        fieldEntry.put("name", "requestId");
+        fieldEntry.put("type", "X");
+        fieldEntry.put("length", 10);
+
+        Map<String, Object> record = new LinkedHashMap<String, Object>();
+        record.put("record_type", "FW_HEADER");
+        record.put("fields", Arrays.<Object>asList(fieldEntry));
+        record.put("rows", Arrays.<Object>asList(Arrays.<Object>asList("0000000001")));
+
+        Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        entry.put("id", "existing");
+        entry.put("records", Arrays.<Object>asList(record));
+
+        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
+        yaml.put("messages", Arrays.<Object>asList(entry));
+
+        // When: private メソッドをリフレクションで呼び出す
+        Method method = YamlMessageBuilder.class.getDeclaredMethod(
+                "extractFwHeader", Map.class, String.class, String.class);
+        method.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> result = (Map<String, String>) method.invoke(sut, yaml, "messages", "nonExistent");
+
+        // Then
+        assertThat("マッチする ID がない場合は空 Map が返ること", result.isEmpty(), is(true));
+    }
+
+    // ========================================================================
+    // fieldIndexOf: 一致フィールドなし → -1 が返ること（防衛的ガード）
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] fieldIndexOf: フィールドリスト内にマッチする name が存在しない場合、
+     * -1 が返ること（防衛的ガード — 通常フローでは到達不能だが実装として定義されている）。
+     *
+     * <p>
+     * Given: name="requestId" のフィールドエントリのみを持つリストを直接組み立て、
+     *        name="userId" で fieldIndexOf をリフレクション経由で呼ぶ<br>
+     * When:  fieldIndexOf(fields, "userId") を呼ぶ<br>
+     * Then:  -1 が返ること
+     * </p>
+     */
+    @Test
+    public void testFieldIndexOf_fieldNotFoundReturnsMinusOne() throws Exception {
+        // Given: "requestId" のみを持つフィールドリスト
+        Map<String, Object> fieldEntry = new LinkedHashMap<String, Object>();
+        fieldEntry.put("name", "requestId");
+        fieldEntry.put("type", "X");
+        fieldEntry.put("length", 10);
+        List<Object> fields = Arrays.<Object>asList(fieldEntry);
+
+        // When: private メソッドをリフレクションで呼び出す（"userId" は存在しない）
+        Method method = YamlMessageBuilder.class.getDeclaredMethod(
+                "fieldIndexOf", List.class, String.class);
+        method.setAccessible(true);
+        int result = (int) method.invoke(sut, fields, "userId");
+
+        // Then
+        assertThat("マッチするフィールドがない場合は -1 が返ること", result, is(-1));
     }
 
     // ========================================================================

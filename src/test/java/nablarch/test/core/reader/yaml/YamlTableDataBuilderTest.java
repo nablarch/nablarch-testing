@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -687,6 +688,56 @@ public class YamlTableDataBuilderTest {
                 result.get(0).get("UPDATE_COL"), is("2010-09-14 12:34:56.0"));
         assertThat("${setUpTime} はシステム時刻に変換されること",
                 result.get(0).get("SET_UP_TIME_COL"), is("2010-09-14 12:34:56.0"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: "[" で始まるが "]" で終わらないキーは除外されないこと。
+     *
+     * <p>
+     * 解説書 10.2: マーカーカラムは "[COL]" 形式（両端が角括弧）のみ除外される。
+     * "[OPEN" のように "[" で始まっても "]" で終わらないキーは通常カラムとして扱われること<br>
+     * Given: list_maps の partialBracketColTest に "[OPEN" キーと "KEY1" キーを含む行<br>
+     * When:  buildListMapRows(yaml, "partialBracketColTest", path) を呼ぶ<br>
+     * Then:  "[OPEN" キーが結果 Map に含まれること（マーカーと見なされないこと）
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_partialBracketKeyIsNotExcluded() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "partialBracketColTest", DIR);
+
+        // Then
+        assertThat(result.size(), is(1));
+        assertTrue("\"[OPEN\" はマーカーではないため結果 Map に含まれること",
+                result.get(0).containsKey("[OPEN"));
+        assertThat("KEY1 の値が正しいこと", result.get(0).get("KEY1"), is("real_val"));
+    }
+
+    /**
+     * [YamlTableDataBuilder] buildListMapRows: rows に Map でない要素（スカラー）が含まれる場合はスキップされること。
+     *
+     * <p>
+     * 解説書 10.x: list_maps の rows に Map でない要素が混在しても例外なくスキップされること<br>
+     * Given: list_maps の nonMapRowTest に 通常行・スカラー文字列・通常行 の 3 エントリ<br>
+     * When:  buildListMapRows(yaml, "nonMapRowTest", path) を呼ぶ<br>
+     * Then:  Map でない行はスキップされ、Map の行 2 件のみ返ること
+     * </p>
+     */
+    @Test
+    public void testBuildListMapRows_nonMapRowSkipped() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+
+        // When
+        List<Map<String, String>> result = sut.buildListMapRows(yaml, "nonMapRowTest", DIR);
+
+        // Then
+        assertThat("Map でない行はスキップされ 2 件のみ返ること", result.size(), is(2));
+        assertThat("1 件目が正しいこと", result.get(0).get("KEY1"), is("valid"));
+        assertThat("2 件目が正しいこと", result.get(1).get("KEY1"), is("also_valid"));
     }
 
     /**

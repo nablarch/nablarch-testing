@@ -74,6 +74,7 @@ setup_tables:
         NUMBER_COL: "21"
         NUMBER_COL2: "21.0"
 
+
 list_maps:
   - id: testListMap
     rows:
@@ -108,6 +109,17 @@ list_maps:
         expectedStatusCode: "400"
         setUpTable: "case2"
         expectedTable: "case2"
+
+  - id: nonMapRowTest
+    rows:
+      - KEY1: "valid"
+      - scalar_entry
+      - KEY1: "also_valid"
+
+  - id: partialBracketColTest
+    rows:
+      - "[OPEN": "ignored_val"
+        KEY1: "real_val"
 
 expected_tables:
   - group_id: markerColInTable

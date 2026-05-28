@@ -90,6 +90,16 @@ response_body_messages:
         rows:
           - ["0000", "SYNC_DATA1"]
 
+  - group_id: grp2
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: X
+            length: 10
+        rows:
+          - ["NO_ID_DATA"]
+
 messages_empty_fw_header_rows:
   - id: emptyRows001
     records:
@@ -146,6 +156,27 @@ messages_malformed_fw_header:
             length: 10
         rows:
           - requestId: "0000000001"
+
+messages_short_fw_header_row:
+  - id: shortRow001
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+        rows:
+          - ["0000000001"]
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: X
+            length: 10
+        rows:
+          - ["TESTDATA1"]
 
 messages_no_fw_header:
   - id: bodyOnly001
