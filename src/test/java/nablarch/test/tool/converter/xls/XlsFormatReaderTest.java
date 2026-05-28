@@ -699,6 +699,178 @@ public class XlsFormatReaderTest {
     }
 
     // -------------------------------------------------------------------------
+    // 追加テスト（カバレッジ拡充）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] データ行のうち col 1 のセルが生成されていない（null cell）
+     * [When]  read() を呼び出す
+     * [Then]  readCells が null セルを "" として扱い、HC-04 で補完される
+     */
+    @Test
+    public void nullCellInRowReadsAsEmptyString() throws Exception {
+        // Given: 手動で Row を作成し col 0 のみセルを作成する（col 1 は null）
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        // 識別行
+        row(sheet, 0, "SETUP_TABLE=T1", "", "");
+        // ヘッダ行
+        row(sheet, 1, "COL1", "COL2", "");
+        // データ行: col 0 のみ作成、col 1 は作成しない
+        Row dataRow = sheet.createRow(2);
+        dataRow.createCell(0).setCellValue("v1");
+        // col 1 のセルは生成しない → null cell
+        // lastCellNum は getLastCellNum() が返す値に依存するため、
+        // col 2 に空セルを置いて lastCellNum >= 2 にする
+        dataRow.createCell(2).setCellValue("");
+        FileOutputStream out = new FileOutputStream(xls);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: col 1 が "" として読まれ HC-04 で補完される
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().get(0), is(Arrays.asList("v1", "")));
+    }
+
+    /**
+     * [Given] データ行のセルが数値型（CELL_TYPE_NUMERIC）
+     * [When]  read() を呼び出す
+     * [Then]  cell.toString() の結果が文字列として読まれ、数値警告ログパスが通る
+     */
+    @Test
+    public void numericCellUsesToString() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        row(sheet, 0, "SETUP_TABLE=T1", "");
+        row(sheet, 1, "COL1", "");
+        // データ行に数値セルを設定
+        Row dataRow = sheet.createRow(2);
+        dataRow.createCell(0).setCellValue(1.0);
+        FileOutputStream out = new FileOutputStream(xls);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: cell.toString() の結果（例: "1.0"）が読まれる
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().size(), is(1));
+        // toString() の結果は空でない
+        assertThat(block.getRows().get(0).get(0).isEmpty(), is(false));
+    }
+
+    /**
+     * [Given] 識別行に "=" が含まれない不正フォーマット（例: "SETUP_TABLE_BAD_FORMAT"）
+     * [When]  read() を呼び出す
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void identifierRowMissingEqualsThrows() throws Exception {
+        // Given: "SETUP_TABLE" プレフィックスで始まるが "=" が無い
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_TABLE_BAD_FORMAT", ""}
+        });
+
+        // When
+        sut.read(xls.toPath());
+    }
+
+    /**
+     * [Given] 認識できない行（DataType プレフィックスに合致しない行）がブロック間に存在する
+     * [When]  read() を呼び出す
+     * [Then]  不明行はスキップされ、前後のブロックは正常に解析される
+     */
+    @Test
+    public void unknownRowBetweenBlocksIsSkipped() throws Exception {
+        // Given: SETUP_TABLE ブロック、不明行 "NOTE: ..." 、EXPECTED_TABLE ブロック
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_TABLE=T1", ""},
+                {"COL1", ""},
+                {"v1", ""},
+                {"NOTE: some text", ""},
+                {"EXPECTED_TABLE=T2", ""},
+                {"COL2", ""},
+                {"v2", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: 2つのブロックが解析され、"NOTE:" 行はスキップされる
+        List<TestDataBlock> blocks = result.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(2));
+        assertThat(blocks.get(0).getDataType(), is(DataType.SETUP_TABLE_DATA));
+        assertThat(blocks.get(1).getDataType(), is(DataType.EXPECTED_TABLE_DATA));
+    }
+
+    /**
+     * [Given] ファイルデータブロックでディレクティブ行なし（識別行直後にフィールド名行）
+     * [When]  read() を呼び出す
+     * [Then]  directives が空で 1 レコードが解析される
+     */
+    @Test
+    public void fileBlockWithNoDirectives() throws Exception {
+        // Given: SETUP_FIXED 直後にフィールド名行（ディレクティブなし）
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_FIXED=data.dat", "", "", ""},
+                {"DATA", "FIELD1", "", ""},
+                {"", "X", "", ""},
+                {"", "5", "", ""},
+                {"", "v1", "", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: directives は空、1レコードが解析される
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().isEmpty(), is(true));
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("v1")));
+    }
+
+    /**
+     * [Given] ファイルデータブロックのデータ行がフィールド数より短い（HC-04 for file blocks）
+     * [When]  read() を呼び出す
+     * [Then]  不足分は空文字で補完される
+     */
+    @Test
+    public void fileBlockDataRowShorterThanFieldCount() throws Exception {
+        // Given: 2フィールドに対してデータ行は1値のみ
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_FIXED=data.dat", "", "", ""},
+                {"DATA", "FIELD1", "FIELD2", ""},
+                {"", "X", "X", ""},
+                {"", "5", "5", ""},
+                {"", "only_val", "", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: データ行が ["only_val", ""] に補完される
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("only_val", "")));
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 

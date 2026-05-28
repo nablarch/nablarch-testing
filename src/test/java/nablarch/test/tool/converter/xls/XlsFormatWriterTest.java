@@ -336,6 +336,32 @@ public class XlsFormatWriterTest {
     }
 
     // -------------------------------------------------------------------------
+    // 追加テスト（カバレッジ拡充）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] 出力先パスがディレクトリではなくファイルとして既に存在する
+     * [When]  write() を呼び出す（Files.createDirectories がファイルパスで IOException を送出）
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void iOExceptionOnDirectoryCreationThrowsConverterException() throws Exception {
+        // Given: "out" という名前のファイルを作成しておく
+        File outFile = temporaryFolder.newFile("out");
+        TestDataBlock block = new TableDataBlock(
+                DataType.SETUP_TABLE_DATA, "", "T1",
+                Arrays.asList("C1"), Arrays.asList(Arrays.asList("v1"))
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When: outFile のパス（ファイル）を outputPath として渡す
+        // XlsFormatWriter は outputPath.resolve(containerName+".xls") を生成するが、
+        // その前に Files.createDirectories(outputPath) を試みる。
+        // outFile がファイルなので createDirectories は IOException を投げる。
+        sut.write(container, outFile.toPath(), false);
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 

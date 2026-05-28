@@ -458,6 +458,128 @@ public class YamlFormatWriterTest {
     }
 
     // -------------------------------------------------------------------------
+    // 追加テスト（カバレッジ拡充）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] containerName と同名のファイルが outputDir 直下に既に存在する
+     * [When]  write() を呼び出す（Files.createDirectories がファイルパスで IOException を送出）
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void iOExceptionOnContainerDirectoryCreationThrowsConverterException() throws Exception {
+        // Given: "FooTest" という名前のファイルを作成（ディレクトリとして作れない）
+        File outputDir = temporaryFolder.newFolder("out");
+        new File(outputDir, "FooTest").createNewFile();
+
+        TestDataBlock block = new TableDataBlock(
+                DataType.SETUP_TABLE_DATA, "", "T1",
+                Arrays.asList("C1"), Arrays.asList(Arrays.asList("v1"))
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When: FooTest がファイルなので createDirectories が失敗する
+        sut.write(container, outputDir.toPath(), false);
+    }
+
+    /**
+     * [Given] TableDataBlock にカラム名はあるが rows が空
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "rows: []" が含まれる
+     */
+    @Test
+    public void tableDataBlockWithEmptyRowsWritesEmptyRows() throws Exception {
+        // Given
+        TestDataBlock block = new TableDataBlock(
+                DataType.SETUP_TABLE_DATA, "", "EMPTY_TBL",
+                Arrays.asList("COL1", "COL2"),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("rows: []"));
+    }
+
+    /**
+     * [Given] FileDataBlock に group_id が設定されている
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "group_id: \"grpA\"" が含まれる
+     */
+    @Test
+    public void fileDataBlockWithGroupIdWritesGroupId() throws Exception {
+        // Given
+        FileDataBlock block = new FileDataBlock(
+                DataType.SETUP_FIXED, "grpA", "data.dat",
+                FileDataBlock.FileType.FIXED, new LinkedHashMap<>(),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("group_id: \"grpA\""));
+    }
+
+    /**
+     * [Given] MessageDataBlock に group_id が設定されている
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "group_id: \"msgGrp\"" が含まれる
+     */
+    @Test
+    public void messageDataBlockWithGroupIdWritesGroupId() throws Exception {
+        // Given
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "msgGrp", "req/msg",
+                new LinkedHashMap<>(),
+                Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("group_id: \"msgGrp\""));
+    }
+
+    /**
+     * [Given] RecordLayout のフィールドに type=null
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力が "{name: \"FIELD1\"}" となり type キーを含まない
+     */
+    @Test
+    public void fieldWithNullTypeWritesNameOnly() throws Exception {
+        // Given: type=null のフィールドを持つ MessageDataBlock
+        List<FieldDef> fields = Arrays.asList(new FieldDef("FIELD1", null, null));
+        RecordLayout record = new RecordLayout("default", fields,
+                Arrays.asList(Arrays.asList("val")));
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "", "req/msg",
+                new LinkedHashMap<>(),
+                Arrays.asList(record)
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then: name のみの形式で出力され、, type: ... が field 定義に含まれない
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("{name: \"FIELD1\"}"));
+        // FieldDef の type が null の場合、field 行に ", type:" が含まれない
+        assertThat(yaml, not(containsString(", type:")));
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 

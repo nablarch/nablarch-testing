@@ -213,6 +213,147 @@ public class TestDataConverterTest {
     }
 
     // -------------------------------------------------------------------------
+    // 追加テスト（カバレッジ拡充）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] --from の後に値がない（引数が不足）
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void fromWithMissingValueReturnsCode2() throws Exception {
+        int exitCode = TestDataConverter.run(new String[]{"--from"});
+        assertThat(exitCode, is(2));
+    }
+
+    /**
+     * [Given] --include オプションで特定ファイルのみ指定
+     * [When]  run() を呼び出す
+     * [Then]  指定ファイルのみが変換され、他のファイルは出力されない
+     */
+    @Test
+    public void includeOptionFiltersFiles() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+        writeSimpleXls(new File(inputDir, "FooTest.xls"));
+        writeSimpleXls(new File(inputDir, "BarTest.xls"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml",
+                "--include", "FooTest.xls",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest/case01.yaml").exists());
+        assertTrue(!new File(outputDir, "BarTest/case01.yaml").exists());
+    }
+
+    /**
+     * [Given] コメント行（"//" で始まる行）を含む XLS ファイル
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 0 が返される（コメント行はスキップされ警告が出る）
+     */
+    @Test
+    public void xlsWithCommentLinesSucceedsWithWarning() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        // XLS with comment line before the data block
+        org.apache.poi.hssf.usermodel.HSSFWorkbook wb = new org.apache.poi.hssf.usermodel.HSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = wb.createSheet("case01");
+        sheet.createRow(0).createCell(0).setCellValue("// this is a comment");
+        sheet.createRow(1).createCell(0).setCellValue("SETUP_TABLE=TBL");
+        sheet.createRow(2).createCell(0).setCellValue("COL1");
+        sheet.createRow(3).createCell(0).setCellValue("val1");
+        java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(inputDir, "FooTest.xls"));
+        try {
+            wb.write(fos);
+        } finally {
+            fos.close();
+        }
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest/case01.yaml").exists());
+    }
+
+    /**
+     * [Given] DataType 識別行が 1 つも存在しないシート（コメント行か不明行のみ）
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 0 が返される（空シート警告が出るが変換エラーではない）
+     */
+    @Test
+    public void emptySheetWarnsAndSucceeds() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        // XLS with only comment rows (no data blocks)
+        org.apache.poi.hssf.usermodel.HSSFWorkbook wb = new org.apache.poi.hssf.usermodel.HSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = wb.createSheet("case01");
+        sheet.createRow(0).createCell(0).setCellValue("// comment only");
+        java.io.FileOutputStream fos = new java.io.FileOutputStream(new File(inputDir, "FooTest.xls"));
+        try {
+            wb.write(fos);
+        } finally {
+            fos.close();
+        }
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+    }
+
+    /**
+     * [Given] inputPath が存在しないディレクトリ
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 1 が返される
+     */
+    @Test
+    public void nonExistentInputPathReturnsCode1() throws Exception {
+        File outputDir = temporaryFolder.newFolder("output");
+        String nonExistentPath = temporaryFolder.getRoot().getAbsolutePath() + "/nonexistent";
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml",
+                nonExistentPath, outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(1));
+    }
+
+    /**
+     * [Given] --delete-source で yaml→xls 変換を実行
+     * [When]  run() を呼び出す
+     * [Then]  変換後にソースディレクトリが削除される
+     */
+    @Test
+    public void deleteSourceWithYamlToXlsDeletesSourceDirectory() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls", "--delete-source",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+        assertTrue(!containerDir.exists());
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 

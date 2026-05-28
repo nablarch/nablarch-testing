@@ -392,6 +392,158 @@ public class YamlFormatReaderTest {
     }
 
     // -------------------------------------------------------------------------
+    // 追加テスト（カバレッジ拡充）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] 空の YAML ファイル（0バイト）
+     * [When]  read() を呼び出す
+     * [Then]  正常終了し、0ブロックのセクションが返される
+     */
+    @Test
+    public void emptyYamlFileResultsInEmptySection() throws Exception {
+        // Given: 空ファイル
+        File dir = temporaryFolder.newFolder("FooTest");
+        new File(dir, "case01.yaml").createNewFile();
+
+        // When
+        TestDataContainer result = sut.read(dir.toPath());
+
+        // Then
+        assertThat(result.getSections().size(), is(1));
+        assertThat(result.getSections().get(0).getBlocks().size(), is(0));
+    }
+
+    /**
+     * [Given] YAML ルートがリスト（マッピングでない）
+     * [When]  read() を呼び出す
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void yamlRootIsListThrowsConverterException() throws Exception {
+        // Given: ルートがリスト形式の YAML
+        File dir = makeDir("FooTest", "case01",
+                "- item1",
+                "- item2"
+        );
+
+        // When
+        sut.read(dir.toPath());
+    }
+
+    /**
+     * [Given] expected_request_header_messages セクションを含む YAML
+     * [When]  read() を呼び出す
+     * [Then]  DataType が EXPECTED_REQUEST_HEADER_MESSAGES のブロックが取得できる
+     */
+    @Test
+    public void readExpectedRequestHeaderMessages() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "expected_request_header_messages:",
+                "  - id: msg1",
+                "    records:",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: F1}",
+                "        rows:",
+                "          - [\"v1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getSections().get(0).getBlocks().size(), is(1));
+        assertThat(result.getSections().get(0).getBlocks().get(0).getDataType(),
+                is(DataType.EXPECTED_REQUEST_HEADER_MESSAGES));
+    }
+
+    /**
+     * [Given] expected_request_body_messages セクションを含む YAML
+     * [When]  read() を呼び出す
+     * [Then]  DataType が EXPECTED_REQUEST_BODY_MESSAGES のブロックが取得できる
+     */
+    @Test
+    public void readExpectedRequestBodyMessages() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "expected_request_body_messages:",
+                "  - id: msg2",
+                "    records:",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: F1}",
+                "        rows:",
+                "          - [\"v1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getSections().get(0).getBlocks().get(0).getDataType(),
+                is(DataType.EXPECTED_REQUEST_BODY_MESSAGES));
+    }
+
+    /**
+     * [Given] response_header_messages セクションを含む YAML
+     * [When]  read() を呼び出す
+     * [Then]  DataType が RESPONSE_HEADER_MESSAGES のブロックが取得できる
+     */
+    @Test
+    public void readResponseHeaderMessages() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "response_header_messages:",
+                "  - id: msg3",
+                "    records:",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: F1}",
+                "        rows:",
+                "          - [\"v1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getSections().get(0).getBlocks().get(0).getDataType(),
+                is(DataType.RESPONSE_HEADER_MESSAGES));
+    }
+
+    /**
+     * [Given] response_body_messages セクションを含む YAML
+     * [When]  read() を呼び出す
+     * [Then]  DataType が RESPONSE_BODY_MESSAGES のブロックが取得できる
+     */
+    @Test
+    public void readResponseBodyMessages() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "response_body_messages:",
+                "  - id: msg4",
+                "    records:",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: F1}",
+                "        rows:",
+                "          - [\"v1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getSections().get(0).getBlocks().get(0).getDataType(),
+                is(DataType.RESPONSE_BODY_MESSAGES));
+    }
+
+    /**
+     * [Given] "case01.yaml" という名前のサブディレクトリが存在する
+     * [When]  read() を呼び出す
+     * [Then]  FileInputStream がディレクトリ上でスローする IOException が ConverterException にラップされる
+     */
+    @Test(expected = ConverterException.class)
+    public void yamlEntryIsDirectoryThrowsConverterException() throws Exception {
+        // Given: case01.yaml という名前のディレクトリを作成
+        File dir = temporaryFolder.newFolder("FooTest");
+        new File(dir, "case01.yaml").mkdir();
+
+        // When: ディレクトリを FileInputStream で開こうとして IOException → ConverterException
+        sut.read(dir.toPath());
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 
