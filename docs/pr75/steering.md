@@ -353,6 +353,17 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
 2. **C-1-9〜C-1-13**: セルフチェック → QA/Java/SWE レビュー → ユーザーレビュー
 
+### C-1-8 実装済みファイル（2026-05-28）
+
+`src/main/java/nablarch/test/tool/converter/` に以下を実装済み:
+- データモデル: `TestDataContainer`, `TestDataSection`, `TestDataBlock`（抽象）, `ColumnRowDataBlock`（抽象）, `TableDataBlock`, `ListMapBlock`, `FileDataBlock`（`FileType` enum 内包）, `MessageDataBlock`, `FieldDef`, `RecordLayout`
+- インターフェース: `TestDataFormatReader`, `TestDataFormatWriter`, `ConverterException`
+- Reader/Writer: `XlsFormatReader`, `XlsFormatWriter`, `YamlFormatReader`, `YamlFormatWriter`
+- ユーティリティ: `ConverterFileFilter`, `ConverterPathResolver`
+- エントリポイント: `TestDataConverter`（`main()` + `run(String[])` 分離）
+
+テスト: `src/test/java/nablarch/test/tool/converter/` に7クラス・81件（全グリーン）
+
 ### C-1 設計方針の確定事項（ユーザーレビュー 2026-05-27）
 
 - Excel IN/OUT・YAML IN/OUT の 4方向すべてを対応する
