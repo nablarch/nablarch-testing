@@ -176,7 +176,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             while (dataRow.size() < columnNames.size()) {
                 dataRow.add("");
             }
-            dataRows.add(dataRow.subList(0, columnNames.size()));
+            dataRows.add(new ArrayList<>(dataRow.subList(0, columnNames.size())));
             i++;
         }
         nextIndex[0] = i;
@@ -267,7 +267,7 @@ public class XlsFormatReader implements TestDataFormatReader {
                 while (padded.size() < fields.size()) {
                     padded.add("");
                 }
-                dataRows.add(padded.subList(0, fields.size()));
+                dataRows.add(new ArrayList<>(padded.subList(0, fields.size())));
                 i++;
                 // 次の行が非空の先頭セルを持つ場合（新レコード種別または新ブロック）
                 if (i < rows.size() && !rows.get(i).get(0).isEmpty()) {
@@ -338,7 +338,7 @@ public class XlsFormatReader implements TestDataFormatReader {
                 while (padded.size() < fields.size()) {
                     padded.add("");
                 }
-                dataRows.add(padded.subList(0, fields.size()));
+                dataRows.add(new ArrayList<>(padded.subList(0, fields.size())));
                 i++;
                 if (i < rows.size() && !rows.get(i).get(0).isEmpty()) {
                     break;

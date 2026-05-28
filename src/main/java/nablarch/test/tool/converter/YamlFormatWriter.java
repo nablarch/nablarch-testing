@@ -192,7 +192,7 @@ public class YamlFormatWriter implements TestDataFormatWriter {
         w.write(indent + "- record_type: " + quoteString(record.getRecordType()) + "\n");
         w.write(indent + "  fields:\n");
         for (FieldDef field : record.getFields()) {
-            if (includeLength && field.getLength() != null) {
+            if (includeLength && field.getLength() != null && field.getType() != null) {
                 w.write(indent + "    - {name: " + quoteString(field.getName())
                         + ", type: " + quoteString(field.getType())
                         + ", length: " + quoteString(field.getLength()) + "}\n");

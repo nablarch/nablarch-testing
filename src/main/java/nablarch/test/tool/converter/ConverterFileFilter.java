@@ -102,7 +102,8 @@ public final class ConverterFileFilter {
                 }
 
                 @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (exc != null) throw exc;
                     if (dir.equals(root)) return FileVisitResult.CONTINUE;
                     if (isYamlDir(dir)) {
                         String name = dir.getFileName().toString();

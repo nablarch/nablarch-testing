@@ -142,7 +142,9 @@ public class TestDataConverter {
     private static void deleteSource(Path target) {
         File f = target.toFile();
         if (f.isFile()) {
-            f.delete();
+            if (!f.delete()) {
+                System.err.println("WARN: Failed to delete source: " + f);
+            }
         } else {
             deleteDirectory(f);
         }
@@ -153,10 +155,14 @@ public class TestDataConverter {
         if (files != null) {
             for (File f : files) {
                 if (f.isDirectory()) deleteDirectory(f);
-                else f.delete();
+                else if (!f.delete()) {
+                    System.err.println("WARN: Failed to delete source file: " + f);
+                }
             }
         }
-        dir.delete();
+        if (!dir.delete()) {
+            System.err.println("WARN: Failed to delete source directory: " + dir);
+        }
     }
 
     private static Options parseArgs(String[] args) {
