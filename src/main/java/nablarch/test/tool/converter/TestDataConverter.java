@@ -56,12 +56,13 @@ public class TestDataConverter {
             writer = new XlsFormatWriter();
         }
 
+        int[] skipCount = {0};
         List<Path> targets;
         try {
             if (opts.from.equals("xls")) {
-                targets = ConverterFileFilter.findXlsFiles(opts.inputPath, opts.includes, opts.excludes);
+                targets = ConverterFileFilter.findXlsFiles(opts.inputPath, opts.includes, opts.excludes, skipCount);
             } else {
-                targets = ConverterFileFilter.findYamlDirs(opts.inputPath, opts.includes, opts.excludes);
+                targets = ConverterFileFilter.findYamlDirs(opts.inputPath, opts.includes, opts.excludes, skipCount);
             }
         } catch (ConverterException e) {
             System.err.println("ERROR: " + e.getMessage());
@@ -128,6 +129,9 @@ public class TestDataConverter {
 
         System.out.println("=== TestDataConverter 変換サマリー ===");
         System.out.println("変換成功: " + successCount + " 件");
+        if (skipCount[0] > 0) {
+            System.out.println("スキップ: " + skipCount[0] + " 件（除外パターン合致）");
+        }
         System.out.println("エラー:   " + errorCount + " 件");
         if (totalCommentLines > 0) {
             System.out.println("コメント行ロスト: " + totalCommentLines + " 行（" + commentLineFiles + " ファイル）");

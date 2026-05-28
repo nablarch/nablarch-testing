@@ -23,13 +23,14 @@ public final class ConverterFileFilter {
     /**
      * ルートディレクトリを再帰走査して .xls ファイルを列挙する。
      *
-     * @param root     走査するルートディレクトリ
-     * @param includes ファイル名グロブパターン（空リストは「全て含む」）
-     * @param excludes ファイル名グロブパターン（空リストは「除外なし」）
+     * @param root      走査するルートディレクトリ
+     * @param includes  ファイル名グロブパターン（空リストは「全て含む」）
+     * @param excludes  ファイル名グロブパターン（空リストは「除外なし」）
+     * @param skipCount スキップ件数の格納先（skipCount[0] に加算される）
      * @return 変換対象の .xls ファイルパスリスト
      */
-    public static List<Path> findXlsFiles(Path root, List<String> includes, List<String> excludes)
-            throws ConverterException {
+    public static List<Path> findXlsFiles(Path root, List<String> includes, List<String> excludes,
+            int[] skipCount) throws ConverterException {
         List<PathMatcher> includeMatchers = toMatchers(includes);
         List<PathMatcher> excludeMatchers = toMatchers(excludes);
         List<Path> result = new ArrayList<>();
@@ -39,8 +40,14 @@ public final class ConverterFileFilter {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String name = file.getFileName().toString();
                     if (!name.endsWith(".xls")) return FileVisitResult.CONTINUE;
-                    if (!matchesIncludes(name, includeMatchers)) return FileVisitResult.CONTINUE;
-                    if (matchesExcludes(name, excludeMatchers)) return FileVisitResult.CONTINUE;
+                    if (!matchesIncludes(name, includeMatchers)) {
+                        skipCount[0]++;
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if (matchesExcludes(name, excludeMatchers)) {
+                        skipCount[0]++;
+                        return FileVisitResult.CONTINUE;
+                    }
                     result.add(file);
                     return FileVisitResult.CONTINUE;
                 }
@@ -52,18 +59,32 @@ public final class ConverterFileFilter {
     }
 
     /**
+     * ルートディレクトリを再帰走査して .xls ファイルを列挙する（後方互換メソッド）。
+     *
+     * @param root     走査するルートディレクトリ
+     * @param includes ファイル名グロブパターン（空リストは「全て含む」）
+     * @param excludes ファイル名グロブパターン（空リストは「除外なし」）
+     * @return 変換対象の .xls ファイルパスリスト
+     */
+    public static List<Path> findXlsFiles(Path root, List<String> includes, List<String> excludes)
+            throws ConverterException {
+        return findXlsFiles(root, includes, excludes, new int[]{0});
+    }
+
+    /**
      * ルートディレクトリを再帰走査して YAML ディレクトリを列挙する。
      *
      * <p>YAML ディレクトリ: 直下に .yaml ファイルを 1 件以上含み、.yaml ファイルを含む
      * サブディレクトリを持たない最下位ディレクトリ。</p>
      *
-     * @param root     走査するルートディレクトリ
-     * @param includes ディレクトリ名グロブパターン（空リストは「全て含む」）
-     * @param excludes ディレクトリ名グロブパターン（空リストは「除外なし」）
+     * @param root      走査するルートディレクトリ
+     * @param includes  ディレクトリ名グロブパターン（空リストは「全て含む」）
+     * @param excludes  ディレクトリ名グロブパターン（空リストは「除外なし」）
+     * @param skipCount スキップ件数の格納先（skipCount[0] に加算される）
      * @return 変換対象の YAML ディレクトリパスリスト
      */
-    public static List<Path> findYamlDirs(Path root, List<String> includes, List<String> excludes)
-            throws ConverterException {
+    public static List<Path> findYamlDirs(Path root, List<String> includes, List<String> excludes,
+            int[] skipCount) throws ConverterException {
         List<PathMatcher> includeMatchers = toMatchers(includes);
         List<PathMatcher> excludeMatchers = toMatchers(excludes);
         List<Path> result = new ArrayList<>();
@@ -73,7 +94,10 @@ public final class ConverterFileFilter {
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                     if (dir.equals(root)) return FileVisitResult.CONTINUE;
                     String name = dir.getFileName().toString();
-                    if (matchesExcludes(name, excludeMatchers)) return FileVisitResult.SKIP_SUBTREE;
+                    if (matchesExcludes(name, excludeMatchers)) {
+                        skipCount[0]++;
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -82,7 +106,10 @@ public final class ConverterFileFilter {
                     if (dir.equals(root)) return FileVisitResult.CONTINUE;
                     if (isYamlDir(dir)) {
                         String name = dir.getFileName().toString();
-                        if (!matchesIncludes(name, includeMatchers)) return FileVisitResult.CONTINUE;
+                        if (!matchesIncludes(name, includeMatchers)) {
+                            skipCount[0]++;
+                            return FileVisitResult.CONTINUE;
+                        }
                         result.add(dir);
                     }
                     return FileVisitResult.CONTINUE;
@@ -92,6 +119,19 @@ public final class ConverterFileFilter {
             throw new ConverterException("Failed to scan directory: " + root, e);
         }
         return result;
+    }
+
+    /**
+     * ルートディレクトリを再帰走査して YAML ディレクトリを列挙する（後方互換メソッド）。
+     *
+     * @param root     走査するルートディレクトリ
+     * @param includes ディレクトリ名グロブパターン（空リストは「全て含む」）
+     * @param excludes ディレクトリ名グロブパターン（空リストは「除外なし」）
+     * @return 変換対象の YAML ディレクトリパスリスト
+     */
+    public static List<Path> findYamlDirs(Path root, List<String> includes, List<String> excludes)
+            throws ConverterException {
+        return findYamlDirs(root, includes, excludes, new int[]{0});
     }
 
     /** 直下に .yaml ファイルを持ち、.yaml を含むサブディレクトリを持たないか確認する。 */

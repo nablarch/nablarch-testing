@@ -53,7 +53,7 @@ public class XlsFormatReader implements TestDataFormatReader {
         }
     }
 
-    private TestDataSection parseSheet(Sheet sheet, Path sourcePath) {
+    private TestDataSection parseSheet(Sheet sheet, Path sourcePath) throws ConverterException {
         List<List<String>> rows = readRows(sheet, sourcePath);
         List<TestDataBlock> blocks = parseBlocks(rows);
         return new TestDataSection(sheet.getSheetName(), blocks);
@@ -115,7 +115,7 @@ public class XlsFormatReader implements TestDataFormatReader {
     }
 
     /** 行リストを走査してデータブロックに分割する。 */
-    private List<TestDataBlock> parseBlocks(List<List<String>> rows) {
+    private List<TestDataBlock> parseBlocks(List<List<String>> rows) throws ConverterException {
         List<TestDataBlock> blocks = new ArrayList<>();
         int i = 0;
         while (i < rows.size()) {
@@ -195,6 +195,9 @@ public class XlsFormatReader implements TestDataFormatReader {
         int i = nextIndex[0];
 
         // ディレクティブ行の読み込み
+        // 判定ルール: 先頭セルが非空かつ次行が EOF または次行先頭も非空 → ディレクティブ行
+        //            先頭セルが空 → フィールド名行の開始（break）
+        //            次行先頭が空 → フィールド名行の開始（break）
         while (i < rows.size()) {
             List<String> row = rows.get(i);
             if (detectDataType(row.get(0)) != null) {
@@ -203,16 +206,16 @@ public class XlsFormatReader implements TestDataFormatReader {
             if (row.get(0).isEmpty()) {
                 break;  // フィールド名行（先頭が空）に到達
             }
-            // 次行の先頭セルが空かどうかで判定（1行先読み）
-            boolean nextFirstEmpty = (i + 1 >= rows.size()) || rows.get(i + 1).isEmpty() || rows.get(i + 1).get(0).isEmpty();
-            if (!nextFirstEmpty) {
-                // ディレクティブ行（次行の先頭も非空）
-                directives.put(row.get(0), row.size() > 1 ? row.get(1) : "");
-                i++;
-            } else {
-                // フィールド名行（次行の先頭が空）→ レコードレイアウトの開始
+            // 次行が存在し、かつ次行先頭セルが空 → 現在行はフィールド名行の直前（break前にディレクティブ登録はしない）
+            boolean nextExists = (i + 1 < rows.size()) && !rows.get(i + 1).isEmpty();
+            boolean nextFirstEmpty = nextExists && rows.get(i + 1).get(0).isEmpty();
+            if (nextFirstEmpty) {
+                // 次行はフィールド名行（先頭空） → ここで break してレコードレイアウト解析へ
                 break;
             }
+            // ディレクティブ行として登録（次行が EOF / 次行先頭が非空 / 次行が新 DataType の場合も含む）
+            directives.put(row.get(0), row.size() > 1 ? row.get(1) : "");
+            i++;
         }
 
         // レコードレイアウトの解析
@@ -365,11 +368,10 @@ public class XlsFormatReader implements TestDataFormatReader {
         return null;
     }
 
-    /** 識別行から groupId と identifier を解析する（DT-02, DT-06）。 */
-    private String[] parseIdentifierRow(String cellValue, DataType dataType) {
+    /** 識別行から groupId と identifier を解析する（DT-02, DT-06）。書式不正時は ConverterException をスロー。 */
+    private String[] parseIdentifierRow(String cellValue, DataType dataType) throws ConverterException {
         String rest = cellValue.substring(dataType.getName().length());
         String groupId = "";
-        String identifier;
         if (rest.startsWith("[")) {
             int end = rest.indexOf(']');
             if (end > 0) {
@@ -377,12 +379,11 @@ public class XlsFormatReader implements TestDataFormatReader {
                 rest = rest.substring(end + 1);
             }
         }
-        // "=" の後が identifier
-        if (rest.startsWith("=")) {
-            identifier = rest.substring(1);
-        } else {
-            identifier = rest;
+        // "=" が必須区切り文字（DT-02）
+        if (!rest.startsWith("=")) {
+            throw new ConverterException("Invalid identifier row format (missing '='): " + cellValue);
         }
+        String identifier = rest.substring(1);
         return new String[]{groupId, identifier};
     }
 

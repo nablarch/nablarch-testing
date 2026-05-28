@@ -529,6 +529,58 @@ public class XlsFormatReaderTest {
     }
 
     /**
+     * [Given] 空ファイル表現がシート末尾（EOF）にある（SS-15、Q-1バグ修正確認）
+     * [When]  read() を呼び出す
+     * [Then]  ディレクティブが directives に格納され records は空リスト
+     */
+    @Test
+    public void emptyFileRepresentationAtEof() throws Exception {
+        // Given: SETUP_FIXED ブロックが最後のブロックで、EOF 直前にディレクティブ行がある
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_FIXED=empty.dat", "", ""},
+                {"text-encoding", "UTF-8", ""}
+                // シート末尾（EOF）
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        FileDataBlock fileBlock = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(fileBlock.getDirectives().size(), is(1));
+        assertThat(fileBlock.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(fileBlock.getRecords().size(), is(0));
+    }
+
+    /**
+     * [Given] 複数ディレクティブの最後がシート末尾（EOF）
+     * [When]  read() を呼び出す
+     * [Then]  全ディレクティブが directives に格納される
+     */
+    @Test
+    public void multipleDirectivesAtEof() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"SETUP_FIXED=data.dat", "", ""},
+                {"text-encoding", "UTF-8", ""},
+                {"record-separator", "\\n", ""}
+                // EOF（次行なし）
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        FileDataBlock fileBlock = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(fileBlock.getDirectives().size(), is(2));
+        assertThat(fileBlock.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(fileBlock.getDirectives().get("record-separator"), is("\\n"));
+        assertThat(fileBlock.getRecords().size(), is(0));
+    }
+
+    /**
      * [Given] 複数レコードレイアウトを持つファイルデータブロック（SS-11）
      * [When]  read() を呼び出す
      * [Then]  複数の RecordLayout が格納される
