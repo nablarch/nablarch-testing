@@ -1,0 +1,408 @@
+package nablarch.test.tool.converter;
+
+import nablarch.test.core.reader.DataType;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * {@link YamlFormatReader} のテスト。
+ *
+ * <p>YAML IN 仕様（7.3節）を検証する。</p>
+ */
+public class YamlFormatReaderTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    private final YamlFormatReader sut = new YamlFormatReader();
+
+    // -------------------------------------------------------------------------
+    // テーブルデータブロック
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] setup_tables を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  SETUP_TABLE_DATA の TableDataBlock が取得できる
+     */
+    @Test
+    public void readSetupTable() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_tables:",
+                "  - table: USER_MASTER",
+                "    rows:",
+                "      - USER_ID: \"001\"",
+                "        NAME: \"taro\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getName(), is("FooTest"));
+        assertThat(result.getSections().size(), is(1));
+        TestDataSection section = result.getSections().get(0);
+        assertThat(section.getName(), is("case01"));
+        TableDataBlock block = (TableDataBlock) section.getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.SETUP_TABLE_DATA));
+        assertThat(block.getIdentifier(), is("USER_MASTER"));
+        assertThat(block.getGroupId(), is(""));
+        assertThat(block.getColumnNames(), is(Arrays.asList("USER_ID", "NAME")));
+        assertThat(block.getRows().get(0), is(Arrays.asList("001", "taro")));
+    }
+
+    /**
+     * [Given] expected_tables を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  EXPECTED_TABLE_DATA の TableDataBlock が取得できる
+     */
+    @Test
+    public void readExpectedTable() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "expected_tables:",
+                "  - table: ORDERS",
+                "    rows:",
+                "      - ORDER_ID: \"ORD001\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.EXPECTED_TABLE_DATA));
+        assertThat(block.getIdentifier(), is("ORDERS"));
+    }
+
+    /**
+     * [Given] expected_complete_tables を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  EXPECTED_COMPLETED の TableDataBlock が取得できる
+     */
+    @Test
+    public void readExpectedCompleteTable() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "expected_complete_tables:",
+                "  - table: ITEMS",
+                "    rows:",
+                "      - ID: \"1\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.EXPECTED_COMPLETED));
+    }
+
+    /**
+     * [Given] group_id フィールドを含む YAML エントリ
+     * [When]  read() を呼び出す
+     * [Then]  groupId が設定される（7.3.2節）
+     */
+    @Test
+    public void readGroupId() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_tables:",
+                "  - group_id: grpA",
+                "    table: TBL",
+                "    rows:",
+                "      - C1: \"v1\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getGroupId(), is("grpA"));
+    }
+
+    /**
+     * [Given] YAML ネイティブ null を含む行
+     * [When]  read() を呼び出す
+     * [Then]  Java null として保持される（7.3.2節）
+     */
+    @Test
+    public void nativeNullPreservedAsNull() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_tables:",
+                "  - table: TBL",
+                "    rows:",
+                "      - COL: null"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().get(0).get(0), is(nullValue()));
+    }
+
+    /**
+     * [Given] list_maps を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  LIST_MAP の ListMapBlock が取得できる
+     */
+    @Test
+    public void readListMap() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "list_maps:",
+                "  - id: myList",
+                "    rows:",
+                "      - KEY1: \"a\"",
+                "        KEY2: \"b\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        ListMapBlock block = (ListMapBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.LIST_MAP));
+        assertThat(block.getIdentifier(), is("myList"));
+        assertThat(block.getColumnNames(), is(Arrays.asList("KEY1", "KEY2")));
+    }
+
+    /**
+     * [Given] マーカーカラム "[NO]" を含む YAML
+     * [When]  read() を呼び出す
+     * [Then]  "[NO]" がそのまま columnNames に保持される
+     */
+    @Test
+    public void markerColumnPreserved() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "list_maps:",
+                "  - id: myList",
+                "    rows:",
+                "      - \"[NO]\": \"1\"",
+                "        KEY1: \"a\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        ListMapBlock block = (ListMapBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getColumnNames(), is(Arrays.asList("[NO]", "KEY1")));
+    }
+
+    // -------------------------------------------------------------------------
+    // ファイルデータブロック
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] setup_files（fixed）を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  SETUP_FIXED の FileDataBlock が取得できる
+     */
+    @Test
+    public void readSetupFixed() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_files:",
+                "  - path: input/data.dat",
+                "    type: fixed",
+                "    directives:",
+                "      text-encoding: \"MS932\"",
+                "    records:",
+                "      - record_type: DATA",
+                "        fields:",
+                "          - {name: USER_ID, type: X, length: 10}",
+                "        rows:",
+                "          - [\"001\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.SETUP_FIXED));
+        assertThat(block.getFileType(), is(FileDataBlock.FileType.FIXED));
+        assertThat(block.getIdentifier(), is("input/data.dat"));
+        assertThat(block.getDirectives().get("text-encoding"), is("MS932"));
+        RecordLayout record = block.getRecords().get(0);
+        assertThat(record.getRecordType(), is("DATA"));
+        assertThat(record.getFields().get(0).getName(), is("USER_ID"));
+        assertThat(record.getFields().get(0).getType(), is("X"));
+        assertThat(record.getFields().get(0).getLength(), is("10"));
+        assertThat(record.getRows().get(0), is(Collections.singletonList("001")));
+    }
+
+    /**
+     * [Given] setup_files（variable）を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  SETUP_VARIABLE の FileDataBlock が取得できる（length は null）
+     */
+    @Test
+    public void readSetupVariable() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_files:",
+                "  - path: out.csv",
+                "    type: variable",
+                "    records:",
+                "      - record_type: DATA",
+                "        fields:",
+                "          - {name: NAME, type: X}",
+                "        rows:",
+                "          - [\"taro\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.SETUP_VARIABLE));
+        assertThat(block.getFileType(), is(FileDataBlock.FileType.VARIABLE));
+        assertThat(block.getRecords().get(0).getFields().get(0).getLength(), is(nullValue()));
+    }
+
+    /**
+     * [Given] records が空の YAML（records: []）
+     * [When]  read() を呼び出す
+     * [Then]  records が空リストの FileDataBlock が取得できる
+     */
+    @Test
+    public void readFileBlockWithEmptyRecords() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_files:",
+                "  - path: empty.csv",
+                "    type: variable",
+                "    directives:",
+                "      text-encoding: \"UTF-8\"",
+                "    records: []"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        FileDataBlock block = (FileDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertTrue(block.getRecords().isEmpty());
+    }
+
+    // -------------------------------------------------------------------------
+    // メッセージングデータブロック
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] messages（FW_HEADER + 通常レコード）を含む YAML ディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  fwHeaderFields が構築され、通常レコードが records に格納される（7.3.4節）
+     */
+    @Test
+    public void readMessage() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "messages:",
+                "  - id: sendSyncTestData/REQ001/message",
+                "    records:",
+                "      - record_type: FW_HEADER",
+                "        fields:",
+                "          - {name: requestId}",
+                "          - {name: userId}",
+                "        rows:",
+                "          - [\"REQ001\", \"usr001\"]",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: FIELD1, type: X}",
+                "        rows:",
+                "          - [\"req1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDataType(), is(DataType.MESSAGE));
+        assertThat(block.getIdentifier(), is("sendSyncTestData/REQ001/message"));
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+        assertThat(block.getFwHeaderFields().get("userId"), is("usr001"));
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getRecordType(), is("default"));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+    }
+
+    // -------------------------------------------------------------------------
+    // 複数セクション・複数ブロック
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] 複数 YAML ファイルを持つコンテナディレクトリ
+     * [When]  read() を呼び出す
+     * [Then]  各 YAML ファイルが TestDataSection として格納される
+     */
+    @Test
+    public void multipleSectionsFromMultipleYamlFiles() throws Exception {
+        File dir = temporaryFolder.newFolder("FooTest");
+        writeYaml(new File(dir, "case01.yaml"),
+                "setup_tables:",
+                "  - table: T1",
+                "    rows:",
+                "      - C: \"v1\""
+        );
+        writeYaml(new File(dir, "case02.yaml"),
+                "expected_tables:",
+                "  - table: T2",
+                "    rows:",
+                "      - C: \"v2\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getName(), is("FooTest"));
+        assertThat(result.getSections().size(), is(2));
+    }
+
+    /**
+     * [Given] 複数のブロックを持つ YAML ファイル
+     * [When]  read() を呼び出す
+     * [Then]  全ブロックが TestDataSection.blocks に格納される
+     */
+    @Test
+    public void multipleBlocksInOneSection() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "setup_tables:",
+                "  - table: T1",
+                "    rows:",
+                "      - C: \"v1\"",
+                "expected_tables:",
+                "  - table: T2",
+                "    rows:",
+                "      - C: \"v2\""
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        assertThat(result.getSections().get(0).getBlocks().size(), is(2));
+    }
+
+    // -------------------------------------------------------------------------
+    // エラーケース
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] 存在しないディレクトリパス
+     * [When]  read() を呼び出す
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void directoryNotFound() throws Exception {
+        sut.read(temporaryFolder.getRoot().toPath().resolve("nonexistent"));
+    }
+
+    // -------------------------------------------------------------------------
+    // ヘルパー
+    // -------------------------------------------------------------------------
+
+    /** 単一 YAML ファイルを含むコンテナディレクトリを作成する。 */
+    private File makeDir(String containerName, String sectionName, String... lines) throws Exception {
+        File dir = temporaryFolder.newFolder(containerName);
+        writeYaml(new File(dir, sectionName + ".yaml"), lines);
+        return dir;
+    }
+
+    private void writeYaml(File file, String... lines) throws Exception {
+        PrintWriter pw = new PrintWriter(file, "UTF-8");
+        try {
+            for (String line : lines) {
+                pw.println(line);
+            }
+        } finally {
+            pw.close();
+        }
+    }
+}
