@@ -300,10 +300,10 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 - [x] **C-1-6**: ソフトウエアエンジニアレビュー（サブエージェントで実施）
 - [x] **C-1-7**: ユーザーレビューで設計書を FIX する（2026-05-28 OK）
 - [x] **C-1-8**: 設計書に従い実装を TDD で行う（全テストグリーン確認）（81テスト全グリーン 2026-05-28）
-- [ ] **C-1-9**: セルフチェック（実装フェーズ）（チェック結果: `docs/pr75/checks/C-1.md` に追記）
-- [ ] **C-1-10**: QAエンジニアレビュー（サブエージェントで実施・本質的なFBがなくなるまで改善）
-- [ ] **C-1-11**: Javaエキスパートレビュー（サブエージェントで実施・本質的なFBがなくなるまで改善）
-- [ ] **C-1-12**: ソフトウエアエンジニアレビュー（サブエージェントで実施・本質的なFBがなくなるまで改善）
+- [x] **C-1-9**: セルフチェック（実装フェーズ）（6件修正・83テスト全グリーン 2026-05-28）
+- [x] **C-1-10**: QAエンジニアレビュー（Q-1/Q-6/Q-7/Q-8修正・85テスト全グリーン 2026-05-28）
+- [x] **C-1-11**: Javaエキスパートレビュー（J-3/J-5/J-6/J-8修正・85テスト全グリーン 2026-05-28）
+- [x] **C-1-12**: ソフトウエアエンジニアレビュー（S-4修正・85テスト全グリーン 2026-05-28）
 - [ ] **C-1-13**: ユーザーレビュー依頼・OK取得
 
 **完了条件**:
@@ -345,22 +345,31 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
 | **R-1** YamlTestDataParser 実装（TDD） | **完了**（ユーザーレビュー OK 2026-05-27） | — |
 | **T-1** トレーサビリティマトリクス完成 | **完了**（ユーザーレビュー OK 2026-05-27） | — |
-| **C-1** NTF テストデータ変換ツール設計・実装 | **進行中** | C-1-9（セルフチェック）から開始 |
+| **C-1** NTF テストデータ変換ツール設計・実装 | **進行中** | C-1-13（ユーザーレビュー依頼）のみ残り |
 | **V-1** Excel 並走確認 | 未着手 | C-1 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **C-1-9〜C-1-13**: セルフチェック → QA/Java/SWE レビュー → ユーザーレビュー
+2. **C-1-13**: ユーザーにレビューを依頼し OK を取得する
+3. C-1-13 OK 後、V-1 に着手する
 
-### C-1-8 実装済みファイル（2026-05-28）
+### C-1 実装状況（2026-05-28）
 
-`src/main/java/nablarch/test/tool/converter/` に以下を実装済み:
-- データモデル: `TestDataContainer`, `TestDataSection`, `TestDataBlock`（抽象）, `ColumnRowDataBlock`（抽象）, `TableDataBlock`, `ListMapBlock`, `FileDataBlock`（`FileType` enum 内包）, `MessageDataBlock`, `FieldDef`, `RecordLayout`
-- インターフェース: `TestDataFormatReader`, `TestDataFormatWriter`, `ConverterException`
-- Reader/Writer: `XlsFormatReader`, `XlsFormatWriter`, `YamlFormatReader`, `YamlFormatWriter`
-- ユーティリティ: `ConverterFileFilter`, `ConverterPathResolver`
-- エントリポイント: `TestDataConverter`（`main()` + `run(String[])` 分離）
+85テスト全グリーン。`src/main/java/nablarch/test/tool/converter/` に 20 クラス実装済み。  
+レビュー記録: `docs/pr75/checks/C-1.md`（C-1-9〜C-1-12 の全指摘・対応記録）
+
+#### C-1-9〜C-1-12 で実施した主な修正
+- **NG-2**: `--from`/`--to` 値バリデーション追加
+- **NG-3**: コメント行ロスト警告・変換サマリー出力
+- **NG-4**: 数値書式セル警告出力
+- **NG-5**: 空シート警告・YAMLスキップ
+- **Q-1**: ディレクティブ EOF 消失バグ修正
+- **Q-7**: スキップ件数サマリー出力
+- **Q-8**: 識別行 `=` なしバリデーション
+- **J-3**: `subList()` ビューをコピーして格納
+- **J-5/J-6/J-8**: 各種 Java 安全性修正
+- **S-4**: `pom.xml` に `exec-maven-plugin` 追加
 
 テスト: `src/test/java/nablarch/test/tool/converter/` に7クラス・81件（全グリーン）
 
