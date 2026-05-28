@@ -358,14 +358,12 @@ MessageDataBlock extends TestDataBlock
 **パッケージ**
 
 ```
-nablarch.test.core.reader.converter
+nablarch.test.tool.converter
 ```
 
 **ソースディレクトリ**
 
-変換ツールは `src/test/java` に配置する（プロダクション向けの成果物ではなく、テスト移行を支援するツールとして位置づけるため）。`exec-maven-plugin` の `classpathScope` を `test` にすることでテストクラスパスを含め、変換ツールから `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）を参照できる（8.1 節参照）。
-
-パッケージは `nablarch.test.core.reader.converter` を使う（変換ツールが参照する `DataType` / `YamlSection` と同じ最上位パッケージに揃えることで IDE のパッケージツリーを整理するため）。
+変換ツールは `src/main/java` に配置する。`nablarch.test.tool` 配下には既存のツール群（`htmlcheck`・`sanitizingcheck` 等）が置かれており、変換ツールもその一つとして位置づける。
 
 ### 6.2 インターフェース
 
@@ -374,7 +372,7 @@ nablarch.test.core.reader.converter
 変換ツール専用の検査例外。IO エラー・書式エラー・上書き禁止エラーなど、変換処理で発生する全ての回復可能なエラーをこの例外でラップして伝播させる。`TestDataConverter` が catch して「エラーとして記録・スキップして続行」する基点となる。
 
 ```java
-package nablarch.test.core.reader.converter;
+package nablarch.test.tool.converter;
 
 /**
  * テストデータ変換ツール専用の検査例外。
@@ -390,7 +388,7 @@ public class ConverterException extends Exception {
 形式に依存しない読み込みインターフェース。
 
 ```java
-package nablarch.test.core.reader.converter;
+package nablarch.test.tool.converter;
 
 import java.nio.file.Path;
 
@@ -415,7 +413,7 @@ public interface TestDataFormatReader {
 形式に依存しない書き込みインターフェース。
 
 ```java
-package nablarch.test.core.reader.converter;
+package nablarch.test.tool.converter;
 
 import java.nio.file.Path;
 
@@ -861,13 +859,13 @@ messages:
   <artifactId>exec-maven-plugin</artifactId>
   <version>3.1.0</version>
   <configuration>
-    <mainClass>nablarch.test.core.reader.converter.TestDataConverter</mainClass>
-    <classpathScope>test</classpathScope>
+    <mainClass>nablarch.test.tool.converter.TestDataConverter</mainClass>
+    <classpathScope>compile</classpathScope>
   </configuration>
 </plugin>
 ```
 
-`TestDataConverter` クラスは `src/test/java` に配置するため（6.1 節参照）、`classpathScope` を `test` にする。これにより `src/test/java` のクラスと `src/main/java` の NTF クラス（`DataType`、`YamlSection` 等）の両方がクラスパスに含まれる。POI（`poi-ooxml`）および SnakeYAML Engine（`snakeyaml-engine`）はともに `compile` スコープで宣言済みのため、`test` スコープにも自動的に含まれる。
+`TestDataConverter` クラスは `src/main/java` に配置するため（6.1 節参照）、`classpathScope` は `compile` とする。
 
 ### 8.2 コマンド例
 
@@ -875,7 +873,7 @@ messages:
 
 ```bash
 mvn exec:java \
-  -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
   -Dexec.args="--from xls --to yaml <入力パス> <出力パス>"
 ```
 
@@ -885,7 +883,7 @@ mvn exec:java \
 
 ```bash
 mvn exec:java \
-  -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
   -Dexec.args="--from xls --to yaml --overwrite <入力パス> <出力パス>"
 ```
 
@@ -893,7 +891,7 @@ mvn exec:java \
 
 ```bash
 mvn exec:java \
-  -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
   -Dexec.args="--from xls --to yaml --overwrite --delete-source <入力パス> <出力パス>"
 ```
 
@@ -901,7 +899,7 @@ mvn exec:java \
 
 ```bash
 mvn exec:java \
-  -Dexec.mainClass=nablarch.test.core.reader.converter.TestDataConverter \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
   -Dexec.args="--from yaml --to xls <入力パス> <出力パス>"
 ```
 
