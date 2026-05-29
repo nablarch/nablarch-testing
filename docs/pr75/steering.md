@@ -374,29 +374,21 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 2. **C-1-15** の残カバレッジ未達確認を再開する（下記「C-1-15 残作業詳細」参照）
 3. C-1-15 OK 後、V-1 に着手する
 
-### C-1-15 残作業詳細（2026-05-29 時点）
+### C-1-15 残作業詳細（2026-05-29 更新）
 
-**現在 件5（`YamlFormatWriter` の `writeMessageRecord()` の `type==null` 分岐）を確認中。**
+**全カバレッジ未達の確認・対応が完了。残2件はいずれも番人（到達不可）として記録済み。**
 
-件5は「到達不可」ではなく「テスト漏れ」と判明：
-- `XlsFormatReader` がファイルブロック/メッセージブロックで型行がフィールド行より短い場合に `type=null` の `FieldDef` を生成しうる（L264・L337）
-- `writeMessageRecord()` 側（L213）はファイルブロック書き出しメソッドの `else` 節。テストを追加すれば解消できる
-
-**次回再開時の作業順序**:
-
-1. 件5: `YamlFormatWriter` の `type==null` パス（L213）にテスト追加
-2. 件6〜7: 残カバレッジ未達を1件ずつユーザーと確認
-3. 全件確認完了後、C-1-15 ユーザーレビューを改めて依頼
+**対応済み（2026-05-29）**:
+- `writeRecordLayout()` の `type==null` 分岐（`FileDataBlock`/可変長フィールド）: テスト漏れであったため `fileBlockFieldWithNullTypeWritesNameOnly` テストを追加し解消（147テスト全グリーン）
 
 **残カバレッジ未達一覧（C-1.md に詳細記録済み）**:
 
 | # | クラス | 内容 | 種別 |
 |---|---|---|---|
 | 3 | `YamlFormatWriter` | `sectionKey()` の `throw AssertionError` | 番人（確認済み・現状維持） |
-| 5 | `YamlFormatWriter` | `writeMessageRecord()` の `type==null` 分岐（L213） | **テスト漏れ → 次回着手** |
-| 6 | `YamlFormatWriter` | `writeMessageRecord()` の `type==null`（L213相当別箇所） | 未確認 |
-| 7 | `YamlFormatReader` | `sectionKeyToDataType()` の `expected_files` 分岐 | 未確認 |
-| 8 | `YamlFormatReader` | `sectionKeyToDataType()` の `default: throw AssertionError` | 未確認 |
+| 8 | `YamlFormatReader` | `sectionKeyToDataType()` の `default: throw AssertionError` | 番人（確認済み・現状維持） |
+
+**次のアクション**: 全件確認完了。C-1-15 ユーザーレビューを改めて依頼する。
 
 ### C-1 実装状況（2026-05-29）
 

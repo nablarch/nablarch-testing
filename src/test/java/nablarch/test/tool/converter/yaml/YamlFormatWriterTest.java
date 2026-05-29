@@ -324,6 +324,35 @@ public class YamlFormatWriterTest {
     }
 
     /**
+     * [Given] SETUP_VARIABLE ブロックのレコードフィールドに type=null（フィールド行が型行より長い場合に XlsFormatReader が生成する）
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力が "{name: \"FIELD1\"}" となり type キーを含まない
+     */
+    @Test
+    public void fileBlockFieldWithNullTypeWritesNameOnly() throws Exception {
+        // Given: type=null のフィールドを持つ FileDataBlock（可変長）
+        List<FieldDef> fields = Arrays.asList(
+                new FieldDef("FIELD1", null, null)
+        );
+        RecordLayout record = new RecordLayout("DATA", fields,
+                Arrays.asList(Arrays.asList("val")));
+        FileDataBlock block = new FileDataBlock(
+                DataType.SETUP_VARIABLE, "", "out.csv",
+                FileDataBlock.FileType.VARIABLE, new LinkedHashMap<>(),
+                Arrays.asList(record)
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then: name のみの形式で出力され、type キーが含まれない
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("{name: \"FIELD1\"}"));
+        assertThat(yaml, not(containsString(", type:")));
+    }
+
+    /**
      * [Given] records が空リストのファイルデータブロック
      * [When]  write() を呼び出す
      * [Then]  records: [] として出力される（7.4.3節）
