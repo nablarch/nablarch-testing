@@ -14,8 +14,6 @@ import nablarch.test.tool.converter.model.TestDataSection;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.MockedStatic;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
@@ -34,9 +32,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
-
 /**
  * {@link YamlFormatWriter} のテスト。
  *
@@ -675,7 +670,7 @@ public class YamlFormatWriterTest {
     }
 
     /**
-     * [Given] Files.newBufferedWriter が IOException をスローする状況
+     * [Given] 書き込み権限のないディレクトリに出力しようとする
      * [When]  write() を呼び出す
      * [Then]  ConverterException がスローされる
      */
@@ -689,18 +684,13 @@ public class YamlFormatWriterTest {
         TestDataContainer container = container("case01", block);
 
         File outputDir = temporaryFolder.newFolder("out");
-        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
-            // createDirectories は実際に実行させる
-            filesMock.when(() -> Files.createDirectories(any(Path.class)))
-                    .thenCallRealMethod();
-            // exists は実際に実行させる
-            filesMock.when(() -> Files.exists(any(Path.class)))
-                    .thenCallRealMethod();
-            // newBufferedWriter は IOException をスロー
-            filesMock.when(() -> Files.newBufferedWriter(any(Path.class), any(java.nio.charset.Charset.class)))
-                    .thenThrow(new IOException("Simulated write failure"));
-
+        File containerDir = new File(outputDir, "FooTest");
+        containerDir.mkdirs();
+        containerDir.setWritable(false);
+        try {
             sut.write(container, outputDir.toPath(), false);
+        } finally {
+            containerDir.setWritable(true);
         }
     }
 
