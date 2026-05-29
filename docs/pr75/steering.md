@@ -311,7 +311,20 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
   - Mockito 5.3.0（`mockStatic`・`mockConstruction`）を使って再現可能な異常系シナリオを追加する
   - 各テストは Given/When/Then 形式で意図を明記し、「カバレッジのため」ではなく「実際に起きうるシナリオの検証」として書く
   - 到達不可な防御ガード（`System.exit()`・`delete()` 失敗・`listFiles() null` 等）は C-1.md にその理由を記録する
-- [ ] **C-1-15**: ユーザーレビュー依頼・OK取得
+- [ ] **C-1-15**: ユーザーレビュー依頼・OK取得（進行中: カバレッジ品質レビュー対応中）
+  - ユーザーレビュー中に発覚した問題を順次修正している。完了後に改めてレビュー依頼する。
+  - **完了済み追加対応（2026-05-29）**:
+    - `TestDataBlock` を sealed class 化（`ColumnRowDataBlock`・`FileDataBlock`・`MessageDataBlock` が `permits`）し、`TableDataBlock`/`ListMapBlock`/`FileDataBlock`/`MessageDataBlock` を `final` に変更
+    - `XlsFormatWriter.writeBlock()` の到達不可 `return rowNum` を削除（sealed class で不要になったため）
+    - 到達不可ガードを `IllegalArgumentException` → `AssertionError("UNREACHABLE:")` に統一（`YamlFormatWriter.sectionKey()`・`YamlFormatReader.sectionKeyToDataType()`・`XlsFormatReader.parseRows()`）
+    - `readCells()` の重複末尾空セル除去ロジックを削除し `trimTrailingEmpty()` に一本化
+    - `TestDataConverter.System.exit()` を削除（`mvn exec:java` 前提では不要・有害）
+    - `YamlFormatWriter` の `IOException` catch テストを `mockStatic` → `setWritable(false)` に置き換え（カバレッジ解消）
+    - `YamlFormatReader` に `isDirectory()==false` ・`listFiles()==null` テストを追加
+    - 146テスト全グリーン、残カバレッジ未達6件（`docs/pr75/checks/C-1.md` に理由記録済み）
+  - **次のアクション**: 残6件の確認を1件ずつユーザーと実施中。現在 件5（`YamlFormatWriter.writeMessageRecord()` の `type==null` 分岐）を確認中
+    - 件5は「到達不可」ではなく「テスト漏れ」と判明。`XlsFormatReader` が type=null の `FieldDef` を生成しうる（フィールド行が型行より長い場合）
+    - 次回再開時: 件5のテスト追加から着手すること
 
 **完了条件**:
 - 設計書がユーザーレビュー OK 済みであること
@@ -341,7 +354,7 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 
 ---
 
-## 現在の状態（2026-05-28）
+## 現在の状態（2026-05-29）
 
 ブランチ: `convert-testdata-excel-to-text`
 
@@ -352,22 +365,45 @@ T-1（仕様リスト145件全件に解説書マッピング・実装マッピ�
 | **S-1〜S-5** Ph-1/Ph-2 全タスク | **完了**（全ユーザーレビュー OK） | — |
 | **R-1** YamlTestDataParser 実装（TDD） | **完了**（ユーザーレビュー OK 2026-05-27） | — |
 | **T-1** トレーサビリティマトリクス完成 | **完了**（ユーザーレビュー OK 2026-05-27） | — |
-| **C-1** NTF テストデータ変換ツール設計・実装 | **進行中** | C-1-14（Mockitoカバレッジ）→ C-1-15（ユーザーレビュー） |
+| **C-1** NTF テストデータ変換ツール設計・実装 | **進行中** | C-1-15（ユーザーレビュー対応中・残6件確認中） |
 | **V-1** Excel 並走確認 | 未着手 | C-1 完了後 |
 
 ### 再開手順
 
 1. `git checkout convert-testdata-excel-to-text` でブランチ確認、`git status` でクリーン確認
-2. **C-1-14** に着手する（下記「C-1-14 作業詳細」参照）
-3. C-1-14 完了後、**C-1-15**（ユーザーレビュー）を依頼する
-4. C-1-15 OK 後、V-1 に着手する
+2. **C-1-15** の残カバレッジ未達確認を再開する（下記「C-1-15 残作業詳細」参照）
+3. C-1-15 OK 後、V-1 に着手する
 
-### C-1 実装状況（2026-05-28）
+### C-1-15 残作業詳細（2026-05-29 時点）
 
-171テスト全グリーン。`src/main/java/nablarch/test/tool/converter/` に 20 クラス（model/xls/yamlサブパッケージ分割済み）実装済み。  
-レビュー記録: `docs/pr75/checks/C-1.md`（C-1-9〜C-1-12 の全指摘・対応記録）
+**現在 件5（`YamlFormatWriter` の `writeMessageRecord()` の `type==null` 分岐）を確認中。**
 
-### C-1-14 作業詳細
+件5は「到達不可」ではなく「テスト漏れ」と判明：
+- `XlsFormatReader` がファイルブロック/メッセージブロックで型行がフィールド行より短い場合に `type=null` の `FieldDef` を生成しうる（L264・L337）
+- `writeMessageRecord()` 側（L213）はファイルブロック書き出しメソッドの `else` 節。テストを追加すれば解消できる
+
+**次回再開時の作業順序**:
+
+1. 件5: `YamlFormatWriter` の `type==null` パス（L213）にテスト追加
+2. 件6〜7: 残カバレッジ未達を1件ずつユーザーと確認
+3. 全件確認完了後、C-1-15 ユーザーレビューを改めて依頼
+
+**残カバレッジ未達一覧（C-1.md に詳細記録済み）**:
+
+| # | クラス | 内容 | 種別 |
+|---|---|---|---|
+| 3 | `YamlFormatWriter` | `sectionKey()` の `throw AssertionError` | 番人（確認済み・現状維持） |
+| 5 | `YamlFormatWriter` | `writeMessageRecord()` の `type==null` 分岐（L213） | **テスト漏れ → 次回着手** |
+| 6 | `YamlFormatWriter` | `writeMessageRecord()` の `type==null`（L213相当別箇所） | 未確認 |
+| 7 | `YamlFormatReader` | `sectionKeyToDataType()` の `expected_files` 分岐 | 未確認 |
+| 8 | `YamlFormatReader` | `sectionKeyToDataType()` の `default: throw AssertionError` | 未確認 |
+
+### C-1 実装状況（2026-05-29）
+
+146テスト全グリーン。`src/main/java/nablarch/test/tool/converter/` に 20 クラス（model/xls/yamlサブパッケージ分割済み）実装済み。  
+レビュー記録: `docs/pr75/checks/C-1.md`
+
+### C-1-14 作業詳細（参考）
 
 **目的**: PRで変更した全クラスのカバレッジを、Mockito 5.3.0 を使った意味のあるテストで可能な限り 100% にする。
 
