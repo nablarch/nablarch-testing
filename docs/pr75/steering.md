@@ -22,15 +22,10 @@
 | 種別 | ファイル | 内容 |
 |---|---|---|
 | **仕様リスト** | [ntf-impl-spec-list.md](ntf-impl-spec-list.md) | 全145件（解説書マッピング × 実装マッピング × テストメソッド） |
-| **解説書** | [specs/ntf-testdata-doc.md](specs/ntf-testdata-doc.md) | YAML テストデータ記述仕様書（FIX 済み） |
-| **解説書 記述例** | [specs/ntf-testdata-doc-examples-overview.md](specs/ntf-testdata-doc-examples-overview.md) ほか | テーブル/ファイル/メッセージング/特殊値の記述例 |
+| **NTFテストデータ解説書** | [specs/ntf-testdata-doc.md](specs/ntf-testdata-doc.md) | YAML テストデータ記述仕様書（FIX 済み） |
 | **スキーマ** | [ntf-testdata-yaml-schema.json](ntf-testdata-yaml-schema.json) | JSON Schema 定義 |
 | **ADR** | [adrs/ADR-001-yaml-library.md](adrs/ADR-001-yaml-library.md) | SnakeYAML Engine 採用根拠 |
-| **チェック S-1〜S-5** | [checks/S-1.md](checks/S-1.md) 〜 [checks/S-5.md](checks/S-5.md) | 仕様抽出・仕様リスト確定の完了条件チェック |
-| **チェック R-1** | [checks/R-1.md](checks/R-1.md) | YamlTestDataParser TDD 実装の完了条件チェック（RS仕様ID対応表含む） |
-| **チェック T-1** | [checks/T-1.md](checks/T-1.md) | トレーサビリティマトリクス完成の完了条件チェック |
-| **C-1 設計書** | [specs/testdata-converter-design.md](specs/testdata-converter-design.md) | Excel↔YAML変換ツール設計書（QAレビュー対応済み・ユーザーレビュー待ち） |
-| **チェック C-1** | [checks/C-1.md](checks/C-1.md) | Excel↔YAML変換ツール 完了条件チェック |
+| **NTF変換ツール設計書** | [specs/testdata-converter-design.md](specs/testdata-converter-design.md) | Excel↔YAML変換ツール設計書（ユーザーレビュー OK 済み） |
 
 ---
 
