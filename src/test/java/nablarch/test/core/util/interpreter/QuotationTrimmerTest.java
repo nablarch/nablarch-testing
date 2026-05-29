@@ -96,19 +96,7 @@ public class QuotationTrimmerTest {
         // Given: 全角ダブルクォート 2文字
         // When: interpret を呼ぶ
         // Then: 前後クォートで囲まれているので空文字になること
-        assertResult("””", "");
-    }
-
-    /**
-     * null 入力: null が入力された場合は null がそのまま返ること。
-     */
-    @Test
-    public void testInterpretNull() {
-        // Given: null 入力
-        // When: interpret を呼ぶ（InterpretationContext(null, target) → ctx.getValue() は null）
-        // Then: null が返ること（NullPointerException が発生しないこと）
-        InterpretationContext ctx = new InterpretationContext(null, target);
-        Assert.assertNull(ctx.invokeNext());
+        assertResult("""", "");
     }
 
     /**

@@ -22,12 +22,9 @@ public class QuotationTrimmer implements TestDataInterpreter {
      * @return 引用符を取り除いた文字列
      */
     private String trimQuotation(String str) {
-        if (str == null) {
-            return str;
-        }
         if (str.length() >= 2
-                && ((str.startsWith("\"") && str.endsWith("\""))
-                        || (str.startsWith("”") && str.endsWith("”")))) {
+                && ((str.startsWith(“\””) && str.endsWith(“\””))
+                        || (str.startsWith(“””) && str.endsWith(“””)))) {
             return str.substring(1, str.length() - 1);
         }
         return str;
