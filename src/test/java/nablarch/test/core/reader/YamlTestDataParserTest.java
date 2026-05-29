@@ -877,6 +877,13 @@ public class YamlTestDataParserTest {
      * </p>
      *
      * <p>
+     * 【設計方針】このメソッドは「スキーマ全11トップレベルキーを一括で通過させる統合煙突テスト」である。
+     * 各 DataType・DataFile 型・メッセージ経路の個別検証は既存の testRs0x_ / testGetSetupFile 等のメソッドで
+     * 実施済みであり、本メソッドはスキーマに定義されたすべての項目が実装によって解釈可能であることを
+     * 一括で確認することを目的とするため、意図的に1メソッドに集約している。
+     * </p>
+     *
+     * <p>
      * 【ディレクティブ値の検証方針】DataFile#setDirective() は無効なキーを IllegalArgumentException で
      * スローする（DR-11・DataFileTest#testConvertValueWithInvalidDirective で確認済み）。そのため、
      * スキーマに記載した全 directives キー（text-encoding, record-separator, file-type, record-length,
