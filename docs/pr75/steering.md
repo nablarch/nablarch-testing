@@ -51,8 +51,9 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] **Ph-3** YamlTestDataParser TDD 実装 — 138件グリーン。ユーザーレビュー OK（2026-05-27）
 - [x] **Ph-4** トレーサビリティマトリクス完成 — 145件全件3軸記録・未対応ゼロ確認。ユーザーレビュー OK（2026-05-27）
 - [ ] **Ph-5** Excel 並走確認
-  - [ ] **C-1** 変換ツール設計・実装 — 147テスト全グリーン。C-1-15 ユーザーレビュー待ち
-  - [ ] **V-1** 全Excelテストの YAML 版並走実行 — C-1 完了後着手
+    - [ ] **C-1** 変換ツール設計・実装 — 147テスト全グリーン。C-1-15 ユーザーレビュー待ち
+  - [ ] **S-6** JSON Schema 整合性確認 — スキーマ全項目網羅 YAML 作成・実装読み込み検証・仕様リストマッピング列追加。C-1 完了後着手
+  - [ ] **V-1** 全Excelテストの YAML 版並走実行 — S-6 完了後着手
 
 ---
 
@@ -240,7 +241,23 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認
-2. **C-1-15** ユーザーレビュー待ち → OK 取得後 V-1 に着手
+2. **C-1-15** ユーザーレビュー待ち → OK 取得後 **S-6** に着手
+3. **S-6** 完了後 **V-1** に着手
+
+### S-6: JSON Schema 整合性確認（次着手タスク）
+
+**目的**: スキーマ（`src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json`）が実装と一致していることを根拠で説明できる状態にする。
+
+**作業内容**:
+- [ ] スキーマの全項目を網羅した YAML ファイル（`schemaFullCoverage.yaml`）を `YamlTestDataParserTest/` に作成する
+- [ ] `YamlTestDataParserTest` でその YAML を実際に読み込んでアサートするテストを追加する（スキーマ準拠かつ実装が正しく解釈できることを検証）
+- [ ] `ntf-impl-spec-list.md` にスキーマ項目マッピング列を追加し、仕様IDとスキーマ項目の対応を記録する
+- [ ] `docs/pr75/` の `ntf-testdata-yaml-schema.json`（旧置き場）を削除する
+- [ ] 成果物一覧のスキーマのパスを `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` に更新する
+
+**完了条件**:
+- `schemaFullCoverage.yaml` を実装に読み込ませてエラーなし
+- 仕様リストのスキーマ項目マッピング列が全件埋まっていること
 
 ---
 
