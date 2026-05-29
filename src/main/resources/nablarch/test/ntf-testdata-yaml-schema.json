@@ -312,10 +312,10 @@
           "description": "データ型記号（BasicDataTypeMapping 参照）。標準値: X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ。BasicDataTypeMapping#setMappingTable() または DataTypeMapping インタフェース実装によりカスタム型記号も使用可能（TEST_X9 等アンダースコアを含む型も許容）"
         },
         "length": {
-          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される（DataFileFragment#removeLineSeparatorWithTrim()）",
+          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される（DataFileFragment#removeLineSeparatorWithTrim()）。変換ツール（YamlFormatWriter）は length を文字列としてリテラル保持するため \"10\" のようにクォートありで出力する。パーサー（YamlFileBuilder）は toStr() で整数・文字列どちらも受容するため、integer 記法（10）も文字列記法（\"10\"）も有効。",
           "anyOf": [
             { "type": "integer", "minimum": 1 },
-            { "type": "string", "const": "-" }
+            { "type": "string", "pattern": "^([1-9][0-9]*|-)$" }
           ]
         }
       }
