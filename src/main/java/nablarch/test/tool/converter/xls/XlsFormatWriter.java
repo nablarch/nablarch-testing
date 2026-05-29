@@ -68,10 +68,9 @@ public class XlsFormatWriter implements TestDataFormatWriter {
             return writeColumnRowBlock(sheet, (ColumnRowDataBlock) block, rowNum);
         } else if (block instanceof FileDataBlock) {
             return writeFileBlock(sheet, (FileDataBlock) block, rowNum);
-        } else if (block instanceof MessageDataBlock) {
+        } else {
             return writeMessageBlock(sheet, (MessageDataBlock) block, rowNum);
         }
-        return rowNum;
     }
 
     private int writeColumnRowBlock(Sheet sheet, ColumnRowDataBlock block, int rowNum) {

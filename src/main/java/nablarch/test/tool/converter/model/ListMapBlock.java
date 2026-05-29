@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * LIST_MAP のデータブロック。
  */
-public class ListMapBlock extends ColumnRowDataBlock {
+public final class ListMapBlock extends ColumnRowDataBlock {
 
     public ListMapBlock(String groupId, String identifier,
                         List<String> columnNames, List<List<String>> rows) {

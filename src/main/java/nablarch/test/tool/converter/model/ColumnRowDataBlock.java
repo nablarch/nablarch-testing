@@ -8,7 +8,7 @@ import java.util.List;
  * テーブルデータ・LIST_MAP の共通基底クラス。
  * カラム名リストとデータ行リストを保持する。
  */
-public abstract class ColumnRowDataBlock extends TestDataBlock {
+public abstract sealed class ColumnRowDataBlock extends TestDataBlock permits TableDataBlock, ListMapBlock {
 
     private final List<String> columnNames;
     private final List<List<String>> rows;

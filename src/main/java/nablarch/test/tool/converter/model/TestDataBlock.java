@@ -5,7 +5,7 @@ import nablarch.test.core.reader.DataType;
 /**
  * NTF の 1 データブロックに相当する抽象クラス。
  */
-public abstract class TestDataBlock {
+public abstract sealed class TestDataBlock permits ColumnRowDataBlock, FileDataBlock, MessageDataBlock {
 
     private final DataType dataType;
     private final String groupId;

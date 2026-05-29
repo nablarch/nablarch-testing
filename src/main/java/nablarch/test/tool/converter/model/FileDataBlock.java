@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * SETUP_FIXED / SETUP_VARIABLE / EXPECTED_FIXED / EXPECTED_VARIABLE のデータブロック。
  */
-public class FileDataBlock extends TestDataBlock {
+public final class FileDataBlock extends TestDataBlock {
 
     /** ファイルデータブロックの種別。SETUP/EXPECTED を問わず固定長か可変長かを区別する。 */
     public enum FileType { FIXED, VARIABLE }

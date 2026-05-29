@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * MESSAGE / EXPECTED_REQUEST_*_MESSAGES / RESPONSE_*_MESSAGES のデータブロック。
  */
-public class MessageDataBlock extends TestDataBlock {
+public final class MessageDataBlock extends TestDataBlock {
 
     /** FW 制御ヘッダフィールド（FW_HEADER レコード）。Excel の行順を保持するため LinkedHashMap を使用する。 */
     private final Map<String, String> fwHeaderFields;
