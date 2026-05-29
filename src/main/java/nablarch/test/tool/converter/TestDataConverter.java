@@ -21,7 +21,7 @@ import java.util.List;
 public class TestDataConverter {
 
     public static void main(String[] args) {
-        System.exit(run(args));
+        run(args);
     }
 
     /**

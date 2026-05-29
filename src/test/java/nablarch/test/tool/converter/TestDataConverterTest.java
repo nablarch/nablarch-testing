@@ -380,42 +380,22 @@ public class TestDataConverterTest {
     }
 
     /**
-     * [Given] main() を呼び出す（有効な引数で正常変換）
+     * [Given] main() を有効な引数で呼び出す
      * [When]  main() が実行される
-     * [Then]  SecurityManager が System.exit(0) の呼び出しを捕捉する
+     * [Then]  例外なく正常終了し、YAML ファイルが出力される
      */
     @Test
-    public void mainInvokesSystemExit() throws Exception {
+    public void mainConvertsSuccessfully() throws Exception {
         File inputDir = temporaryFolder.newFolder("input");
         File outputDir = temporaryFolder.newFolder("output");
         writeSimpleXls(new File(inputDir, "FooTest.xls"));
 
-        // SecurityManager を使って System.exit() の呼び出しを捕捉する
-        SecurityManager originalSm = System.getSecurityManager();
-        final int[] exitCode = {-1};
-        System.setSecurityManager(new SecurityManager() {
-            @Override
-            public void checkPermission(java.security.Permission perm) {
-                // 許可
-            }
-            @Override
-            public void checkExit(int status) {
-                exitCode[0] = status;
-                throw new SecurityException("Intercepted System.exit(" + status + ")");
-            }
+        TestDataConverter.main(new String[]{
+                "--from", "xls", "--to", "yaml",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
         });
-        try {
-            TestDataConverter.main(new String[]{
-                    "--from", "xls", "--to", "yaml",
-                    inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
-            });
-        } catch (SecurityException e) {
-            // System.exit() の呼び出しを捕捉
-        } finally {
-            System.setSecurityManager(originalSm);
-        }
 
-        assertThat(exitCode[0], is(0));
+        assertTrue(new File(outputDir, "FooTest").isDirectory());
     }
 
     /**
