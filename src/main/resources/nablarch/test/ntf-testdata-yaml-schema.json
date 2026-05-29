@@ -2,64 +2,64 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nablarch.github.io/ntf-testdata-yaml-schema.json",
   "title": "NTF Test Data",
-  "description": "Nablarch Testing Framework のテストデータ YAML 表現スキーマ。根拠: DataType.java、TestDataParsingTemplate.java 等",
+  "description": "Nablarch Testing Framework のテストデータ YAML 表現スキーマ",
   "type": "object",
   "additionalProperties": false,
   "properties": {
 
     "setup_tables": {
       "type": "array",
-      "description": "SETUP_TABLE: DB事前準備用テーブルデータ（GroupData系）",
+      "description": "SETUP_TABLE: DB事前準備用テーブルデータ",
       "items": { "$ref": "#/$defs/table_data" }
     },
     "expected_tables": {
       "type": "array",
-      "description": "EXPECTED_TABLE: 期待値テーブルデータ（GroupData系）",
+      "description": "EXPECTED_TABLE: 期待値テーブルデータ",
       "items": { "$ref": "#/$defs/table_data" }
     },
     "expected_complete_tables": {
       "type": "array",
-      "description": "EXPECTED_COMPLETE_TABLE: 省略カラムにデフォルト値を補完する期待値テーブル（GroupData系）",
+      "description": "EXPECTED_COMPLETE_TABLE: 省略カラムにデフォルト値を補完する期待値テーブル",
       "items": { "$ref": "#/$defs/table_data" }
     },
     "list_maps": {
       "type": "array",
-      "description": "LIST_MAP: List<Map<String,String>> 形式データ（SingleData系、ID一致で最初の1件のみ取得）",
+      "description": "LIST_MAP: List<Map<String,String>> 形式データ。id が重複した場合は最初の1件のみ取得される",
       "items": { "$ref": "#/$defs/list_map_data" }
     },
     "setup_files": {
       "type": "array",
-      "description": "SETUP_FIXED / SETUP_VARIABLE を統合。type フィールドで区別。getSetupFile() が両者をまとめて返す",
+      "description": "SETUP_FIXED / SETUP_VARIABLE を統合。type フィールドで区別",
       "items": { "$ref": "#/$defs/file_data" }
     },
     "expected_files": {
       "type": "array",
-      "description": "EXPECTED_FIXED / EXPECTED_VARIABLE を統合。getExpectedFile() が両者をまとめて返す",
+      "description": "EXPECTED_FIXED / EXPECTED_VARIABLE を統合。type フィールドで区別",
       "items": { "$ref": "#/$defs/file_data" }
     },
     "messages": {
       "type": "array",
-      "description": "MESSAGE: 要求電文。内部は固定長ファイルと同構造（SingleData系）",
+      "description": "MESSAGE: 要求電文。固定長ファイルと同じ構造で記述する",
       "items": { "$ref": "#/$defs/message_data" }
     },
     "expected_request_header_messages": {
       "type": "array",
-      "description": "EXPECTED_REQUEST_HEADER_MESSAGES（SingleData系）",
+      "description": "EXPECTED_REQUEST_HEADER_MESSAGES",
       "items": { "$ref": "#/$defs/message_data" }
     },
     "expected_request_body_messages": {
       "type": "array",
-      "description": "EXPECTED_REQUEST_BODY_MESSAGES（SingleData系）",
+      "description": "EXPECTED_REQUEST_BODY_MESSAGES",
       "items": { "$ref": "#/$defs/message_data" }
     },
     "response_header_messages": {
       "type": "array",
-      "description": "RESPONSE_HEADER_MESSAGES（GroupData系、GroupMessageParser が処理）",
+      "description": "RESPONSE_HEADER_MESSAGES",
       "items": { "$ref": "#/$defs/group_message_data" }
     },
     "response_body_messages": {
       "type": "array",
-      "description": "RESPONSE_BODY_MESSAGES（GroupData系、GroupMessageParser が処理）",
+      "description": "RESPONSE_BODY_MESSAGES",
       "items": { "$ref": "#/$defs/group_message_data" }
     }
 
@@ -80,11 +80,11 @@
         },
         "table": {
           "type": "string",
-          "description": "テーブル名。TableData#setTableName() で trim().toUpperCase() される"
+          "description": "テーブル名。NTF により trim・大文字変換される"
         },
         "rows": {
           "type": "array",
-          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\nマーカーカラム（[COLNAME] 形式）は NTF が除外するため YAML には出力しない。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する（BasicTestDataParser が全件DELETE を実行）。\n各オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に DefaultValues によるデフォルト値が補完される（SETUP_TABLE / EXPECTED_TABLE どちらでも同様）。EXPECTED_COMPLETE_TABLE では省略カラムに BasicDefaultValues で全件補完したうえで比較される。",
+          "description": "データ行。各要素がレコード1件。キー=カラム名（文字列）、値=セル値。\n【テーブル系の rows はオブジェクト配列】ファイル系（record_fragment）の rows は配列の配列である点に注意。\n数値・真偽値も必ず文字列（クォート付き）で記述すること（例: AGE: \"30\"、FLAG: \"true\"）。\n空配列 [] は SETUP_TABLE において全件削除として機能する。\n各オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時にデフォルト値が補完される（SETUP_TABLE / EXPECTED_TABLE どちらでも同様）。EXPECTED_COMPLETE_TABLE では省略カラムにデフォルト値を全件補完したうえで比較される。",
           "items": {
             "type": "object",
             "additionalProperties": {
@@ -99,11 +99,11 @@
       "type": "object",
       "required": ["id", "rows"],
       "additionalProperties": false,
-      "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群。SingleData系のため id が重複した場合は最初の1件のみ取得される",
+      "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群。id が重複した場合は最初の1件のみ取得される",
       "properties": {
         "id": {
           "type": "string",
-          "description": "識別ID。Excel: LIST_MAP=ID の '=' 以降の文字列（getTypeValue()）。ファイル内でユニークにすること"
+          "description": "識別ID。Excel: LIST_MAP=ID の '=' 以降の文字列。ファイル内でユニークにすること"
         },
         "rows": {
           "type": "array",
@@ -122,7 +122,7 @@
       "type": "object",
       "required": ["path", "type", "records"],
       "additionalProperties": false,
-      "description": "ファイルデータ1ブロック。DataFile（1ファイル）+ 複数の DataFileFragment（1レコード種別）に対応",
+      "description": "ファイルデータ1ブロック。1ファイル＋複数のレコード種別で構成される",
       "properties": {
         "group_id": {
           "type": "string",
@@ -142,7 +142,7 @@
         "records": {
           "type": "array",
           "minItems": 0,
-          "description": "レコード種別ごとのブロック。DataFileFragment の配列。空ファイル（0バイト）を定義する場合は空配列 [] を指定し、directives のみ記述してレコード定義を省略する（公式解説書: 03_Tips.rst）",
+          "description": "レコード種別ごとのブロック。空ファイル（0バイト）を定義する場合は空配列 [] を指定し、directives のみ記述してレコード定義を省略する（公式解説書: 03_Tips.rst）",
           "items": { "$ref": "#/$defs/record_fragment" }
         }
       }
@@ -152,7 +152,7 @@
       "type": "object",
       "required": ["id", "records"],
       "additionalProperties": false,
-      "description": "メッセージデータ（SingleData系）。内部構造は固定長ファイルと同一。id が重複した場合は最初の1件のみ取得される",
+      "description": "メッセージデータ。固定長ファイルと同じ構造で記述する。id が重複した場合は最初の1件のみ取得される",
       "properties": {
         "id": {
           "type": "string",
@@ -162,7 +162,7 @@
         "records": {
           "type": "array",
           "minItems": 1,
-          "description": "レコード種別ごとのブロック。FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は MessageParser により fwHeader Map に分離される（SystemRepository の reader.fwHeaderfields キーで変更可能）",
+          "description": "レコード種別ごとのブロック。FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は自動的に分離される（SystemRepository の reader.fwHeaderfields キーで変更可能）",
           "items": { "$ref": "#/$defs/record_fragment" }
         }
       }
@@ -172,16 +172,16 @@
       "type": "object",
       "required": ["id", "records"],
       "additionalProperties": false,
-      "description": "RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES のデータブロック。アクセスパスが2つある:\n(A) RequestTestingSendSyncSupport → GroupMessageParser（GroupDataParsingTemplate）: group_id でフィルタリング。group_id 必須\n(B) MockMessagingContext / MockMessagingClient → SendSyncMessageParser（SingleDataParsingTemplate）: id で照合。group_id 不要（RESPONSE_HEADER_MESSAGES=id 形式）\ngroup_id を省略した場合はパスB（SingleData形式）として扱われる。",
+      "description": "RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES のデータブロック。アクセス経路が2つある:\n(A) RequestTestingSendSyncSupport 経由: group_id でフィルタリング。group_id 必須\n(B) MockMessagingContext / MockMessagingClient 経由: id で照合。group_id 不要\ngroup_id を省略した場合は経路B として扱われる。",
       "properties": {
         "group_id": {
           "type": "string",
           "minLength": 1,
-          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。GroupDataParsingTemplate（RequestTestingSendSyncSupport 経路）がこの値でフィルタリングする。MockMessagingContext / MockMessagingClient 経路では不要のため省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
+          "description": "グループID。Excel: RESPONSE_HEADER_MESSAGES[groupId]=ID の括弧内の値。RequestTestingSendSyncSupport 経路でフィルタリングに使用される。MockMessagingContext / MockMessagingClient 経路では不要のため省略可。空文字 \"\" は誤マッチを引き起こすため minLength: 1 で禁止"
         },
         "id": {
           "type": "string",
-          "description": "Excel の '=' 以降の値。GroupData経路ではフィルタリングに使われず識別子として記録。SingleData経路（MockMessagingContext/Client）ではこの値で照合される"
+          "description": "Excel の '=' 以降の値。RequestTestingSendSyncSupport 経路では識別子のみ。MockMessagingContext / MockMessagingClient 経路ではこの値で照合される"
         },
         "directives": { "$ref": "#/$defs/directives" },
         "records": {
@@ -195,75 +195,75 @@
     "directives": {
       "type": "object",
       "additionalProperties": false,
-      "description": "ファイルディレクティブ。固定長（FixedLengthDirective）と可変長（VariableLengthDirective）で有効なキーが異なる。根拠: nablarch-core-dataformat の DataRecordFormatterSupport$Directive、FixedLengthDataRecordFormatter$FixedLengthDirective、VariableLengthDataRecordFormatter$VariableLengthDirective",
+      "description": "ファイルディレクティブ。固定長と可変長で有効なキーが異なる",
       "properties": {
         "text-encoding": {
           "type": "string",
-          "description": "[共通] 文字エンコーディング（例: UTF-8, MS932）。DataRecordFormatterSupport$Directive#TEXT_ENCODING"
+          "description": "[共通] 文字エンコーディング（例: UTF-8, MS932）"
         },
         "record-separator": {
           "type": "string",
-          "description": "[共通] レコード区切り文字。YAMLダブルクォート文字列内でエスケープシーケンスを使う（例: \"\\r\\n\" = CRLF、\"\\n\" = LF）。シンボル形式（\"CRLF\" / \"LF\" / \"CR\" / \"NONE\"）も有効（LineSeparator.evaluate() が解釈）。DataRecordFormatterSupport$Directive#RECORD_SEPARATOR"
+          "description": "[共通] レコード区切り文字。YAMLダブルクォート文字列内でエスケープシーケンスを使う（例: \"\\r\\n\" = CRLF、\"\\n\" = LF）。シンボル形式（\"CRLF\" / \"LF\" / \"CR\" / \"NONE\"）も有効"
         },
         "file-type": {
           "type": "string",
-          "description": "[共通] ファイル種別。FixedLengthFile / VariableLengthFile のコンストラクタが自動設定するため通常は記述不要（固定長=Fixed、可変長=Variable）。DataRecordFormatterSupport$Directive#FILE_TYPE"
+          "description": "[共通] ファイル種別（固定長=Fixed、可変長=Variable）。type フィールドから自動設定されるため通常は記述不要"
         },
         "record-length": {
           "type": "integer",
-          "description": "[固定長専用] レコード長（バイト数）。FixedLengthFile#createLayout() が全フィールド長の合計から自動計算するため通常は記述不要。明示した場合は自動計算値を上書きする。FixedLengthDataRecordFormatter$FixedLengthDirective#RECORD_LENGTH"
+          "description": "[固定長専用] レコード長（バイト数）。全フィールド長の合計から自動計算されるため通常は記述不要。明示した場合は自動計算値を上書きする"
         },
         "positive-zone-sign-nibble": {
           "type": "string",
-          "description": "[固定長専用] ゾーン数値の正符号ニブル。FixedLengthDirective#POSITIVE_ZONE_SIGN_NIBBLE"
+          "description": "[固定長専用] ゾーン数値の正符号ニブル"
         },
         "negative-zone-sign-nibble": {
           "type": "string",
-          "description": "[固定長専用] ゾーン数値の負符号ニブル。FixedLengthDirective#NEGATIVE_ZONE_SIGN_NIBBLE"
+          "description": "[固定長専用] ゾーン数値の負符号ニブル"
         },
         "positive-pack-sign-nibble": {
           "type": "string",
-          "description": "[固定長専用] パック数値の正符号ニブル。FixedLengthDirective#POSITIVE_PACK_SIGN_NIBBLE"
+          "description": "[固定長専用] パック数値の正符号ニブル"
         },
         "negative-pack-sign-nibble": {
           "type": "string",
-          "description": "[固定長専用] パック数値の負符号ニブル。FixedLengthDirective#NEGATIVE_PACK_SIGN_NIBBLE"
+          "description": "[固定長専用] パック数値の負符号ニブル"
         },
         "required-decimal-point": {
           "type": "boolean",
-          "description": "[固定長専用] 小数点の要否。FixedLengthDirective#REQUIRED_DECIMAL_POINT"
+          "description": "[固定長専用] 小数点の要否"
         },
         "fixed-sign-position": {
           "type": "boolean",
-          "description": "[固定長専用] 符号位置固定の要否。FixedLengthDirective#FIXED_SIGN_POSITION"
+          "description": "[固定長専用] 符号位置固定の要否"
         },
         "required-plus-sign": {
           "type": "boolean",
-          "description": "[固定長専用] 正符号出力の要否。FixedLengthDirective#REQUIRED_PLUS_SIGN"
+          "description": "[固定長専用] 正符号出力の要否"
         },
         "field-separator": {
           "type": "string",
-          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。1文字のみ有効。\"\\\\t\" を指定するとタブ文字（U+0009）に変換される（VariableLengthFile#convertDirectiveValue()）。VariableLengthDirective#FIELD_SEPARATOR"
+          "description": "[可変長専用] フィールド区切り文字。省略時はカンマ（\",\"）。1文字のみ有効。\"\\\\t\" を指定するとタブ文字（U+0009）に変換される"
         },
         "quoting-delimiter": {
           "type": "string",
-          "description": "[可変長専用] クォート区切り文字。VariableLengthDirective#QUOTING_DELIMITER"
+          "description": "[可変長専用] クォート区切り文字"
         },
         "ignore-blank-lines": {
           "type": "boolean",
-          "description": "[可変長専用] 空行を無視するか否か。VariableLengthDirective#IGNORE_BLANK_LINES"
+          "description": "[可変長専用] 空行を無視するか否か"
         },
         "requires-title": {
           "type": "boolean",
-          "description": "[可変長専用] タイトル行の要否。VariableLengthDirective#REQUIRES_TITLE"
+          "description": "[可変長専用] タイトル行の要否"
         },
         "max-record-length": {
           "type": "integer",
-          "description": "[可変長専用] 最大レコード長（バイト数）。VariableLengthDirective#MAX_RECORD_LENGTH"
+          "description": "[可変長専用] 最大レコード長（バイト数）"
         },
         "title-record-type-name": {
           "type": "string",
-          "description": "[可変長専用] タイトルレコード種別名。VariableLengthDirective#TITLE_RECORD_TYPE_NAME"
+          "description": "[可変長専用] タイトルレコード種別名"
         }
       }
     },
@@ -272,7 +272,7 @@
       "type": "object",
       "required": ["record_type", "fields", "rows"],
       "additionalProperties": false,
-      "description": "レコード種別1ブロック。DataFileFragment に対応。Excel の『先頭セルが種別名の行』から始まる行群。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。\nrows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（パーサが列順で対応付ける）。",
+      "description": "レコード種別1ブロック。Excel の『先頭セルが種別名の行』から始まる行群。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。\nrows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（パーサが列順で対応付ける）。",
       "properties": {
         "record_type": {
           "type": "string",
@@ -281,7 +281,7 @@
         "fields": {
           "type": "array",
           "minItems": 1,
-          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合。同一レコード種別内のフィールド名は重複不可（DataFileFragment#setNames() が重複チェックし重複時は IllegalArgumentException）",
+          "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合。同一レコード種別内のフィールド名は重複不可（重複時はエラー）",
           "items": { "$ref": "#/$defs/field_def" }
         },
         "rows": {
@@ -309,10 +309,10 @@
         "type": {
           "type": "string",
           "pattern": "^[A-Z][A-Z0-9_]*$",
-          "description": "データ型記号（BasicDataTypeMapping 参照）。標準値: X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ。BasicDataTypeMapping#setMappingTable() または DataTypeMapping インタフェース実装によりカスタム型記号も使用可能（TEST_X9 等アンダースコアを含む型も許容）"
+          "description": "データ型記号。標準値: X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ。カスタム型記号も設定により使用可能（TEST_X9 等アンダースコアを含む型も許容）"
         },
         "length": {
-          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（FixedLengthFileFragment が実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される（DataFileFragment#removeLineSeparatorWithTrim()）。変換ツール（YamlFormatWriter）は length を文字列としてリテラル保持するため \"10\" のようにクォートありで出力する。パーサー（YamlFileBuilder）は toStr() で整数・文字列どちらも受容するため、integer 記法（10）も文字列記法（\"10\"）も有効。",
+          "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される。変換ツールは length を文字列としてリテラル保持するため \"10\" のようにクォートありで出力する。integer 記法（10）も文字列記法（\"10\"）もどちらも有効。",
           "anyOf": [
             { "type": "integer", "minimum": 1 },
             { "type": "string", "pattern": "^([1-9][0-9]*|-)$" }
