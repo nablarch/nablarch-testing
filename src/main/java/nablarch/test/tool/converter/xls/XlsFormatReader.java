@@ -158,7 +158,7 @@ public class XlsFormatReader implements TestDataFormatReader {
                 blocks.add(block);
                 i = next[0];
             } else {
-                i++;
+                throw new AssertionError("UNREACHABLE: unexpected DataType: " + dataType);
             }
         }
         return blocks;
