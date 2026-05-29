@@ -10,6 +10,7 @@ import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
+import nablarch.test.core.reader.DataType;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
@@ -859,6 +860,92 @@ public class YamlTestDataParserTest {
     public void testSetTestDataReaderThrowsUnsupported() {
         // Given / When / Then
         sut.setTestDataReader(new MockTestDataReader());
+    }
+
+    // ========================================================================
+    // S-6: JSON Schema 全項目網羅テスト
+    // ========================================================================
+
+    /**
+     * [S-6] schemaFullCoverage: スキーマの全トップレベルキー・全 directives・length="-" を含む YAML を
+     * 実装が正しく解釈できること。
+     *
+     * <p>
+     * Given: スキーマ（ntf-testdata-yaml-schema.json）の全項目を含む schemaFullCoverage.yaml<br>
+     * When:  各 get* メソッドで読み込む<br>
+     * Then:  エラーなしに読み込まれ、各トップレベルキーの件数が正しいこと
+     * </p>
+     */
+    @Test
+    public void testSchemaFullCoverage() throws Exception {
+        final String resource = "YamlTestDataParserTest/schemaFullCoverage";
+
+        // setup_tables: group_id なし・grp1・emptySetup の 3 エントリ。
+        // グループID なし呼び出しは group_id フィールドのないエントリのみ返す（rows 空除外後の 1 件）。
+        List<TableData> setupTables = sut.getSetupTableData(DIR, resource);
+        assertThat("setup_tables: group_id なしエントリが取得できること", setupTables.size(), is(1));
+        assertThat(setupTables.get(0).getTableName(), is("TEST_TABLE"));
+
+        List<TableData> setupTablesGrp1 = sut.getSetupTableData(DIR, resource, "grp1");
+        assertThat("setup_tables: grp1 エントリが取得できること", setupTablesGrp1.size(), is(1));
+
+        // expected_tables: group_id なし・grp1・emptyExpected の 3 エントリ。
+        // getExpectedTableData はグループID なしでは expected_tables(1件) + expected_complete_tables(1件) = 2 件。
+        List<TableData> expectedTables = sut.getExpectedTableData(DIR, resource);
+        assertThat("expected_tables + expected_complete_tables: group_id なしエントリが取得できること", expectedTables.size(), is(2));
+
+        List<TableData> expectedTablesGrp1 = sut.getExpectedTableData(DIR, resource, "grp1");
+        assertThat("expected_tables: grp1 エントリが取得できること", expectedTablesGrp1.size(), is(1));
+
+        // list_maps: id=listMapId1 が取得できること
+        List<Map<String, String>> listMap = sut.getListMap(DIR, resource, "listMapId1");
+        assertThat("list_maps: 2 行取得できること", listMap.size(), is(2));
+        assertThat("list_maps: KEY1 が val1 であること", listMap.get(0).get("KEY1"), is("val1"));
+        assertThat("list_maps: KEY2 の null 値が null として取得されること", listMap.get(1).get("KEY2"), nullValue());
+
+        // setup_files: fixed 2 件（all_directives + grp） + variable 1 件 + empty 1 件（records 空は除外）
+        // records が空のエントリは DataFile オブジェクトとして返されるが fragment が 0 件
+        List<DataFile> setupFiles = sut.getSetupFile(DIR, resource);
+        assertThat("setup_files: グループなしの 3 件が取得できること", setupFiles.size(), is(3));
+        assertThat("setup_files[0]: FixedLengthFile であること", setupFiles.get(0), instanceOf(FixedLengthFile.class));
+        assertThat("setup_files[0]: path が正しいこと",
+                setupFiles.get(0).getPath(), is("dummy/setup_fixed_all_directives.dat"));
+        assertThat("setup_files[1]: VariableLengthFile であること", setupFiles.get(1), instanceOf(VariableLengthFile.class));
+        assertThat("setup_files[2]: records 空の FixedLengthFile であること", setupFiles.get(2), instanceOf(FixedLengthFile.class));
+
+        List<DataFile> setupFilesGrp = sut.getSetupFile(DIR, resource, "grpFixed");
+        assertThat("setup_files: grpFixed エントリが取得できること", setupFilesGrp.size(), is(1));
+
+        // expected_files: fixed 1 件 + variable 1 件
+        List<DataFile> expectedFiles = sut.getExpectedFile(DIR, resource);
+        assertThat("expected_files: 2 件取得できること", expectedFiles.size(), is(2));
+        assertThat("expected_files[0]: FixedLengthFile であること", expectedFiles.get(0), instanceOf(FixedLengthFile.class));
+        assertThat("expected_files[1]: VariableLengthFile であること", expectedFiles.get(1), instanceOf(VariableLengthFile.class));
+
+        // messages: id=msgId1 が取得できること
+        MessagePool msg = sut.getMessage(DIR, resource, "msgId1");
+        assertThat("messages: non-null であること", msg, notNullValue());
+        assertThat("messages: RequestTestingMessagePool であること", msg, instanceOf(RequestTestingMessagePool.class));
+
+        // expected_request_header_messages: id=msgId1 が取得できること
+        MessagePool reqHeader = sut.getMessageWithoutCache(
+                DIR, resource, DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "msgId1");
+        assertThat("expected_request_header_messages: non-null であること", reqHeader, notNullValue());
+
+        // expected_request_body_messages: id=msgId1 が取得できること
+        MessagePool reqBody = sut.getMessageWithoutCache(
+                DIR, resource, DataType.EXPECTED_REQUEST_BODY_MESSAGES, "msgId1");
+        assertThat("expected_request_body_messages: non-null であること", reqBody, notNullValue());
+
+        // response_body_messages: getSendSyncMessage で grp1 エントリが取得できること
+        List<RequestTestingMessagePool> respBody = sut.getSendSyncMessage(
+                DIR, resource, "grp1", DataType.RESPONSE_BODY_MESSAGES);
+        assertThat("response_body_messages: grp1 の 1 件が取得できること", respBody.size(), is(1));
+
+        // response_header_messages: getSendSyncMessage で grp1 エントリが取得できること
+        List<RequestTestingMessagePool> respHeader = sut.getSendSyncMessage(
+                DIR, resource, "grp1", DataType.RESPONSE_HEADER_MESSAGES);
+        assertThat("response_header_messages: grp1 の 1 件が取得できること", respHeader.size(), is(1));
     }
 
     // ========================================================================

@@ -1,0 +1,283 @@
+# S-6: JSON Schema 全項目網羅テスト用 YAML
+# スキーマ（ntf-testdata-yaml-schema.json）の全項目を1ファイルに収録する。
+# 各項目が実装に正しく解釈されることを YamlTestDataParserTest#testSchemaFullCoverage で検証する。
+
+# ─── table_data ───────────────────────────────────────────────────────────────
+
+setup_tables:
+  # group_id なし
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "9000000001"
+        PK_COL2: "AA"
+        VARCHAR2_COL: "あいう"
+        NUMBER_COL: "1"
+        NUMBER_COL2: null
+  # group_id あり
+  - group_id: grp1
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "9000000002"
+        PK_COL2: "BB"
+        VARCHAR2_COL: "かきく"
+        NUMBER_COL: "2"
+  # rows 空（全件削除ユースケース）
+  - group_id: emptySetup
+    table: TEST_TABLE
+    rows: []
+
+expected_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "9000000001"
+        PK_COL2: "AA"
+  - group_id: grp1
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "9000000002"
+        PK_COL2: "BB"
+  - group_id: emptyExpected
+    table: TEST_TABLE
+    rows: []
+
+expected_complete_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000099"
+        PK_COL2: "ZZ"
+
+# ─── list_map_data ────────────────────────────────────────────────────────────
+
+list_maps:
+  - id: listMapId1
+    rows:
+      - KEY1: "val1"
+        KEY2: "val2"
+      - KEY1: "val3"
+        KEY2: null
+
+# ─── file_data（fixed + 固定長専用 directives 全キー） ───────────────────────
+
+setup_files:
+  # fixed: group_id なし・固定長専用 directives 全キー
+  - path: dummy/setup_fixed_all_directives.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+      record-separator: "\r\n"
+      file-type: Fixed
+      record-length: 10
+      positive-zone-sign-nibble: "C"
+      negative-zone-sign-nibble: "D"
+      positive-pack-sign-nibble: "C"
+      negative-pack-sign-nibble: "D"
+      required-decimal-point: false
+      fixed-sign-position: false
+      required-plus-sign: false
+    records:
+      - record_type: DATA
+        fields:
+          # length=整数
+          - name: FIELD1
+            type: X
+            length: 5
+          # length="-"（オンデマンド計算）
+          - name: FIELD2
+            type: X
+            length: "-"
+          # length 省略（可変長向けだが fixed_def としても許容）
+          - name: FIELD3
+            type: X
+        rows:
+          - ["AAAAA", "BBB", "CCC"]
+
+  # fixed: group_id あり
+  - group_id: grpFixed
+    path: dummy/setup_fixed_grp.dat
+    type: fixed
+    directives:
+      text-encoding: UTF-8
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: X
+            length: 3
+        rows:
+          - ["AAA"]
+
+  # variable: group_id なし・可変長専用 directives 全キー
+  - path: dummy/setup_variable_all_directives.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      record-separator: "\n"
+      field-separator: ","
+      quoting-delimiter: "\""
+      ignore-blank-lines: true
+      requires-title: false
+      max-record-length: 1024
+      title-record-type-name: "TITLE"
+    records:
+      - record_type: DATA
+        fields:
+          - name: COL1
+            type: X
+          - name: COL2
+            type: X
+        rows:
+          - ["val1", "val2"]
+
+  # records 空（空ファイル定義ユースケース）
+  - path: dummy/setup_empty_file.dat
+    type: fixed
+    directives:
+      text-encoding: UTF-8
+    records: []
+
+expected_files:
+  - path: dummy/expected_fixed.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: RESULT
+        fields:
+          - name: CODE
+            type: X
+            length: 4
+          - name: MSG
+            type: X
+            length: 4
+        rows:
+          - ["0000", "OKAY"]
+
+  - path: dummy/expected_variable.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: NAME
+            type: X
+          - name: VALUE
+            type: X
+        rows:
+          - ["result1", "200"]
+
+# ─── message_data ─────────────────────────────────────────────────────────────
+
+messages:
+  - id: msgId1
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: X
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+expected_request_header_messages:
+  - id: msgId1
+    records:
+      - record_type: FW_HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+          - name: userId
+            type: X
+            length: 10
+          - name: resendFlag
+            type: X
+            length: 1
+          - name: resultCode
+            type: X
+            length: 4
+        rows:
+          - ["0000000001", "testUser01", "0", "0000"]
+
+expected_request_body_messages:
+  - id: msgId1
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: X
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+# ─── group_message_data ───────────────────────────────────────────────────────
+
+response_header_messages:
+  # GroupData 経路: group_id あり
+  - group_id: grp1
+    id: respHeader1
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+        rows:
+          - ["0000000001"]
+  # SingleData 経路: group_id なし（MockMessagingContext/Client 経由）
+  - id: respHeaderSingle
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: X
+            length: 10
+        rows:
+          - ["0000000002"]
+
+response_body_messages:
+  # GroupData 経路: group_id あり
+  - group_id: grp1
+    id: respBody1
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: X
+            length: 4
+          - name: DATA
+            type: X
+            length: 10
+        rows:
+          - ["0000", "RESULT_DAT"]
+  # SingleData 経路: group_id なし
+  - id: respBodySingle
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: X
+            length: 4
+        rows:
+          - ["0000"]
