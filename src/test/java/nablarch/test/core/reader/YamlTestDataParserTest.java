@@ -919,8 +919,8 @@ public class YamlTestDataParserTest {
         assertThat("list_maps: KEY1 が val1 であること", listMap.get(0).get("KEY1"), is("val1"));
         assertThat("list_maps: KEY2 の null 値が null として取得されること", listMap.get(1).get("KEY2"), nullValue());
 
-        // setup_files: fixed 2 件（all_directives + grp） + variable 1 件 + empty 1 件（records 空は除外）
-        // records が空のエントリは DataFile オブジェクトとして返されるが fragment が 0 件
+        // setup_files: group_id なしエントリが3件（all_directives[fixed], variable, empty_file[fixed]）。
+        // group_id=grpFixed のエントリはグループIDなし呼び出しではフィルタされるため除外される。
         List<DataFile> setupFiles = sut.getSetupFile(DIR, resource);
         assertThat("setup_files: グループなしの 3 件が取得できること", setupFiles.size(), is(3));
         assertThat("setup_files[0]: FixedLengthFile であること", setupFiles.get(0), instanceOf(FixedLengthFile.class));

@@ -200,6 +200,8 @@ messages:
 
 expected_request_header_messages:
   - id: msgId1
+    directives:
+      text-encoding: Windows-31J
     records:
       - record_type: FW_HEADER
         fields:
