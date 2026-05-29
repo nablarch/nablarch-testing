@@ -875,6 +875,15 @@ public class YamlTestDataParserTest {
      * When:  各 get* メソッドで読み込む<br>
      * Then:  エラーなしに読み込まれ、各トップレベルキーの件数が正しいこと
      * </p>
+     *
+     * <p>
+     * 【ディレクティブ値の検証方針】DataFile#setDirective() は無効なキーを IllegalArgumentException で
+     * スローする（DR-11・DataFileTest#testConvertValueWithInvalidDirective で確認済み）。そのため、
+     * スキーマに記載した全 directives キー（text-encoding, record-separator, file-type, record-length,
+     * positive/negative-zone/pack-sign-nibble, required-decimal-point, fixed-sign-position, required-plus-sign,
+     * field-separator, quoting-delimiter, ignore-blank-lines, requires-title, max-record-length, title-record-type-name）を
+     * 含む YAML が例外なく読み込まれた時点で、全キーが実装で有効であることが証明される。
+     * </p>
      */
     @Test
     public void testSchemaFullCoverage() throws Exception {
@@ -942,10 +951,19 @@ public class YamlTestDataParserTest {
                 DIR, resource, "grp1", DataType.RESPONSE_BODY_MESSAGES);
         assertThat("response_body_messages: grp1 の 1 件が取得できること", respBody.size(), is(1));
 
-        // response_header_messages: getSendSyncMessage で grp1 エントリが取得できること
+        // response_header_messages: getSendSyncMessage で grp1 エントリが取得できること（GroupData 経路）
         List<RequestTestingMessagePool> respHeader = sut.getSendSyncMessage(
                 DIR, resource, "grp1", DataType.RESPONSE_HEADER_MESSAGES);
         assertThat("response_header_messages: grp1 の 1 件が取得できること", respHeader.size(), is(1));
+
+        // response_header/body_messages: SingleData 経路（group_id なし）のエントリが取得できること
+        MessagePool respHeaderSingle = sut.getMessageWithoutCache(
+                DIR, resource, DataType.RESPONSE_HEADER_MESSAGES, "respHeaderSingle");
+        assertThat("response_header_messages: SingleData 経路のエントリが取得できること", respHeaderSingle, notNullValue());
+
+        MessagePool respBodySingle = sut.getMessageWithoutCache(
+                DIR, resource, DataType.RESPONSE_BODY_MESSAGES, "respBodySingle");
+        assertThat("response_body_messages: SingleData 経路のエントリが取得できること", respBodySingle, notNullValue());
     }
 
     // ========================================================================
