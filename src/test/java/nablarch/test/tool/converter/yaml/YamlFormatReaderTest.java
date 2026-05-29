@@ -646,6 +646,33 @@ public class YamlFormatReaderTest {
         assertThat(block.getRecords().size(), is(1));
     }
 
+    /**
+     * [Given] ディレクトリではなくファイルのパスを渡す
+     * [When]  read() を呼び出す
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void pathIsFileNotDirectoryThrowsConverterException() throws Exception {
+        File file = temporaryFolder.newFile("notADir.yaml");
+        sut.read(file.toPath());
+    }
+
+    /**
+     * [Given] 読み取り権限のないディレクトリ（listFiles() が null を返す）
+     * [When]  read() を呼び出す
+     * [Then]  ConverterException がスローされる
+     */
+    @Test(expected = ConverterException.class)
+    public void listFilesReturnsNullThrowsConverterException() throws Exception {
+        File dir = temporaryFolder.newFolder("FooTest");
+        dir.setReadable(false);
+        try {
+            sut.read(dir.toPath());
+        } finally {
+            dir.setReadable(true);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------

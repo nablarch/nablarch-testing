@@ -87,7 +87,7 @@ public class YamlFormatWriter implements TestDataFormatWriter {
         if (dt == DataType.EXPECTED_REQUEST_BODY_MESSAGES) return "expected_request_body_messages";
         if (dt == DataType.RESPONSE_HEADER_MESSAGES) return "response_header_messages";
         if (dt == DataType.RESPONSE_BODY_MESSAGES) return "response_body_messages";
-        throw new IllegalArgumentException("Unknown DataType: " + dt);
+        throw new AssertionError("UNREACHABLE: unknown DataType: " + dt);
     }
 
     private void writeBlock(Writer w, TestDataBlock block) throws IOException {

@@ -268,7 +268,7 @@ public class YamlFormatReader implements TestDataFormatReader {
             case "expected_request_body_messages": return DataType.EXPECTED_REQUEST_BODY_MESSAGES;
             case "response_header_messages": return DataType.RESPONSE_HEADER_MESSAGES;
             case "response_body_messages": return DataType.RESPONSE_BODY_MESSAGES;
-            default: throw new IllegalArgumentException("Unknown section key: " + key);
+            default: throw new AssertionError("UNREACHABLE: unknown section key: " + key);
         }
     }
 

@@ -119,11 +119,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             }
             cells.add(value);
         }
-        // 末尾の空セルを除去して全セルが空なら空リストとして返す（HC-07用）
-        while (!cells.isEmpty() && cells.get(cells.size() - 1).isEmpty()) {
-            cells.remove(cells.size() - 1);
-        }
-        return cells;
+        return trimTrailingEmpty(cells);
     }
 
     /** 行リストを走査してデータブロックに分割する。 */
