@@ -184,6 +184,13 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>3.0.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   
   <build>
