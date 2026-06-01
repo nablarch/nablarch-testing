@@ -241,31 +241,22 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認
-2. **C-1 セルフチェック・QAレビュー実施**（`.xlsx` 対応・`--xls` オプション追加分）→ C-1 完了条件チェックファイルに追記
-3. C-1・V-1 をまとめてユーザーレビュー依頼。OK が出たらタスクリストを完了にしてブランチをマージ。
+2. **C-1・V-1 をまとめてユーザーレビュー依頼**。OK が出たらタスクリストを完了にしてブランチをマージ。
 
-### 今セッションで対応済みの事項（2026-06-01）
+### 今セッションで対応済みの事項（2026-06-01 後半）
 
-**V-1: 全 Excel テストの YAML 版並走実行**（セルフチェック・QA 完了。ユーザーレビュー待ち）
+**C-1: `.xlsx` 対応・`--xls` オプション追加分のセルフチェック・QAレビュー完了**
 
-- C-1 の `.xlsx` 非対応バグを V-1 作業中に発見・修正（`ConverterFileFilter`・`ConverterPathResolver`・`XlsFormatReader`）
-  - 根本原因: 設計書が「`.xlsx` は対象外」と記述し、その前提が実装に波及していた
-  - テストも「`.xlsx` は除外される」ことを正として書かれていたため、TDD・レビューでは検知不可
-  - 149テスト全グリーンを確認後にコミット（`73b5e56`）
-- `BasicTestDataParserTest.xls` を YAML に変換し `BasicTestDataParserTest/` ディレクトリに配置
-- `ExcelToYamlEquivalenceTest` を新規作成（16テスト全グリーン）
-  - `BasicTestDataParser`（Excel）と `YamlTestDataParser`（YAML）の読み込み結果が等価であることを確認
-  - QA 8件指摘を全件対応後に `9ac597b` でコミット
-
-**ユーザー指摘を受けて対応済み（2026-06-01 後半、コミット `a0140ec`）**
-
-- ユーザー確認事項（メソッド名・設計書ズレ）を整理→設計書を先に修正してからコードを直す正しい順序で対応
-- Excel OUT デフォルトを `.xlsx`（`XSSFWorkbook`）に変更。`--xls` フラグ指定時のみ `.xls`（`HSSFWorkbook`）
-- 設計書（1.1, 1.2, 3.2, 3.3, 6.3, 6.4, 6.5, 7.1, 7.2, 8.2, 8.3 各節）を現状と一致するよう全面更新
-- `ConverterFileFilter` Javadoc を `.xls/.xlsx` 両対応に修正
-- `ConverterPathResolver` Javadoc を実態（拡張子は `XlsFormatWriter` が決定）に修正
-- テスト: `.xlsx` 前提に修正、`--xls` フラグのテスト3件追加（`TestDataConverterTest`）、`mockStatic` → `setWritable(false)` に置換（`XlsFormatWriterTest`）
-- **この変更はまだセルフチェック・QAレビューを経ていない**（次セッションで実施）
+- QA 8件指摘を全件対応後にコミット（`06799c0`）、156テスト全グリーン確認済み
+  - P-1: POI 3.8 制約で受け入れ
+  - P-2: エラーメッセージを `"Failed to write XLS"` → `"Failed to write Excel file"` に修正
+  - P-3: `xlsFlagWithNonXlsToReturnsCode2` でエラーメッセージ内容を `ByteArrayOutputStream` でキャプチャ検証
+  - P-4: `.xlsx` 入力 E2E テスト追加（`xlsxToYaml`・`yamlToXlsxAndBackToYaml`）
+  - P-5: `xlsFormatFlagProducesXlsFile` に `assertFalse(FooTest.xlsx exists)` を追加
+  - P-6: `yaml → xlsx` の上書き禁止・`--overwrite` テスト追加
+  - P-7: `ConverterPathResolver.yamlDirToXls()` Javadoc を実態に合わせて修正
+  - P-8: `xlsxFilesIncluded` に `hasItem("FooTest.xlsx")` / `hasItem("BarTest.xls")` を追加
+- C-1.md にセルフチェック・QAレビュー記録を追記（コミット `67b7662`）
 
 ---
 
