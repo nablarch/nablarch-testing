@@ -11,20 +11,17 @@ import nablarch.test.tool.converter.model.TableDataBlock;
 import nablarch.test.tool.converter.model.TestDataBlock;
 import nablarch.test.tool.converter.model.TestDataContainer;
 import nablarch.test.tool.converter.model.TestDataSection;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.MockedConstruction;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -34,9 +31,6 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mockConstruction;
 
 /**
  * {@link XlsFormatWriter} のテスト（7.2節）。
@@ -334,11 +328,33 @@ public class XlsFormatWriterTest {
         File outputDir = temporaryFolder.newFolder("out");
         sut.write(container, outputDir.toPath(), false);
 
-        assertTrue(new File(outputDir, "FooTest.xls").exists());
+        assertTrue(new File(outputDir, "FooTest.xlsx").exists());
         Workbook wb = openWorkbook(outputDir, "FooTest");
         assertThat(wb.getNumberOfSheets(), is(2));
         assertThat(wb.getSheetAt(0).getSheetName(), is("case01"));
         assertThat(wb.getSheetAt(1).getSheetName(), is("case02"));
+    }
+
+    /**
+     * [Given] xlsFormat=true の XlsFormatWriter
+     * [When]  write() を呼び出す
+     * [Then]  .xls ファイルが生成される
+     */
+    @Test
+    public void xlsFormatFlagProducesXlsFile() throws Exception {
+        XlsFormatWriter xlsWriter = new XlsFormatWriter(true);
+        TestDataBlock block = new TableDataBlock(
+                DataType.SETUP_TABLE_DATA, "", "T1",
+                Arrays.asList("C1"), Arrays.asList(Arrays.asList("v1"))
+        );
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        xlsWriter.write(container, outputDir.toPath(), false);
+
+        assertTrue(new File(outputDir, "FooTest.xls").exists());
+        Workbook wb = openXlsWorkbook(outputDir, "FooTest");
+        assertThat(wb.getNumberOfSheets(), is(1));
     }
 
     // -------------------------------------------------------------------------
@@ -361,16 +377,16 @@ public class XlsFormatWriterTest {
         TestDataContainer container = container("case01", block);
 
         // When: outFile のパス（ファイル）を outputPath として渡す
-        // XlsFormatWriter は outputPath.resolve(containerName+".xls") を生成するが、
+        // XlsFormatWriter は outputPath.resolve(containerName+".xlsx") を生成するが、
         // その前に Files.createDirectories(outputPath) を試みる。
         // outFile がファイルなので createDirectories は IOException を投げる。
         sut.write(container, outFile.toPath(), false);
     }
 
     /**
-     * [Given] FileOutputStream のコンストラクタが IOException をスローする状況
+     * [Given] 出力先ファイルが書き込み不可の状態
      * [When]  write() を呼び出す
-     * [Then]  ConverterException がスローされる（wb.write() の IOException catch を通過）
+     * [Then]  ConverterException がスローされる
      */
     @Test(expected = ConverterException.class)
     public void iOExceptionOnFileOutputStreamThrowsConverterException() throws Exception {
@@ -381,19 +397,14 @@ public class XlsFormatWriterTest {
         );
         TestDataContainer container = container("case01", block);
         File outputDir = temporaryFolder.newFolder("out");
+        File outFile = new File(outputDir, "FooTest.xlsx");
+        outFile.createNewFile();
+        outFile.setWritable(false);
 
-        // When: FileOutputStream のコンストラクタ時に IOException をスローさせる
-        // MockedConstruction に initializer を指定するとコンストラクタ後の初期化として実行されるが、
-        // コンストラクタ自体を失敗させるには withSettings().useConstructor() が不要なため
-        // 代わりに write(byte[], int, int) を呼ぶと IOException をスローする mock を使う
-        try (MockedConstruction<FileOutputStream> fosMock = mockConstruction(FileOutputStream.class,
-                (mock, context) -> {
-                    doThrow(new IOException("Simulated write failure"))
-                            .when(mock).write(any(byte[].class), any(int.class), any(int.class));
-                    doThrow(new IOException("Simulated write failure"))
-                            .when(mock).write(any(byte[].class));
-                })) {
-            sut.write(container, outputDir.toPath(), false);
+        try {
+            sut.write(container, outputDir.toPath(), true);
+        } finally {
+            outFile.setWritable(true);
         }
     }
 
@@ -407,10 +418,20 @@ public class XlsFormatWriterTest {
     }
 
     private Workbook openWorkbook(File outputDir, String name) throws Exception {
+        File xlsxFile = new File(outputDir, name + ".xlsx");
+        FileInputStream fis = new FileInputStream(xlsxFile);
+        try {
+            return WorkbookFactory.create(fis);
+        } finally {
+            fis.close();
+        }
+    }
+
+    private Workbook openXlsWorkbook(File outputDir, String name) throws Exception {
         File xlsFile = new File(outputDir, name + ".xls");
         FileInputStream fis = new FileInputStream(xlsFile);
         try {
-            return new HSSFWorkbook(fis);
+            return WorkbookFactory.create(fis);
         } finally {
             fis.close();
         }

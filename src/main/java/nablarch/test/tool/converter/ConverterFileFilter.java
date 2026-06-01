@@ -21,13 +21,13 @@ public final class ConverterFileFilter {
     }
 
     /**
-     * ルートディレクトリを再帰走査して .xls ファイルを列挙する。
+     * ルートディレクトリを再帰走査して .xls/.xlsx ファイルを列挙する。
      *
      * @param root      走査するルートディレクトリ
      * @param includes  ファイル名グロブパターン（空リストは「全て含む」）
      * @param excludes  ファイル名グロブパターン（空リストは「除外なし」）
      * @param skipCount スキップ件数の格納先（skipCount[0] に加算される）
-     * @return 変換対象の .xls ファイルパスリスト
+     * @return 変換対象の .xls/.xlsx ファイルパスリスト
      */
     public static List<Path> findXlsFiles(Path root, List<String> includes, List<String> excludes,
             int[] skipCount) throws ConverterException {
@@ -59,12 +59,12 @@ public final class ConverterFileFilter {
     }
 
     /**
-     * ルートディレクトリを再帰走査して .xls ファイルを列挙する（後方互換メソッド）。
+     * ルートディレクトリを再帰走査して .xls/.xlsx ファイルを列挙する（後方互換メソッド）。
      *
      * @param root     走査するルートディレクトリ
      * @param includes ファイル名グロブパターン（空リストは「全て含む」）
      * @param excludes ファイル名グロブパターン（空リストは「除外なし」）
-     * @return 変換対象の .xls ファイルパスリスト
+     * @return 変換対象の .xls/.xlsx ファイルパスリスト
      */
     public static List<Path> findXlsFiles(Path root, List<String> includes, List<String> excludes)
             throws ConverterException {

@@ -69,7 +69,48 @@ public class TestDataConverterTest {
         });
 
         assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest.xlsx").exists());
+    }
+
+    /**
+     * [Given] --xls オプションを指定した YAML→Excel 変換
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 0 かつ .xls ファイルが生成される
+     */
+    @Test
+    public void yamlToXlsWithXlsFlag() throws Exception {
+        File inputDir = temporaryFolder.newFolder("inputXlsFlag");
+        File outputDir = temporaryFolder.newFolder("outputXlsFlag");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls", "--xls",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
         assertTrue(new File(outputDir, "FooTest.xls").exists());
+    }
+
+    /**
+     * [Given] --xls オプションを --to xls 以外（--to yaml）と組み合わせる
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void xlsFlagWithNonXlsToReturnsCode2() throws Exception {
+        File inputDir = temporaryFolder.newFolder("inputXlsFlagInvalid");
+        File outputDir = temporaryFolder.newFolder("outputXlsFlagInvalid");
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml", "--xls",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(2));
     }
 
     /**

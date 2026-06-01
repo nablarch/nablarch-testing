@@ -11,12 +11,12 @@ public final class ConverterPathResolver {
     }
 
     /**
-     * XLS ファイルパスから YAML 出力ディレクトリパスを計算する。
+     * Excel ファイルパス（.xls/.xlsx）から YAML 出力ディレクトリパスを計算する。
      *
-     * <p>例: inputRoot=src, xls=src/foo/FooTest.xls, outputRoot=out → out/foo/FooTest</p>
+     * <p>例: inputRoot=src, xls=src/foo/FooTest.xlsx, outputRoot=out → out/foo/FooTest</p>
      *
      * @param inputRoot  入力ルートディレクトリ
-     * @param xlsFile    XLS ファイルパス
+     * @param xlsFile    Excel ファイルパス（.xls または .xlsx）
      * @param outputRoot 出力ルートディレクトリ
      * @return YAML ディレクトリパス
      */
@@ -39,14 +39,17 @@ public final class ConverterPathResolver {
     }
 
     /**
-     * YAML ディレクトリパスから XLS 出力ファイルパスを計算する。
+     * YAML ディレクトリパスから Excel 出力ファイルパス（.xls）を計算する。
+     *
+     * <p>実際の出力拡張子（.xls/.xlsx）は {@link nablarch.test.tool.converter.xls.XlsFormatWriter} が決定する。
+     * このメソッドは主に出力先ディレクトリの計算（{@code .getParent()}）に使用する。</p>
      *
      * <p>例: inputRoot=src, yamlDir=src/foo/FooTest, outputRoot=out → out/foo/FooTest.xls</p>
      *
      * @param inputRoot  入力ルートディレクトリ
      * @param yamlDir    YAML ディレクトリパス
      * @param outputRoot 出力ルートディレクトリ
-     * @return XLS ファイルパス
+     * @return 出力先ファイルパス（拡張子は .xls）
      */
     public static Path yamlDirToXls(Path inputRoot, Path yamlDir, Path outputRoot) {
         Path relative = inputRoot.relativize(yamlDir);

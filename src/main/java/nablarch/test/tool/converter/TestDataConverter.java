@@ -52,6 +52,12 @@ public class TestDataConverter {
             return 2;
         }
 
+        if (opts.xlsFormat && !opts.to.equals("xls")) {
+            System.err.println("--xls option is only valid with --to xls.");
+            System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--xls] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
+            return 2;
+        }
+
         XlsFormatReader xlsReader = opts.from.equals("xls") ? new XlsFormatReader() : null;
         TestDataFormatReader reader;
         TestDataFormatWriter writer;
@@ -60,7 +66,7 @@ public class TestDataConverter {
             writer = new YamlFormatWriter();
         } else {
             reader = new YamlFormatReader();
-            writer = new XlsFormatWriter();
+            writer = new XlsFormatWriter(opts.xlsFormat);
         }
 
         int[] skipCount = {0};
@@ -193,6 +199,9 @@ public class TestDataConverter {
                 case "--delete-source":
                     opts.deleteSource = true;
                     break;
+                case "--xls":
+                    opts.xlsFormat = true;
+                    break;
                 case "--include":
                     if (++i >= args.length) return null;
                     opts.includes.add(args[i]);
@@ -220,6 +229,7 @@ public class TestDataConverter {
         String to;
         boolean overwrite = false;
         boolean deleteSource = false;
+        boolean xlsFormat = false;
         List<String> includes = new ArrayList<>();
         List<String> excludes = new ArrayList<>();
         Path inputPath;

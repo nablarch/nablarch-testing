@@ -1,7 +1,7 @@
 # NTF テストデータ形式間変換ツール 設計書
 
 - **作成日**: 2026-05-27
-- **更新日**: 2026-05-27（C-1-7: フェーズ定義章を廃止し設計方針に統合）
+- **更新日**: 2026-06-01（Excel `.xlsx` 対応・OUT デフォルトを `.xlsx` に変更）
 - **対象ブランチ**: convert-testdata-excel-to-text
 
 ---
@@ -24,7 +24,7 @@
 
 ### 1.1 目的
 
-NTF（Nablarch Testing Framework）のテストデータを特定の形式に依存させず、Excel（`.xls`）と YAML（`.yaml`）を相互に変換可能にする。
+NTF（Nablarch Testing Framework）のテストデータを特定の形式に依存させず、Excel（`.xls`/`.xlsx`）と YAML（`.yaml`）を相互に変換可能にする。
 
 これにより以下のような運用を選択できる。
 
@@ -41,8 +41,8 @@ NTF（Nablarch Testing Framework）のテストデータを特定の形式に依
 
 **変換ツールがカバーすること**
 
-- Excel（`.xls`）→ YAML（`.yaml`）への変換
-- YAML（`.yaml`）→ Excel（`.xls`）への変換
+- Excel（`.xls`/`.xlsx`）→ YAML（`.yaml`）への変換
+- YAML（`.yaml`）→ Excel（`.xlsx`）への変換（`--xls` オプション指定時は `.xls` で出力）
 
 **変換ツールがカバーしないこと**
 
@@ -160,14 +160,14 @@ OUT は出力ルールに従ってモデルの内容を形式に変換するだ�
 **例**:
 
 ```bash
-# MASTER_DATA*.xls と template.xls を除外する
---exclude "MASTER_DATA*.xls" --exclude "template.xls"
+# MASTER_DATA*.xls[x] と template.xls[x] を除外する
+--exclude "MASTER_DATA*.xls" --exclude "MASTER_DATA*.xlsx" --exclude "template.xls" --exclude "template.xlsx"
 
-# FooTest.xls と BarTest.xls だけを対象にする
---include "FooTest.xls" --include "BarTest.xls"
+# FooTest.xls[x] と BarTest.xls[x] だけを対象にする
+--include "FooTest.xls" --include "FooTest.xlsx" --include "BarTest.xls" --include "BarTest.xlsx"
 
 # テスト系ファイルのみ対象にして、テンプレートを除外する
---include "*Test.xls" --exclude "template.xls"
+--include "*Test.xls" --include "*Test.xlsx" --exclude "template.xls" --exclude "template.xlsx"
 ```
 
 デフォルトは include / exclude なし（全対象ファイルが候補）。プロジェクト固有の除外ファイル（DB 初期データ、HTTP ダンプテンプレート等）はツール側で決め打ちせず、実行者が `--exclude` で明示的に指定する。
@@ -176,15 +176,15 @@ OUT は出力ルールに従ってモデルの内容を形式に変換するだ�
 
 各形式がデータモデルにどのようなファイル構造で対応するかを定める。
 
-#### XLS 形式
+#### Excel 形式
 
-| データモデル | XLS での対応 |
+| データモデル | Excel での対応 |
 |---|---|
-| `TestDataContainer` | `.xls` ブック 1 ファイル |
+| `TestDataContainer` | `.xls` または `.xlsx` ブック 1 ファイル |
 | `TestDataSection` | ブック内のシート 1 枚（シート名 = セクション名） |
 | `TestDataBlock` | シート内のデータブロック（識別行から始まる行群） |
 
-`TestDataContainer` の名前はファイル名（拡張子なし）。例: `FooTest.xls` → `name = "FooTest"`
+`TestDataContainer` の名前はファイル名（拡張子なし）。例: `FooTest.xlsx` → `name = "FooTest"`
 
 #### YAML 形式
 
@@ -440,11 +440,11 @@ public interface TestDataFormatWriter {
 
 #### XlsFormatReader
 
-Apache POI を使用して `.xls` ファイルを読み込み、`TestDataContainer` を生成する（IN仕様: 7.1節）。
+Apache POI の `WorkbookFactory` を使用して `.xls`/`.xlsx` ファイルを読み込み、`TestDataContainer` を生成する（IN仕様: 7.1節）。拡張子で自動判別するため `.xls`/`.xlsx` の両形式を透過的に扱う。
 
 #### XlsFormatWriter
 
-Apache POI の `HSSFWorkbook` を使用して `TestDataContainer` を `.xls` ファイルとして書き出す（OUT仕様: 7.2節）。NTF の既存テストデータは全て `.xls` 形式のため `.xlsx` 変換は本ツールのスコープ外とする。HSSF の制約として 1 ブック最大 65535 行・256 シートがあるが、NTF テストデータのサイズでは超過しない前提とする。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
+Apache POI を使用して `TestDataContainer` を Excel ファイルとして書き出す（OUT仕様: 7.2節）。デフォルトは `XSSFWorkbook`（`.xlsx`）で出力する。`--xls` オプション指定時は `HSSFWorkbook`（`.xls`）で出力する。既存ファイルが存在し `overwrite=false` の場合は `ConverterException` をスローする。
 
 #### YamlFormatReader
 
@@ -465,8 +465,8 @@ SnakeYAML Engine を使用して `TestDataContainer` を YAML ファイル群と
 - `--from` / `--to` 引数で形式を選択して Reader/Writer インスタンスを生成する
 - `--overwrite` オプションを解析する
 - `--delete-source` オプションを解析する（変換成功後に入力ファイルを削除する）
-- 入力ディレクトリを再帰走査し、変換対象ファイル（`.xls` または YAML ディレクトリ）を列挙する
-- 除外パターン（`template.xls`、`MASTER_DATA.xls` 等）に合致するファイルをスキップする
+- 入力ディレクトリを再帰走査し、変換対象ファイル（`.xls`/`.xlsx` または YAML ディレクトリ）を列挙する
+- 除外パターン（`template.xls`、`template.xlsx`、`MASTER_DATA.xls` 等）に合致するファイルをスキップする
 - 各ファイルに対して Reader → Writer の変換処理を実行する
 - 変換結果サマリー（成功件数・スキップ件数・エラー件数・コメント行ロスト件数）を標準出力に表示する
 - エラーが 1 件以上あった場合は終了コード 1 で終了する
@@ -487,6 +487,7 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 | `--exclude <パターン>` | 任意（複数可） | 変換対象から除外するファイル名グロブパターン（3.2 節参照）。複数指定可 |
 | `--overwrite` | 任意 | 既存ファイルを上書きする（デフォルト: 上書き禁止） |
 | `--delete-source` | 任意 | 変換成功後に入力ファイルを削除する |
+| `--xls` | 任意 | Excel OUT 時に `.xls`（旧形式）で出力する（デフォルト: `.xlsx`） |
 | `<入力パス>` | 必須 | 変換対象のルートディレクトリ |
 | `<出力パス>` | 必須 | 変換結果の出力先ルートディレクトリ |
 
@@ -500,7 +501,7 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 
 - 指定ルートディレクトリを再帰走査して変換対象ファイルを列挙する
 - `--include` / `--exclude` で指定されたファイル名グロブパターン（3.2 節参照）に従って変換対象を絞り込む。グロブ評価には `java.nio.file.PathMatcher`（`glob:` 構文）をファイル名部分に適用する
-- Excel 読み込み時は `.xls` ファイルを、YAML 読み込み時は YAML ディレクトリ（3.3 節「YAML ディレクトリの定義」参照: 直下に `.yaml` ファイルを 1 件以上含み、`.yaml` ファイルを含むサブディレクトリを持たない最下位ディレクトリ）を列挙する
+- Excel 読み込み時は `.xls`/`.xlsx` ファイルを、YAML 読み込み時は YAML ディレクトリ（3.3 節「YAML ディレクトリの定義」参照: 直下に `.yaml` ファイルを 1 件以上含み、`.yaml` ファイルを含むサブディレクトリを持たない最下位ディレクトリ）を列挙する
 
 #### ConverterPathResolver
 
@@ -520,9 +521,9 @@ TestDataConverter --from <形式> --to <形式> [options] <入力パス> <出力
 
 ---
 
-### 7.1 XLS 形式 IN 仕様（`XlsFormatReader`）
+### 7.1 Excel 形式 IN 仕様（`XlsFormatReader`）
 
-`.xls` ファイルを読み込んで `TestDataContainer` を生成する。
+`.xls`/`.xlsx` ファイルを読み込んで `TestDataContainer` を生成する。`WorkbookFactory.create()` が拡張子から形式を自動判別する。
 
 #### 7.1.1 セル値の読み取り規則
 
@@ -670,9 +671,9 @@ MessageDataBlock {
 
 ---
 
-### 7.2 XLS 形式 OUT 仕様（`XlsFormatWriter`）
+### 7.2 Excel 形式 OUT 仕様（`XlsFormatWriter`）
 
-`TestDataContainer` を `.xls` ファイルとして書き出す。POI の `HSSFWorkbook` を使用する。
+`TestDataContainer` を Excel ファイルとして書き出す。デフォルトは `XSSFWorkbook`（`.xlsx`）、`--xls` オプション指定時は `HSSFWorkbook`（`.xls`）を使用する。
 
 #### 7.2.1 セル値の書き出し規則
 
@@ -895,12 +896,20 @@ mvn exec:java \
   -Dexec.args="--from xls --to yaml --overwrite --delete-source <入力パス> <出力パス>"
 ```
 
-#### YAML → Excel
+#### YAML → Excel（デフォルト: `.xlsx` 出力）
 
 ```bash
 mvn exec:java \
   -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
   -Dexec.args="--from yaml --to xls <入力パス> <出力パス>"
+```
+
+#### YAML → Excel（旧形式 `.xls` で出力したい場合）
+
+```bash
+mvn exec:java \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
+  -Dexec.args="--from yaml --to xls --xls <入力パス> <出力パス>"
 ```
 
 ### 8.3 引数仕様（再掲）
@@ -917,6 +926,7 @@ TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [-
 | `--exclude` | グロブパターン（複数可） | 変換対象から除外するファイル名パターン（3.2 節参照） |
 | `--overwrite` | フラグ | 既存ファイルを上書きする |
 | `--delete-source` | フラグ | 変換成功後に入力ファイルを削除する |
+| `--xls` | フラグ | Excel OUT 時に `.xls`（旧形式）で出力する（デフォルト: `.xlsx`） |
 | `<入力パス>` | パス文字列 | 変換対象のルートディレクトリ |
 | `<出力パス>` | パス文字列 | 変換結果の出力先ルートディレクトリ |
 
@@ -949,6 +959,7 @@ TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [-
 | フィールド名/型/長さリストのサイズ不一致 | エラーとして記録し、対象ファイルをスキップして続行 |
 | YAML の `records:` 内で `rows:` 要素数と `fields:` 件数が不一致 | エラーとして記録し、対象ファイルをスキップして続行 |
 | 引数が不正（`--from` の値が `xls`/`yaml` 以外、`--from` と `--to` が同一形式等） | 即時終了コード 2 で終了。ヘルプメッセージを出力する |
+| `--xls` が `--to xls` 以外と同時に指定された場合 | 即時終了コード 2 で終了。ヘルプメッセージを出力する |
 
 ### 9.3 警告ケースと対処
 

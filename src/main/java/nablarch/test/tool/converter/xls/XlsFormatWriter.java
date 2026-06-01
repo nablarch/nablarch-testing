@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,11 +26,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link TestDataContainer} を XLS ファイルとして書き出す Writer。
+ * {@link TestDataContainer} を Excel ファイルとして書き出す Writer。
  *
- * <p>出力先: outputPath/containerName.xls</p>
+ * <p>デフォルト出力先: outputPath/containerName.xlsx（{@code xlsFormat=true} の場合は .xls）</p>
  */
 public class XlsFormatWriter implements TestDataFormatWriter {
+
+    /** true のとき旧形式（.xls）で出力する。false のとき新形式（.xlsx）で出力する。 */
+    private final boolean xlsFormat;
+
+    public XlsFormatWriter() {
+        this(false);
+    }
+
+    public XlsFormatWriter(boolean xlsFormat) {
+        this.xlsFormat = xlsFormat;
+    }
 
     @Override
     public void write(TestDataContainer container, Path outputPath, boolean overwrite) throws ConverterException {
@@ -38,12 +50,13 @@ public class XlsFormatWriter implements TestDataFormatWriter {
         } catch (IOException e) {
             throw new ConverterException("Failed to create output directory: " + outputPath, e);
         }
-        Path xlsFile = outputPath.resolve(container.getName() + ".xls");
+        String extension = xlsFormat ? ".xls" : ".xlsx";
+        Path xlsFile = outputPath.resolve(container.getName() + extension);
         if (!overwrite && Files.exists(xlsFile)) {
             throw new ConverterException("File already exists (use overwrite=true): " + xlsFile);
         }
 
-        Workbook wb = new HSSFWorkbook();
+        Workbook wb = xlsFormat ? new HSSFWorkbook() : new XSSFWorkbook();
         try {
             for (TestDataSection section : container.getSections()) {
                 Sheet sheet = wb.createSheet(section.getName());
