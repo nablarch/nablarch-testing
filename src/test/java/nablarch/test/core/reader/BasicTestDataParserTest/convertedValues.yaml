@@ -1,0 +1,11 @@
+list_maps:
+  - id: "expectedUgroup"
+    rows:
+      - UGROUP_ID: "${半角数字,5}12345"
+        UGROUP_NAME: "${全角ひらがな,50}"
+      - UGROUP_ID: "${半角英字,10}"
+        UGROUP_NAME: "\" abc \""
+      - UGROUP_ID: "${半角数字,10}"
+        UGROUP_NAME: "null"
+      - UGROUP_ID: "${binaryFile:testdata.txt}"
+        UGROUP_NAME: "${binaryFile:BasicTestDataParserTest.xls}"

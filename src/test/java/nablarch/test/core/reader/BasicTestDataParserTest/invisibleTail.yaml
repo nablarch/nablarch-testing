@@ -1,0 +1,18 @@
+list_maps:
+  - id: "expectedUgroup"
+    rows:
+      - UGROUP_ID: "0000000001"
+        UGROUP_NAME: "総務部"
+      - UGROUP_ID: "0000000002"
+        UGROUP_NAME: "人事部"
+      - UGROUP_ID: "0000000003"
+        UGROUP_NAME: "テスト用"
+expected_tables:
+  - table: "test_table"
+    rows:
+      - pk_col1: "1234567890"
+        pk_col2: "01"
+      - pk_col1: "1234567891"
+        pk_col2: "02"
+      - pk_col1: "1234567892"
+        pk_col2: "03"

@@ -1,0 +1,25 @@
+list_maps:
+  - id: "params"
+    rows:
+      - id: "0000000001"
+        name: "山田太郎"
+        address: "1"
+      - id: "0000000002"
+        name: "鈴木一郎"
+        address: "10"
+  - id: "anothor_one"
+    rows:
+      - id: "0000000003"
+        name: "EF"
+        address: "1"
+      - id: "0000000004"
+        name: "GH"
+        address: "10"
+  - id: "empty_cell"
+    rows:
+      - id: "0000000003"
+        name: ""
+        address: ""
+      - id: "0000000004"
+        name: "GH"
+        address: "10"

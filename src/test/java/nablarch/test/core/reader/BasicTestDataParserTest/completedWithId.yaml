@@ -1,0 +1,11 @@
+expected_complete_tables:
+  - group_id: "with_ID"
+    table: "TEST_TABLE"
+    rows:
+      - PK_COL1: "0000000003"
+        PK_COL2: "EF"
+  - group_id: "with_ID"
+    table: "TEST_TABLE"
+    rows:
+      - PK_COL1: "0000000004"
+        PK_COL2: "GH"
