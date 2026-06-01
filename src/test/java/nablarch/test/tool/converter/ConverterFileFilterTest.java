@@ -68,12 +68,12 @@ public class ConverterFileFilterTest {
     }
 
     /**
-     * [Given] .xlsx ファイルがある
+     * [Given] .xls と .xlsx ファイルがある
      * [When]  findXlsFiles() を呼び出す
-     * [Then]  .xlsx は列挙されない
+     * [Then]  .xls と .xlsx が両方列挙される
      */
     @Test
-    public void xlsxFilesExcluded() throws Exception {
+    public void xlsxFilesIncluded() throws Exception {
         File root = temporaryFolder.newFolder("src");
         touch(root, "FooTest.xlsx");
         touch(root, "BarTest.xls");
@@ -81,7 +81,7 @@ public class ConverterFileFilterTest {
         List<Path> result = ConverterFileFilter.findXlsFiles(root.toPath(),
                 Collections.emptyList(), Collections.emptyList());
 
-        assertThat(result.size(), is(1));
+        assertThat(result.size(), is(2));
     }
 
     /**

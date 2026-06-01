@@ -23,9 +23,14 @@ public final class ConverterPathResolver {
     public static Path xlsToYamlDir(Path inputRoot, Path xlsFile, Path outputRoot) {
         Path relative = inputRoot.relativize(xlsFile);
         String fileName = relative.getFileName().toString();
-        // strip .xls extension
-        String baseName = fileName.endsWith(".xls")
-                ? fileName.substring(0, fileName.length() - 4) : fileName;
+        String baseName;
+        if (fileName.endsWith(".xlsx")) {
+            baseName = fileName.substring(0, fileName.length() - 5);
+        } else if (fileName.endsWith(".xls")) {
+            baseName = fileName.substring(0, fileName.length() - 4);
+        } else {
+            baseName = fileName;
+        }
         Path parent = relative.getParent();
         if (parent != null) {
             return outputRoot.resolve(parent).resolve(baseName);

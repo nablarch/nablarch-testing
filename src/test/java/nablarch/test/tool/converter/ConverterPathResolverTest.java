@@ -58,6 +58,21 @@ public class ConverterPathResolverTest {
     }
 
     /**
+     * [Given] inputRoot=src/test/resources, XLSX=src/test/resources/foo/FooTest.xlsx, outputRoot=out
+     * [When]  xlsToYamlDir() を呼び出す
+     * [Then]  out/foo/FooTest が返される（.xlsx 拡張子も除去される）
+     */
+    @Test
+    public void xlsToYamlDirXlsx() {
+        java.nio.file.Path result = ConverterPathResolver.xlsToYamlDir(
+                Paths.get("src/test/resources"),
+                Paths.get("src/test/resources/foo/FooTest.xlsx"),
+                Paths.get("out")
+        );
+        assertThat(result, is(Paths.get("out/foo/FooTest")));
+    }
+
+    /**
      * [Given] XLS ファイルが .xls 拡張子を持たないファイル名
      * [When]  xlsToYamlDir() を呼び出す
      * [Then]  ファイル名そのままが YAML ディレクトリ名になる

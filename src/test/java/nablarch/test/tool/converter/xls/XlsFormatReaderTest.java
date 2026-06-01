@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1168,6 +1169,36 @@ public class XlsFormatReaderTest {
     }
 
     // -------------------------------------------------------------------------
+    // .xlsx 対応（WorkbookFactory 経由）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] SETUP_TABLE ブロックを含む XLSX ファイル
+     * [When]  read() を呼び出す
+     * [Then]  TestDataContainer にテーブルデータブロックが格納される（.xlsx も読める）
+     */
+    @Test
+    public void readXlsx() throws Exception {
+        // Given
+        File xlsx = temporaryFolder.newFile("FooTest.xlsx");
+        writeXlsx(xlsx, new String[][]{
+                {"SETUP_TABLE=USER_MASTER", "", ""},
+                {"USER_ID", "NAME", ""},
+                {"001", "taro", ""}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xlsx.toPath());
+
+        // Then
+        assertThat(result.getName(), is("FooTest"));
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getIdentifier(), is("USER_MASTER"));
+        assertThat(block.getColumnNames(), is(Arrays.asList("USER_ID", "NAME")));
+        assertThat(block.getRows().get(0), is(Arrays.asList("001", "taro")));
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 
@@ -1179,6 +1210,21 @@ public class XlsFormatReaderTest {
             row(sheet, r, data[r]);
         }
         FileOutputStream out = new FileOutputStream(xls);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+    }
+
+    /** 単一シート "case01" に指定の行を書き込んだ XLSX ファイルを生成する。 */
+    private static void writeXlsx(File xlsx, String[][] data) throws Exception {
+        Workbook wb = new XSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        for (int r = 0; r < data.length; r++) {
+            row(sheet, r, data[r]);
+        }
+        FileOutputStream out = new FileOutputStream(xlsx);
         try {
             wb.write(out);
         } finally {

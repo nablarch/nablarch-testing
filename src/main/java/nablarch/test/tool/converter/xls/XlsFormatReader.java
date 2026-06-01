@@ -13,11 +13,11 @@ import nablarch.test.tool.converter.model.TableDataBlock;
 import nablarch.test.tool.converter.model.TestDataBlock;
 import nablarch.test.tool.converter.model.TestDataContainer;
 import nablarch.test.tool.converter.model.TestDataSection;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,16 +43,20 @@ public class XlsFormatReader implements TestDataFormatReader {
     @Override
     public TestDataContainer read(Path sourcePath) throws ConverterException {
         String fileName = sourcePath.getFileName().toString();
-        String name = fileName.endsWith(".xls") ? fileName.substring(0, fileName.length() - 4) : fileName;
+        String name;
+        if (fileName.endsWith(".xlsx")) {
+            name = fileName.substring(0, fileName.length() - 5);
+        } else if (fileName.endsWith(".xls")) {
+            name = fileName.substring(0, fileName.length() - 4);
+        } else {
+            name = fileName;
+        }
         lastCommentLineCount = 0;
 
         try {
-            FileInputStream fis = new FileInputStream(sourcePath.toFile());
             Workbook wb;
-            try {
-                wb = new HSSFWorkbook(fis);
-            } finally {
-                fis.close();
+            try (FileInputStream fis = new FileInputStream(sourcePath.toFile())) {
+                wb = WorkbookFactory.create(fis);
             }
             List<TestDataSection> sections = new ArrayList<>();
             for (int i = 0; i < wb.getNumberOfSheets(); i++) {
@@ -60,7 +64,7 @@ public class XlsFormatReader implements TestDataFormatReader {
                 sections.add(parseSheet(sheet, sourcePath));
             }
             return new TestDataContainer(name, sections);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new ConverterException("Failed to read XLS file: " + sourcePath, e);
         }
     }

@@ -39,7 +39,7 @@ public final class ConverterFileFilter {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     String name = file.getFileName().toString();
-                    if (!name.endsWith(".xls")) return FileVisitResult.CONTINUE;
+                    if (!name.endsWith(".xls") && !name.endsWith(".xlsx")) return FileVisitResult.CONTINUE;
                     if (!matchesIncludes(name, includeMatchers)) {
                         skipCount[0]++;
                         return FileVisitResult.CONTINUE;
