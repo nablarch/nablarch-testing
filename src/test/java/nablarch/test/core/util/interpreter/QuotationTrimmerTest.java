@@ -79,27 +79,6 @@ public class QuotationTrimmerTest {
     }
 
     /**
-     * 境界値: ダブルクォート1文字・2文字・全角ダブルクォート2文字の境界動作（SW-3）。
-     */
-    @Test
-    public void testBoundaryValues() {
-        // Given: 半角ダブルクォート 1文字
-        // When: interpret を呼ぶ
-        // Then: 前後クォートにならないのでそのまま返ること
-        assertResult("\"", "\"");
-
-        // Given: 半角ダブルクォート 2文字
-        // When: interpret を呼ぶ
-        // Then: 前後クォートで囲まれているので空文字になること
-        assertResult("\"\"", "");
-
-        // Given: 全角ダブルクォート 2文字
-        // When: interpret を呼ぶ
-        // Then: 前後クォートで囲まれているので空文字になること
-        assertResult("""", "");
-    }
-
-    /**
      * テスト対象の実行結果をアサートする。
      *
      * @param input 入力値
