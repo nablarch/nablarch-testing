@@ -105,12 +105,73 @@ public class TestDataConverterTest {
         File inputDir = temporaryFolder.newFolder("inputXlsFlagInvalid");
         File outputDir = temporaryFolder.newFolder("outputXlsFlagInvalid");
 
+        java.io.ByteArrayOutputStream errBuf = new java.io.ByteArrayOutputStream();
+        java.io.PrintStream originalErr = System.err;
+        System.setErr(new java.io.PrintStream(errBuf));
+        int exitCode;
+        try {
+            exitCode = TestDataConverter.run(new String[]{
+                    "--from", "xls", "--to", "yaml", "--xls",
+                    inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+            });
+        } finally {
+            System.setErr(originalErr);
+        }
+
+        assertThat(exitCode, is(2));
+        assertTrue(errBuf.toString().contains("--xls option is only valid with --to xls."));
+    }
+
+    /**
+     * [Given] --from xls --to yaml で .xlsx ファイルを入力とする
+     * [When]  run() を呼び出す
+     * [Then]  YAML ファイルが生成され、終了コード 0 が返される
+     */
+    @Test
+    public void xlsxToYaml() throws Exception {
+        File inputDir = temporaryFolder.newFolder("inputXlsx");
+        File outputDir = temporaryFolder.newFolder("outputXlsx");
+
+        // Write a simple XLSX
+        writeSimpleXlsx(new File(inputDir, "FooTest.xlsx"));
+
         int exitCode = TestDataConverter.run(new String[]{
-                "--from", "xls", "--to", "yaml", "--xls",
+                "--from", "xls", "--to", "yaml",
                 inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
         });
 
-        assertThat(exitCode, is(2));
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest/case01.yaml").exists());
+    }
+
+    /**
+     * [Given] yaml→xlsx に変換した後、再度 --from xls --to yaml で変換する
+     * [When]  run() を2回呼び出す（往復変換）
+     * [Then]  両方とも終了コード 0 が返される
+     */
+    @Test
+    public void yamlToXlsxAndBackToYaml() throws Exception {
+        File inputDir = temporaryFolder.newFolder("inputRoundtrip");
+        File midDir = temporaryFolder.newFolder("midRoundtrip");
+        File outputDir = temporaryFolder.newFolder("outputRoundtrip");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        int exitCode1 = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls",
+                inputDir.getAbsolutePath(), midDir.getAbsolutePath()
+        });
+        assertThat(exitCode1, is(0));
+        assertTrue(new File(midDir, "FooTest.xlsx").exists());
+
+        int exitCode2 = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml",
+                midDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+        assertThat(exitCode2, is(0));
+        assertTrue(new File(outputDir, "FooTest/case01.yaml").exists());
     }
 
     /**
@@ -156,6 +217,60 @@ public class TestDataConverterTest {
 
         int exitCode = TestDataConverter.run(new String[]{
                 "--from", "xls", "--to", "yaml", "--overwrite",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+    }
+
+    /**
+     * [Given] yaml→xlsx 変換で既存 .xlsx ファイルあり・--overwrite なし
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 1 が返される
+     */
+    @Test
+    public void yamlToXlsxOverwriteErrorReturnsCode1() throws Exception {
+        File inputDir = temporaryFolder.newFolder("inputOverwrite");
+        File outputDir = temporaryFolder.newFolder("outputOverwrite");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(1));
+    }
+
+    /**
+     * [Given] yaml→xlsx 変換で既存ファイルあり・--overwrite あり
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 0 が返される
+     */
+    @Test
+    public void yamlToXlsxOverwriteOptionSucceeds() throws Exception {
+        File inputDir = temporaryFolder.newFolder("inputOverwriteOk");
+        File outputDir = temporaryFolder.newFolder("outputOverwriteOk");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls", "--overwrite",
                 inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
         });
 
@@ -543,6 +658,23 @@ public class TestDataConverterTest {
 
     private void writeSimpleXls(File file) throws Exception {
         org.apache.poi.hssf.usermodel.HSSFWorkbook wb = new org.apache.poi.hssf.usermodel.HSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = wb.createSheet("case01");
+        org.apache.poi.ss.usermodel.Row r0 = sheet.createRow(0);
+        r0.createCell(0).setCellValue("SETUP_TABLE=TBL");
+        org.apache.poi.ss.usermodel.Row r1 = sheet.createRow(1);
+        r1.createCell(0).setCellValue("COL1");
+        org.apache.poi.ss.usermodel.Row r2 = sheet.createRow(2);
+        r2.createCell(0).setCellValue("val1");
+        java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+        try {
+            wb.write(fos);
+        } finally {
+            fos.close();
+        }
+    }
+
+    private void writeSimpleXlsx(File file) throws Exception {
+        org.apache.poi.xssf.usermodel.XSSFWorkbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
         org.apache.poi.ss.usermodel.Sheet sheet = wb.createSheet("case01");
         org.apache.poi.ss.usermodel.Row r0 = sheet.createRow(0);
         r0.createCell(0).setCellValue("SETUP_TABLE=TBL");

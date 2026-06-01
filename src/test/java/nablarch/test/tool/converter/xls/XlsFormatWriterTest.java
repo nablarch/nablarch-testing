@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -353,6 +354,7 @@ public class XlsFormatWriterTest {
         xlsWriter.write(container, outputDir.toPath(), false);
 
         assertTrue(new File(outputDir, "FooTest.xls").exists());
+        assertFalse(new File(outputDir, "FooTest.xlsx").exists());
         Workbook wb = openXlsWorkbook(outputDir, "FooTest");
         assertThat(wb.getNumberOfSheets(), is(1));
     }

@@ -72,7 +72,7 @@ public class XlsFormatWriter implements TestDataFormatWriter {
                 out.close();
             }
         } catch (IOException e) {
-            throw new ConverterException("Failed to write XLS: " + xlsFile, e);
+            throw new ConverterException("Failed to write Excel file: " + xlsFile, e);
         }
     }
 

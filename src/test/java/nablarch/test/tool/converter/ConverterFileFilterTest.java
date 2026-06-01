@@ -82,6 +82,8 @@ public class ConverterFileFilterTest {
                 Collections.emptyList(), Collections.emptyList());
 
         assertThat(result.size(), is(2));
+        assertThat(fileNames(result), hasItem("FooTest.xlsx"));
+        assertThat(fileNames(result), hasItem("BarTest.xls"));
     }
 
     /**
