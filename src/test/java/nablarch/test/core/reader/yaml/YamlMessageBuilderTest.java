@@ -167,8 +167,8 @@ public class YamlMessageBuilderTest {
      *
      * <p>
      * 解説書 7.1/7.3: sendSyncTestData/{requestId}/message という id 形式が正しく取得できること<br>
-     * Given: messages_path_id に id="sendSyncTestData/REQ001/message"<br>
-     * When:  buildMessagePool(yaml, "messages_path_id", "sendSyncTestData/REQ001/message", path) を呼ぶ<br>
+     * Given: messages に id="sendSyncTestData/REQ001/message"<br>
+     * When:  buildMessagePool(yaml, "messages", "sendSyncTestData/REQ001/message", path) を呼ぶ<br>
      * Then:  RequestTestingMessagePool が返り、FW ヘッダの requestId="REQ0000001" であること
      * </p>
      */
@@ -694,6 +694,86 @@ public class YamlMessageBuilderTest {
         @SuppressWarnings("unchecked")
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
         assertThat("response_* 経路は fwHeader が空 Map であること", fwHeader.isEmpty(), is(true));
+    }
+
+    /**
+     * [MS-04] getMessageWithoutCache（expected_request_header_messages）経路は extractFwHeader を呼ばず空 Map を渡すこと。
+     *
+     * <p>
+     * Given: expected_request_header_messages に id=req001 のエントリ<br>
+     * When:  buildMessagePool(yaml, "expected_request_header_messages", "req001", path) を呼ぶ<br>
+     * Then:  fwHeader が空 Map であること
+     * </p>
+     */
+    @Test
+    public void expectedRequestHeaderMessagesReturnsEmptyFwHeader() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("expected_request_header_messages 経路は fwHeader が空 Map であること", fwHeader.isEmpty(), is(true));
+    }
+
+    /**
+     * [MS-04] getMessageWithoutCache（response_header_messages）経路は extractFwHeader を呼ばず空 Map を渡すこと。
+     *
+     * <p>
+     * Given: response_header_messages に id=resp001 のエントリ<br>
+     * When:  buildMessagePool(yaml, "response_header_messages", "resp001", path) を呼ぶ<br>
+     * Then:  fwHeader が空 Map であること
+     * </p>
+     */
+    @Test
+    public void responseHeaderMessagesReturnsEmptyFwHeader() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "response_header_messages", "resp001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("response_header_messages 経路は fwHeader が空 Map であること", fwHeader.isEmpty(), is(true));
+    }
+
+    /**
+     * [MS-04] fw_header: の値がクォートなしの数値・真偽値の場合、文字列に変換されること。
+     *
+     * <p>
+     * Given: messages に id=numericValues001 の fw_header にクォートなし数値 (0, 1234) と真偽値 (true) を記述<br>
+     * When:  buildMessagePool(yaml, "messages", "numericValues001", path) を呼ぶ<br>
+     * Then:  fwHeader の各値が文字列に変換されていること（"0", "1234", "true"）
+     * </p>
+     */
+    @Test
+    public void fwHeaderMapWithUnquotedNumericAndBooleanValues() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "numericValues001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("整数値が文字列に変換されること", fwHeader.get("resendFlag"), is("0"));
+        assertThat("4桁整数が文字列に変換されること", fwHeader.get("resultCode"), is("1234"));
+        assertThat("真偽値が文字列に変換されること", fwHeader.get("boolFlag"), is("true"));
     }
 
     /**

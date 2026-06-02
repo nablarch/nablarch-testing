@@ -32,6 +32,21 @@ messages:
         rows:
           - ["HELLO"]
 
+  # fw_header の値がクォートなし数値・真偽値（YAML ネイティブ型変換の確認）
+  - id: numericValues001
+    fw_header:
+      resendFlag: 0
+      resultCode: 1234
+      boolFlag: true
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
 expected_request_body_messages:
   - id: req001
     records:
