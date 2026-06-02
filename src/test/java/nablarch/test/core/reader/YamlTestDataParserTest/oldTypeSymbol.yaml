@@ -1,0 +1,16 @@
+# T1: 旧記法（型記号 X）を使った場合に例外になることを確認する YAML
+# identity mapping 廃止後は type: X が DEFAULT_TABLE に存在しないため変換失敗する
+
+setup_files:
+  - path: dummy/old_symbol_fixed.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD1
+            type: X
+            length: 5
+        rows:
+          - ["AAAAA"]

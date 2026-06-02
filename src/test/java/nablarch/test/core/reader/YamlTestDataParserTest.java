@@ -991,18 +991,49 @@ public class YamlTestDataParserTest {
      * Then:  FixedLengthFile / VariableLengthFile が取得でき、例外が発生しないこと
      * </p>
      */
+    /**
+     * [IV-12] フィールド型を日本語名称で記述した固定長/可変長 YAML が
+     * dataTypeMapping identity mapping なしで例外なく読み込めること。
+     * BasicDataTypeMapping.DEFAULT_TABLE の全 18 エントリ（X/N/XN/Z/SZ/P/SP/X9/SX9/B 系）を網羅する。
+     *
+     * <p>
+     * Given: 半角英字/半角数字/半角記号/半角カナ/半角英数字/半角英数字記号/半角/
+     *        全角英字/全角数字/全角ひらがな/全角カタカナ/全角漢字/全角/全半角/
+     *        数値/符号無ゾーン10進数/符号付ゾーン10進数/符号無パック10進数/符号付パック10進数/
+     *        符号無数値/符号付数値/バイナリ を含む YAML<br>
+     * When:  getSetupFile / getExpectedFile を呼ぶ<br>
+     * Then:  FixedLengthFile / VariableLengthFile が取得でき、例外が発生しないこと
+     * </p>
+     */
     @Test
     public void japaneseFieldTypeIsReadableWithoutIdentityMapping() {
         // Given / When
         List<DataFile> setupFiles = sut.getSetupFile(DIR, "YamlTestDataParserTest/japaneseFieldType");
         List<DataFile> expectedFiles = sut.getExpectedFile(DIR, "YamlTestDataParserTest/japaneseFieldType");
 
-        // Then
-        assertThat(setupFiles.size(), is(2));
+        // Then: 3固定長（X系/N系/misc系）+ 1可変長
+        assertThat(setupFiles.size(), is(4));
         assertThat(setupFiles.get(0), instanceOf(FixedLengthFile.class));
-        assertThat(setupFiles.get(1), instanceOf(VariableLengthFile.class));
+        assertThat(setupFiles.get(1), instanceOf(FixedLengthFile.class));
+        assertThat(setupFiles.get(2), instanceOf(FixedLengthFile.class));
+        assertThat(setupFiles.get(3), instanceOf(VariableLengthFile.class));
         assertThat(expectedFiles.size(), is(1));
         assertThat(expectedFiles.get(0), instanceOf(FixedLengthFile.class));
+    }
+
+    /**
+     * [IV-12] identity mapping 廃止後、旧記法（型記号 X）を YAML に書くと例外になること。
+     *
+     * <p>
+     * Given: type: X（旧型記号記法）を含む YAML<br>
+     * When:  getSetupFile を呼ぶ<br>
+     * Then:  BasicDataTypeMapping が "X" を変換できず IllegalArgumentException が送出されること
+     * </p>
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void oldTypeSymbolThrowsWhenIdentityMappingAbsent() {
+        // Given / When / Then: IllegalArgumentException を期待
+        sut.getSetupFile(DIR, "YamlTestDataParserTest/oldTypeSymbol");
     }
 
     /**

@@ -1,26 +1,108 @@
 # T1: フィールド型記法を日本語名称に統一
 # dataTypeMapping identity mapping なしで日本語型の固定長/可変長 YAML が読み込めることを検証する
+# BasicDataTypeMapping.DEFAULT_TABLE の全18エントリを網羅する
 
 setup_files:
-  - path: dummy/japanese_fixed.dat
+  # 固定長ファイル: X系（半角英字/半角数字/半角記号/半角カナ/半角英数字/半角英数字記号/半角）
+  - path: dummy/japanese_fixed_x.dat
     type: fixed
     directives:
       text-encoding: Windows-31J
     records:
       - record_type: DATA
         fields:
+          - name: FIELD_HAN_EI
+            type: 半角英字
+            length: 3
+          - name: FIELD_HAN_SU
+            type: 半角数字
+            length: 3
+          - name: FIELD_HAN_KI
+            type: 半角記号
+            length: 3
+          - name: FIELD_HAN_KA
+            type: 半角カナ
+            length: 3
+          - name: FIELD_HAN_EISU
+            type: 半角英数字
+            length: 3
+          - name: FIELD_HAN_EISUKI
+            type: 半角英数字記号
+            length: 3
           - name: FIELD_HAN
             type: 半角
-            length: 5
-          - name: FIELD_NUM
-            type: 数値
-            length: 5
+            length: 3
+        rows:
+          - ["AAA", "001", "---", "ｱｲｳ", "AB1", "A1.", "ABC"]
+
+  # 固定長ファイル: N系（全角英字/全角数字/全角ひらがな/全角カタカナ/全角漢字/全角）
+  - path: dummy/japanese_fixed_n.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD_ZEN_EI
+            type: 全角英字
+            length: 4
+          - name: FIELD_ZEN_SU
+            type: 全角数字
+            length: 4
+          - name: FIELD_ZEN_HIRA
+            type: 全角ひらがな
+            length: 4
+          - name: FIELD_ZEN_KATA
+            type: 全角カタカナ
+            length: 4
+          - name: FIELD_ZEN_KAN
+            type: 全角漢字
+            length: 4
           - name: FIELD_ZEN
             type: 全角
-            length: 6
+            length: 4
         rows:
-          - ["AAAAA", "00001", "あいうえお"]
+          - ["ＡＢＣＤ", "１２３４", "あいうえ", "アイウエ", "漢字テス", "全角文字"]
 
+  # 固定長ファイル: XN/Z/SZ/P/SP/X9/SX9/B系
+  - path: dummy/japanese_fixed_misc.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD_ZENHANKAKU
+            type: 全半角
+            length: 5
+          - name: FIELD_NUMERIC
+            type: 数値
+            length: 5
+          - name: FIELD_ZONE_UNSIGNED
+            type: 符号無ゾーン10進数
+            length: 5
+          - name: FIELD_ZONE_SIGNED
+            type: 符号付ゾーン10進数
+            length: 5
+          - name: FIELD_PACK_UNSIGNED
+            type: 符号無パック10進数
+            length: 3
+          - name: FIELD_PACK_SIGNED
+            type: 符号付パック10進数
+            length: 3
+          - name: FIELD_DECIMAL_UNSIGNED
+            type: 符号無数値
+            length: 5
+          - name: FIELD_DECIMAL_SIGNED
+            type: 符号付数値
+            length: 5
+          - name: FIELD_BINARY
+            type: バイナリ
+            length: 4
+        rows:
+          - ["AB１２３", "00001", "00001", "00001", "001", "001", "00001", "00001", "0001"]
+
+  # 可変長ファイル: X系と N系の混在確認
   - path: dummy/japanese_variable.csv
     type: variable
     directives:
