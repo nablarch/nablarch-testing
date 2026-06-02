@@ -68,6 +68,9 @@ public final class YamlSection {
 
     public static final String FW_HEADER_RECORD_TYPE = "FW_HEADER";
 
+    /** messages エントリ直下の FW 制御ヘッダマップキー */
+    public static final String FIELD_FW_HEADER = "fw_header";
+
     /** フォールバック時に使用するレコードタイプ名。record_type が未指定の場合および skipFwHeader=true の場合に使用する。 */
     public static final String DEFAULT_RECORD_TYPE = "default";
 

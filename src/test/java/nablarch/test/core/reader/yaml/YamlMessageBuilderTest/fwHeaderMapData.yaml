@@ -1,0 +1,80 @@
+# T2: fw_header マップ対応テスト用データ
+# messages エントリ直下の fw_header: マップから FW 制御ヘッダを取得することを検証する
+
+messages:
+  # 既定キー（requestId/userId/resendFlag/resultCode）+ プロジェクト独自キーを含む
+  - id: req001
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "0000000001"
+      userId: "testUser01"
+      resendFlag: "0"
+      resultCode: "0000"
+      customProjectKey: "PROJECT_VALUE"
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+  # fw_header なし（BODY のみ）
+  - id: bodyOnly001
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 5
+        rows:
+          - ["HELLO"]
+
+expected_request_body_messages:
+  - id: req001
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+expected_request_header_messages:
+  - id: req001
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+          - name: userId
+            type: 半角
+            length: 10
+        rows:
+          - ["0000000001", "testUser01"]
+
+response_body_messages:
+  - id: resp001
+    records:
+      - record_type: BODY
+        fields:
+          - name: RESULT_CODE
+            type: 半角
+            length: 4
+        rows:
+          - ["0000"]
+
+response_header_messages:
+  - id: resp001
+    records:
+      - record_type: HEADER
+        fields:
+          - name: requestId
+            type: 半角
+            length: 10
+        rows:
+          - ["0000000001"]

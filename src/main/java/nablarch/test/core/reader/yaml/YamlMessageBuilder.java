@@ -1,7 +1,5 @@
 package nablarch.test.core.reader.yaml;
 
-import nablarch.core.repository.SystemRepository;
-import nablarch.test.NablarchTestUtils;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.MockMessages;
 import nablarch.test.core.messaging.MessagePool;
@@ -13,16 +11,11 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static nablarch.core.util.StringUtil.isNullOrEmpty;
-import static nablarch.test.core.reader.yaml.YamlSection.FIELD_FIELDS;
+import static nablarch.test.core.reader.yaml.YamlSection.FIELD_FW_HEADER;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_GROUP_ID;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ID;
-import static nablarch.test.core.reader.yaml.YamlSection.FIELD_NAME;
-import static nablarch.test.core.reader.yaml.YamlSection.FIELD_RECORDS;
-import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
-import static nablarch.test.core.reader.yaml.YamlSection.FW_HEADER_RECORD_TYPE;
+import static nablarch.test.core.reader.yaml.YamlSection.KEY_MESSAGES;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.objectToString;
@@ -40,32 +33,10 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  */
 public final class YamlMessageBuilder {
 
-    /**
-     * FW ヘッダフィールド名を SystemRepository から読み込むためのキー。
-     * {@link nablarch.test.core.reader.MessageParser} と同じキーを参照する。
-     */
-    private static final String FW_HEADER_KEY = "reader.fwHeaderfields";
-
-    /**
-     * FW 制御ヘッダフィールド名セット。
-     * {@value #FW_HEADER_KEY} が SystemRepository に設定されている場合はその値を使用し、
-     * 設定がない場合はデフォルト値 {@code {requestId, userId, resendFlag, resultCode}} を使用する。
-     */
-    private final Set<String> fwHeaderFields;
-
-    private final List<TestDataInterpreter> interpreters;
     private final YamlFileBuilder fileBuilder;
 
     public YamlMessageBuilder(List<TestDataInterpreter> interpreters) {
-        this.interpreters = interpreters;
         this.fileBuilder = new YamlFileBuilder(interpreters);
-        // fwHeaderFields はコンストラクタ時点の SystemRepository 状態で解決する。
-        // YamlTestDataParser の setter 呼び出しごとにビルダーが再生成されるため、
-        // setter 呼び出し後の SystemRepository の状態が反映される。
-        this.fwHeaderFields =
-                isNullOrEmpty(SystemRepository.getString(FW_HEADER_KEY))
-                ? NablarchTestUtils.asSet("requestId", "userId", "resendFlag", "resultCode")
-                : NablarchTestUtils.asSet(NablarchTestUtils.makeArray(SystemRepository.getString(FW_HEADER_KEY)));
     }
 
     /**
@@ -83,7 +54,11 @@ public final class YamlMessageBuilder {
         if (file == null) {
             return null;
         }
-        Map<String, String> fwHeader = extractFwHeader(yaml, sectionKey, id);
+        // messages（MESSAGE）経路のみ fw_header: マップを読む。
+        // expected_request_* / response_* 経路は空 Map を渡す（フィールド単位で records に定義するため）。
+        Map<String, String> fwHeader = KEY_MESSAGES.equals(sectionKey)
+                ? extractFwHeader(yaml, sectionKey, id)
+                : Collections.<String, String>emptyMap();
         return new RequestTestingMessagePool(file, fwHeader);
     }
 
@@ -131,48 +106,18 @@ public final class YamlMessageBuilder {
             Map<String, Object> map = castMap(entry);
             String entryId = toStr(map.get(FIELD_ID));
             if (id.equals(entryId)) {
+                Object fwHeaderObj = map.get(FIELD_FW_HEADER);
+                if (fwHeaderObj == null) {
+                    return Collections.emptyMap();
+                }
                 Map<String, String> fwHeader = new LinkedHashMap<String, String>();
-                List<Object> records = getList(map, FIELD_RECORDS);
-                for (Object recordObj : records) {
-                    Map<String, Object> record = castMap(recordObj);
-                    if (!FW_HEADER_RECORD_TYPE.equals(toStr(record.get(YamlSection.FIELD_RECORD_TYPE)))) {
-                        continue;
-                    }
-                    List<Object> fields = getList(record, FIELD_FIELDS);
-                    List<Object> rows = getList(record, FIELD_ROWS);
-                    for (Object fieldObj : fields) {
-                        Map<String, Object> field = castMap(fieldObj);
-                        String fieldName = toStr(field.get(FIELD_NAME));
-                        if (fwHeaderFields.contains(fieldName) && !rows.isEmpty()) {
-                            Object firstRowObj = rows.get(0);
-                            if (!(firstRowObj instanceof List)) {
-                                throw new IllegalStateException(
-                                        "FW_HEADER rows must be a list of lists, but got "
-                                                + firstRowObj.getClass().getName()
-                                                + ". sectionKey=" + sectionKey + ", id=" + id);
-                            }
-                            @SuppressWarnings("unchecked")
-                            List<Object> firstRow = (List<Object>) firstRowObj;
-                            int fieldIndex = fieldIndexOf(fields, fieldName);
-                            if (fieldIndex >= 0 && fieldIndex < firstRow.size()) {
-                                fwHeader.put(fieldName, objectToString(firstRow.get(fieldIndex)));
-                            }
-                        }
-                    }
+                Map<?, ?> rawMap = (Map<?, ?>) fwHeaderObj;
+                for (Map.Entry<?, ?> kv : rawMap.entrySet()) {
+                    fwHeader.put(objectToString(kv.getKey()), objectToString(kv.getValue()));
                 }
                 return fwHeader;
             }
         }
         return Collections.emptyMap();
-    }
-
-    private int fieldIndexOf(List<Object> fields, String fieldName) {
-        for (int i = 0; i < fields.size(); i++) {
-            Map<String, Object> field = castMap(fields.get(i));
-            if (fieldName.equals(toStr(field.get(FIELD_NAME)))) {
-                return i;
-            }
-        }
-        return -1;
     }
 }

@@ -693,4 +693,144 @@ public class YamlMessageBuilderTest {
             });
         }
     }
+
+    // ========================================================================
+    // T2: fw_header マップ対応（ランタイム、messages 限定）
+    // ========================================================================
+
+    /**
+     * [MS-04] messages の fw_header: マップの全キー（既定＋独自）が getFwHeader() に保持されること。
+     *
+     * <p>
+     * Given: messages に id=req001 のエントリが fw_header: マップ
+     *        （requestId/userId/resendFlag/resultCode + customProjectKey）を持つ YAML<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  fwHeader に全キー（既定＋独自）が保持されること
+     * </p>
+     */
+    @Test
+    public void fwHeaderMapAllKeysRetainedIncludingCustom() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "req001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("requestId が設定されていること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("userId が設定されていること", fwHeader.get("userId"), is("testUser01"));
+        assertThat("resendFlag が設定されていること", fwHeader.get("resendFlag"), is("0"));
+        assertThat("resultCode が設定されていること", fwHeader.get("resultCode"), is("0000"));
+        assertThat("独自キー customProjectKey が黙って消えないこと", fwHeader.get("customProjectKey"), is("PROJECT_VALUE"));
+    }
+
+    /**
+     * [MS-04] records 側に FW_HEADER レコードがなくても fw_header: マップから FW ヘッダが取得できること。
+     *
+     * <p>
+     * Given: messages エントリに fw_header: マップがあり records には FW_HEADER レコードがない YAML<br>
+     * When:  buildMessagePool(yaml, "messages", "req001", path) を呼ぶ<br>
+     * Then:  fwHeader に requestId が設定されていること
+     * </p>
+     */
+    @Test
+    public void fwHeaderMapReadableWithoutFwHeaderRecord() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "req001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("records に FW_HEADER レコードがなくても fw_header マップから取得できること",
+                fwHeader.get("requestId"), is("0000000001"));
+    }
+
+    /**
+     * [MS-04] getMessageWithoutCache（expected/response）経路は extractFwHeader を呼ばず空 Map を渡すこと。
+     *
+     * <p>
+     * Given: expected_request_body_messages に id=req001 のエントリ（fw_header: なし）<br>
+     * When:  buildMessagePool(yaml, "expected_request_body_messages", "req001", path) を呼ぶ<br>
+     * Then:  fwHeader が空 Map であること（extractFwHeader を呼ばない）
+     * </p>
+     */
+    @Test
+    public void expectedRequestBodyMessagesReturnsEmptyFwHeader() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("expected_request_* 経路は fwHeader が空 Map であること", fwHeader.isEmpty(), is(true));
+    }
+
+    /**
+     * [MS-04] getMessageWithoutCache（response_*）経路は extractFwHeader を呼ばず空 Map を渡すこと。
+     *
+     * <p>
+     * Given: response_body_messages に id=resp001 のエントリ<br>
+     * When:  buildMessagePool(yaml, "response_body_messages", "resp001", path) を呼ぶ<br>
+     * Then:  fwHeader が空 Map であること
+     * </p>
+     */
+    @Test
+    public void responseBodyMessagesReturnsEmptyFwHeader() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("response_* 経路は fwHeader が空 Map であること", fwHeader.isEmpty(), is(true));
+    }
+
+    /**
+     * [MS-04] messages の fw_header: がない場合は空 Map を返すこと。
+     *
+     * <p>
+     * Given: messages に id=bodyOnly001 のエントリ（fw_header: なし）<br>
+     * When:  buildMessagePool(yaml, "messages", "bodyOnly001", path) を呼ぶ<br>
+     * Then:  fwHeader が空 Map であること
+     * </p>
+     */
+    @Test
+    public void messagesWithoutFwHeaderMapReturnsEmptyFwHeader() throws Exception {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+
+        // When
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
+
+        // Then
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("fw_header: マップなしの messages エントリは空 Map であること", fwHeader.isEmpty(), is(true));
+    }
 }
