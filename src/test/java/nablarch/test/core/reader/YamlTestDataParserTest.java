@@ -977,6 +977,34 @@ public class YamlTestDataParserTest {
     // expected_complete_tables: fillDefaultValues が呼ばれること
     // ========================================================================
 
+    /**
+     * [RS-01] getExpectedTableData: expected_complete_tables では fillDefaultValues が呼ばれること。
+     *
+     * <p>
+     * Given: expected_complete_tables に PK_COL1/PK_COL2 のみのエントリ（他カラム省略）<br>
+     * When:  getExpectedTableData を呼ぶ<br>
+     * Then:  省略カラムにデフォルト値が補完されていること（カラム数が増え、具体的なデフォルト値が設定されること）
+     * </p>
+     */
+    @Test
+    public void testGetExpectedTableDataCompleted() {
+        // Given / When
+        List<TableData> result = sut.getExpectedTableData(DIR, "YamlTestDataParserTest/completedTable");
+
+        // Then: expected_complete_tables の 1 件が返り、省略カラムが補完されていること
+        assertThat(result.size(), is(1));
+        TableData td = result.get(0);
+        assertThat(td.getTableName(), is("TEST_TABLE"));
+        // fillDefaultValues() により DB の全カラムが追加される（YAML 記述の 2 カラムより多い）
+        assertTrue("fillDefaultValues により全カラムが補完されていること", td.getColumnNames().length > 2);
+        // 数値型（NUMBER_COL）のデフォルト値は "0"（BasicDefaultValues の仕様）
+        assertThat("NUMBER_COL のデフォルト値が補完されていること",
+                td.getValue(0, "NUMBER_COL").toString(), is("0"));
+        // 文字列型（VARCHAR2_COL）のデフォルト値は " "（半角スペース）
+        assertThat("VARCHAR2_COL のデフォルト値が補完されていること",
+                td.getValue(0, "VARCHAR2_COL").toString(), is(" "));
+    }
+
     // ========================================================================
     // T1: フィールド型記法を日本語名称に統一
     // ========================================================================
@@ -984,17 +1012,7 @@ public class YamlTestDataParserTest {
     /**
      * [IV-12] フィールド型を日本語名称で記述した固定長/可変長 YAML が
      * dataTypeMapping identity mapping なしで例外なく読み込めること。
-     *
-     * <p>
-     * Given: 型に「半角」「数値」「全角」「全角漢字」「半角数字」「半角英字」を使った YAML<br>
-     * When:  getSetupFile / getExpectedFile を呼ぶ<br>
-     * Then:  FixedLengthFile / VariableLengthFile が取得でき、例外が発生しないこと
-     * </p>
-     */
-    /**
-     * [IV-12] フィールド型を日本語名称で記述した固定長/可変長 YAML が
-     * dataTypeMapping identity mapping なしで例外なく読み込めること。
-     * BasicDataTypeMapping.DEFAULT_TABLE の全 18 エントリ（X/N/XN/Z/SZ/P/SP/X9/SX9/B 系）を網羅する。
+     * BasicDataTypeMapping.DEFAULT_TABLE の全 22 エントリ（X/N/XN/Z/SZ/P/SP/X9/SX9/B 系）を網羅する。
      *
      * <p>
      * Given: 半角英字/半角数字/半角記号/半角カナ/半角英数字/半角英数字記号/半角/
@@ -1034,33 +1052,5 @@ public class YamlTestDataParserTest {
     public void oldTypeSymbolThrowsWhenIdentityMappingAbsent() {
         // Given / When / Then: IllegalArgumentException を期待
         sut.getSetupFile(DIR, "YamlTestDataParserTest/oldTypeSymbol");
-    }
-
-    /**
-     * [RS-01] getExpectedTableData: expected_complete_tables では fillDefaultValues が呼ばれること。
-     *
-     * <p>
-     * Given: expected_complete_tables に PK_COL1/PK_COL2 のみのエントリ（他カラム省略）<br>
-     * When:  getExpectedTableData を呼ぶ<br>
-     * Then:  省略カラムにデフォルト値が補完されていること（カラム数が増え、具体的なデフォルト値が設定されること）
-     * </p>
-     */
-    @Test
-    public void testGetExpectedTableDataCompleted() {
-        // Given / When
-        List<TableData> result = sut.getExpectedTableData(DIR, "YamlTestDataParserTest/completedTable");
-
-        // Then: expected_complete_tables の 1 件が返り、省略カラムが補完されていること
-        assertThat(result.size(), is(1));
-        TableData td = result.get(0);
-        assertThat(td.getTableName(), is("TEST_TABLE"));
-        // fillDefaultValues() により DB の全カラムが追加される（YAML 記述の 2 カラムより多い）
-        assertTrue("fillDefaultValues により全カラムが補完されていること", td.getColumnNames().length > 2);
-        // 数値型（NUMBER_COL）のデフォルト値は "0"（BasicDefaultValues の仕様）
-        assertThat("NUMBER_COL のデフォルト値が補完されていること",
-                td.getValue(0, "NUMBER_COL").toString(), is("0"));
-        // 文字列型（VARCHAR2_COL）のデフォルト値は " "（半角スペース）
-        assertThat("VARCHAR2_COL のデフォルト値が補完されていること",
-                td.getValue(0, "VARCHAR2_COL").toString(), is(" "));
     }
 }
