@@ -1,21 +1,14 @@
-# reader.fwHeaderfields カスタム設定テスト用（QA-4）
-# customField のみを FW ヘッダとして抽出することを検証する
+# プロジェクト独自キーを含む fw_header マップテスト用（T2 手順6）
+# fwHeaderFields フィルタが廃止され、fw_header に記述した全キーが保持されることを検証する
 
 messages:
   - id: req001
     directives:
       text-encoding: Windows-31J
+    fw_header:
+      customField: "CUSTOM_VALUE"
+      requestId: "0000000001"
     records:
-      - record_type: FW_HEADER
-        fields:
-          - name: customField
-            type: 半角
-            length: 12
-          - name: requestId
-            type: 半角
-            length: 10
-        rows:
-          - ["CUSTOM_VALUE", "0000000001"]
       - record_type: BODY
         fields:
           - name: DATA

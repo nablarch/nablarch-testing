@@ -4,23 +4,12 @@ messages:
   - id: req001
     directives:
       text-encoding: Windows-31J
+    fw_header:
+      requestId: "0000000001"
+      userId: "testUser01"
+      resendFlag: "0"
+      resultCode: "0000"
     records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-          - name: userId
-            type: 半角
-            length: 10
-          - name: resendFlag
-            type: 半角
-            length: 1
-          - name: resultCode
-            type: 半角
-            length: 4
-        rows:
-          - ["0000000001", "testUser01", "0", "0000"]
       - record_type: BODY
         fields:
           - name: SEARCH_KEY
@@ -28,6 +17,72 @@ messages:
             length: 10
         rows:
           - ["SEARCHKEY1"]
+
+  - id: sendSyncTestData/REQ001/message
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: "REQ0000001"
+      userId: "pathUser01"
+      resendFlag: "0"
+      resultCode: "0000"
+    records:
+      - record_type: BODY
+        fields:
+          - name: PAYLOAD
+            type: 半角
+            length: 10
+        rows:
+          - ["PAYLOADDAT"]
+
+  # fw_header が空マップ（emptyRows001: FW ヘッダなし）
+  - id: emptyRows001
+    fw_header: {}
+    records:
+      - record_type: BODY
+        fields:
+          - name: SEARCH_KEY
+            type: 半角
+            length: 10
+        rows:
+          - ["SEARCHKEY1"]
+
+  # fw_header にリスト形式（誤記）- ClassCastException を引き起こす
+  - id: malformed001
+    fw_header:
+      - requestId: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
+  # fw_header に一部のキーのみ
+  - id: partialHeader001
+    fw_header:
+      requestId: "0000000001"
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
+
+  # fw_header なし（BODY のみ）
+  - id: bodyOnly001
+    records:
+      - record_type: BODY
+        fields:
+          - name: DATA
+            type: 半角
+            length: 10
+        rows:
+          - ["TESTDATA1"]
 
 expected_request_header_messages:
   - id: req001
@@ -99,95 +154,6 @@ response_body_messages:
             length: 10
         rows:
           - ["NO_ID_DATA"]
-
-messages_empty_fw_header_rows:
-  - id: emptyRows001
-    records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-        rows: []
-      - record_type: BODY
-        fields:
-          - name: SEARCH_KEY
-            type: 半角
-            length: 10
-        rows:
-          - ["SEARCHKEY1"]
-
-messages_path_id:
-  - id: sendSyncTestData/REQ001/message
-    directives:
-      text-encoding: Windows-31J
-    records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-          - name: userId
-            type: 半角
-            length: 10
-          - name: resendFlag
-            type: 半角
-            length: 1
-          - name: resultCode
-            type: 半角
-            length: 4
-        rows:
-          - ["REQ0000001", "pathUser01", "0", "0000"]
-      - record_type: BODY
-        fields:
-          - name: PAYLOAD
-            type: 半角
-            length: 10
-        rows:
-          - ["PAYLOADDAT"]
-
-messages_malformed_fw_header:
-  - id: malformed001
-    records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-        rows:
-          - requestId: "0000000001"
-
-messages_short_fw_header_row:
-  - id: shortRow001
-    records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-          - name: userId
-            type: 半角
-            length: 10
-        rows:
-          - ["0000000001"]
-      - record_type: BODY
-        fields:
-          - name: DATA
-            type: 半角
-            length: 10
-        rows:
-          - ["TESTDATA1"]
-
-messages_no_fw_header:
-  - id: bodyOnly001
-    records:
-      - record_type: BODY
-        fields:
-          - name: DATA
-            type: 半角
-            length: 10
-        rows:
-          - ["TESTDATA1"]
 
 response_header_messages:
   - group_id: grp1

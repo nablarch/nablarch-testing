@@ -4,23 +4,12 @@ messages:
   - id: req001
     directives:
       text-encoding: Windows-31J
+    fw_header:
+      requestId: "0000000001"
+      userId: "testUser01"
+      resendFlag: "0"
+      resultCode: "0000"
     records:
-      - record_type: FW_HEADER
-        fields:
-          - name: requestId
-            type: 半角
-            length: 10
-          - name: userId
-            type: 半角
-            length: 10
-          - name: resendFlag
-            type: 半角
-            length: 1
-          - name: resultCode
-            type: 半角
-            length: 4
-        rows:
-          - ["0000000001", "testUser01", "0", "0000"]
       - record_type: BODY
         fields:
           - name: SEARCH_KEY

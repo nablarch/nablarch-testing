@@ -1,8 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
 import nablarch.core.dataformat.LayoutDefinition;
-import nablarch.core.repository.ObjectLoader;
-import nablarch.core.repository.SystemRepository;
 import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
@@ -17,16 +15,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -187,7 +178,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages_path_id", "sendSyncTestData/REQ001/message", DIR);
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "sendSyncTestData/REQ001/message", DIR);
 
         // Then
         assertNotNull(result);
@@ -299,12 +290,13 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder/YamlFileBuilder] buildMessagePool: FW_HEADER レコードが FixedLengthFile から除外されること。
+     * [YamlMessageBuilder/YamlFileBuilder] buildMessagePool: BODY のみの messages を読んだとき
+     * FixedLengthFile に 1 フラグメントだけ含まれること。
      *
      * <p>
-     * Given: messages に id=req001 が FW_HEADER + BODY の 2 レコードで定義されている<br>
-     * When:  buildMessagePool を呼ぶ（内部で buildMessageFile(skipFwHeader=true) を使用）<br>
-     * Then:  FixedLengthFile の layout に BODY レコード 1 件のみ含まれること（FW_HEADER は除外）
+     * Given: messages に id=req001 が fw_header: マップ + BODY レコードで定義されている<br>
+     * When:  YamlFileBuilder.buildMessageFile を呼ぶ（records の BODY のみがフラグメントになる）<br>
+     * Then:  FixedLengthFile の layout に BODY レコード 1 件のみ含まれること
      * </p>
      */
     @Test
@@ -312,14 +304,14 @@ public class YamlMessageBuilderTest {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
-        // When: YamlFileBuilder 経由で buildMessagePool を呼ぶ（YamlMessageBuilder が buildMessageFile を内部で使用）
+        // When
         YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<TestDataInterpreter>>getComponent("interpreters"));
         FixedLengthFile file = fileBuilder.buildMessageFile(yaml, "messages", "req001", DIR);
 
-        // Then: FW_HEADER が除外され BODY のみ 1 フラグメントであること
+        // Then: records に BODY のみ 1 フラグメントであること
         assertNotNull(file);
         LayoutDefinition layout = file.createLayout();
-        assertThat("FW_HEADER を除いた BODY レコードのみが含まれること", layout.getRecords().size(), is(1));
+        assertThat("BODY レコードのみが含まれること", layout.getRecords().size(), is(1));
         assertThat("レコードタイプが 'default' に固定されること", layout.getRecords().get(0).getTypeName(), is("default"));
     }
 
@@ -384,13 +376,13 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: FW_HEADER の rows が空リストの場合、
+     * [YamlMessageBuilder] buildMessagePool: fw_header: が空マップの場合、
      * 例外をスローせず空の fwHeader で MessagePool が返ること（E-3 分岐D）。
      *
      * <p>
-     * Given: messages_empty_fw_header_rows に id=emptyRows001 の FW_HEADER rows が空リスト<br>
-     * When:  buildMessagePool(yaml, "messages_empty_fw_header_rows", "emptyRows001", path) を呼ぶ<br>
-     * Then:  MessagePool が返り、fwHeader が空 Map であること（型チェック分岐には到達しない）
+     * Given: messages に id=emptyRows001 の fw_header が空マップ<br>
+     * When:  buildMessagePool(yaml, "messages", "emptyRows001", path) を呼ぶ<br>
+     * Then:  MessagePool が返り、fwHeader が空 Map であること
      * </p>
      */
     @Test
@@ -399,7 +391,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages_empty_fw_header_rows", "emptyRows001", DIR);
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "emptyRows001", DIR);
 
         // Then: 例外なく返り、fwHeader は空 Map
         assertNotNull(result);
@@ -407,7 +399,7 @@ public class YamlMessageBuilderTest {
         fwHeaderField.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
-        assertThat("rows が空のとき fwHeader は空 Map であること", fwHeader.size(), is(0));
+        assertThat("fw_header が空マップのとき fwHeader は空 Map であること", fwHeader.size(), is(0));
     }
 
     // ========================================================================
@@ -415,13 +407,13 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: FW_HEADER フラグメントが存在しない場合、
+     * [YamlMessageBuilder] buildMessagePool: fw_header: マップがない場合、
      * 空 Map を FW ヘッダとして MessagePool が返ること（RS-20）。
      *
      * <p>
-     * 解説書: RS-20（FW_HEADER フラグメント不在の代替フロー）<br>
-     * Given: messages_no_fw_header に id=bodyOnly001 の BODY レコードのみ（FW_HEADER レコードなし）<br>
-     * When:  buildMessagePool(yaml, "messages_no_fw_header", "bodyOnly001", path) を呼ぶ<br>
+     * 解説書: RS-20（fw_header マップ不在の代替フロー）<br>
+     * Given: messages に id=bodyOnly001 の BODY レコードのみ（fw_header マップなし）<br>
+     * When:  buildMessagePool(yaml, "messages", "bodyOnly001", path) を呼ぶ<br>
      * Then:  MessagePool が返り、fwHeader が空 Map であること
      * </p>
      */
@@ -431,7 +423,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages_no_fw_header", "bodyOnly001", DIR);
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
 
         // Then
         assertNotNull(result);
@@ -439,7 +431,7 @@ public class YamlMessageBuilderTest {
         fwHeaderField.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
-        assertThat("FW_HEADER フラグメントが存在しない場合は空 Map が使用されること", fwHeader.size(), is(0));
+        assertThat("fw_header マップがない場合は空 Map が使用されること", fwHeader.size(), is(0));
     }
 
     // ========================================================================
@@ -447,13 +439,13 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: FW_HEADER の rows が Map 形式の場合、
-     * IllegalStateException がスローされセクションキーと ID がメッセージに含まれること（E-3）。
+     * [YamlMessageBuilder] buildMessagePool: fw_header: の値がマップでなくリスト形式の場合、
+     * ClassCastException がスローされること（E-3）。
      *
      * <p>
-     * Given: messages_malformed_fw_header に id=malformed001 の FW_HEADER rows が Map 形式<br>
+     * Given: messages_malformed_fw_header に id=malformed001 の fw_header がリスト形式（誤記）<br>
      * When:  buildMessagePool(yaml, "messages_malformed_fw_header", "malformed001", path) を呼ぶ<br>
-     * Then:  IllegalStateException がスローされ、sectionKey と id がメッセージに含まれること
+     * Then:  ClassCastException がスローされること
      * </p>
      */
     @Test
@@ -463,11 +455,10 @@ public class YamlMessageBuilderTest {
 
         // When / Then
         try {
-            sut.buildMessagePool(yaml, "messages_malformed_fw_header", "malformed001", DIR);
-            fail("IllegalStateException が期待される");
-        } catch (IllegalStateException e) {
-            assertThat("セクションキーがメッセージに含まれること", e.getMessage(), containsString("messages_malformed_fw_header"));
-            assertThat("IDがメッセージに含まれること", e.getMessage(), containsString("malformed001"));
+            sut.buildMessagePool(yaml, "messages", "malformed001", DIR);
+            fail("ClassCastException が期待される");
+        } catch (ClassCastException e) {
+            // OK: fw_header がリスト形式の場合は ClassCastException がスローされること
         }
     }
 
@@ -529,13 +520,12 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: FW_HEADER の row 値がフィールド数より少ない場合、
-     * 範囲外のフィールドはスキップされ、範囲内のフィールドのみ fwHeader に設定されること。
+     * [YamlMessageBuilder] buildMessagePool: fw_header: マップに一部のキーのみ含まれる場合、
+     * 記載されたキーのみ fwHeader に設定されること。
      *
      * <p>
-     * Given: messages_short_fw_header_row に id=shortRow001 の FW_HEADER が
-     *        fields=[requestId, userId] だが rows に値が 1 つ（requestId のみ）<br>
-     * When:  buildMessagePool(yaml, "messages_short_fw_header_row", "shortRow001", path) を呼ぶ<br>
+     * Given: messages_partial_fw_header に id=partialHeader001 の fw_header が requestId のみ<br>
+     * When:  buildMessagePool(yaml, "messages_partial_fw_header", "partialHeader001", path) を呼ぶ<br>
      * Then:  fwHeader に requestId のみ設定され、userId は含まれないこと
      * </p>
      */
@@ -545,7 +535,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages_short_fw_header_row", "shortRow001", DIR);
+        MessagePool result = sut.buildMessagePool(yaml, "messages", "partialHeader001", DIR);
 
         // Then
         assertNotNull(result);
@@ -553,145 +543,43 @@ public class YamlMessageBuilderTest {
         fwHeaderField.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
-        assertThat("範囲内の requestId は設定されること", fwHeader.get("requestId"), is("0000000001"));
-        assertThat("範囲外の userId は設定されないこと", fwHeader.containsKey("userId"), is(false));
+        assertThat("記載された requestId は設定されること", fwHeader.get("requestId"), is("0000000001"));
+        assertThat("記載されていない userId は含まれないこと", fwHeader.containsKey("userId"), is(false));
     }
 
-    // ========================================================================
-    // extractFwHeader: 一致する ID なし → 空 Map が返ること（防衛的ガード）
-    // ========================================================================
-
-    /**
-     * [YamlMessageBuilder] extractFwHeader: セクション内にマッチする ID が存在しない場合、
-     * 空 Map が返ること（防衛的ガード — 通常フローでは到達不能だが実装として定義されている）。
-     *
-     * <p>
-     * Given: 1 エントリ（id="existing"）のみを持つ yaml Map を直接組み立て、
-     *        存在しない id="nonExistent" で extractFwHeader をリフレクション経由で呼ぶ<br>
-     * When:  extractFwHeader(yaml, "messages", "nonExistent") を呼ぶ<br>
-     * Then:  空 Map が返ること
-     * </p>
-     */
-    @Test
-    public void testExtractFwHeader_idNotFoundReturnsEmptyMap() throws Exception {
-        // Given: yaml を直接構築（エントリの id と検索 id が食い違う）
-        Map<String, Object> fieldEntry = new LinkedHashMap<String, Object>();
-        fieldEntry.put("name", "requestId");
-        fieldEntry.put("type", "X");
-        fieldEntry.put("length", 10);
-
-        Map<String, Object> record = new LinkedHashMap<String, Object>();
-        record.put("record_type", "FW_HEADER");
-        record.put("fields", Arrays.<Object>asList(fieldEntry));
-        record.put("rows", Arrays.<Object>asList(Arrays.<Object>asList("0000000001")));
-
-        Map<String, Object> entry = new LinkedHashMap<String, Object>();
-        entry.put("id", "existing");
-        entry.put("records", Arrays.<Object>asList(record));
-
-        Map<String, Object> yaml = new LinkedHashMap<String, Object>();
-        yaml.put("messages", Arrays.<Object>asList(entry));
-
-        // When: private メソッドをリフレクションで呼び出す
-        Method method = YamlMessageBuilder.class.getDeclaredMethod(
-                "extractFwHeader", Map.class, String.class, String.class);
-        method.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        Map<String, String> result = (Map<String, String>) method.invoke(sut, yaml, "messages", "nonExistent");
-
-        // Then
-        assertThat("マッチする ID がない場合は空 Map が返ること", result.isEmpty(), is(true));
-    }
-
-    // ========================================================================
-    // fieldIndexOf: 一致フィールドなし → -1 が返ること（防衛的ガード）
-    // ========================================================================
-
-    /**
-     * [YamlMessageBuilder] fieldIndexOf: フィールドリスト内にマッチする name が存在しない場合、
-     * -1 が返ること（防衛的ガード — 通常フローでは到達不能だが実装として定義されている）。
-     *
-     * <p>
-     * Given: name="requestId" のフィールドエントリのみを持つリストを直接組み立て、
-     *        name="userId" で fieldIndexOf をリフレクション経由で呼ぶ<br>
-     * When:  fieldIndexOf(fields, "userId") を呼ぶ<br>
-     * Then:  -1 が返ること
-     * </p>
-     */
-    @Test
-    public void testFieldIndexOf_fieldNotFoundReturnsMinusOne() throws Exception {
-        // Given: "requestId" のみを持つフィールドリスト
-        Map<String, Object> fieldEntry = new LinkedHashMap<String, Object>();
-        fieldEntry.put("name", "requestId");
-        fieldEntry.put("type", "X");
-        fieldEntry.put("length", 10);
-        List<Object> fields = Arrays.<Object>asList(fieldEntry);
-
-        // When: private メソッドをリフレクションで呼び出す（"userId" は存在しない）
-        Method method = YamlMessageBuilder.class.getDeclaredMethod(
-                "fieldIndexOf", List.class, String.class);
-        method.setAccessible(true);
-        int result = (int) method.invoke(sut, fields, "userId");
-
-        // Then
-        assertThat("マッチするフィールドがない場合は -1 が返ること", result, is(-1));
-    }
 
     // ========================================================================
     // fwHeaderFields カスタム設定（QA-4）
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: reader.fwHeaderfields が SystemRepository に設定されている場合、
-     * そのフィールドのみ FW ヘッダとして抽出されること（QA-4）。
+     * [YamlMessageBuilder] buildMessagePool: fw_header: マップにプロジェクト独自キーと既定キーが混在する場合、
+     * fw_header に記述した全キーが保持されること（fwHeaderFields フィルタ廃止後の確認）。
      *
      * <p>
-     * Given: SystemRepository に reader.fwHeaderfields=customField を一時設定した YamlMessageBuilder<br>
-     *        messages に id=req001 が FW_HEADER/BODY レコードで定義されている<br>
+     * Given: messages に id=req001 の fw_header マップに customField/requestId を記述<br>
      * When:  buildMessagePool を呼ぶ<br>
-     * Then:  customField が FW ヘッダに含まれ、requestId は含まれないこと（QA-4）
+     * Then:  customField と requestId の両方が FW ヘッダに含まれること
      * </p>
      */
     @Test
     public void testBuildMessagePool_customFwHeaderFields() throws Exception {
-        // Given: reader.fwHeaderfields を一時設定
-        SystemRepository.load(new ObjectLoader() {
-            @Override
-            public Map<String, Object> load() {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                map.put("reader.fwHeaderfields", "customField");
-                return map;
-            }
-        });
-        try {
-            List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-            YamlMessageBuilder customSut = new YamlMessageBuilder(interpreters);
-            Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+        // Given
+        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
+        YamlMessageBuilder customSut = new YamlMessageBuilder(interpreters);
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
 
-            // When
-            MessagePool result = customSut.buildMessagePool(yaml, "messages", "req001", DIR);
+        // When
+        MessagePool result = customSut.buildMessagePool(yaml, "messages", "req001", DIR);
 
-            // Then
-            assertNotNull(result);
-            Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
-            fwHeaderField.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
-            assertThat("customField が設定されていること", fwHeader.get("customField"), is("CUSTOM_VALUE"));
-            assertThat("requestId は含まれないこと", fwHeader.containsKey("requestId"), is(false));
-        } finally {
-            // テスト後に reader.fwHeaderfields を null に戻す。
-            // YamlMessageBuilder は isNullOrEmpty(null) を true と判断してデフォルト値にフォールバックするため、
-            // 後続テストが reader.fwHeaderfields の影響を受けないことが保証される。
-            SystemRepository.load(new ObjectLoader() {
-                @Override
-                public Map<String, Object> load() {
-                    HashMap<String, Object> map = new HashMap<String, Object>();
-                    map.put("reader.fwHeaderfields", null);
-                    return map;
-                }
-            });
-        }
+        // Then: fw_header に記述した全キーが保持されること（フィルタなし）
+        assertNotNull(result);
+        Field fwHeaderField = MessagePool.class.getDeclaredField("fwHeader");
+        fwHeaderField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, String> fwHeader = (Map<String, String>) fwHeaderField.get(result);
+        assertThat("独自キー customField が保持されること", fwHeader.get("customField"), is("CUSTOM_VALUE"));
+        assertThat("既定キー requestId も保持されること", fwHeader.get("requestId"), is("0000000001"));
     }
 
     // ========================================================================
