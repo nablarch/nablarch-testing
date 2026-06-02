@@ -251,39 +251,32 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T2 の続きから着手する**（WIP コミット `19af5e4` 参照）
+2. **T2 の T2.md チェックファイル更新・ユーザーレビュー依頼から着手する**
 
-### T2 再開手順（fw_header マップ対応）
+### T2 現状（2026-06-02 完了済み）
 
-**完了済み:**
-- `YamlSection.FIELD_FW_HEADER` 定数追加
-- `YamlMessageBuilder` を `fw_header:` マップ読込方式に書き換え（`FW_HEADER` レコード探索廃止）
-- `messages` のみ `fw_header:` を読む、`expected_*`/`response_*` は空 Map を返す経路分離
-- `fwHeaderFields`/`FW_HEADER_KEY` 削除
-- T2 RED テスト5件追加（`YamlMessageBuilderTest`）、`fwHeaderMapData.yaml` 追加
+**実装・テスト完了（コミット `949c1b8` まで）:**
+- `YamlMessageBuilder` を `fw_header:` マップ読込方式に書き換え完了
+- テスト YAML 全ファイル（`messageData.yaml`・`customFwHeaderData.yaml`・`fwHeaderMapData.yaml`・`schemaFullCoverage.yaml`・`YamlTestDataParserTest/messageData.yaml`）を `fw_header:` マップ方式に更新
+- 27テスト全グリーン（82テスト合計でグリーン）
+- QA・Java エキスパート・SWE レビュー指摘を全件対応済み
 
 **残タスク（ここから再開）:**
-1. 既存テスト YAML（`YamlMessageBuilderTest/messageData.yaml`）を `record_type: FW_HEADER` 方式 → `fw_header:` マップ方式に更新する。`messages` セクションのみ（`expected_request_*`/`response_*` は変更不要）
-2. `customFwHeaderData.yaml` も同様に更新（`fw_header:` マップ方式へ）
-3. `testBuildMessagePool_fwHeaderFragmentExcluded` テストは `FW_HEADER` レコードがなくなるため、代わりに「BODY のみの messages を読んだとき FixedLengthFile に 1 フラグメントだけ含まれる」ことを検証するよう修正する
-4. `testBuildMessagePool_withFwHeader`・`testBuildMessagePool_idWithPathSegments` のテストも `fw_header:` マップ方式の YAML で動作確認する
-5. `testExtractFwHeader_idNotFoundReturnsEmptyMap`・`testFieldIndexOf_fieldNotFoundReturnsMinusOne` は実装から削除されたプライベートメソッドのテストなので削除する
-6. `testBuildMessagePool_customFwHeaderFields` は `fwHeaderFields` によるフィルタが廃止されたため、テスト内容を見直す（「独自キーが保持される」旨の検証に変更）
-7. `YamlSchemaValidationTest` / `YamlTestDataParserTest/schemaFullCoverage.yaml` の `messages` セクションも `fw_header:` マップ方式に更新する
-8. `mvn test` で全関連テストがグリーンになることを確認
-9. セルフチェック → QA → Java エキスパート → SWE レビュー → T2.md 更新
+1. `T2.md` チェックファイルをセルフチェック・各レビュー結果で埋めて更新する（`docs/pr75/checks/T2.md`）
+2. ユーザーレビュー依頼（T2.md に結果を記録）
 
 ### 今セッションで対応済みの事項（2026-06-02）
 
 **T1: フィールド型記法を日本語名称に統一（完了）**
 - `unit-test-yaml.xml` から identity mapping 削除（コミット `c5af79f`）
 - テスト YAML を日本語型に更新（`fileData.yaml` 等7ファイル）
-- QA 指摘2件対応: DEFAULT_TABLE 全22エントリ網羅・旧記法の負テスト追加（コミット `e3eef83`）
-- エキスパートレビュー指摘2件対応: Javadoc 重複削除・コメント修正（コミット `f18499f`）
+- QA 指摘2件対応・エキスパートレビュー指摘2件対応（コミット `e3eef83`・`f18499f`）
 - T1.md レビュー結果記録済み（コミット `67ac3af`）
 
-**T2: fw_header マップ対応 WIP（コミット `19af5e4`）**
-- 上記「残タスク」を参照
+**T2: fw_header マップ対応（コミット `949c1b8` で実装・全レビュー完了）**
+- 実装: `YamlMessageBuilder.extractFwHeader` を `fw_header:` マップ方式に変更
+- テスト: 27テスト全グリーン（QA・Java・SWE 各レビュー指摘を全件対応済み）
+- 残: T2.md チェックファイル記入・ユーザーレビュー
 
 ---
 
