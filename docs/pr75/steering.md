@@ -250,23 +250,40 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 ## 再開手順
 
-1. `git status` でクリーン確認
-2. **C-1・V-1 をまとめてユーザーレビュー依頼**。OK が出たらタスクリストを完了にしてブランチをマージ。
+1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
+2. **T2 の続きから着手する**（WIP コミット `19af5e4` 参照）
 
-### 今セッションで対応済みの事項（2026-06-01 後半）
+### T2 再開手順（fw_header マップ対応）
 
-**C-1: `.xlsx` 対応・`--xls` オプション追加分のセルフチェック・QAレビュー完了**
+**完了済み:**
+- `YamlSection.FIELD_FW_HEADER` 定数追加
+- `YamlMessageBuilder` を `fw_header:` マップ読込方式に書き換え（`FW_HEADER` レコード探索廃止）
+- `messages` のみ `fw_header:` を読む、`expected_*`/`response_*` は空 Map を返す経路分離
+- `fwHeaderFields`/`FW_HEADER_KEY` 削除
+- T2 RED テスト5件追加（`YamlMessageBuilderTest`）、`fwHeaderMapData.yaml` 追加
 
-- QA 8件指摘を全件対応後にコミット（`06799c0`）、156テスト全グリーン確認済み
-  - P-1: POI 3.8 制約で受け入れ
-  - P-2: エラーメッセージを `"Failed to write XLS"` → `"Failed to write Excel file"` に修正
-  - P-3: `xlsFlagWithNonXlsToReturnsCode2` でエラーメッセージ内容を `ByteArrayOutputStream` でキャプチャ検証
-  - P-4: `.xlsx` 入力 E2E テスト追加（`xlsxToYaml`・`yamlToXlsxAndBackToYaml`）
-  - P-5: `xlsFormatFlagProducesXlsFile` に `assertFalse(FooTest.xlsx exists)` を追加
-  - P-6: `yaml → xlsx` の上書き禁止・`--overwrite` テスト追加
-  - P-7: `ConverterPathResolver.yamlDirToXls()` Javadoc を実態に合わせて修正
-  - P-8: `xlsxFilesIncluded` に `hasItem("FooTest.xlsx")` / `hasItem("BarTest.xls")` を追加
-- C-1.md にセルフチェック・QAレビュー記録を追記（コミット `67b7662`）
+**残タスク（ここから再開）:**
+1. 既存テスト YAML（`YamlMessageBuilderTest/messageData.yaml`）を `record_type: FW_HEADER` 方式 → `fw_header:` マップ方式に更新する。`messages` セクションのみ（`expected_request_*`/`response_*` は変更不要）
+2. `customFwHeaderData.yaml` も同様に更新（`fw_header:` マップ方式へ）
+3. `testBuildMessagePool_fwHeaderFragmentExcluded` テストは `FW_HEADER` レコードがなくなるため、代わりに「BODY のみの messages を読んだとき FixedLengthFile に 1 フラグメントだけ含まれる」ことを検証するよう修正する
+4. `testBuildMessagePool_withFwHeader`・`testBuildMessagePool_idWithPathSegments` のテストも `fw_header:` マップ方式の YAML で動作確認する
+5. `testExtractFwHeader_idNotFoundReturnsEmptyMap`・`testFieldIndexOf_fieldNotFoundReturnsMinusOne` は実装から削除されたプライベートメソッドのテストなので削除する
+6. `testBuildMessagePool_customFwHeaderFields` は `fwHeaderFields` によるフィルタが廃止されたため、テスト内容を見直す（「独自キーが保持される」旨の検証に変更）
+7. `YamlSchemaValidationTest` / `YamlTestDataParserTest/schemaFullCoverage.yaml` の `messages` セクションも `fw_header:` マップ方式に更新する
+8. `mvn test` で全関連テストがグリーンになることを確認
+9. セルフチェック → QA → Java エキスパート → SWE レビュー → T2.md 更新
+
+### 今セッションで対応済みの事項（2026-06-02）
+
+**T1: フィールド型記法を日本語名称に統一（完了）**
+- `unit-test-yaml.xml` から identity mapping 削除（コミット `c5af79f`）
+- テスト YAML を日本語型に更新（`fileData.yaml` 等7ファイル）
+- QA 指摘2件対応: DEFAULT_TABLE 全22エントリ網羅・旧記法の負テスト追加（コミット `e3eef83`）
+- エキスパートレビュー指摘2件対応: Javadoc 重複削除・コメント修正（コミット `f18499f`）
+- T1.md レビュー結果記録済み（コミット `67ac3af`）
+
+**T2: fw_header マップ対応 WIP（コミット `19af5e4`）**
+- 上記「残タスク」を参照
 
 ---
 
