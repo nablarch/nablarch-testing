@@ -295,14 +295,30 @@ public class XlsFormatReader implements TestDataFormatReader {
         return new FileDataBlock(dataType, groupId, identifier, fileType, directives, records);
     }
 
+    /**
+     * 既知のディレクティブ名。電文ブロックの「名前｜値」行がこのセットに含まれる場合は
+     * FW 制御ヘッダではなくディレクティブとして扱う。
+     * NTF の DataRecordFormatterSupport$Directive / FixedLengthDirective / VariableLengthDirective の全名称を網羅する。
+     */
+    private static final java.util.Set<String> KNOWN_DIRECTIVE_NAMES = new java.util.HashSet<>(java.util.Arrays.asList(
+            "file-type", "text-encoding", "record-separator",
+            "record-length",
+            "positive-zone-sign-nibble", "negative-zone-sign-nibble",
+            "positive-pack-sign-nibble", "negative-pack-sign-nibble",
+            "required-decimal-point", "fixed-sign-position", "required-plus-sign",
+            "field-separator", "quoting-delimiter", "ignore-blank-lines",
+            "requires-title", "max-record-length", "title-record-type-name"
+    ));
+
     /** メッセージングデータブロックの解析（MS-01, MS-02）。 */
     private MessageDataBlock parseMessageBlock(DataType dataType, String groupId, String identifier,
                                                 List<List<String>> rows, int[] nextIndex) {
+        Map<String, String> directives = new LinkedHashMap<>();
         Map<String, String> fwHeaderFields = new LinkedHashMap<>();
         List<RecordLayout> records = new ArrayList<>();
         int i = nextIndex[0];
 
-        // FW ヘッダ行（先頭非空）の読み込み。先頭が空になったらフィールド名行の開始
+        // 先頭非空行（ディレクティブ または FW 制御ヘッダ）の読み込み。先頭が空になったらフィールド名行の開始
         while (i < rows.size()) {
             List<String> row = rows.get(i);
             if (detectDataType(row.get(0)) != null) {
@@ -311,7 +327,13 @@ public class XlsFormatReader implements TestDataFormatReader {
             if (row.get(0).isEmpty()) {
                 break;  // フィールド名行（no列: 先頭が空）
             }
-            fwHeaderFields.put(row.get(0), row.size() > 1 ? row.get(1) : "");
+            String key = row.get(0);
+            String value = row.size() > 1 ? row.get(1) : "";
+            if (KNOWN_DIRECTIVE_NAMES.contains(key)) {
+                directives.put(key, value);
+            } else {
+                fwHeaderFields.put(key, value);
+            }
             i++;
         }
 
@@ -361,7 +383,7 @@ public class XlsFormatReader implements TestDataFormatReader {
         }
 
         nextIndex[0] = i;
-        return new MessageDataBlock(dataType, groupId, identifier, fwHeaderFields, records);
+        return new MessageDataBlock(dataType, groupId, identifier, directives, fwHeaderFields, records);
     }
 
     /** DataType の判定（DT-03: 前方一致）。DEFAULT は対象外。 */

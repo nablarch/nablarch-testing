@@ -386,6 +386,7 @@ public class YamlFormatWriterTest {
      */
     @Test
     public void writeMessage() throws Exception {
+        // Given
         Map<String, String> fwHeaders = new LinkedHashMap<>();
         fwHeaders.put("requestId", "REQ001");
         fwHeaders.put("userId", "usr001");
@@ -397,20 +398,22 @@ public class YamlFormatWriterTest {
                 Arrays.asList(Arrays.asList("req1", "data1")));
         MessageDataBlock block = new MessageDataBlock(
                 DataType.MESSAGE, "", "sendSyncTestData/REQ001/message",
-                fwHeaders, Arrays.asList(bodyRecord)
+                new LinkedHashMap<>(), fwHeaders, Arrays.asList(bodyRecord)
         );
         TestDataContainer container = container("case01", block);
 
+        // When
         File outputDir = temporaryFolder.newFolder("out");
         sut.write(container, outputDir.toPath(), false);
 
+        // Then: fw_header: マップ形式で出力され、record_type: FW_HEADER は出力されない
         String yaml = readYaml(outputDir, "FooTest", "case01");
         assertThat(yaml, containsString("messages:"));
         assertThat(yaml, containsString("id: \"sendSyncTestData/REQ001/message\""));
-        assertThat(yaml, containsString("record_type: \"FW_HEADER\""));
-        assertThat(yaml, containsString("name: \"requestId\""));
-        assertThat(yaml, containsString("name: \"userId\""));
-        assertThat(yaml, containsString("[\"REQ001\", \"usr001\"]"));
+        assertThat(yaml, containsString("fw_header:"));
+        assertThat(yaml, containsString("requestId: \"REQ001\""));
+        assertThat(yaml, containsString("userId: \"usr001\""));
+        assertThat(yaml, not(containsString("record_type: \"FW_HEADER\"")));
         assertThat(yaml, containsString("record_type: \"default\""));
         assertThat(yaml, containsString("name: \"FIELD1\""));
     }
@@ -569,7 +572,7 @@ public class YamlFormatWriterTest {
         // Given
         MessageDataBlock block = new MessageDataBlock(
                 DataType.MESSAGE, "msgGrp", "req/msg",
-                new LinkedHashMap<>(),
+                new LinkedHashMap<>(), new LinkedHashMap<>(),
                 Collections.emptyList()
         );
         TestDataContainer container = container("case01", block);
@@ -595,7 +598,7 @@ public class YamlFormatWriterTest {
                 Arrays.asList(Arrays.asList("val")));
         MessageDataBlock block = new MessageDataBlock(
                 DataType.MESSAGE, "", "req/msg",
-                new LinkedHashMap<>(),
+                new LinkedHashMap<>(), new LinkedHashMap<>(),
                 Arrays.asList(record)
         );
         TestDataContainer container = container("case01", block);
@@ -620,7 +623,7 @@ public class YamlFormatWriterTest {
         // Given
         MessageDataBlock block = new MessageDataBlock(
                 DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "", "req/hdr",
-                new LinkedHashMap<>(),
+                new LinkedHashMap<>(), new LinkedHashMap<>(),
                 Collections.emptyList()
         );
         TestDataContainer container = container("case01", block);
@@ -642,7 +645,7 @@ public class YamlFormatWriterTest {
         // Given
         MessageDataBlock block = new MessageDataBlock(
                 DataType.EXPECTED_REQUEST_BODY_MESSAGES, "", "req/body",
-                new LinkedHashMap<>(),
+                new LinkedHashMap<>(), new LinkedHashMap<>(),
                 Collections.emptyList()
         );
         TestDataContainer container = container("case01", block);

@@ -163,6 +163,7 @@ public class YamlFormatWriter implements TestDataFormatWriter {
 
     private void writeMessageBlock(Writer w, MessageDataBlock block) throws IOException {
         String indent = "  ";
+        boolean isMessage = block.getDataType() == DataType.MESSAGE;
 
         if (!block.getGroupId().isEmpty()) {
             w.write(indent + "- group_id: " + quoteString(block.getGroupId()) + "\n");
@@ -171,28 +172,22 @@ public class YamlFormatWriter implements TestDataFormatWriter {
             w.write(indent + "- id: " + quoteString(block.getIdentifier()) + "\n");
         }
 
-        w.write(indent + "  records:\n");
-
-        // FW_HEADER record from fwHeaderFields
-        if (!block.getFwHeaderFields().isEmpty()) {
-            w.write(indent + "    - record_type: \"FW_HEADER\"\n");
-            w.write(indent + "      fields:\n");
-            for (String fieldName : block.getFwHeaderFields().keySet()) {
-                w.write(indent + "        - {name: " + quoteString(fieldName) + "}\n");
+        if (!block.getDirectives().isEmpty()) {
+            w.write(indent + "  directives:\n");
+            for (Map.Entry<String, String> entry : block.getDirectives().entrySet()) {
+                w.write(indent + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
             }
-            // rows: single row with all FW header values
-            w.write(indent + "      rows:\n");
-            w.write(indent + "        - [");
-            boolean first = true;
-            for (String value : block.getFwHeaderFields().values()) {
-                if (!first) w.write(", ");
-                w.write(quoteString(value));
-                first = false;
-            }
-            w.write("]\n");
         }
 
-        // regular records
+        // fw_header は MESSAGE（messages）のみ出力する
+        if (isMessage && !block.getFwHeaderFields().isEmpty()) {
+            w.write(indent + "  fw_header:\n");
+            for (Map.Entry<String, String> entry : block.getFwHeaderFields().entrySet()) {
+                w.write(indent + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
+            }
+        }
+
+        w.write(indent + "  records:\n");
         for (RecordLayout record : block.getRecords()) {
             writeMessageRecord(w, record, indent + "    ");
         }

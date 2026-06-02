@@ -58,7 +58,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - 前提: 文書 `docs/pr75/specs/ntf-testdata-doc.md` / `docs/pr75/design/ntf-testdata-yaml-design.md` / `docs/pr75/ntf-impl-spec-list.md` / `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` / `docs/pr75/specs/ntf-testdata-doc-examples-messaging.md` は是正済み（あるべき姿）。本フェーズはこれら文書を正とし実装を一致させる
   - 各タスクは「ソースコード変更を含むタスク（5ステップ）」プロセスに従う。完了条件は各チェックファイルに記載
   - [ ] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`
-  - [ ] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
+  - [x] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
   - [ ] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
   - [ ] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [ ] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
@@ -251,21 +251,25 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T2 の T2.md チェックファイル更新・ユーザーレビュー依頼から着手する**
+2. **T3 の実装を継続する（WIP コミット済み）**
 
-### T2 現状（2026-06-02 完了済み）
+### T3 現状（WIP）
 
-**実装・テスト完了（コミット `949c1b8` まで）:**
-- `YamlMessageBuilder` を `fw_header:` マップ読込方式に書き換え完了
-- テスト YAML 全ファイル（`messageData.yaml`・`customFwHeaderData.yaml`・`fwHeaderMapData.yaml`・`schemaFullCoverage.yaml`・`YamlTestDataParserTest/messageData.yaml`）を `fw_header:` マップ方式に更新
-- 27テスト全グリーン（82テスト合計でグリーン）
-- QA・Java エキスパート・SWE レビュー指摘を全件対応済み
+**変更済みファイル（コミット済み）:**
+- `MessageDataBlock`: `directives` フィールド追加（コンストラクタ 5引数→6引数）
+- `XlsFormatReader.parseMessageBlock`: 既知ディレクティブ名セット（`KNOWN_DIRECTIVE_NAMES`）で振り分け。`text-encoding` 等は `directives`、それ以外は `fwHeaderFields` へ
+- `YamlFormatWriter.writeMessageBlock`: `directives:` → (`MESSAGE` のみ) `fw_header:` → `records:` 順で出力。`record_type: FW_HEADER` レコード廃止
+- `YamlFormatReader.parseMessageBlock`: `fw_header:` マップ形式で読み込むよう変更（旧 `FW_HEADER` レコード形式から）
+- `YamlFormatWriterTest`: コンストラクタ更新・`writeMessage` テストのアサーションを新形式（`fw_header:` マップ）に更新
 
-**残タスク（ここから再開）:**
-1. `T2.md` チェックファイルをセルフチェック・各レビュー結果で埋めて更新する（`docs/pr75/checks/T2.md`）
-2. ユーザーレビュー依頼（T2.md に結果を記録）
+**残作業（ここから再開）:**
+1. `YamlFormatWriterTest` の残り2件 `new MessageDataBlock(...)` を6引数に更新（`writeResponseHeaderMessages`・`writeResponseBodyMessages`）
+2. `XlsFormatWriterTest` の `new MessageDataBlock(...)` を6引数に更新
+3. T3 の RED テスト（ディレクティブ分離・fw_header マップ出力を検証するテスト）を `XlsFormatReaderTest` と `YamlFormatWriterTest` に追加
+4. `mvn clean package -Dtest="XlsFormatReaderTest,YamlFormatWriterTest,YamlFormatReaderTest"` で全グリーン確認
+5. セルフチェック・レビュー・T3.md 記入
 
-### 今セッションで対応済みの事項（2026-06-02）
+### 完了済みタスク（2026-06-02）
 
 **T1: フィールド型記法を日本語名称に統一（完了）**
 - `unit-test-yaml.xml` から identity mapping 削除（コミット `c5af79f`）
@@ -273,10 +277,10 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - QA 指摘2件対応・エキスパートレビュー指摘2件対応（コミット `e3eef83`・`f18499f`）
 - T1.md レビュー結果記録済み（コミット `67ac3af`）
 
-**T2: fw_header マップ対応（コミット `949c1b8` で実装・全レビュー完了）**
+**T2: fw_header マップ対応（完了・ユーザーレビュー OK）**
 - 実装: `YamlMessageBuilder.extractFwHeader` を `fw_header:` マップ方式に変更
 - テスト: 27テスト全グリーン（QA・Java・SWE 各レビュー指摘を全件対応済み）
-- 残: T2.md チェックファイル記入・ユーザーレビュー
+- T2.md チェックファイル記入済み（コミット `b9eef74`）
 
 ---
 

@@ -195,31 +195,34 @@ public class YamlFormatReader implements TestDataFormatReader {
 
     private MessageDataBlock parseMessageBlock(DataType dataType, String groupId, Map<String, Object> map) {
         String identifier = toStr(map.get("id"), "");
-        List<Object> recordEntries = castList(map.get("records"));
 
-        Map<String, String> fwHeaderFields = new LinkedHashMap<>();
-        List<RecordLayout> records = new ArrayList<>();
-
-        for (Object recObj : recordEntries) {
-            Map<String, Object> recMap = castMap(recObj);
-            String recordType = toStr(recMap.get("record_type"), "");
-            if ("FW_HEADER".equals(recordType)) {
-                // Extract fwHeaderFields from fields + rows[0]
-                List<Object> fieldEntries = castList(recMap.get("fields"));
-                List<Object> rowEntries = castList(recMap.get("rows"));
-                List<Object> firstRow = rowEntries.isEmpty() ? Collections.emptyList() : castList(rowEntries.get(0));
-                for (int i = 0; i < fieldEntries.size(); i++) {
-                    Map<String, Object> fieldMap = castMap(fieldEntries.get(i));
-                    String fieldName = toStr(fieldMap.get("name"), "");
-                    String value = i < firstRow.size() ? toStr(firstRow.get(i), "") : "";
-                    fwHeaderFields.put(fieldName, value);
-                }
-            } else {
-                records.add(parseRecordLayout(recMap, false));
+        Map<String, String> directives = new LinkedHashMap<>();
+        if (map.containsKey("directives") && map.get("directives") instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> directivesMap = (Map<String, Object>) map.get("directives");
+            for (Map.Entry<String, Object> entry : directivesMap.entrySet()) {
+                directives.put(entry.getKey(), toStr(entry.getValue(), ""));
             }
         }
 
-        return new MessageDataBlock(dataType, groupId, identifier, fwHeaderFields, records);
+        // fw_header: マップ（MESSAGE のみ存在する）
+        Map<String, String> fwHeaderFields = new LinkedHashMap<>();
+        if (map.containsKey("fw_header") && map.get("fw_header") instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> fwHeaderMap = (Map<String, Object>) map.get("fw_header");
+            for (Map.Entry<String, Object> entry : fwHeaderMap.entrySet()) {
+                fwHeaderFields.put(entry.getKey(), toStr(entry.getValue(), ""));
+            }
+        }
+
+        List<RecordLayout> records = new ArrayList<>();
+        List<Object> recordEntries = castList(map.get("records"));
+        for (Object recObj : recordEntries) {
+            Map<String, Object> recMap = castMap(recObj);
+            records.add(parseRecordLayout(recMap, false));
+        }
+
+        return new MessageDataBlock(dataType, groupId, identifier, directives, fwHeaderFields, records);
     }
 
     private RecordLayout parseRecordLayout(Map<String, Object> recMap, boolean includeLength) {
