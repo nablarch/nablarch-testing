@@ -43,7 +43,8 @@ public final class YamlMessageBuilder {
      * メッセージプールを構築する（getMessage / getMessageWithoutCache 相当）。
      *
      * @param yaml       YAML トップレベル Map
-     * @param sectionKey セクションキー（例: "messages"）
+     * @param sectionKey セクションキー。{@code "messages"} の場合のみエントリ直下の {@code fw_header:} マップを読む。
+     *                   それ以外（{@code expected_request_*}・{@code response_*}）は空 Map を使用する
      * @param id         メッセージ ID
      * @param basePath   インタープリタ用ベースパス
      * @return {@link RequestTestingMessagePool}、または存在しない場合 null（呼び出し元で null チェックが必要）
@@ -108,6 +109,11 @@ public final class YamlMessageBuilder {
                 Object fwHeaderObj = map.get(FIELD_FW_HEADER);
                 if (fwHeaderObj == null) {
                     return Collections.emptyMap();
+                }
+                if (!(fwHeaderObj instanceof Map)) {
+                    throw new IllegalStateException(
+                            "fw_header in messages entry id='" + id + "' must be a map, "
+                                    + "but was: " + fwHeaderObj.getClass().getSimpleName());
                 }
                 Map<String, String> fwHeader = new LinkedHashMap<String, String>();
                 Map<?, ?> rawMap = (Map<?, ?>) fwHeaderObj;

@@ -66,6 +66,14 @@ public final class YamlSection {
     // メッセージ系定数
     // ========================================================================
 
+    /**
+     * FW制御ヘッダレコード種別名。
+     *
+     * <p>
+     * {@link YamlFileBuilder} が messages セクションの records から FW_HEADER レコードを
+     * スキップする際に使用する。FW制御ヘッダ自体は {@link #FIELD_FW_HEADER} マップから取得する。
+     * </p>
+     */
     public static final String FW_HEADER_RECORD_TYPE = "FW_HEADER";
 
     /** messages エントリ直下の FW 制御ヘッダマップキー */

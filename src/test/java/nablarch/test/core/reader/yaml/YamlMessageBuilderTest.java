@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -52,6 +53,13 @@ public class YamlMessageBuilderTest {
     @After
     public void after() {
         YamlLoader.clearCacheForTest();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> getFwHeader(MessagePool pool) throws Exception {
+        Field f = MessagePool.class.getDeclaredField("fwHeader");
+        f.setAccessible(true);
+        return (Map<String, String>) f.get(pool);
     }
 
     // ========================================================================
@@ -439,12 +447,12 @@ public class YamlMessageBuilderTest {
 
     /**
      * [YamlMessageBuilder] buildMessagePool: fw_header: の値がマップでなくリスト形式の場合、
-     * ClassCastException がスローされること（E-3）。
+     * IllegalStateException がスローされ id がメッセージに含まれること（E-3）。
      *
      * <p>
      * Given: messages に id=malformed001 の fw_header がリスト形式（誤記）<br>
      * When:  buildMessagePool(yaml, "messages", "malformed001", path) を呼ぶ<br>
-     * Then:  ClassCastException がスローされること
+     * Then:  IllegalStateException がスローされ、id がメッセージに含まれること
      * </p>
      */
     @Test
@@ -455,9 +463,9 @@ public class YamlMessageBuilderTest {
         // When / Then
         try {
             sut.buildMessagePool(yaml, "messages", "malformed001", DIR);
-            fail("ClassCastException が期待される");
-        } catch (ClassCastException e) {
-            // OK: fw_header がリスト形式の場合は ClassCastException がスローされること
+            fail("IllegalStateException が期待される");
+        } catch (IllegalStateException e) {
+            assertThat("id がメッセージに含まれること", e.getMessage(), containsString("malformed001"));
         }
     }
 
