@@ -9,17 +9,17 @@ messages:
       - record_type: FW_HEADER
         fields:
           - name: customField
-            type: X
+            type: 半角
             length: 12
           - name: requestId
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["CUSTOM_VALUE", "0000000001"]
       - record_type: BODY
         fields:
           - name: DATA
-            type: X
+            type: 半角
             length: 5
         rows:
           - ["HELLO"]

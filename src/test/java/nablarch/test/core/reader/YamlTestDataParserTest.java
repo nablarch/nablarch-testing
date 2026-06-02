@@ -977,6 +977,34 @@ public class YamlTestDataParserTest {
     // expected_complete_tables: fillDefaultValues が呼ばれること
     // ========================================================================
 
+    // ========================================================================
+    // T1: フィールド型記法を日本語名称に統一
+    // ========================================================================
+
+    /**
+     * [IV-12] フィールド型を日本語名称で記述した固定長/可変長 YAML が
+     * dataTypeMapping identity mapping なしで例外なく読み込めること。
+     *
+     * <p>
+     * Given: 型に「半角」「数値」「全角」「全角漢字」「半角数字」「半角英字」を使った YAML<br>
+     * When:  getSetupFile / getExpectedFile を呼ぶ<br>
+     * Then:  FixedLengthFile / VariableLengthFile が取得でき、例外が発生しないこと
+     * </p>
+     */
+    @Test
+    public void japaneseFieldTypeIsReadableWithoutIdentityMapping() {
+        // Given / When
+        List<DataFile> setupFiles = sut.getSetupFile(DIR, "YamlTestDataParserTest/japaneseFieldType");
+        List<DataFile> expectedFiles = sut.getExpectedFile(DIR, "YamlTestDataParserTest/japaneseFieldType");
+
+        // Then
+        assertThat(setupFiles.size(), is(2));
+        assertThat(setupFiles.get(0), instanceOf(FixedLengthFile.class));
+        assertThat(setupFiles.get(1), instanceOf(VariableLengthFile.class));
+        assertThat(expectedFiles.size(), is(1));
+        assertThat(expectedFiles.get(0), instanceOf(FixedLengthFile.class));
+    }
+
     /**
      * [RS-01] getExpectedTableData: expected_complete_tables では fillDefaultValues が呼ばれること。
      *

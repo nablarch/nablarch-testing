@@ -4,27 +4,5 @@
                          xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./component-configuration.xsd">
   <import file="unit-test.xml"/>
 
-  <!--
-    YAML テストデータ用 identity DataTypeMapping。
-    YAML ファイルにはフレームワーク型記号（X, N, Z 等）を直接記述するため、
-    BasicDataTypeMapping のデフォルト（日本語設計表記→型記号）では変換できない。
-    identity mapping（X→X, N→N, ...）を登録することで setTypes() が正しく動作する。
-  -->
-  <component name="dataTypeMapping" class="nablarch.test.core.file.BasicDataTypeMapping">
-    <property name="mappingTable">
-      <map>
-        <entry key="X"   value="X"/>
-        <entry key="N"   value="N"/>
-        <entry key="XN"  value="XN"/>
-        <entry key="Z"   value="Z"/>
-        <entry key="SZ"  value="SZ"/>
-        <entry key="P"   value="P"/>
-        <entry key="SP"  value="SP"/>
-        <entry key="B"   value="B"/>
-        <entry key="X9"  value="X9"/>
-        <entry key="SX9" value="SX9"/>
-      </map>
-    </property>
-  </component>
 
 </component-configuration>

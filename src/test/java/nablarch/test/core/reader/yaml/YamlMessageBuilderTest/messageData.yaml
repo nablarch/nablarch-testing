@@ -8,23 +8,23 @@ messages:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
           - name: userId
-            type: X
+            type: 半角
             length: 10
           - name: resendFlag
-            type: X
+            type: 半角
             length: 1
           - name: resultCode
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000000001", "testUser01", "0", "0000"]
       - record_type: BODY
         fields:
           - name: SEARCH_KEY
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["SEARCHKEY1"]
@@ -35,16 +35,16 @@ expected_request_header_messages:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
           - name: userId
-            type: X
+            type: 半角
             length: 10
           - name: resendFlag
-            type: X
+            type: 半角
             length: 1
           - name: resultCode
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000000001", "testUser01", "0", "0000"]
@@ -55,7 +55,7 @@ expected_request_body_messages:
       - record_type: BODY
         fields:
           - name: SEARCH_KEY
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["SEARCHKEY1"]
@@ -66,10 +66,10 @@ response_body_messages:
       - record_type: BODY
         fields:
           - name: RESULT_CODE
-            type: X
+            type: 半角
             length: 4
           - name: DATA
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000", "RESULT_DAT"]
@@ -82,10 +82,10 @@ response_body_messages:
       - record_type: BODY
         fields:
           - name: RESULT_CODE
-            type: X
+            type: 半角
             length: 4
           - name: DATA
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000", "SYNC_DATA1"]
@@ -95,7 +95,7 @@ response_body_messages:
       - record_type: BODY
         fields:
           - name: DATA
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["NO_ID_DATA"]
@@ -106,13 +106,13 @@ messages_empty_fw_header_rows:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
         rows: []
       - record_type: BODY
         fields:
           - name: SEARCH_KEY
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["SEARCHKEY1"]
@@ -125,23 +125,23 @@ messages_path_id:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
           - name: userId
-            type: X
+            type: 半角
             length: 10
           - name: resendFlag
-            type: X
+            type: 半角
             length: 1
           - name: resultCode
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["REQ0000001", "pathUser01", "0", "0000"]
       - record_type: BODY
         fields:
           - name: PAYLOAD
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["PAYLOADDAT"]
@@ -152,7 +152,7 @@ messages_malformed_fw_header:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
         rows:
           - requestId: "0000000001"
@@ -163,17 +163,17 @@ messages_short_fw_header_row:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
           - name: userId
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000000001"]
       - record_type: BODY
         fields:
           - name: DATA
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["TESTDATA1"]
@@ -184,7 +184,7 @@ messages_no_fw_header:
       - record_type: BODY
         fields:
           - name: DATA
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["TESTDATA1"]
@@ -196,7 +196,7 @@ response_header_messages:
       - record_type: HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000000001"]

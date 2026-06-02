@@ -79,15 +79,15 @@ setup_files:
         fields:
           # length=整数
           - name: FIELD1
-            type: X
+            type: 半角
             length: 5
           # length="-"（オンデマンド計算）
           - name: FIELD2
-            type: X
+            type: 半角
             length: "-"
           # length 省略（可変長向けだが fixed_def としても許容）
           - name: FIELD3
-            type: X
+            type: 半角
         rows:
           - ["AAAAA", "BBB", "CCC"]
 
@@ -101,7 +101,7 @@ setup_files:
       - record_type: DATA
         fields:
           - name: FIELD1
-            type: X
+            type: 半角
             length: 3
         rows:
           - ["AAA"]
@@ -122,9 +122,9 @@ setup_files:
       - record_type: DATA
         fields:
           - name: COL1
-            type: X
+            type: 半角
           - name: COL2
-            type: X
+            type: 半角
         rows:
           - ["val1", "val2"]
 
@@ -144,10 +144,10 @@ expected_files:
       - record_type: RESULT
         fields:
           - name: CODE
-            type: X
+            type: 半角
             length: 4
           - name: MSG
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000", "OKAY"]
@@ -161,9 +161,9 @@ expected_files:
       - record_type: DATA
         fields:
           - name: NAME
-            type: X
+            type: 半角
           - name: VALUE
-            type: X
+            type: 半角
         rows:
           - ["result1", "200"]
 
@@ -177,23 +177,23 @@ messages:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
           - name: userId
-            type: X
+            type: 半角
             length: 10
           - name: resendFlag
-            type: X
+            type: 半角
             length: 1
           - name: resultCode
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000000001", "testUser01", "0", "0000"]
       - record_type: BODY
         fields:
           - name: SEARCH_KEY
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["SEARCHKEY1"]
@@ -206,16 +206,16 @@ expected_request_header_messages:
       - record_type: FW_HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
           - name: userId
-            type: X
+            type: 半角
             length: 10
           - name: resendFlag
-            type: X
+            type: 半角
             length: 1
           - name: resultCode
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000000001", "testUser01", "0", "0000"]
@@ -226,7 +226,7 @@ expected_request_body_messages:
       - record_type: BODY
         fields:
           - name: SEARCH_KEY
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["SEARCHKEY1"]
@@ -243,7 +243,7 @@ response_header_messages:
       - record_type: HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000000001"]
@@ -253,7 +253,7 @@ response_header_messages:
       - record_type: HEADER
         fields:
           - name: requestId
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000000002"]
@@ -266,10 +266,10 @@ response_body_messages:
       - record_type: BODY
         fields:
           - name: RESULT_CODE
-            type: X
+            type: 半角
             length: 4
           - name: DATA
-            type: X
+            type: 半角
             length: 10
         rows:
           - ["0000", "RESULT_DAT"]
@@ -279,7 +279,7 @@ response_body_messages:
       - record_type: BODY
         fields:
           - name: RESULT_CODE
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000"]

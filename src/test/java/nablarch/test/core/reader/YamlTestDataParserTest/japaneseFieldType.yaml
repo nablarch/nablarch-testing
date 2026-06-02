@@ -1,0 +1,54 @@
+# T1: フィールド型記法を日本語名称に統一
+# dataTypeMapping identity mapping なしで日本語型の固定長/可変長 YAML が読み込めることを検証する
+
+setup_files:
+  - path: dummy/japanese_fixed.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: DATA
+        fields:
+          - name: FIELD_HAN
+            type: 半角
+            length: 5
+          - name: FIELD_NUM
+            type: 数値
+            length: 5
+          - name: FIELD_ZEN
+            type: 全角
+            length: 6
+        rows:
+          - ["AAAAA", "00001", "あいうえお"]
+
+  - path: dummy/japanese_variable.csv
+    type: variable
+    directives:
+      text-encoding: UTF-8
+      field-separator: ","
+    records:
+      - record_type: DATA
+        fields:
+          - name: NAME
+            type: 全角漢字
+          - name: CODE
+            type: 半角数字
+        rows:
+          - ["田中", "100"]
+
+expected_files:
+  - path: dummy/japanese_expected_fixed.dat
+    type: fixed
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: RESULT
+        fields:
+          - name: CODE
+            type: 半角英字
+            length: 4
+          - name: MSG
+            type: 半角
+            length: 4
+        rows:
+          - ["0000", "OKAY"]

@@ -7,7 +7,7 @@ expected_files:
       - record_type: RESULT
         fields:
           - name: CODE
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000"]
@@ -21,7 +21,7 @@ expected_files:
       - record_type: RESULT
         fields:
           - name: CODE
-            type: X
+            type: 半角
             length: 4
         rows:
           - ["0000"]
