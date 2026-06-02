@@ -51,9 +51,19 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] **Ph-3** YamlTestDataParser TDD 実装 — 138件グリーン。ユーザーレビュー OK（2026-05-27）
 - [x] **Ph-4** トレーサビリティマトリクス完成 — 145件全件3軸記録・未対応ゼロ確認。ユーザーレビュー OK（2026-05-27）
 - [ ] **Ph-5** Excel 並走確認
-    - [ ] **C-1** 変換ツール設計・実装 — 147テスト全グリーン。V-1 完了後にユーザーレビュー依頼
+    - [ ] **C-1** 変換ツール設計・実装 — 147テスト全グリーン。Ph-6 是正後に再レビュー
   - [x] **S-6** JSON Schema 整合性確認 — 完了。ユーザーレビュー OK（2026-05-29）
-  - [ ] **V-1** 全Excelテストの YAML 版並走実行 — 着手中
+  - [ ] **V-1** 全Excelテストの YAML 版並走実行 — Ph-6 T7 に統合
+- [ ] **Ph-6** ユーザーレビュー指摘の是正（2026-06-02 ユーザーレビューで確定）
+  - 前提: 文書 `docs/pr75/specs/ntf-testdata-doc.md` / `docs/pr75/design/ntf-testdata-yaml-design.md` / `docs/pr75/ntf-impl-spec-list.md` / `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` / `docs/pr75/specs/ntf-testdata-doc-examples-messaging.md` は是正済み（あるべき姿）。本フェーズはこれら文書を正とし実装を一致させる
+  - 各タスクは「ソースコード変更を含むタスク（5ステップ）」プロセスに従う。完了条件は各チェックファイルに記載
+  - [ ] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`
+  - [ ] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
+  - [ ] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
+  - [ ] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
+  - [ ] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
+  - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
+  - [ ] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`
 
 ---
 
@@ -261,6 +271,23 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ---
 
 ## 決定事項
+
+### Ph-6 是正方針（ユーザーレビューで確定 2026-06-02）
+
+判断に迷った場合は、対応する文書の該当章を正とする。
+
+| 決定 | 内容 | 正となる文書 |
+|---|---|---|
+| 型記法 | フィールド型は日本語名称（`半角英字`/`全角`/`数値` 等）で記述する。記号（`X`/`N`/`Z`）は採用しない。identity mapping（`unit-test-yaml.xml` の `dataTypeMapping`）は削除する | 設計書 §5、スキーマ `$defs/field_def/type` |
+| FW制御ヘッダ | `messages`（MESSAGE）のみ `fw_header:` マップ（任意キー許容、設定値でフィルタしない）で表す。`expected_request_*`/`response_*` の4種は `fw_header` を使わず `records` の `fields/rows` でフィールド単位に定義する。`record_type: FW_HEADER` 方式は廃止 | 設計書 §12、スキーマ `$defs/message_data/fw_header`・`$defs/fw_header` |
+| ランタイムFW分離 | `getMessage`（messages）経路のみ `fw_header` を読む。`getMessageWithoutCache`（expected/response）経路は `extractFwHeader` を呼ばず空 Map を渡す | 設計書 §12、仕様リスト MS-04 |
+| ディレクティブ分離 | `text-encoding` 等のディレクティブは `directives:` に入れる。FW制御ヘッダ・電文ボディに混入させない | 設計書 §12 |
+| 電文構造 | 電文は ディレクティブ群 → FW制御ヘッダ群 → `no` 行（フィールド名称行）→ 型 → 長さ → データ の順。変換ツール `parseMessageBlock` はこの構造で解釈する | 設計書 §12、解説書 §7 |
+| Doc-4 撤回 | `expected_tables` と `expected_complete_tables` の混在順序は自由（YAML はセクションキーで独立取得）。旧 Doc-4「混在で後半が読まれない」制約は撤回 | 設計書 §4、解説書 §3.3 |
+| 数値書式セル | 変換ツールは数値/日付書式セルを `DataFormatter#formatCellValue(cell)` で文字列化する。`cell.toString()` は使わない | 設計書 §（数値セル注記） |
+| 検証モード | 変換ツールに検証モード（列数一致・構造境界・スキーマ適合を検査するリンタ）を追加する | 設計書 §28 |
+| リソース名 | リソース名は `"ブック名/シート名"` を維持（ブック名→ディレクトリ、シート名→ファイル名）。テストコードの変更は不要 | 設計書 移行戦略 |
+| 等価性テスト | 等価性テストに型行を持つ実Excel・messaging 系（FW制御ヘッダ・日本語型・複数データ行）を追加する | 仕様リスト SS-05/MS-04、T7 |
 
 ### C-1 中間データモデルの命名（ユーザーレビューで確定済み 2026-05-27）
 

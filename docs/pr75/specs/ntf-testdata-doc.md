@@ -148,9 +148,11 @@ setup_tables:
 
 ### 3.3 同一ファイル（シート）内に複数のデータブロックを書く場合の注意
 
-**複数テーブルを INSERT したい場合**: `SETUP_TABLE` などの全件収集タイプのデータブロックは、同一 ID（groupId）のものをすべて収集します。複数のテーブルデータを並べて記述できます。
+**複数テーブルを INSERT したい場合**: `setup_tables` などの全件収集タイプのデータブロックは、同一 groupId のものをすべて収集します。複数のテーブルデータを並べて記述できます。
 
-**同一種別のデータブロックは連続して記述してください**: データブロックを読み込む際、別の種別のデータブロック（別の DataType）が現れると、そこで読み込みを終了します。同じ種別のデータブロックを別の種別で挟んで書くと、後半が読み込まれません。
+**データタイプの混在順序は自由です（YAML）**: YAML ではトップレベルのセクションキー（`expected_tables` / `expected_complete_tables` 等）ごとに独立してデータを取得します。セクションの記述順序や、異なるセクションを交互に書いても、すべてのデータが正しく読み込まれます。
+
+> **補足（Excel との違い）**: Excel（旧形式）では行を順に読み込む方式のため、同一シート内で別のデータタイプを挟むと後半が読み込まれない制約がありました（解説書の旧 Doc-4）。YAML はセクションキーで構造化されているため、この制約は存在しません。Excel から移行する際にデータタイプごとにまとめ直す必要はありません。
 
 **`LIST_MAP` や `MESSAGE` の重複 ID**: 同一 ID のエントリが複数ある場合、最初の1件のみ有効です。2件目以降は無視されます。
 
@@ -351,7 +353,7 @@ list_maps:
 行1: SETUP_FIXED=work/input.txt  [空]     [空]
 行2: text-encoding               MS932   [空]
 行3: DATA                        USER_ID  AMOUNT
-行4: [空]                        X        Z
+行4: [空]                        半角     数値
 行5: [空]                        10       10
 行6: [空]                        001      5000
 ```
@@ -367,13 +369,14 @@ setup_files:
     records:
       - record_type: DATA
         fields:
-          - {name: USER_ID, type: X, length: 10}
-          - {name: AMOUNT,  type: Z, length: 10}
+          - {name: USER_ID, type: 半角, length: 10}
+          - {name: AMOUNT,  type: 数値, length: 10}
         rows:
           - ["001", "5000"]
 ```
 
 - `fields:` の各要素は `{name: フィールド名, type: データ型, length: バイト長}` の形式で記述します
+- **`type` は日本語型名称（`半角`, `全角`, `数値` 等）で記述します**（[8.10 データ型マッピング](#810-データ型マッピング) 参照）。Excel と同じ表記であり、変換ツールも Excel の型名称をそのまま出力します
 - `length` の値は整数（例: `length: 10`）または文字列（例: `length: "10"`）どちらでも有効です。変換ツールが生成した YAML は文字列形式（`"10"`）になります
 - `rows:` の各行は配列形式で、`fields:` と**同じ順序・同じ件数**で値を並べます
 - `rows:` 内の値はダブルクォートで囲んでください（[8章](#8-値の書き方) 参照）
@@ -435,27 +438,55 @@ sendSyncTestData/{requestId}/message
 
 ### 7.2 FW 制御ヘッダフィールド
 
-デフォルトの FW 制御ヘッダフィールドは以下の4種類です。`reader.fwHeaderfields` キーで変更できます。
+> **適用範囲**: `fw_header:` マップは `messages`（MESSAGE: MockMessaging 経路の要求/応答電文）でのみ使用します。`expected_request_header_messages` / `expected_request_body_messages` / `response_header_messages` / `response_body_messages` の4種では使用しません。これらは `requestId` 等のヘッダフィールドも含めて、`records` の `fields:`/`rows:` にフィールド単位（型・長さつき）で記述します（[7.x EXPECTED/RESPONSE 系の記述](#) 参照）。両者はテスト手法が異なる（値の指定 か フィールド単位の検証/生成 か）ため、表現も異なります。
 
-- `requestId`
-- `userId`
-- `resendFlag`
-- `resultCode`
+FW 制御ヘッダのフィールド名は**プロジェクトごとに異なります**。フレームワーク標準では以下の4種が既定値ですが、これは固定ではなく、`SystemRepository` の `reader.fwHeaderfields` キーでプロジェクトが任意の名前に変更できます（例: `reader.fwHeaderfields=requestId,addHeader`）。
 
-**Excel での記述**: フィールド名称行より前に `| フィールド名 | 値 |` の形式で記述します（ディレクティブ行と同じ位置）。
-**YAML での記述**: `record_type: FW_HEADER` のレコードとして記述します。
+- 既定値の例: `requestId`, `userId`, `resendFlag`, `resultCode`
+
+**Excel での記述**: フィールド名称行（`no` 行）より前に `| フィールド名 | 値 |` の形式で記述します（ディレクティブと同じ「名前｜値」形式）。
+
+**YAML での記述**: `fw_header:` マップ（キー: 値）として記述します。電文ボディのフィールド（`fields:`/`rows:`）とは別の構造です。**キー名は固定ではなく、任意の名前を記述できます**（プロジェクトの `reader.fwHeaderfields` 設定に合わせる）。
+
+```yaml
+messages:
+  - id: requestMessages
+    directives:
+      text-encoding: Windows-31J     # ディレクティブはここに書く
+    fw_header:                        # FW制御ヘッダは名前: 値のマップ（キーは任意）
+      requestId: hoge
+      userId: moge
+    records:
+      - record_type: default          # MessageParser は record_type を無視する（7.10 参照）
+        fields:
+          - {name: ユーザ名, type: 全角, length: 50}
+          - {name: 備考,     type: 全角, length: 200}
+          - {name: FILLER,   type: 半角, length: 252}
+        rows:
+          - ["電文太郎", "特筆なし", ""]
+```
+
+- **`directives:`（`text-encoding` 等）と `fw_header:`（`requestId` 等）は別キーで記述します。** Excel ではどちらも「名前｜値」の行として書かれますが、FW 制御ヘッダはフレームワークが電文ヘッダとして分離して扱うため、YAML では区別します
+- **`fw_header:` に記述したキーはすべて FW 制御ヘッダとして扱われます。** ランタイムは `fw_header:` マップをそのまま FW ヘッダとして使用し、`reader.fwHeaderfields` の値でフィルタリングして取り捨てることはしません（記述したものが黙って消えることはありません）
+- 電文ボディのフィールドは従来どおり `records:` の `fields:`/`rows:` に記述します
 
 ### 7.3 HEADER / BODY MESSAGES の構造と件数制約
 
 - `EXPECTED_REQUEST_HEADER_MESSAGES` と `EXPECTED_REQUEST_BODY_MESSAGES` のエントリ数（rows 合計）は一致が必須です。不一致の場合はエラーになります
 - HTTP 同期応答メッセージ（`response_body_messages`）の各データエントリは文字列長が同一である必要があります
 
-### 7.4 no カラムと errorMode
+### 7.4 no 行（フィールド名称行）と errorMode
 
-- **Excel**: `no` カラム（先頭カラム）はフレームワークが除去し、データとして保存されません。フィールド名称行の先頭セルは空にします
-- **YAML**: `no` フィールドは `rows:` のリスト要素に含めます。フレームワークが除去します
-- `errorMode` の値は先頭から2番目のカラム（1始まりで番号1）に格納されます
-- `errorMode:timeout` および `errorMode:msgException` は特殊値です。これらが指定されたエントリでは他フィールドはパースされません
+**電文の行構造**: ディレクティブ群・FW 制御ヘッダの後、`no` で始まる行がフィールド名称行です。以降、データ型行・フィールド長行・データ行が続きます（公式仕様の電文表書式に準拠）。
+
+- **Excel**: フィールド名称行の先頭セルに `no` を記述します。データ行の先頭セル（`no` カラム）はフレームワークが除去し、データとして保存されません
+- **YAML**: フィールド名称は `fields:` に、データは `rows:` に記述します（`no` カラム自体は YAML の構造には現れません）
+
+**errorMode（RESPONSE系・MockMessaging 経路のみ）**:
+
+- `response_header_messages` / `response_body_messages` で、データ行の先頭値が `errorMode:timeout` または `errorMode:msgException` の場合、そのエントリは送受信エラーをシミュレートするマーカーとして扱われます
+- errorMode 行は `fw_header:` の分離とは独立した別の仕組みです。`fw_header:` を分離した後も errorMode 行はそのまま機能します
+- `RequestTestingSendSyncSupport` 経路（GroupMessageParser）では errorMode は使用されません
 
 ### 7.5 複数回送信
 
@@ -480,10 +511,12 @@ SystemRepository の `messaging.assertAsMapFileType` キーの設定値に応じ
 
 ### 7.10 record_type の扱い
 
-`MESSAGE` / `EXPECTED_REQUEST_*_MESSAGES` の `record_type` 値は、内部で常に `"default"` に置き換えられます。
+`messages` / `expected_request_*_messages` / `response_*_messages` の `record_type` 値は、フレームワーク内部で常に `"default"` に置き換えられます。
 
 - **Excel**: フィールド名称行の先頭セルに任意の値を記述できます（装飾的なメタデータとして扱われます）
-- **YAML**: `record_type:` に任意の値を記述できます。ただし `FW_HEADER` は FW 制御ヘッダ抽出に使用されるため、それ以外の用途には使用しないでください
+- **YAML**: `record_type:` に任意の値を記述できます（可読性のためだけで、実行時の挙動には影響しません）
+
+> **注意**: 旧版では FW 制御ヘッダを `record_type: FW_HEADER` のレコードとして表していましたが、本仕様では FW 制御ヘッダは `fw_header:` マップで記述します（[7.2](#72-fw-制御ヘッダフィールド) 参照）。`record_type` に特別な予約値はありません。
 
 → [Excel / YAML Example](ntf-testdata-doc-examples-messaging.md#messaging)
 

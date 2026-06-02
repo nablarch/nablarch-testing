@@ -36,32 +36,33 @@
 ```yaml
 messages:
   - id: requestMessages
+    directives:
+      text-encoding: Windows-31J     # ディレクティブ
+    fw_header:                        # FW制御ヘッダ（任意キーのマップ）
+      requestId: hoge
+      userId: moge
     records:
-      - record_type: DEFAULT
-        directives:
-          text-encoding: Windows-31J
-          requestId: hoge
-          userId: moge
+      - record_type: default
         fields:
-          - {name: ユーザ名, type: 全角,  length: 50}
-          - {name: 備考,     type: 全角,  length: 200}
-          - {name: FILLER,   type: 半角,  length: 252}
+          - {name: ユーザ名, type: 全角, length: 50}
+          - {name: 備考,     type: 全角, length: 200}
+          - {name: FILLER,   type: 半角, length: 252}
         rows:
           - ["電文太郎", "特筆なし",                          ""]
           - ["",         "ユーザ名が空欄なのでエラーが発生します。", ""]
   - id: responseMessages
     records:
-      - record_type: DEFAULT
+      - record_type: default
         fields:
-          - {name: 処理結果コード, type: X, length: 2}
-          - {name: 会員ID,         type: X, length: 10}
-          - {name: FILLER,         type: X, length: 490}
+          - {name: 処理結果コード, type: 半角, length: 2}
+          - {name: 会員ID,         type: 半角, length: 10}
+          - {name: FILLER,         type: 半角, length: 490}
         rows:
           - ["00", "1234567890", ""]
           - ["01", "",           ""]
 ```
 
-- `record_type` の値はフレームワーク内部で `"default"` に置き換えられます。任意の値を記述できます
+- `record_type` の値はフレームワーク内部で `"default"` に置き換えられます。任意の値を記述できます（`FW_HEADER` のような予約値はありません。FW制御ヘッダは `fw_header:` マップに記述します）
 
 ---
 
@@ -148,10 +149,10 @@ messages:
     records:
       - record_type: DATA
         fields:
-          - {name: no,        type: X, length: 2}
-          - {name: errorMode, type: X, length: 10}
-          - {name: field1,    type: X, length: 10}
-          - {name: field2,    type: X, length: 10}
+          - {name: no,        type: 半角, length: 2}
+          - {name: errorMode, type: 半角, length: 10}
+          - {name: field1,    type: 半角, length: 10}
+          - {name: field2,    type: 半角, length: 10}
         rows:
           - ["1", "",        "value1", "value2"]
           - ["2", "",        "value3", "value4"]
@@ -171,7 +172,7 @@ HTTP 同期応答テストでステータスコードカラムを省略するケ
 | RESPONSE_BODY_MESSAGES=REQ001 | | |
 |---|---|---|
 | no | body | |
-| | X | |
+| | 半角 | |
 | | 10 | |
 | 1 | RESULT_OK | |
 
@@ -185,7 +186,7 @@ response_body_messages:
     records:
       - record_type: DATA
         fields:
-          - {name: body, type: X, length: 10}
+          - {name: body, type: 半角, length: 10}
         rows:
           - ["RESULT_OK"]
 ```

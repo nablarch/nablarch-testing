@@ -6,70 +6,91 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-
     "setup_tables": {
       "type": "array",
       "description": "SETUP_TABLE: DB事前準備用テーブルデータ",
-      "items": { "$ref": "#/$defs/table_data" }
+      "items": {
+        "$ref": "#/$defs/table_data"
+      }
     },
     "expected_tables": {
       "type": "array",
       "description": "EXPECTED_TABLE: 期待値テーブルデータ",
-      "items": { "$ref": "#/$defs/table_data" }
+      "items": {
+        "$ref": "#/$defs/table_data"
+      }
     },
     "expected_complete_tables": {
       "type": "array",
       "description": "EXPECTED_COMPLETE_TABLE: 省略カラムにデフォルト値を補完する期待値テーブル",
-      "items": { "$ref": "#/$defs/table_data" }
+      "items": {
+        "$ref": "#/$defs/table_data"
+      }
     },
     "list_maps": {
       "type": "array",
       "description": "LIST_MAP: List<Map<String,String>> 形式データ。id が重複した場合は最初の1件のみ取得される",
-      "items": { "$ref": "#/$defs/list_map_data" }
+      "items": {
+        "$ref": "#/$defs/list_map_data"
+      }
     },
     "setup_files": {
       "type": "array",
       "description": "SETUP_FIXED / SETUP_VARIABLE を統合。type フィールドで区別",
-      "items": { "$ref": "#/$defs/file_data" }
+      "items": {
+        "$ref": "#/$defs/file_data"
+      }
     },
     "expected_files": {
       "type": "array",
       "description": "EXPECTED_FIXED / EXPECTED_VARIABLE を統合。type フィールドで区別",
-      "items": { "$ref": "#/$defs/file_data" }
+      "items": {
+        "$ref": "#/$defs/file_data"
+      }
     },
     "messages": {
       "type": "array",
       "description": "MESSAGE: 要求電文。固定長ファイルと同じ構造で記述する",
-      "items": { "$ref": "#/$defs/message_data" }
+      "items": {
+        "$ref": "#/$defs/message_data"
+      }
     },
     "expected_request_header_messages": {
       "type": "array",
       "description": "EXPECTED_REQUEST_HEADER_MESSAGES",
-      "items": { "$ref": "#/$defs/message_data" }
+      "items": {
+        "$ref": "#/$defs/message_data"
+      }
     },
     "expected_request_body_messages": {
       "type": "array",
       "description": "EXPECTED_REQUEST_BODY_MESSAGES",
-      "items": { "$ref": "#/$defs/message_data" }
+      "items": {
+        "$ref": "#/$defs/message_data"
+      }
     },
     "response_header_messages": {
       "type": "array",
       "description": "RESPONSE_HEADER_MESSAGES",
-      "items": { "$ref": "#/$defs/group_message_data" }
+      "items": {
+        "$ref": "#/$defs/group_message_data"
+      }
     },
     "response_body_messages": {
       "type": "array",
       "description": "RESPONSE_BODY_MESSAGES",
-      "items": { "$ref": "#/$defs/group_message_data" }
+      "items": {
+        "$ref": "#/$defs/group_message_data"
+      }
     }
-
   },
-
   "$defs": {
-
     "table_data": {
       "type": "object",
-      "required": ["table", "rows"],
+      "required": [
+        "table",
+        "rows"
+      ],
       "additionalProperties": false,
       "description": "テーブルデータ1ブロック。Excel では SETUP_TABLE[groupId]=TABLE_NAME から始まる行群に対応",
       "properties": {
@@ -88,16 +109,21 @@
           "items": {
             "type": "object",
             "additionalProperties": {
-              "type": ["string", "null"]
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }
       }
     },
-
     "list_map_data": {
       "type": "object",
-      "required": ["id", "rows"],
+      "required": [
+        "id",
+        "rows"
+      ],
       "additionalProperties": false,
       "description": "LIST_MAP データ1ブロック。Excel: LIST_MAP=ID から始まる行群。id が重複した場合は最初の1件のみ取得される",
       "properties": {
@@ -111,16 +137,22 @@
           "items": {
             "type": "object",
             "additionalProperties": {
-              "type": ["string", "null"]
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }
       }
     },
-
     "file_data": {
       "type": "object",
-      "required": ["path", "type", "records"],
+      "required": [
+        "path",
+        "type",
+        "records"
+      ],
       "additionalProperties": false,
       "description": "ファイルデータ1ブロック。1ファイル＋複数のレコード種別で構成される",
       "properties": {
@@ -135,22 +167,31 @@
         },
         "type": {
           "type": "string",
-          "enum": ["fixed", "variable"],
+          "enum": [
+            "fixed",
+            "variable"
+          ],
           "description": "fixed = 固定長（SETUP_FIXED/EXPECTED_FIXED）、variable = 可変長（SETUP_VARIABLE/EXPECTED_VARIABLE）"
         },
-        "directives": { "$ref": "#/$defs/directives" },
+        "directives": {
+          "$ref": "#/$defs/directives"
+        },
         "records": {
           "type": "array",
           "minItems": 0,
           "description": "レコード種別ごとのブロック。空ファイル（0バイト）を定義する場合は空配列 [] を指定し、directives のみ記述してレコード定義を省略する（公式解説書: 03_Tips.rst）",
-          "items": { "$ref": "#/$defs/record_fragment" }
+          "items": {
+            "$ref": "#/$defs/record_fragment"
+          }
         }
       }
     },
-
     "message_data": {
       "type": "object",
-      "required": ["id", "records"],
+      "required": [
+        "id",
+        "records"
+      ],
       "additionalProperties": false,
       "description": "メッセージデータ。固定長ファイルと同じ構造で記述する。id が重複した場合は最初の1件のみ取得される",
       "properties": {
@@ -158,19 +199,29 @@
           "type": "string",
           "description": "メッセージID。Excel: MESSAGE=ID の '=' 以降。ファイル内でユニークにすること"
         },
-        "directives": { "$ref": "#/$defs/directives" },
+        "directives": {
+          "$ref": "#/$defs/directives"
+        },
         "records": {
           "type": "array",
           "minItems": 1,
-          "description": "レコード種別ごとのブロック。FWヘッダフィールド（requestId, userId, resendFlag, resultCode）は自動的に分離される（SystemRepository の reader.fwHeaderfields キーで変更可能）",
-          "items": { "$ref": "#/$defs/record_fragment" }
+          "description": "電文本文のレコード。FW制御ヘッダは records ではなく fw_header: マップに記述する（messages 専用。record_type:FW_HEADER 方式は廃止）",
+          "items": {
+            "$ref": "#/$defs/record_fragment"
+          }
+        },
+        "fw_header": {
+          "$ref": "#/$defs/fw_header",
+          "description": "FW制御ヘッダ（キー: 値）。messages（MESSAGE: MockMessaging経路の要求/応答電文）でのみ使用する。FW制御ヘッダを名前:値で指定する。キー名はプロジェクト可変（reader.fwHeaderfields）。ここに書いたキーは全てFW制御ヘッダとして扱い、値でフィルタしない"
         }
       }
     },
-
     "group_message_data": {
       "type": "object",
-      "required": ["id", "records"],
+      "required": [
+        "id",
+        "records"
+      ],
       "additionalProperties": false,
       "description": "RESPONSE_HEADER_MESSAGES / RESPONSE_BODY_MESSAGES のデータブロック。アクセス経路が2つある:\n(A) RequestTestingSendSyncSupport 経由: group_id でフィルタリング。group_id 必須\n(B) MockMessagingContext / MockMessagingClient 経由: id で照合。group_id 不要\ngroup_id を省略した場合は経路B として扱われる。",
       "properties": {
@@ -183,15 +234,18 @@
           "type": "string",
           "description": "Excel の '=' 以降の値。RequestTestingSendSyncSupport 経路では識別子のみ。MockMessagingContext / MockMessagingClient 経路ではこの値で照合される"
         },
-        "directives": { "$ref": "#/$defs/directives" },
+        "directives": {
+          "$ref": "#/$defs/directives"
+        },
         "records": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/$defs/record_fragment" }
+          "items": {
+            "$ref": "#/$defs/record_fragment"
+          }
         }
       }
     },
-
     "directives": {
       "type": "object",
       "additionalProperties": false,
@@ -267,38 +321,50 @@
         }
       }
     },
-
     "record_fragment": {
       "type": "object",
-      "required": ["record_type", "fields", "rows"],
+      "required": [
+        "record_type",
+        "fields",
+        "rows"
+      ],
       "additionalProperties": false,
       "description": "レコード種別1ブロック。Excel の『先頭セルが種別名の行』から始まる行群。\n【ファイル系の rows は配列の配列】テーブル系（table_data / list_map_data）の rows はオブジェクト配列である点に注意。\nrows の各配列は fields と完全に同じ順序・同じ件数で値を並べること（パーサが列順で対応付ける）。",
       "properties": {
         "record_type": {
           "type": "string",
-          "description": "レコード種別名。Excel のフィールド名行の先頭セル値"
+          "description": "レコード種別名。MessageParser 経路では内部で \"default\" に置換され実行時の挙動に影響しない（可読性のため任意の名前を記述可。FW_HEADER のような予約値はない）。ファイルデータでは複数レコードレイアウトの識別に使われる"
         },
         "fields": {
           "type": "array",
           "minItems": 1,
           "description": "フィールド定義リスト。Excel のフィールド名行・データ型行・フィールド長行（3行1組）を1要素に統合。同一レコード種別内のフィールド名は重複不可（重複時はエラー）",
-          "items": { "$ref": "#/$defs/field_def" }
+          "items": {
+            "$ref": "#/$defs/field_def"
+          }
         },
         "rows": {
           "type": "array",
           "description": "データ行リスト。各要素は fields と同順・同件数の値配列。空ファイル（出力なし）の期待値検証ユースケースでは 0 件も有効",
           "items": {
             "type": "array",
-            "items": { "type": ["string", "null"] },
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "description": "フィールド値のリスト。fields の順序に完全対応。数値・真偽値も文字列（クォート付き）で記述すること"
           }
         }
       }
     },
-
     "field_def": {
       "type": "object",
-      "required": ["name", "type"],
+      "required": [
+        "name",
+        "type"
+      ],
       "additionalProperties": false,
       "description": "フィールド定義1件。Excel のフィールド名・データ型・フィールド長の3行に対応。固定長ファイル（type=fixed）では length が実質必須（省略するとパーサが record-length を計算できない）",
       "properties": {
@@ -308,18 +374,32 @@
         },
         "type": {
           "type": "string",
-          "pattern": "^[A-Z][A-Z0-9_]*$",
-          "description": "データ型記号。標準値: X=半角、N=全角、XN=全半角、Z=符号無ゾーン10進数、SZ=符号付ゾーン10進数、P=符号無パック10進数、SP=符号付パック10進数、X9=符号無数値、SX9=符号付数値、B=バイナリ。カスタム型記号も設定により使用可能（TEST_X9 等アンダースコアを含む型も許容）"
+          "minLength": 1,
+          "description": "データ型。日本語名称で記述する（半角英字 / 半角数字 / 半角 / 全角 / 全角漢字 / 数値 / 符号無ゾーン10進数 / 符号付ゾーン10進数 / 符号無パック10進数 / 符号付パック10進数 / 符号無数値 / 符号付数値 / バイナリ 等）。Excel・公式解説書と同一の表記。フレームワークが BasicDataTypeMapping により内部の型記号へ変換する。プロジェクト独自の型名称（dataTypeMapping で登録したもの）も許容するため、過度なパターン制約は設けない"
         },
         "length": {
           "description": "フィールド長（バイト数）。固定長ファイルでは実質必須。可変長ファイルでは不要（省略可）。\"-\" はオンデマンド計算（実データ長で動的決定）。\"-\" を指定したフィールドの値は格納時に改行コードおよび前後空白が除去される。変換ツールは length を文字列としてリテラル保持するため \"10\" のようにクォートありで出力する。integer 記法（10）も文字列記法（\"10\"）もどちらも有効。",
           "anyOf": [
-            { "type": "integer", "minimum": 1 },
-            { "type": "string", "pattern": "^([1-9][0-9]*|-)$" }
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "string",
+              "pattern": "^([1-9][0-9]*|-)$"
+            }
           ]
         }
       }
+    },
+    "$comment_fw_header": "fw_header は任意キー許容マップ。directives(固定キー)とは異なり additionalProperties で任意のヘッダ名を許容する",
+    "fw_header": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "FW制御ヘッダ（キー: 値）。MESSAGE（messages セクション）専用。expected_request_*/response_* では使用せず、それらは records の fields/rows でフィールド単位に定義する。キー名はプロジェクト可変（reader.fwHeaderfields。既定例: requestId, userId, resendFlag, resultCode）"
     }
-
   }
 }

@@ -92,9 +92,9 @@ setup_files:
     records:
       - record_type: DATA
         fields:
-          - {name: USER_ID,   type: X, length: 10}
-          - {name: USER_NAME, type: N, length: 20}
-          - {name: AMOUNT,    type: Z, length: 10}
+          - {name: USER_ID,   type: 半角, length: 10}
+          - {name: USER_NAME, type: 全角, length: 20}
+          - {name: AMOUNT,    type: 数値, length: 10}
         rows:
           - ["001", "山田太郎", "5000"]  # パディングは自動付与されるため不要
 ```
@@ -156,7 +156,7 @@ Excelでは別のデータ種別だが、`BasicTestDataParser#getSetupFile()` �
 | バイナリ型 | 10バイトのゼロバイト列の HexString |
 | Boolean型 | `"false"` |
 
-**注意**: `BasicDataTypeMapping` では「`半角数字`」は `X`（文字型）にマッピングされる（`Z`＝ゾーン10進数ではない）。設計書の「半角数字」フィールドを YAML に変換する際は `type: X` と書く。
+**注意**: `BasicDataTypeMapping` では「`半角数字`」は文字型（型記号 `X`）にマッピングされる（数値型 `Z`＝ゾーン10進数ではない）。YAML には日本語名称をそのまま書くため `type: 半角数字` と記述する（フレームワークが内部で型記号 `X` に変換する）。
 
 なお、`SETUP_TABLE` / `EXPECTED_TABLE` でも各 `rows` オブジェクトに含まれないカラム（キーを省略したカラム）には INSERT 時に `DefaultValues` によるデフォルト値が補完される（`TableData#convert()` の動作）。省略カラムの補完は `EXPECTED_COMPLETE_TABLE` 専用ではない。
 
@@ -164,20 +164,35 @@ Excelでは別のデータ種別だが、`BasicTestDataParser#getSetupFile()` �
 
 **`java.sql.Timestamp` 型カラムの期待値は末尾 `.0` が必要**（Doc-3）: `Timestamp` 型カラムを `expected_tables` / `expected_complete_tables` に記述する際は、`"2010-01-01 12:34:56.0"` のようにナノ秒部分の `.0` を付加すること。末尾の `.0` がないとアサートが失敗する（`Timestamp#toString()` の出力形式に合わせる必要がある）。
 
-**データタイプの混在禁止（Doc-4）**: 同一の `rows` ブロック内（同一シートに対応するYAMLファイル内）で `expected_tables` と `expected_complete_tables` を混在させると、後半のデータが読み込まれない問題が発生する。データタイプごとにまとめて記述すること（例: `expected_tables` をすべて書いてから `expected_complete_tables` をまとめて書く）。
+**データタイプの混在順序は自由（Doc-4 はYAMLでは不適用）**: YAML パーサは `getExpectedTableData()` で `expected_tables` と `expected_complete_tables` をそれぞれ独立にセクションキーで取得（`getList`）して連結する。セクションの記述順序や交互記述に依存せず、両方が正しく読み込まれる（実ロードで確認済み）。旧 Doc-4 の「混在させると後半が読み込まれない」制約は Excel の行ステートマシン（別 DataType が現れたら読み込み終了）に由来するものであり、セクションキーで構造化された YAML には当てはまらない。Excel から移行する際にデータタイプごとにまとめ直す必要はない。
 
 **`BasicDefaultValues` のカスタマイズ（Doc-1）**: `charValue`, `numberValue`, `dateValue` プロパティをコンポーネント設定ファイルで変更可能。デフォルト値を変更する場合は `BasicDefaultValues` の DI 設定を確認すること。
 
 ### 5. field_def.type と BasicDataTypeMapping の関係
 
-**採用: YAMLにはフレームワーク型記号（`X`, `N`, `Z` 等）を記述する。**
+**採用: YAML には日本語型名称（`半角英字`, `全角`, `数値` 等）を記述する。** Excel・公式解説書と同一の表記であり、追加設定なしで動作する。
 
-`DataFileFragment#setTypes()` は内部で `DataTypeMapping#convertToFrameworkExpression()` を呼ぶ。  
-デフォルトの `BasicDataTypeMapping` のキーは日本語設計表記（`"半角英字"`, `"全角"` 等）であるため、
-YAMLパーサが `type: X` を直接 `setTypes()` に渡すと `IllegalArgumentException` が発生する。
+#### 根拠
 
-YAML対応パーサの実装時は、`type` 値をそのままフレームワーク型記号として使用する独自の `DataTypeMapping`（identity mapping）を `SystemRepository` の `"dataTypeMapping"` キーで登録するか、パーサ側で `setTypes()` を迂回してフレームワーク型記号を直接設定する必要がある。  
-この実装判断はスキーマ定義の範囲外だが、YAMLアダプタ実装時に必須の考慮事項として記録する。
+- 公式解説書（`05_UnitTestGuide/02_RequestUnitTest/send_sync.rst`, `batch.rst`）が「データ型は日本語名称で記述する」と明記している。フォーマット定義ファイル上の型と日本語名称のマッピングは `BasicDataTypeMapping` の `DEFAULT_TABLE` が担う。
+- 既存の Excel テストデータも型行は日本語（`半角`, `全角漢字`, `半角カナ` 等）で記述されている。
+- `DataFileFragment#setTypes()` は内部で `DataTypeMapping#convertToFrameworkExpression()` を呼ぶ。デフォルトの `BasicDataTypeMapping` は日本語名称キー（`"半角英字"` → `X` 等）で構成されるため、**日本語名称をそのまま渡せば追加設定なしで変換される**。
+
+#### 旧設計（記号採用）からの変更とその理由
+
+旧設計では「YAML には記号（`X`, `N`, `Z`）を記述し、識別 mapping（`X`→`X` の identity mapping）を `SystemRepository["dataTypeMapping"]` に登録する」としていた。これを以下の理由で撤回する。
+
+1. **公式仕様・既存 Excel・変換ツール出力のすべてが日本語**。記号採用は YAML だけが3者と非対称になり、利用者が型を書き換える負担と、移行時の混乱を生む。
+2. **記号採用は移行先プロジェクトに identity mapping の登録を強制する**。登録を忘れるとファイル系・メッセージ系の読み込み時に `IllegalArgumentException: can't convert value [X]` が発生する初見殺しになる。日本語採用ならこの追加設定が不要になる。
+3. 変換ツール（Excel→YAML）は型セルを無加工で写すため、Excel の日本語型はそのまま `type: 半角` として出力される。記号採用だと変換ツールに記号変換ロジックを追加する必要があり、保守点が増える。
+
+#### スキーマへの反映
+
+`field_def.type` のスキーマ定義は、旧 `pattern: "^[A-Z][A-Z0-9_]*$"`（記号のみ許容）を撤回し、日本語名称を許容する定義に変更する（[3. スキーマ](#) 参照）。`TEST_` プレフィクスのテスト専用型など、日本語名称以外のカスタム型を使う場合も許容できるよう、過度に厳しいパターン制約は設けない。
+
+#### identity mapping の扱い
+
+`unit-test-yaml.xml` に登録されていた `dataTypeMapping`（記号10種の identity mapping）は不要になるため削除する。
 
 ### 6. マーカーカラムの扱い
 
@@ -277,15 +292,83 @@ YAMLでは `group_id` フィールドを省略した場合が経路B相当とな
 - **異なるレコード種別間のフィールド名重複は許容される（Doc-9）**: `records` 配列内の異なる `record_fragment` 間では同一フィールド名が存在してもよい。フィールド名の重複禁止チェックは同一 `record_fragment`（同一レコード種別）内でのみ適用される。
 - **HTTP同期応答メッセージ送信処理のボディ行長制約（Doc-15）**: HTTP 同期応答メッセージ送信処理（`http_send_sync`）では、`response_body_messages` の各データ行の文字列長が同一であることが必要。JSON/XML データ形式使用時の制約。行長が異なるとパース時にエラーが発生する。
 
-### 12. MESSAGE系の record_type は装飾的（MessageParser の仕様）
+### 12. MESSAGE系の構造: FW制御ヘッダ・ディレクティブ・電文ボディの分離
 
-`MessageParser` は内部で `FixedLengthFileParser#onReadingNames()` をオーバーライドし、先頭セル（レコード種別名）を常に固定文字列 `"default"` に置き換える（`MessageParser.java` 匿名クラス内）。  
-このため `messages` / `expected_request_*_messages` の `record_type` 値（`"FW_HEADER"`, `"BODY"` 等）は識別・可読性のためだけであり、パーサの動作に影響しない。  
-YAMLでは可読性のため任意の名前を書いてよいが、実行時に無視されることを認識すること。
+#### 電文の構造（公式仕様準拠）
 
-**Excel との相違点（YAMLアダプタ実装時の注意）:** Excel では FW制御ヘッダフィールド（`requestId`, `userId` 等）は「フィールド名 | 値」の 2列ディレクティブ行形式で書かれ、`MessageParser#processDirectives()` が `isFrameworkHeader()` で判定して `fwHeader` Map に分離していた。YAMLでは通常の `fields` 配列の要素として記述し、YAMLアダプタ実装側でフィールド名を参照して `fwHeader` 分離を行う必要がある。
+公式解説書（`send_sync.rst` の電文表書式）に従い、電文は次の順序で構成される。
 
-**`response_*_messages` での FW制御ヘッダ分離なし:** `SendSyncMessageParser`（`MockMessagingContext` / `MockMessagingClient` 経路）は `getFwHeader()` が `UnsupportedOperationException` を投げるため、FW制御ヘッダの分離は行われない。`response_*_messages` では FW_HEADER ブロックを `directives` ではなく `fields` として記述すること（`MessageParser` 経路と同一の構造にしてよい）。
+1. **ディレクティブ群**（`text-encoding` 等。`名前｜値`）
+2. **FW 制御ヘッダ群**（`requestId`, `userId` 等。`名前｜値`。どのフィールド名がFW制御ヘッダかは `reader.fwHeaderfields` で決まり、プロジェクトごとに可変）
+3. **`no` 行 = フィールド名称行**（先頭セルが `no`。これがフィールド名称行の起点）
+4. **データ型行** → **フィールド長行** → **データ行**
+
+#### 対象 DataType と表現の使い分け（重要）
+
+messaging 系 5種は、テスト手法によって2グループに分かれ、FW制御ヘッダの表現が異なる。これは歴史的経緯ではなく**用途の違いによる本質的な差**である（公式 `02_RequestUnitTest` / `03_DealUnitTest`、および実データ・実コードで確認）。
+
+| DataType | 経路 | テスト手法 | FW制御ヘッダの表現 |
+|---|---|---|---|
+| `MESSAGE`（`messages`） | MockMessaging（取引単体テスト） | ヘッダ・本文の値を**指定** | **`fw_header:` マップ** |
+| `EXPECTED_REQUEST_HEADER_MESSAGES` | SendSync（リクエスト単体テスト） | フィールド単位で**アサート** | `records` の `fields:`/`rows:` |
+| `EXPECTED_REQUEST_BODY_MESSAGES` | 同上 | フィールド単位でアサート | `fields:`/`rows:` |
+| `RESPONSE_HEADER_MESSAGES` | 同上 | フィールド単位で**生成** | `fields:`/`rows:` |
+| `RESPONSE_BODY_MESSAGES` | 同上 | フィールド単位で生成 | `fields:`/`rows:` |
+
+根拠: `MessageParser`（MESSAGE 経路）は `processDirectives` で「名前｜値」を読み `isFrameworkHeader` で `fwHeader` Map に分離する。一方 `SendSyncMessageParser`（expected/response 経路）は `getFwHeader()` が `UnsupportedOperationException` を投げ、FW制御ヘッダ分離を行わない。`requestId` 等も `no` 行のフィールドとして型・長さ・複数データ行つきで定義され、フィールド単位の検証/生成に使われる。`fw_header:` マップにすると型・長さ・複数行が表現できずテスト目的が成立しない。
+
+#### MESSAGE（messages）の YAML 表現（fw_header マップ）
+
+| 構成要素 | YAML 表現 |
+|---|---|
+| ディレクティブ（`text-encoding` 等） | `directives:` マップ |
+| FW 制御ヘッダ（`requestId` 等） | `fw_header:` マップ（**任意キー許容**） |
+| 電文本文（`no` 行以降の名称・型・長さ・データ） | `records:` の `fields:`/`rows:` |
+
+#### EXPECTED_REQUEST_* / RESPONSE_* の YAML 表現（fields/rows）
+
+ヘッダ部・本文部とも `records` の `fields:`/`rows:` でフィールド単位に定義する。`requestId` 等のヘッダフィールドも `fields` の1要素（日本語型・長さつき）として書く。`fw_header:` は使わない。`text-encoding` 等のディレクティブは `directives:` に分離する（混入させない）。
+
+```yaml
+messages:
+  - id: requestMessages
+    directives:
+      text-encoding: Windows-31J
+    fw_header:
+      requestId: hoge
+      userId: moge
+    records:
+      - record_type: default
+        fields:
+          - {name: ユーザ名, type: 全角, length: 50}
+        rows:
+          - ["電文太郎"]
+```
+
+#### 設計判断とその根拠（旧設計からの変更）
+
+旧設計（§12 旧版）では FW 制御ヘッダを `record_type: FW_HEADER` のレコードの `fields`/`rows` で表していた。これを撤回し、`fw_header:` マップを採用する。
+
+1. **公式仕様に忠実**。FW 制御ヘッダは公式上「名前｜値」のディレクティブ行群であり、ディレクティブと同じ構造。値は1電文につき1組であって、複数データ行を持つ電文ボディとは性質が異なる。`fields`/`rows` 表現では rows が常に1行のいびつな形になる。
+2. **データモデルに一致**。ランタイムは FW 制御ヘッダを `Map<String,String>`（`fwHeader`）として保持する。`fw_header:` マップはこの内部モデルに素直に対応する。
+3. **位置ずれが原理的に起きない**。`fields`/`rows` 表現は名前（fields）と値（rows）が位置対応のため、列ずれ事故の温床になる（変換ツールの実バグ C-2 と同根）。マップはキーで対応するため起きない。
+4. **任意キーを安全に扱える**。FW 制御ヘッダ名はプロジェクトごとに可変（`reader.fwHeaderfields`）。`fw_header:` に書いたキーはすべて FW 制御ヘッダとして扱い、ランタイムは設定値でフィルタして取り捨てない（記述したものが黙って消えない）。スキーマは `additionalProperties` で任意キーを許容する。
+
+#### record_type の扱い
+
+`MessageParser` は内部で `FixedLengthFileParser#onReadingNames()` をオーバーライドし、先頭セル（レコード種別名）を常に `"default"` に置き換える。このため `record_type` 値は識別・可読性のためだけで、実行時の挙動に影響しない。`record_type: FW_HEADER` のような予約値は存在しない（FW 制御ヘッダは `fw_header:` で表すため）。
+
+#### errorMode との共存
+
+`response_*_messages`（`MockMessagingContext` / `MockMessagingClient` 経路）の `errorMode:timeout` / `errorMode:msgException` 行マーカーは、`fw_header:` の分離とは独立した別の仕組みである。`fw_header:` を分離した後も errorMode 行はそのまま機能する。`RequestTestingSendSyncSupport` 経路では errorMode は使用されない。
+
+#### ランタイムへの影響（getMessageWithoutCache 経路）
+
+ランタイムの `YamlMessageBuilder` は、`messages`（`getMessage`）経路でのみ `fw_header:` を読んで FW ヘッダ Map を構築する。`expected_request_*` / `response_*`（`getMessageWithoutCache` 経路）では FW ヘッダ分離を行わず、空 Map を渡す（Excel 版 `SendSyncMessageParser#getFwHeader()` が `UnsupportedOperationException` を投げる挙動と整合させる）。現状実装は `getMessageWithoutCache` も `extractFwHeader` を呼んでいるため、経路で呼び分けるよう是正する。
+
+#### 変換ツール（Excel → YAML）への影響
+
+変換ツールの `parseMessageBlock` は、上記の電文構造（ディレクティブ群 → FW制御ヘッダ群 → `no` 行＝フィールド名称行 → 型 → 長さ → データ）を正しく状態遷移して解釈し、ディレクティブを `directives:`、FW制御ヘッダを `fw_header:`、電文ボディを `records:` に振り分けて出力する必要がある（現状の実装は3者を区別できず破綻している。修正タスク参照）。
 
 ### 13. Excel → YAML の行処理ルール（TestDataParsingTemplate）
 
@@ -313,11 +396,11 @@ YAMLでは可読性のため任意の名前を書いてよいが、実行時に�
 2. `SystemRepository["dataTypeMapping"]`
 3. `BasicDataTypeMapping`（デフォルト）
 
-YAML アダプタ実装時は、フレームワーク型記号（`X`, `N` 等）を直接渡す identity mapping を `"dataTypeMapping"` キーで登録するか、パーサ側で `setTypes()` を迂回する（§5 参照）。未知の型記号は `BasicDataTypeMapping` が `IllegalArgumentException` をスローするため、identity mapping が必須。
+YAML には日本語型名称（`半角英字`, `全角` 等）を記述するため、デフォルトの `BasicDataTypeMapping`（日本語名称キー）がそのまま変換に使える（§5 参照）。プロジェクトがエンコーディング別・独自のマッピングを `"dataTypeMapping_{エンコーディング名}"` / `"dataTypeMapping"` キーで登録している場合はそちらが優先される。日本語名称にない独自の型名称を使う場合は、その名称を含むマッピングを登録する。
 
 ### 16. TEST_ プレフィクス型の自動昇格
 
-`"TEST_X9"` のように `TEST_` プレフィクスのデータ型が `ConvertorFactory` に登録されている場合、YAML に `type: X9` と書いてもパーサが `getTypeForTest()` で `TEST_X9` を自動優先選択する（`DataFileFragment`）。テスト専用の型シンボルを使いたい場合は `TEST_` プレフィクスで登録すると既存の type 記述を変えずに切り替えできる。
+`TEST_` プレフィクスのデータ型が `ConvertorFactory` に登録されている場合、対応する型（例: `符号無数値` → 型記号 `X9`）に対してパーサが `getTypeForTest()` で `TEST_` 付きの型を自動優先選択する（`DataFileFragment`）。テスト専用の型変換を使いたい場合に、YAML の type 記述（日本語名称）を変えずに切り替えできる。
 
 ### 17. TestDataConverter 拡張点
 
@@ -374,21 +457,21 @@ setup_files:
     records:
       - record_type: HEADER        # レコード種別1
         fields:
-          - {name: TYPE,    type: X, length: 4}
-          - {name: DATE,    type: X, length: 8}
+          - {name: TYPE,    type: 半角, length: 4}
+          - {name: DATE,    type: 半角, length: 8}
         rows:
           - ["HDR", "20240101"]
       - record_type: DATA          # レコード種別2（連続して記述）
         fields:
-          - {name: ID,      type: X, length: 10}
-          - {name: VALUE,   type: Z, length: 10}
+          - {name: ID,      type: 半角, length: 10}
+          - {name: VALUE,   type: 数値, length: 10}
         rows:
           - ["0000000001", "5000"]
           - ["0000000002", "9800"]
       - record_type: TRAILER       # レコード種別3
         fields:
-          - {name: TYPE,    type: X, length: 4}
-          - {name: COUNT,   type: Z, length: 6}
+          - {name: TYPE,    type: 半角, length: 4}
+          - {name: COUNT,   type: 数値, length: 6}
         rows:
           - ["TRL", "2"]
 ```
@@ -463,9 +546,12 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 - マーカーカラム（`[COLNAME]`）はYAMLキーとして `"[COLNAME]"` にクォートする
 - Excel のセル値が空（`""`）でも意図的に空文字として出力する（省略しない）
 - `null` セルは `null` として出力する
-- **Excelのセルが数値型で保存されている場合**（例: `001` が整数 `1` として格納）は、POI の `DataFormatter#formatCellValue(cell)` で文字列化してから取得する（`cell.setCellType(STRING)` は POI 4.x 以降で削除されたため使用不可）
+- **Excelのセルが数値型で保存されている場合**（例: `001` が整数 `1` として格納）は、POI の `DataFormatter#formatCellValue(cell)` で文字列化してから取得する（`cell.setCellType(STRING)` は POI 4.x 以降で削除されたため使用不可。`DataFormatter` クラスは依存している POI 3.8 にも存在する）。
+  - **現状の変換ツールの不具合**: `XlsFormatReader` は数値型セルを `cell.toString()` で文字列化しており、`2` が `"2.0"` のように小数表記になってフィールド型・値に混入する不具合がある（`MessageParserTest.xls` で確認）。`DataFormatter#formatCellValue(cell)` を使うよう修正すること（修正タスク参照）。
 - **複数シートのExcelファイルは1シート1YAMLファイルに分割する（選択肢A）**: `FooTest.xlsx` の各シート（`setUpDb`, `testMethod1` 等）をそれぞれ `FooTest.setUpDb.yaml`, `FooTest.testMethod1.yaml` として独立したファイルに出力する。1ファイル複数シート相当の構造をスキーマに追加する選択肢B は既存スキーマの破壊的変更が必要なため採用しない。先行実装例（nablarch-example-*-ntf-yaml）もフラット変換（1シート→1ファイル）方式を採用しており整合が取れる
-- **`dataName`（リソース名）の形式変更に注意**: 既存テストでは `PoiXlsReader` が `"ファイル名/シート名"` 形式のキーでデータをキャッシュする。YAML移行後はシートの概念がなくなるため、YAMLパーサのキャッシュキー形式をプロジェクトルールで統一すること（例: `"ファイル名"` のみ、または `"ファイル名/default"` など）。テストクラスが参照するリソース名もあわせて変更が必要
+- **`dataName`（リソース名）は `"ブック名/シート名"` 形式を維持する（テストコード変更不要）**: 既存テストでは `TestSupport#getResourceName(sheetName)` が `getBookName() + "/" + sheetName`（例: `"FooTest/setUpDb"`）を返し、これがリソース名兼キャッシュキーになる。YAML 移行では、**ブック名をディレクトリ名、シート名をファイル名**に対応させる（例: `FooTest/setUpDb.yaml`）。これにより YAML パーサは `basePath + "FooTest/setUpDb" + ".yaml"` で目的のファイルを解決でき、**リソース名の形式は不変**。テストクラスが渡すリソース名もそのまま使えるため、**テストコードの変更は不要**である。
+
+  > 旧版では「シートの概念がなくなるためキャッシュキー形式をプロジェクトで統一せよ／参照名の変更が必要」と記載していたが、上記のディレクトリ/ファイル対応により不要となるため撤回する。
 
 
 ---
@@ -615,3 +701,32 @@ YAML対応のパーサを追加実装する際は、`TestDataReader` インタ�
 | `ntf-testdata-yaml-examples.yaml` | Phase 2: 各データ種別のYAML記述例 |
 | `ntf-testdata-yaml-design.md` | Phase 2: 設計判断・トレードオフ（本ファイル） |
 | `tasks.md` | 作業タスクリスト（中断・再開用） |
+
+---
+
+## 28. 変換ツールの検証モード（リンタ機能）
+
+### 目的
+
+変換ツールに検証モードを追加する。主用途は、**AI（または人間）がテストデータ YAML を新規作成・修正する際の事前チェック（リンタ）**である。
+
+### なぜ検証モードが必要か
+
+YAML の構造誤り（列数不一致・FW制御ヘッダの取り違え・スキーマ違反等）を、テストを実行して検知しようとすると、ビルド → DB 起動 → テスト走行が必要で、エラーも `IllegalArgumentException: can't convert value [...]` のような間接的なスタックトレースとしてしか現れない。原因の特定に時間とトークンを要する。
+
+検証モードは「入力 = YAML、出力 = 構造エラー一覧」で完結するため、実行環境に依存せず、原因が一意に示される。AI がテストデータを直す用途では、実行よりも検証モードの方が読むトークンが少なく、修正が確実になる。
+
+### 検証内容（最低限）
+
+1. **列数の一致**: 各 `record_fragment` 内で、`fields` の件数と、各 `rows` 配列の要素数が一致すること（`{name: 半角, type: 50}` のような列ずれを検出）。
+2. **構造境界の妥当性**: ディレクティブ（`directives:`）・FW制御ヘッダ（`fw_header:`）・電文ボディ（`records:`）が正しく分離されていること（`text-encoding` が `fw_header:` に混入していない等）。
+3. **スキーマ適合**: 変換後 YAML が JSON Schema（`ntf-testdata-yaml-schema.json`）に適合すること。既存の `YamlSchemaValidationTest` 相当の検証を変換ツールから呼べるようにする。
+
+### 動作
+
+- 検証失敗時は、どのファイル・どの位置で何が崩れているかを構造エラー一覧として出力する。
+- 用途に応じて「検証のみ実行するモード」と「変換実行時に検証も行い、失敗したら変換を中断するモード」を提供する。
+
+### 列順ミスとの関係（K）
+
+ファイル系の `rows` は `fields` と同順の位置対応配列であり、列順の取り違えは JSON Schema では検出できない（スキーマの原理的限界）。検証モードの「列数の一致」チェック（上記1）で件数ずれは確実に捕捉できる。列順そのものの正しさは検証できないため、設計書・解説書で「`fields` の順序と `rows` の値順を必ず一致させること」を引き続き明記する。
