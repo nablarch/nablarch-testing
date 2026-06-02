@@ -20,7 +20,6 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -281,7 +280,7 @@ public class YamlMessageBuilderTest {
                 yaml, "response_body_messages", "grp1", DIR);
 
         // Then
-        assertThat(result, notNullValue());
+        assertNotNull(result);
         assertThat(result.get(0).getRequestId(), is("sync001"));
     }
 
@@ -338,7 +337,7 @@ public class YamlMessageBuilderTest {
                 yaml, "response_body_messages", "grp1", DIR);
 
         // Then: directives が MockMessages に設定されていること（source フィールド経由で確認）
-        assertThat(result, notNullValue());
+        assertNotNull(result);
         Field sourceField = MessagePool.class.getDeclaredField("source");
         sourceField.setAccessible(true);
         FixedLengthFile source = (FixedLengthFile) sourceField.get(result.get(0));
@@ -443,8 +442,8 @@ public class YamlMessageBuilderTest {
      * ClassCastException がスローされること（E-3）。
      *
      * <p>
-     * Given: messages_malformed_fw_header に id=malformed001 の fw_header がリスト形式（誤記）<br>
-     * When:  buildMessagePool(yaml, "messages_malformed_fw_header", "malformed001", path) を呼ぶ<br>
+     * Given: messages に id=malformed001 の fw_header がリスト形式（誤記）<br>
+     * When:  buildMessagePool(yaml, "messages", "malformed001", path) を呼ぶ<br>
      * Then:  ClassCastException がスローされること
      * </p>
      */
@@ -597,7 +596,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void fwHeaderMapAllKeysRetainedIncludingCustom() throws Exception {
+    public void testBuildMessagePool_fwHeaderMapAllKeysRetainedIncludingCustom() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -627,7 +626,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void fwHeaderMapReadableWithoutFwHeaderRecord() throws Exception {
+    public void testBuildMessagePool_fwHeaderMapReadableWithoutFwHeaderRecord() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -654,7 +653,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void expectedRequestBodyMessagesReturnsEmptyFwHeader() throws Exception {
+    public void testBuildMessagePool_expectedRequestBodyMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -680,7 +679,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void responseBodyMessagesReturnsEmptyFwHeader() throws Exception {
+    public void testBuildMessagePool_responseBodyMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -706,7 +705,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void expectedRequestHeaderMessagesReturnsEmptyFwHeader() throws Exception {
+    public void testBuildMessagePool_expectedRequestHeaderMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -732,7 +731,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void responseHeaderMessagesReturnsEmptyFwHeader() throws Exception {
+    public void testBuildMessagePool_responseHeaderMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -758,7 +757,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void fwHeaderMapWithUnquotedNumericAndBooleanValues() throws Exception {
+    public void testBuildMessagePool_fwHeaderMapWithUnquotedNumericAndBooleanValues() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
@@ -786,7 +785,7 @@ public class YamlMessageBuilderTest {
      * </p>
      */
     @Test
-    public void messagesWithoutFwHeaderMapReturnsEmptyFwHeader() throws Exception {
+    public void testBuildMessagePool_messagesWithoutFwHeaderMapReturnsEmptyFwHeader() throws Exception {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 

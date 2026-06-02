@@ -49,7 +49,7 @@ public final class YamlMessageBuilder {
      * @return {@link RequestTestingMessagePool}、または存在しない場合 null（呼び出し元で null チェックが必要）
      */
     public MessagePool buildMessagePool(Map<String, Object> yaml, String sectionKey,
-                                  String id, String basePath) {
+                                        String id, String basePath) {
         FixedLengthFile file = fileBuilder.buildMessageFile(yaml, sectionKey, id, basePath);
         if (file == null) {
             return null;
@@ -57,8 +57,8 @@ public final class YamlMessageBuilder {
         // messages（MESSAGE）経路のみ fw_header: マップを読む。
         // expected_request_* / response_* 経路は空 Map を渡す（フィールド単位で records に定義するため）。
         Map<String, String> fwHeader = KEY_MESSAGES.equals(sectionKey)
-                ? extractFwHeader(yaml, sectionKey, id)
-                : Collections.<String, String>emptyMap();
+                ? extractFwHeader(yaml, id)
+                : Collections.emptyMap();
         return new RequestTestingMessagePool(file, fwHeader);
     }
 
@@ -72,7 +72,7 @@ public final class YamlMessageBuilder {
      * @return {@link RequestTestingMessagePool} リスト、または存在しない場合 null（呼び出し元で null チェックが必要）
      */
     public List<RequestTestingMessagePool> buildSendSyncMessageList(Map<String, Object> yaml, String sectionKey,
-                                                              String groupId, String basePath) {
+                                                                   String groupId, String basePath) {
         List<Object> entries = getList(yaml, sectionKey);
         List<RequestTestingMessagePool> result = new ArrayList<RequestTestingMessagePool>();
         for (Object entry : entries) {
@@ -80,8 +80,7 @@ public final class YamlMessageBuilder {
             String entryGroupId = toStr(map.get(FIELD_GROUP_ID));
             if (entryGroupId != null && entryGroupId.equals(groupId)) {
                 MockMessages file = buildMockMessages(map, basePath);
-                Map<String, String> emptyHeader = Collections.emptyMap();
-                RequestTestingMessagePool pool = new RequestTestingMessagePool(file, emptyHeader);
+                RequestTestingMessagePool pool = new RequestTestingMessagePool(file, Collections.emptyMap());
                 String entryId = toStr(map.get(FIELD_ID));
                 if (entryId != null) {
                     pool.setRequestId(entryId);
@@ -100,8 +99,8 @@ public final class YamlMessageBuilder {
         return file;
     }
 
-    private Map<String, String> extractFwHeader(Map<String, Object> yaml, String sectionKey, String id) {
-        List<Object> entries = getList(yaml, sectionKey);
+    private Map<String, String> extractFwHeader(Map<String, Object> yaml, String id) {
+        List<Object> entries = getList(yaml, KEY_MESSAGES);
         for (Object entry : entries) {
             Map<String, Object> map = castMap(entry);
             String entryId = toStr(map.get(FIELD_ID));
