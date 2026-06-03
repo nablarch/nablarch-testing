@@ -997,11 +997,18 @@ YAML テストデータファイルを変換前・変換後に検証し、構造
 
 ### 10.3 検証ルール
 
-| ID | ルール | 対象 |
-|---|---|---|
-| V-COL | `fields` 件数と各 `rows` 配列長が一致すること | `setup_files`・`expected_files`・`messages`・`expected_request_*`・`response_*` の全 `record_fragment` |
-| V-DIR | `fw_header:` にディレクティブ名（`MessageDataBlock.KNOWN_DIRECTIVE_NAMES`）が含まれないこと | `messages`・`expected_request_*`・`response_*` |
-| V-SCH | `ntf-testdata-yaml-schema.json`（クラスパス）に適合していること | 全 YAML ファイル |
+| ID | ルール | 対象 | 仕様ID |
+|---|---|---|---|
+| V-COL | `fields` 件数と各 `rows` 配列長が一致すること | `setup_files`・`expected_files`・`messages`・`expected_request_*`・`response_*` の全 `record_fragment` | — |
+| V-DIR | `fw_header:` にディレクティブ名（`MessageDataBlock.KNOWN_DIRECTIVE_NAMES`）が含まれないこと | `messages`・`expected_request_*`・`response_*` | — |
+| V-SCH | `ntf-testdata-yaml-schema.json`（クラスパス）に適合していること | 全 YAML ファイル | — |
+| V-FNAME | 同一 `record_fragment` 内のフィールド名が重複していないこと | `setup_files`・`expected_files`・`messages`・`expected_request_*`・`response_*` の全 `record_fragment` | SS-14 |
+| V-DKEY | `directives:` マップのキーが既知のディレクティブ名（固定長: `FixedLengthDirective` 相当 / 可変長: `VariableLengthDirective` 相当）であること | `setup_files`・`expected_files`・`messages`・`expected_request_*`・`response_*` | DR-02, DR-03 |
+| V-MSGROW | `expected_request_header_messages` と `expected_request_body_messages` の各ブロックペア（同一インデックス）の `rows` 合計行数が一致すること | `expected_request_header_messages`・`expected_request_body_messages` | MS-05 |
+
+#### ルール追加の判断根拠（シフトレフト）
+
+V-FNAME / V-DKEY / V-MSGROW はもともと設計書で「対象外（検証）— NTF 実行時に検出」に分類していた。しかし YAML 記述時点で検出できる誤りを NTF 実行まで持ち越す理由はなく、早期フィードバックの観点（シフトレフト）でバリデータに追加する。NTF 実行時の検証は引き続き行われるため、二重検知になっても問題ない。
 
 ### 10.4 `ValidationError` 構造
 

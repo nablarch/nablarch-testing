@@ -62,6 +62,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - [x] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
   - [x] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [x] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
+  - [ ] **T5-ext** バリデータに V-FNAME / V-DKEY / V-MSGROW を追加（シフトレフト拡張） — `docs/pr75/checks/T5.md`（同チェックファイルに追記）
   - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
   - [ ] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`
 
@@ -251,7 +252,25 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T5 完了・ユーザーレビュー待ち（2026-06-03）。次は T6 または T7 を実施する**
+2. **T5 ユーザーレビュー OK（2026-06-03）。次は T5-ext を実施する**
+
+### T5-ext 概要
+
+**タスク**: バリデータに V-FNAME / V-DKEY / V-MSGROW を追加（シフトレフト拡張）
+**チェックファイル**: `docs/pr75/checks/T5.md`（完了条件チェックリスト・レビュー欄を追記する）
+**変更対象**: `YamlTestDataValidator`・`YamlTestDataValidatorTest`・設計書 §10.3 は更新済み
+
+#### 追加する3ルール
+
+| ID | 内容 | 実装メモ |
+|---|---|---|
+| V-FNAME | 同一 `record_fragment` 内のフィールド名重複を検出 | `fields` リストの `name` を Set で重複判定 |
+| V-DKEY | `directives:` キーが既知ディレクティブ名（`MessageDataBlock.KNOWN_DIRECTIVE_NAMES` + 固定長専用キー）以外を検出 | 既知キー Set は `MessageDataBlock.KNOWN_DIRECTIVE_NAMES` をそのまま使う（固定長・可変長の区別は type フィールドで判断できないため全既知キーで許容し、未知キーをエラーとする） |
+| V-MSGROW | `expected_request_header_messages[i]` と `expected_request_body_messages[i]` の `rows` 合計行数が一致しているか検出 | ファイル内の2セクションをペアリングしてインデックス単位で比較 |
+
+#### 実施手順
+
+ソースコード変更を含むタスクの5ステップに従う。TDD（RED→GREEN）で進める。
 
 ### T5 概要
 
