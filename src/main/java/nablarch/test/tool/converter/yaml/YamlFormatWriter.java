@@ -194,7 +194,7 @@ public class YamlFormatWriter implements TestDataFormatWriter {
         } else {
             w.write(INDENT + "  records:\n");
             for (RecordLayout record : block.getRecords()) {
-                writeMessageRecord(w, record, INDENT + INDENT);
+                writeRecordLayout(w, record, INDENT + INDENT, false);
             }
         }
     }
@@ -208,28 +208,6 @@ public class YamlFormatWriter implements TestDataFormatWriter {
                         + ", type: " + quoteString(field.getType())
                         + ", length: " + quoteString(field.getLength()) + "}\n");
             } else if (field.getType() != null) {
-                w.write(indent + "    - {name: " + quoteString(field.getName())
-                        + ", type: " + quoteString(field.getType()) + "}\n");
-            } else {
-                w.write(indent + "    - {name: " + quoteString(field.getName()) + "}\n");
-            }
-        }
-        w.write(indent + "  rows:\n");
-        for (List<String> row : record.getRows()) {
-            w.write(indent + "    - [");
-            for (int i = 0; i < row.size(); i++) {
-                if (i > 0) w.write(", ");
-                w.write(quoteString(row.get(i)));
-            }
-            w.write("]\n");
-        }
-    }
-
-    private void writeMessageRecord(Writer w, RecordLayout record, String indent) throws IOException {
-        w.write(indent + "- record_type: " + quoteString(record.getRecordType()) + "\n");
-        w.write(indent + "  fields:\n");
-        for (FieldDef field : record.getFields()) {
-            if (field.getType() != null) {
                 w.write(indent + "    - {name: " + quoteString(field.getName())
                         + ", type: " + quoteString(field.getType()) + "}\n");
             } else {
