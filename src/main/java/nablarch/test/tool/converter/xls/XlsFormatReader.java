@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * XLS ファイルを読み込んで {@link TestDataContainer} に変換する Reader。
@@ -232,84 +231,12 @@ public class XlsFormatReader implements TestDataFormatReader {
         }
 
         // レコードレイアウトの解析
-        while (i < rows.size()) {
-            List<String> row = rows.get(i);
-            if (detectDataType(row.get(0)) != null) {
-                break;
-            }
-            if (row.get(0).isEmpty()) {
-                break;
-            }
-            // フィールド名行
-            String recordType = row.get(0);
-            List<String> fieldNames = row.subList(1, row.size());
-            fieldNames = trimTrailingEmpty(fieldNames);
-            i++;
-
-            // データ型行
-            List<String> types = new ArrayList<>();
-            if (i < rows.size() && rows.get(i).get(0).isEmpty()) {
-                List<String> typeRow = rows.get(i).subList(1, rows.get(i).size());
-                types = trimTrailingEmpty(typeRow);
-                i++;
-            }
-
-            // フィールド長行（固定長のみ）
-            List<String> lengths = new ArrayList<>();
-            FileDataBlock.FileType fileType = resolveFileType(dataType);
-            if (fileType == FileDataBlock.FileType.FIXED && i < rows.size() && rows.get(i).get(0).isEmpty()) {
-                List<String> lengthRow = rows.get(i).subList(1, rows.get(i).size());
-                lengths = trimTrailingEmpty(lengthRow);
-                i++;
-            }
-
-            // FieldDef の構築
-            List<FieldDef> fields = new ArrayList<>();
-            for (int f = 0; f < fieldNames.size(); f++) {
-                String type = f < types.size() ? types.get(f) : null;
-                String length = (fileType == FileDataBlock.FileType.FIXED && f < lengths.size()) ? lengths.get(f) : null;
-                fields.add(new FieldDef(fieldNames.get(f), type, length));
-            }
-
-            // データ行
-            List<List<String>> dataRows = new ArrayList<>();
-            while (i < rows.size() && rows.get(i).get(0).isEmpty()) {
-                List<String> dataRow = rows.get(i).subList(1, rows.get(i).size());
-                // HC-04: フィールド数に合わせて補完
-                List<String> padded = new ArrayList<>(dataRow);
-                while (padded.size() < fields.size()) {
-                    padded.add("");
-                }
-                dataRows.add(new ArrayList<>(padded.subList(0, fields.size())));
-                i++;
-                // 次の行が非空の先頭セルを持つ場合（新レコード種別または新ブロック）
-                if (i < rows.size() && !rows.get(i).get(0).isEmpty()) {
-                    break;
-                }
-            }
-
-            records.add(new RecordLayout(recordType, fields, dataRows));
-        }
+        FileDataBlock.FileType fileType = resolveFileType(dataType);
+        i = parseRecordLayouts(rows, i, fileType == FileDataBlock.FileType.FIXED, null, records);
 
         nextIndex[0] = i;
-        FileDataBlock.FileType fileType = resolveFileType(dataType);
         return new FileDataBlock(dataType, groupId, identifier, fileType, directives, records);
     }
-
-    /**
-     * 既知のディレクティブ名。電文ブロックの「名前｜値」行がこのセットに含まれる場合は
-     * FW 制御ヘッダではなくディレクティブとして扱う。
-     * NTF の DataRecordFormatterSupport$Directive / FixedLengthDirective / VariableLengthDirective の全名称を網羅する。
-     */
-    private static final Set<String> KNOWN_DIRECTIVE_NAMES = Set.of(
-            "file-type", "text-encoding", "record-separator",
-            "record-length",
-            "positive-zone-sign-nibble", "negative-zone-sign-nibble",
-            "positive-pack-sign-nibble", "negative-pack-sign-nibble",
-            "required-decimal-point", "fixed-sign-position", "required-plus-sign",
-            "field-separator", "quoting-delimiter", "ignore-blank-lines",
-            "requires-title", "max-record-length", "title-record-type-name"
-    );
 
     /** メッセージングデータブロックの解析（MS-01, MS-02）。 */
     private MessageDataBlock parseMessageBlock(DataType dataType, String groupId, String identifier,
@@ -330,7 +257,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             }
             String key = row.get(0);
             String value = row.size() > 1 ? row.get(1) : "";
-            if (KNOWN_DIRECTIVE_NAMES.contains(key)) {
+            if (MessageDataBlock.KNOWN_DIRECTIVE_NAMES.contains(key)) {
                 directives.put(key, value);
             } else {
                 fwHeaderFields.put(key, value);
@@ -338,17 +265,47 @@ public class XlsFormatReader implements TestDataFormatReader {
             i++;
         }
 
-        // レコードレイアウトの解析（ファイルデータと同様だが no列: 先頭セルが空がフィールド名行の合図）
+        // レコードレイアウトの解析（MS-02: no列省略 = 先頭セルが空がフィールド名行の合図）
+        i = parseRecordLayouts(rows, i, false, "default", records);
+
+        nextIndex[0] = i;
+        return new MessageDataBlock(dataType, groupId, identifier, directives, fwHeaderFields, records);
+    }
+
+    /**
+     * レコードレイアウト（フィールド名行→型行→[長行]→データ行）を解析して {@code out} に追加する。
+     *
+     * @param rows          シート全行リスト
+     * @param startIndex    解析開始行インデックス
+     * @param withLength    固定長ファイルの場合 true（フィールド長行を読む）
+     * @param fixedRecordType null のとき行の先頭セルを recordType として使用（ファイルデータ）、
+     *                        非 null のとき固定文字列を recordType として使用（メッセージング）
+     * @param out           解析結果の格納先
+     * @return 次の未処理行インデックス
+     */
+    private int parseRecordLayouts(List<List<String>> rows, int startIndex,
+                                    boolean withLength, String fixedRecordType,
+                                    List<RecordLayout> out) {
+        int i = startIndex;
         while (i < rows.size()) {
             List<String> row = rows.get(i);
             if (detectDataType(row.get(0)) != null) {
                 break;
             }
-            if (!row.get(0).isEmpty()) {
-                break;
+            if (fixedRecordType == null) {
+                // ファイルデータ: 先頭セルが recordType（非空）
+                if (row.get(0).isEmpty()) {
+                    break;
+                }
+            } else {
+                // メッセージング: 先頭セルが空 = フィールド名行
+                if (!row.get(0).isEmpty()) {
+                    break;
+                }
             }
 
-            // フィールド名行（MS-02: 先頭セルが空 = no列省略）
+            // フィールド名行（ファイルデータは先頭セルがレコード種別、メッセージングは先頭セルが空）
+            String recordType = fixedRecordType != null ? fixedRecordType : row.get(0);
             List<String> fieldNames = trimTrailingEmpty(row.subList(1, row.size()));
             i++;
 
@@ -359,13 +316,22 @@ public class XlsFormatReader implements TestDataFormatReader {
                 i++;
             }
 
+            // フィールド長行（固定長のみ）
+            List<String> lengths = new ArrayList<>();
+            if (withLength && i < rows.size() && rows.get(i).get(0).isEmpty()) {
+                lengths = trimTrailingEmpty(rows.get(i).subList(1, rows.get(i).size()));
+                i++;
+            }
+
+            // FieldDef の構築
             List<FieldDef> fields = new ArrayList<>();
             for (int f = 0; f < fieldNames.size(); f++) {
                 String type = f < types.size() ? types.get(f) : null;
-                fields.add(new FieldDef(fieldNames.get(f), type, null));
+                String length = (withLength && f < lengths.size()) ? lengths.get(f) : null;
+                fields.add(new FieldDef(fieldNames.get(f), type, length));
             }
 
-            // データ行
+            // データ行（HC-04: フィールド数に合わせて補完）
             List<List<String>> dataRows = new ArrayList<>();
             while (i < rows.size() && rows.get(i).get(0).isEmpty()) {
                 List<String> dataRow = rows.get(i).subList(1, rows.get(i).size());
@@ -380,11 +346,9 @@ public class XlsFormatReader implements TestDataFormatReader {
                 }
             }
 
-            records.add(new RecordLayout("default", fields, dataRows));
+            out.add(new RecordLayout(recordType, fields, dataRows));
         }
-
-        nextIndex[0] = i;
-        return new MessageDataBlock(dataType, groupId, identifier, directives, fwHeaderFields, records);
+        return i;
     }
 
     /** DataType の判定（DT-03: 前方一致）。DEFAULT は対象外。 */

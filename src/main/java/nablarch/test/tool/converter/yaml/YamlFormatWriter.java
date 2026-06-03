@@ -29,6 +29,8 @@ import java.util.Map;
  */
 public class YamlFormatWriter implements TestDataFormatWriter {
 
+    private static final String INDENT = "  ";
+
     @Override
     public void write(TestDataContainer container, Path outputPath, boolean overwrite) throws ConverterException {
         Path containerDir = outputPath.resolve(container.getName());
@@ -102,30 +104,29 @@ public class YamlFormatWriter implements TestDataFormatWriter {
 
     private void writeColumnRowBlock(Writer w, ColumnRowDataBlock block) throws IOException {
         boolean isListMap = block.getDataType() == DataType.LIST_MAP;
-        String indent = "  ";
 
         // group_id before identifier key
         if (!block.getGroupId().isEmpty()) {
-            w.write(indent + "- group_id: " + quoteString(block.getGroupId()) + "\n");
-            w.write(indent + "  " + (isListMap ? "id" : "table") + ": " + quoteString(block.getIdentifier()) + "\n");
+            w.write(INDENT + "- group_id: " + quoteString(block.getGroupId()) + "\n");
+            w.write(INDENT + "  " + (isListMap ? "id" : "table") + ": " + quoteString(block.getIdentifier()) + "\n");
         } else {
-            w.write(indent + "- " + (isListMap ? "id" : "table") + ": " + quoteString(block.getIdentifier()) + "\n");
+            w.write(INDENT + "- " + (isListMap ? "id" : "table") + ": " + quoteString(block.getIdentifier()) + "\n");
         }
 
         if (block.getRows().isEmpty()) {
-            w.write(indent + "  rows: []\n");
+            w.write(INDENT + "  rows: []\n");
         } else {
-            w.write(indent + "  rows:\n");
+            w.write(INDENT + "  rows:\n");
             for (List<String> row : block.getRows()) {
-                w.write(indent + "    - ");
+                w.write(INDENT + "    - ");
                 boolean first = true;
                 for (int i = 0; i < block.getColumnNames().size(); i++) {
                     String colName = block.getColumnNames().get(i);
                     String value = i < row.size() ? row.get(i) : "";
                     if (!first) {
-                        w.write(indent + "      ");
+                        w.write(INDENT + "      ");
                     }
-                    w.write(quoteKey(colName) + ": " + quoteValue(value) + "\n");
+                    w.write(quoteKey(colName) + ": " + quoteString(value) + "\n");
                     first = false;
                 }
             }
@@ -133,66 +134,67 @@ public class YamlFormatWriter implements TestDataFormatWriter {
     }
 
     private void writeFileBlock(Writer w, FileDataBlock block) throws IOException {
-        String indent = "  ";
         String fileTypeStr = block.getFileType() == FileDataBlock.FileType.FIXED ? "fixed" : "variable";
 
         if (!block.getGroupId().isEmpty()) {
-            w.write(indent + "- group_id: " + quoteString(block.getGroupId()) + "\n");
-            w.write(indent + "  path: " + quoteString(block.getIdentifier()) + "\n");
+            w.write(INDENT + "- group_id: " + quoteString(block.getGroupId()) + "\n");
+            w.write(INDENT + "  path: " + quoteString(block.getIdentifier()) + "\n");
         } else {
-            w.write(indent + "- path: " + quoteString(block.getIdentifier()) + "\n");
+            w.write(INDENT + "- path: " + quoteString(block.getIdentifier()) + "\n");
         }
-        w.write(indent + "  type: " + fileTypeStr + "\n");
+        w.write(INDENT + "  type: " + fileTypeStr + "\n");
 
         if (!block.getDirectives().isEmpty()) {
-            w.write(indent + "  directives:\n");
+            w.write(INDENT + "  directives:\n");
             for (Map.Entry<String, String> entry : block.getDirectives().entrySet()) {
-                w.write(indent + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
+                w.write(INDENT + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
             }
         }
 
         if (block.getRecords().isEmpty()) {
-            w.write(indent + "  records: []\n");
+            w.write(INDENT + "  records: []\n");
         } else {
-            w.write(indent + "  records:\n");
+            w.write(INDENT + "  records:\n");
             for (RecordLayout record : block.getRecords()) {
-                writeRecordLayout(w, record, indent + "    ", block.getFileType() == FileDataBlock.FileType.FIXED);
+                writeRecordLayout(w, record, INDENT + INDENT, block.getFileType() == FileDataBlock.FileType.FIXED);
             }
         }
     }
 
     private void writeMessageBlock(Writer w, MessageDataBlock block) throws IOException {
-        String indent = "  ";
         boolean isMessage = block.getDataType() == DataType.MESSAGE;
 
         if (!block.getGroupId().isEmpty()) {
-            w.write(indent + "- group_id: " + quoteString(block.getGroupId()) + "\n");
-            w.write(indent + "  id: " + quoteString(block.getIdentifier()) + "\n");
+            w.write(INDENT + "- group_id: " + quoteString(block.getGroupId()) + "\n");
+            w.write(INDENT + "  id: " + quoteString(block.getIdentifier()) + "\n");
         } else {
-            w.write(indent + "- id: " + quoteString(block.getIdentifier()) + "\n");
+            w.write(INDENT + "- id: " + quoteString(block.getIdentifier()) + "\n");
         }
 
         if (!block.getDirectives().isEmpty()) {
-            w.write(indent + "  directives:\n");
+            w.write(INDENT + "  directives:\n");
             for (Map.Entry<String, String> entry : block.getDirectives().entrySet()) {
-                w.write(indent + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
+                w.write(INDENT + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
             }
         }
 
-        // fw_header は MESSAGE（messages）のみ出力する
+        // fw_header は MESSAGE（messages セクション）のみが FW 制御ヘッダを持つ仕様のため、
+        // EXPECTED_REQUEST_* / RESPONSE_* には出力しない。
+        // XlsFormatReader は全メッセージ型でディレクティブ分類を行うが、
+        // EXPECTED_REQUEST_* / RESPONSE_* の fwHeaderFields は空になることが前提。
         if (isMessage && !block.getFwHeaderFields().isEmpty()) {
-            w.write(indent + "  fw_header:\n");
+            w.write(INDENT + "  fw_header:\n");
             for (Map.Entry<String, String> entry : block.getFwHeaderFields().entrySet()) {
-                w.write(indent + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
+                w.write(INDENT + "    " + entry.getKey() + ": " + quoteString(entry.getValue()) + "\n");
             }
         }
 
         if (block.getRecords().isEmpty()) {
-            w.write(indent + "  records: []\n");
+            w.write(INDENT + "  records: []\n");
         } else {
-            w.write(indent + "  records:\n");
+            w.write(INDENT + "  records:\n");
             for (RecordLayout record : block.getRecords()) {
-                writeMessageRecord(w, record, indent + "    ");
+                writeMessageRecord(w, record, INDENT + INDENT);
             }
         }
     }
@@ -251,12 +253,6 @@ public class YamlFormatWriter implements TestDataFormatWriter {
             return "\"" + key + "\"";
         }
         return key;
-    }
-
-    /** 値をダブルクォートで出力する。null は unquoted null。 */
-    private String quoteValue(String value) {
-        if (value == null) return "null";
-        return "\"" + escapeYaml(value) + "\"";
     }
 
     /** 文字列をダブルクォートで出力する。null は unquoted null。 */
