@@ -670,6 +670,72 @@ public class YamlFormatReaderTest {
         }
     }
 
+    /**
+     * [Given] messages に directives と fw_header が共存する YAML
+     * [When]  read() を呼び出す
+     * [Then]  directives と fwHeaderFields の両方が正しく復元される（T3: directives + fw_header 共存）
+     */
+    @Test
+    public void readMessageWithDirectivesAndFwHeader() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "messages:",
+                "  - id: req/msg",
+                "    directives:",
+                "      text-encoding: \"UTF-8\"",
+                "      record-separator: \"MS932\"",
+                "    fw_header:",
+                "      requestId: \"REQ001\"",
+                "      userId: \"usr001\"",
+                "    records:",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: FIELD1, type: X}",
+                "        rows:",
+                "          - [\"val1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        // directives が正しく復元される
+        assertThat(block.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(block.getDirectives().get("record-separator"), is("MS932"));
+        // fwHeaderFields が正しく復元される
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+        assertThat(block.getFwHeaderFields().get("userId"), is("usr001"));
+        // records が正しく復元される
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("val1")));
+    }
+
+    /**
+     * [Given] messages に fw_header: がスカラー値（非 Map）の YAML
+     * [When]  read() を呼び出す
+     * [Then]  fwHeaderFields が空 Map にフォールバックし例外を投げない（T3: fw_header 非 Map のフォールバック）
+     */
+    @Test
+    public void readMessageWithNonMapFwHeaderFallsBackToEmptyMap() throws Exception {
+        File dir = makeDir("FooTest", "case01",
+                "messages:",
+                "  - id: req/msg",
+                "    fw_header: \"invalid-scalar\"",
+                "    records:",
+                "      - record_type: default",
+                "        fields:",
+                "          - {name: FIELD1, type: X}",
+                "        rows:",
+                "          - [\"val1\"]"
+        );
+
+        TestDataContainer result = sut.read(dir.toPath());
+
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        // 非 Map の fw_header は空 Map にフォールバック（例外なし）
+        assertThat(block.getFwHeaderFields().isEmpty(), is(true));
+        // records は正常に復元される
+        assertThat(block.getRecords().size(), is(1));
+    }
+
     // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------

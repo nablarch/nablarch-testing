@@ -458,7 +458,40 @@ public class YamlFormatWriterTest {
     }
 
     /**
-     * [Given] EXPECTED_REQUEST_HEADER_MESSAGES ブロック（directives あり・FW ヘッダあり）
+     * [Given] MESSAGE ブロック（directives あり・FW ヘッダあり）
+     * [When]  write() を呼び出す
+     * [Then]  fw_header: ブロック内に text-encoding が混入しない（T3: fw_header 内部混入防止の直接検証）
+     */
+    @Test
+    public void writeMessageFwHeaderSectionDoesNotContainDirective() throws Exception {
+        // Given
+        Map<String, String> directives = new LinkedHashMap<>();
+        directives.put("text-encoding", "MS932");
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        RecordLayout record = new RecordLayout("default",
+                Arrays.asList(new FieldDef("FIELD1", "X", null)),
+                Arrays.asList(Arrays.asList("req1")));
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "", "req/msg",
+                directives, fwHeaders, Arrays.asList(record)
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then: fw_header: ブロックと records: ブロックの間に text-encoding が現れない
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        int fwHeaderPos = yaml.indexOf("fw_header:");
+        int recordsPos = yaml.indexOf("records:");
+        String fwHeaderSection = yaml.substring(fwHeaderPos, recordsPos);
+        assertThat(fwHeaderSection, not(containsString("text-encoding")));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_HEADER_MESSAGES ブロック（directives あり・fwHeaderFields あり）
      * [When]  write() を呼び出す
      * [Then]  directives: のみ出力され fw_header: は出力されない（T3: expected_request は fw_header なし）
      */
@@ -488,6 +521,137 @@ public class YamlFormatWriterTest {
         assertThat(yaml, containsString("text-encoding: \"UTF-8\""));
         assertThat(yaml, not(containsString("fw_header:")));
         assertThat(yaml, containsString("records:"));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_BODY_MESSAGES ブロック（fwHeaderFields あり）
+     * [When]  write() を呼び出す
+     * [Then]  fw_header: が出力されない（T3: expected_request_body は fw_header なし）
+     */
+    @Test
+    public void writeExpectedRequestBodyWithFwHeaderFieldsDoesNotOutputFwHeader() throws Exception {
+        // Given: fwHeaderFields に値があっても fw_header: を出力しない
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.EXPECTED_REQUEST_BODY_MESSAGES, "", "req/body",
+                new LinkedHashMap<>(), fwHeaders, Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, not(containsString("fw_header:")));
+    }
+
+    /**
+     * [Given] RESPONSE_HEADER_MESSAGES ブロック（fwHeaderFields あり）
+     * [When]  write() を呼び出す
+     * [Then]  fw_header: が出力されない（T3: response_header は fw_header なし）
+     */
+    @Test
+    public void writeResponseHeaderWithFwHeaderFieldsDoesNotOutputFwHeader() throws Exception {
+        // Given
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.RESPONSE_HEADER_MESSAGES, "", "res/hdr",
+                new LinkedHashMap<>(), fwHeaders, Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, not(containsString("fw_header:")));
+    }
+
+    /**
+     * [Given] RESPONSE_BODY_MESSAGES ブロック（fwHeaderFields あり）
+     * [When]  write() を呼び出す
+     * [Then]  fw_header: が出力されない（T3: response_body は fw_header なし）
+     */
+    @Test
+    public void writeResponseBodyWithFwHeaderFieldsDoesNotOutputFwHeader() throws Exception {
+        // Given
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.RESPONSE_BODY_MESSAGES, "", "res/body",
+                new LinkedHashMap<>(), fwHeaders, Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, not(containsString("fw_header:")));
+    }
+
+    /**
+     * [Given] MESSAGE ブロック（directives のみ・fwHeaderFields 空）
+     * [When]  write() を呼び出す
+     * [Then]  fw_header: が出力されない（T3: fwHeaderFields 空のとき fw_header: セクション省略）
+     */
+    @Test
+    public void writeMessageWithDirectivesOnlyDoesNotOutputFwHeader() throws Exception {
+        // Given
+        Map<String, String> directives = new LinkedHashMap<>();
+        directives.put("text-encoding", "UTF-8");
+        RecordLayout record = new RecordLayout("default",
+                Arrays.asList(new FieldDef("FIELD1", "X", null)),
+                Arrays.asList(Arrays.asList("val1")));
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "", "req/msg",
+                directives, new LinkedHashMap<>(), Arrays.asList(record)
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then: fw_header: が出力されず directives: は出力される
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("directives:"));
+        assertThat(yaml, containsString("text-encoding: \"UTF-8\""));
+        assertThat(yaml, not(containsString("fw_header:")));
+    }
+
+    /**
+     * [Given] MESSAGE ブロック（directives 空・fwHeaderFields あり）
+     * [When]  write() を呼び出す
+     * [Then]  YAML 出力に "directives:" が含まれない（T3: directives 空のとき directives: セクション省略）
+     */
+    @Test
+    public void writeMessageWithEmptyDirectivesDoesNotOutputDirectivesSection() throws Exception {
+        // Given
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "", "req/msg",
+                new LinkedHashMap<>(), fwHeaders, Collections.emptyList()
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, not(containsString("directives:")));
+        assertThat(yaml, containsString("fw_header:"));
     }
 
     // -------------------------------------------------------------------------

@@ -24,6 +24,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -1255,6 +1256,168 @@ public class XlsFormatReaderTest {
         assertThat(block.getDirectives().get("text-encoding"), is("UTF-8"));
         assertThat(block.getDirectives().get("record-separator"), is("\\n"));
         assertThat(block.getFwHeaderFields().isEmpty(), is(true));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_BODY_MESSAGES ブロックに text-encoding ディレクティブと requestId が混在
+     * [When]  read() を呼び出す
+     * [Then]  text-encoding は directives に、requestId は fwHeaderFields に格納される
+     */
+    @Test
+    public void expectedRequestBodyDirectiveSeparatedFromFwHeader() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"EXPECTED_REQUEST_BODY_MESSAGES=req/body", ""},
+                {"text-encoding", "UTF-8"},
+                {"requestId", "REQ001"},
+                {"", "FIELD1"},
+                {"", "X"},
+                {"", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(block.getFwHeaderFields().containsKey("text-encoding"), is(false));
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+    }
+
+    /**
+     * [Given] RESPONSE_HEADER_MESSAGES ブロックに text-encoding ディレクティブと requestId が混在
+     * [When]  read() を呼び出す
+     * [Then]  text-encoding は directives に、requestId は fwHeaderFields に格納される
+     */
+    @Test
+    public void responseHeaderDirectiveSeparatedFromFwHeader() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"RESPONSE_HEADER_MESSAGES=res/hdr", ""},
+                {"text-encoding", "UTF-8"},
+                {"requestId", "REQ001"},
+                {"", "FIELD1"},
+                {"", "X"},
+                {"", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(block.getFwHeaderFields().containsKey("text-encoding"), is(false));
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+    }
+
+    /**
+     * [Given] RESPONSE_BODY_MESSAGES ブロックに text-encoding ディレクティブと requestId が混在
+     * [When]  read() を呼び出す
+     * [Then]  text-encoding は directives に、requestId は fwHeaderFields に格納される
+     */
+    @Test
+    public void responseBodyDirectiveSeparatedFromFwHeader() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"RESPONSE_BODY_MESSAGES=res/body", ""},
+                {"text-encoding", "UTF-8"},
+                {"requestId", "REQ001"},
+                {"", "FIELD1"},
+                {"", "X"},
+                {"", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(block.getFwHeaderFields().containsKey("text-encoding"), is(false));
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+    }
+
+    /**
+     * [Given] MESSAGE ブロックに既知ディレクティブでも代表的な FW ヘッダ名でもない任意のキーが含まれる
+     * [When]  read() を呼び出す
+     * [Then]  任意のキーは fwHeaderFields に格納される（設計上の意図: 未知キーは FW ヘッダ扱い）
+     */
+    @Test
+    public void messageBlockUnknownKeyGoesToFwHeaderFields() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/msg", ""},
+                {"unknownKey", "someValue"},
+                {"", "FIELD1"},
+                {"", "X"},
+                {"", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: 未知のキーは directives ではなく fwHeaderFields に格納される
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().containsKey("unknownKey"), is(false));
+        assertThat(block.getFwHeaderFields().get("unknownKey"), is("someValue"));
+    }
+
+    /**
+     * [Given] MESSAGE ブロックに複数ディレクティブが Excel 行順で記述されている
+     * [When]  read() を呼び出す
+     * [Then]  directives の挿入順（LinkedHashMap）が Excel 行順と一致する
+     */
+    @Test
+    public void messageBlockDirectivesPreserveInsertionOrder() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/msg", ""},
+                {"text-encoding", "UTF-8"},
+                {"record-separator", "\\n"},
+                {"field-separator", ","},
+                {"", "FIELD1"},
+                {"", "X"},
+                {"", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: Excel 行順（text-encoding → record-separator → field-separator）が保持される
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        List<String> keys = new ArrayList<>(block.getDirectives().keySet());
+        assertThat(keys, is(Arrays.asList("text-encoding", "record-separator", "field-separator")));
+    }
+
+    /**
+     * [Given] MESSAGE ブロックでフィールド定義なし（識別行＋ディレクティブのみで EOF）
+     * [When]  read() を呼び出す
+     * [Then]  records が空リストになる
+     */
+    @Test
+    public void messageBlockWithDirectivesOnlyAndNoRecords() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/msg", ""},
+                {"text-encoding", "UTF-8"}
+                // EOF（レコード定義なし）
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("text-encoding"), is("UTF-8"));
+        assertThat(block.getRecords().isEmpty(), is(true));
     }
 
     // -------------------------------------------------------------------------
