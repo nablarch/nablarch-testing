@@ -59,7 +59,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - 各タスクは「ソースコード変更を含むタスク（5ステップ）」プロセスに従う。完了条件は各チェックファイルに記載
   - [ ] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`
   - [x] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
-  - [x] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
+  - [ ] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`（差し戻し対応完了・ユーザーレビュー待ち）
   - [ ] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [ ] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
   - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
@@ -251,7 +251,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T4 を実施する**
+2. **T3 差し戻し対応のユーザーレビューを待つ（対応完了 → ユーザーOK 後に T4 へ）**
 
 ### T4 概要
 
@@ -265,15 +265,16 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 3. `mvn clean package -Dtest="XlsFormatReaderTest"` で全グリーン確認
 4. セルフチェック・QA・Java・SWE レビュー・T4.md 記入
 
-### 完了済みタスク（2026-06-03）
+### 差し戻し対応済みタスク（2026-06-03）
 
-**T3: 変換ツール parseMessageBlock の構造分離修正（完了・ユーザーレビュー待ち）**
-- `MessageDataBlock`: `directives` フィールド追加（6引数コンストラクタ）。`KNOWN_DIRECTIVE_NAMES` をモデル層に移動
-- `XlsFormatReader.parseMessageBlock`: 既知ディレクティブ名で `directives`/`fwHeaderFields` に振り分け。`parseRecordLayouts` 共通メソッドに抽出
-- `XlsFormatWriter.writeMessageBlock`: ディレクティブ行を FW ヘッダ前に出力
-- `YamlFormatWriter`: `directives:`→`fw_header:`→`records:` 順。`writeMessageRecord` 削除して `writeRecordLayout` に統合。`INDENT` 定数化
-- テスト: 128件全グリーン（QA・Java・SWE 各レビュー指摘を全件対応済み）
-- T3.md チェックファイル記入済み
+**T3: 変換ツール parseMessageBlock の構造分離修正（差し戻し対応完了・ユーザーレビュー待ち）**
+- ユーザーレビューで差し戻し：no行を先頭に持つフィールド名称行（実 Excel 形式）が FWヘッダに誤投入され、フィールド名1列ずれ・データ消失が発生していた
+- `XlsFormatReader.parseMessageBlock`: no行（先頭セルが "no"）をフィールド名称行起点として認識しディレクティブ/FWヘッダ収集を打ち切る
+- `parseRecordLayouts`: `withNoColumn` フラグ追加。メッセージング（fixedRecordType != null）で型行後の先頭空行（長さ行等）をスキップし先頭非空（シーケンス番号）行をデータ行として読む
+- `XlsFormatWriter.writeMessageBlock`: データ行先頭をシーケンス番号に変更（ラウンドトリップバグ修正）
+- テスト: 166件全グリーン。実Excel確認テスト（MessageParserTest.xls, MessagingRequestTestSupportTest.xls）・ラウンドトリップテスト追加
+- QA・Java・SWE 各レビュー指摘を全件対応済み
+- T3.md チェックファイル更新済み
 
 ### 完了済みタスク（2026-06-02）
 
