@@ -669,7 +669,7 @@ public class XlsFormatReaderTest {
                 {"userId", "usr001"},
                 {"", "FIELD1", "FIELD2"},
                 {"", "X", "X"},
-                {"", "req1", "data1"}
+                {"1", "req1", "data1"}
         });
 
         // When
@@ -1037,7 +1037,7 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1", "FIELD2"},
                 {"", "X", "X"},
-                {"", "req1", "data1"},
+                {"1", "req1", "data1"},
                 {"FW_HEADER_EXTRA", "VALUE"}  // 先頭非空の非識別行
         });
 
@@ -1066,7 +1066,7 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1", "FIELD2"},
                 {"", "X", "X"},
-                {"", "only_val", ""}
+                {"1", "only_val", ""}
         });
 
         // When
@@ -1091,8 +1091,8 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"},
-                {"", "val2"},  // 2行目データ
+                {"1", "val1"},
+                {"2", "val2"},  // 2行目データ
                 {"EXPECTED_TABLE=T1", ""},
                 {"COL1", ""},
                 {"v1", ""}
@@ -1186,7 +1186,7 @@ public class XlsFormatReaderTest {
                 {"userId", "usr001"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "req1"}
+                {"1", "req1"}
         });
 
         // When
@@ -1217,7 +1217,7 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "expected1"}
+                {"1", "expected1"}
         });
 
         // When
@@ -1245,7 +1245,7 @@ public class XlsFormatReaderTest {
                 {"record-separator", "\\n"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"}
+                {"1", "val1"}
         });
 
         // When
@@ -1274,7 +1274,7 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"}
+                {"1", "val1"}
         });
 
         // When
@@ -1302,7 +1302,7 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"}
+                {"1", "val1"}
         });
 
         // When
@@ -1330,7 +1330,7 @@ public class XlsFormatReaderTest {
                 {"requestId", "REQ001"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"}
+                {"1", "val1"}
         });
 
         // When
@@ -1357,7 +1357,7 @@ public class XlsFormatReaderTest {
                 {"unknownKey", "someValue"},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"}
+                {"1", "val1"}
         });
 
         // When
@@ -1385,7 +1385,7 @@ public class XlsFormatReaderTest {
                 {"field-separator", ","},
                 {"", "FIELD1"},
                 {"", "X"},
-                {"", "val1"}
+                {"1", "val1"}
         });
 
         // When
@@ -1421,6 +1421,112 @@ public class XlsFormatReaderTest {
         assertThat(block.getRecords().isEmpty(), is(true));
     }
 
+    /**
+     * [Given] MESSAGE ブロックで先頭セルが "no" の行（実 Excel 形式：no列あり）
+     * [When]  read() を呼び出す
+     * [Then]  "no" 行がフィールド名称行として認識され、FWヘッダに誤投入されない
+     *         型行・長さ行・データ行が1段ずれず正しく解析される（T3差し戻し修正）
+     */
+    @Test
+    public void messageBlockWithNoColumnRow() throws Exception {
+        // Given: 実 Excel 形式（MessageParserTest.xls の responseMessages 相当）
+        // no行が "no" というリテラル文字列で先頭セルに入っている
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=responseMessages", ""},
+                // ディレクティブ/FWヘッダなし
+                {"no", "処理結果コード", "会員ID", "FILLER"},   // ← "no" が先頭のフィールド名称行
+                {"", "X", "X", "X"},                            // 型行
+                {"", "2", "10", "490"},                         // 長さ行（メッセージはwithLength=false: 型行の次は型行として無視）
+                {"1", "00", "1234567890", ""},                  // データ行（先頭が "1"）
+                {"2", "01", "", ""}                             // データ行（先頭が "2"）
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: "no" 行はFWヘッダに入らない
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getDirectives().containsKey("no"), is(false));
+        // フィールド名が "no" 列を除いた 3 フィールド
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getFields().size(), is(3));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("処理結果コード"));
+        assertThat(block.getRecords().get(0).getFields().get(1).getName(), is("会員ID"));
+        assertThat(block.getRecords().get(0).getFields().get(2).getName(), is("FILLER"));
+        // データ行が消失しない（"no" 列 = 先頭セル = 除外、残り3値）
+        assertThat(block.getRecords().get(0).getRows().size(), is(2));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("00", "1234567890", "")));
+        assertThat(block.getRecords().get(0).getRows().get(1), is(Arrays.asList("01", "", "")));
+    }
+
+    /**
+     * [Given] MESSAGE ブロックでディレクティブ＋FWヘッダ＋"no"列を持つ実 Excel 形式
+     *         （MessagingRequestTestSupportTest.xls の setUpMessages 相当）
+     * [When]  read() を呼び出す
+     * [Then]  ディレクティブは directives、FWヘッダは fwHeaderFields、
+     *         "no" 行以降がレコードレイアウトとして正しく解析される
+     */
+    @Test
+    public void messageBlockWithDirectivesFwHeaderAndNoColumn() throws Exception {
+        // Given: 実 Excel 形式（MessagingRequestTestSupportTest.xls の setUpMessages 相当）
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=setUpMessages", ""},
+                {"text-encoding", "Windows-31J"},                // ディレクティブ
+                // FWヘッダなし（この電文では省略）
+                {"no", "ユーザ名", "備考", "FILLER"},             // "no" が先頭のフィールド名称行
+                {"", "全角", "全角", "半角"},                    // 型行
+                {"", "50", "200", "252"},                       // 長さ行（メッセージはwithLength=false）
+                {"1", "電文太郎", "特筆なし", ""},               // データ行
+                {"2", "", "エラー", ""}                          // データ行
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("text-encoding"), is("Windows-31J"));
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("ユーザ名"));
+        assertThat(block.getRecords().get(0).getFields().get(1).getName(), is("備考"));
+        assertThat(block.getRecords().get(0).getFields().get(2).getName(), is("FILLER"));
+        assertThat(block.getRecords().get(0).getRows().size(), is(2));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("電文太郎", "特筆なし", "")));
+        assertThat(block.getRecords().get(0).getRows().get(1), is(Arrays.asList("", "エラー", "")));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_HEADER_MESSAGES ブロックで "no" 列を持つ実 Excel 形式
+     * [When]  read() を呼び出す
+     * [Then]  EXPECTED_REQUEST_* でも "no" 行がフィールド名称行として認識される
+     */
+    @Test
+    public void expectedRequestMessageWithNoColumn() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"EXPECTED_REQUEST_HEADER_MESSAGES=req/hdr", ""},
+                {"no", "FIELD1", "FIELD2"},
+                {"", "X", "X"},
+                {"1", "val1", "val2"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getRecords().size(), is(1));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+        assertThat(block.getRecords().get(0).getRows().size(), is(1));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("val1", "val2")));
+    }
+
     // -------------------------------------------------------------------------
     // .xlsx 対応（WorkbookFactory 経由）
     // -------------------------------------------------------------------------
@@ -1449,6 +1555,129 @@ public class XlsFormatReaderTest {
         assertThat(block.getIdentifier(), is("USER_MASTER"));
         assertThat(block.getColumnNames(), is(Arrays.asList("USER_ID", "NAME")));
         assertThat(block.getRows().get(0), is(Arrays.asList("001", "taro")));
+    }
+
+    // -------------------------------------------------------------------------
+    // 実 Excel ファイルを使った変換確認（T3差し戻し対応: 完了条件「実Excel再現確認」）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] 実 Excel ファイル MessageParserTest.xls の testParse シート
+     *         （responseMessages: "no"列あり、requestMessages: 先頭空形式が混在）
+     * [When]  read() を呼び出す
+     * [Then]  - "no" 行が FWヘッダに誤投入されない
+     *         - フィールド名が1列ずれない（responseMessages の "処理結果コード" が正しく先頭フィールド）
+     *         - データ行が消失しない（responseMessages の "00", "01" が正しく rows に入る）
+     */
+    @Test
+    public void realExcelMessageParserTestXls() throws Exception {
+        // Given: 実 Excel ファイル（src/test/java/.../MessageParserTest.xls）
+        java.io.File realXls = new java.io.File(
+                "src/test/java/nablarch/test/core/messaging/MessageParserTest.xls");
+        org.junit.Assume.assumeTrue("MessageParserTest.xls が見つからない場合はスキップ", realXls.exists());
+
+        // When
+        TestDataContainer result = sut.read(realXls.toPath());
+
+        // Then: testParse シートを探す
+        TestDataSection testParse = null;
+        for (TestDataSection s : result.getSections()) {
+            if ("testParse".equals(s.getName())) {
+                testParse = s;
+                break;
+            }
+        }
+        assertThat("testParse シートが存在する", testParse != null, is(true));
+
+        // requestMessages ブロック（先頭空形式）
+        MessageDataBlock reqBlock = null;
+        MessageDataBlock resBlock = null;
+        for (TestDataBlock b : testParse.getBlocks()) {
+            if (b instanceof MessageDataBlock) {
+                MessageDataBlock mb = (MessageDataBlock) b;
+                if ("requestMessages".equals(mb.getIdentifier())) reqBlock = mb;
+                if ("responseMessages".equals(mb.getIdentifier())) resBlock = mb;
+            }
+        }
+        assertThat("requestMessages が存在する", reqBlock != null, is(true));
+        assertThat("responseMessages が存在する", resBlock != null, is(true));
+
+        // requestMessages: text-encoding が directives、requestId/userId が fwHeaderFields
+        assertThat(reqBlock.getDirectives().get("text-encoding"), is("Windows-31J"));
+        assertThat(reqBlock.getFwHeaderFields().get("requestId"), is("hoge"));
+        assertThat(reqBlock.getFwHeaderFields().get("userId"), is("moge"));
+        // フィールド名が正しい（ユーザ名, 備考, FILLER）
+        assertThat(reqBlock.getRecords().get(0).getFields().get(0).getName(), is("ユーザ名"));
+        assertThat(reqBlock.getRecords().get(0).getRows().size(), is(2));
+
+        // responseMessages: "no" 行が FWヘッダに誤投入されない
+        assertThat(resBlock.getFwHeaderFields().containsKey("no"), is(false));
+        // フィールド名が1列ずれない（先頭が "処理結果コード"）
+        assertThat(resBlock.getRecords().get(0).getFields().get(0).getName(), is("処理結果コード"));
+        assertThat(resBlock.getRecords().get(0).getFields().get(1).getName(), is("会員ID"));
+        assertThat(resBlock.getRecords().get(0).getFields().get(2).getName(), is("FILLER"));
+        // データ行が消失しない（2行存在）
+        assertThat(resBlock.getRecords().get(0).getRows().size(), is(2));
+        assertThat(resBlock.getRecords().get(0).getRows().get(0).get(0), is("00"));
+        assertThat(resBlock.getRecords().get(0).getRows().get(1).get(0), is("01"));
+    }
+
+    /**
+     * [Given] 実 Excel ファイル MessagingRequestTestSupportTest.xls の testMessagingSample シート
+     *         （setUpMessages/expectedMessages: "no"列あり）
+     * [When]  read() を呼び出す
+     * [Then]  - "no" 行が FWヘッダに誤投入されない
+     *         - setUpMessages: text-encoding が directives、フィールド名/データ行が正しい
+     *         - expectedMessages: フィールド名が1列ずれない、データ行が消失しない
+     */
+    @Test
+    public void realExcelMessagingRequestTestSupportTestXls() throws Exception {
+        // Given: 実 Excel ファイル（src/test/resources/.../MessagingRequestTestSupportTest.xls）
+        java.io.File realXls = new java.io.File(
+                "src/test/resources/nablarch/test/core/messaging/MessagingRequestTestSupportTest.xls");
+        org.junit.Assume.assumeTrue("MessagingRequestTestSupportTest.xls が見つからない場合はスキップ",
+                realXls.exists());
+
+        // When
+        TestDataContainer result = sut.read(realXls.toPath());
+
+        // Then: testMessagingSample シートを探す
+        TestDataSection sample = null;
+        for (TestDataSection s : result.getSections()) {
+            if ("testMessagingSample".equals(s.getName())) {
+                sample = s;
+                break;
+            }
+        }
+        assertThat("testMessagingSample シートが存在する", sample != null, is(true));
+
+        // setUpMessages / expectedMessages ブロックを取得
+        MessageDataBlock setUpBlock = null;
+        MessageDataBlock expBlock = null;
+        for (TestDataBlock b : sample.getBlocks()) {
+            if (b instanceof MessageDataBlock) {
+                MessageDataBlock mb = (MessageDataBlock) b;
+                if ("setUpMessages".equals(mb.getIdentifier())) setUpBlock = mb;
+                if ("expectedMessages".equals(mb.getIdentifier())) expBlock = mb;
+            }
+        }
+        assertThat("setUpMessages が存在する", setUpBlock != null, is(true));
+        assertThat("expectedMessages が存在する", expBlock != null, is(true));
+
+        // setUpMessages: text-encoding が directives、"no" がFWヘッダに入らない
+        assertThat(setUpBlock.getDirectives().get("text-encoding"), is("Windows-31J"));
+        assertThat(setUpBlock.getFwHeaderFields().containsKey("no"), is(false));
+        // フィールド名が正しい（ユーザ名, 備考, FILLER）
+        assertThat(setUpBlock.getRecords().get(0).getFields().get(0).getName(), is("ユーザ名"));
+        assertThat(setUpBlock.getRecords().get(0).getFields().get(2).getName(), is("FILLER"));
+        // データ行が消失しない（2行）
+        assertThat(setUpBlock.getRecords().get(0).getRows().size(), is(2));
+        assertThat(setUpBlock.getRecords().get(0).getRows().get(0).get(0), is("電文太郎"));
+
+        // expectedMessages: "no" がFWヘッダに入らない、フィールド名が正しい
+        assertThat(expBlock.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(expBlock.getRecords().get(0).getFields().get(0).getName(), is("処理結果コード"));
+        assertThat(expBlock.getRecords().get(0).getRows().size(), is(2));
     }
 
     // -------------------------------------------------------------------------

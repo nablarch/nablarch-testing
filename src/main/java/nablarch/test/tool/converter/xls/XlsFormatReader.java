@@ -232,7 +232,7 @@ public class XlsFormatReader implements TestDataFormatReader {
 
         // レコードレイアウトの解析
         FileDataBlock.FileType fileType = resolveFileType(dataType);
-        i = parseRecordLayouts(rows, i, fileType == FileDataBlock.FileType.FIXED, null, records);
+        i = parseRecordLayouts(rows, i, fileType == FileDataBlock.FileType.FIXED, null, false, records);
 
         nextIndex[0] = i;
         return new FileDataBlock(dataType, groupId, identifier, fileType, directives, records);
@@ -246,14 +246,15 @@ public class XlsFormatReader implements TestDataFormatReader {
         List<RecordLayout> records = new ArrayList<>();
         int i = nextIndex[0];
 
-        // 先頭非空行（ディレクティブ または FW 制御ヘッダ）の読み込み。先頭が空になったらフィールド名行の開始
+        // 先頭非空行（ディレクティブ または FW 制御ヘッダ）の読み込み。
+        // 先頭が空、または "no"（フィールド名称行の起点）になったらレコードレイアウト解析へ
         while (i < rows.size()) {
             List<String> row = rows.get(i);
             if (detectDataType(row.get(0)) != null) {
                 break;
             }
-            if (row.get(0).isEmpty()) {
-                break;  // フィールド名行（no列: 先頭が空）
+            if (row.get(0).isEmpty() || row.get(0).equals("no")) {
+                break;  // フィールド名行（no列: 先頭が空 or リテラル "no"）
             }
             String key = row.get(0);
             String value = row.size() > 1 ? row.get(1) : "";
@@ -265,8 +266,11 @@ public class XlsFormatReader implements TestDataFormatReader {
             i++;
         }
 
-        // レコードレイアウトの解析（MS-02: no列省略 = 先頭セルが空がフィールド名行の合図）
-        i = parseRecordLayouts(rows, i, false, "default", records);
+        // メッセージングではデータ行の先頭セルが常にシーケンス番号（非空）。
+        // - 先頭が "no": no列あり形式のフィールド名称行
+        // - 先頭が空: no列なし形式のフィールド名称行（型行・長さ行も先頭空。スキップして番号行をデータ行に）
+        boolean withNoColumn = i < rows.size() && rows.get(i).get(0).equals("no");
+        i = parseRecordLayouts(rows, i, false, "default", withNoColumn, records);
 
         nextIndex[0] = i;
         return new MessageDataBlock(dataType, groupId, identifier, directives, fwHeaderFields, records);
@@ -275,16 +279,20 @@ public class XlsFormatReader implements TestDataFormatReader {
     /**
      * レコードレイアウト（フィールド名行→型行→[長行]→データ行）を解析して {@code out} に追加する。
      *
-     * @param rows          シート全行リスト
-     * @param startIndex    解析開始行インデックス
-     * @param withLength    固定長ファイルの場合 true（フィールド長行を読む）
+     * @param rows            シート全行リスト
+     * @param startIndex      解析開始行インデックス
+     * @param withLength      固定長ファイルの場合 true（フィールド長行を読む）
      * @param fixedRecordType null のとき行の先頭セルを recordType として使用（ファイルデータ）、
      *                        非 null のとき固定文字列を recordType として使用（メッセージング）
-     * @param out           解析結果の格納先
+     * @param withNoColumn    true のとき先頭セルが "no" のフィールド名称行から始まる実 Excel 形式。
+     *                        フィールド名行・型行・長さ行の先頭セルはシーケンス番号・記号として無視し col[1] 以降を使用。
+     *                        データ行の先頭セルもシーケンス番号として除外する。
+     * @param out             解析結果の格納先
      * @return 次の未処理行インデックス
      */
     private int parseRecordLayouts(List<List<String>> rows, int startIndex,
                                     boolean withLength, String fixedRecordType,
+                                    boolean withNoColumn,
                                     List<RecordLayout> out) {
         int i = startIndex;
         while (i < rows.size()) {
@@ -292,35 +300,47 @@ public class XlsFormatReader implements TestDataFormatReader {
             if (detectDataType(row.get(0)) != null) {
                 break;
             }
-            if (fixedRecordType == null) {
+            if (withNoColumn) {
+                // no列あり形式: 先頭セルが "no" の行がフィールド名称行
+                if (!row.get(0).equals("no")) {
+                    break;
+                }
+            } else if (fixedRecordType == null) {
                 // ファイルデータ: 先頭セルが recordType（非空）
                 if (row.get(0).isEmpty()) {
                     break;
                 }
             } else {
-                // メッセージング: 先頭セルが空 = フィールド名行
+                // メッセージング（先頭空形式）: 先頭セルが空 = フィールド名行
                 if (!row.get(0).isEmpty()) {
                     break;
                 }
             }
 
-            // フィールド名行（ファイルデータは先頭セルがレコード種別、メッセージングは先頭セルが空）
-            String recordType = fixedRecordType != null ? fixedRecordType : row.get(0);
+            // フィールド名行（ファイルデータは先頭セルがレコード種別、メッセージングは先頭セルが空またはno）
+            String recordType = fixedRecordType != null ? fixedRecordType : (withNoColumn ? "default" : row.get(0));
             List<String> fieldNames = trimTrailingEmpty(row.subList(1, row.size()));
             i++;
 
-            // データ型行
+            // データ型行（先頭セルが空）
             List<String> types = new ArrayList<>();
             if (i < rows.size() && rows.get(i).get(0).isEmpty()) {
                 types = trimTrailingEmpty(rows.get(i).subList(1, rows.get(i).size()));
                 i++;
             }
 
-            // フィールド長行（固定長のみ）
+            // フィールド長行（固定長のみ、先頭セルが空）
             List<String> lengths = new ArrayList<>();
             if (withLength && i < rows.size() && rows.get(i).get(0).isEmpty()) {
                 lengths = trimTrailingEmpty(rows.get(i).subList(1, rows.get(i).size()));
                 i++;
+            }
+
+            // メッセージングでは型行・長さ行読み取り後も先頭空行が残る場合スキップする（データ行は先頭が非空）
+            if (fixedRecordType != null) {
+                while (i < rows.size() && rows.get(i).get(0).isEmpty()) {
+                    i++;
+                }
             }
 
             // FieldDef の構築
@@ -332,8 +352,9 @@ public class XlsFormatReader implements TestDataFormatReader {
             }
 
             // データ行（HC-04: フィールド数に合わせて補完）
+            // no列あり形式では先頭セルがシーケンス番号（非空・非DataType）もデータ行として読む
             List<List<String>> dataRows = new ArrayList<>();
-            while (i < rows.size() && rows.get(i).get(0).isEmpty()) {
+            while (i < rows.size() && isDataRow(rows.get(i), withNoColumn)) {
                 List<String> dataRow = rows.get(i).subList(1, rows.get(i).size());
                 List<String> padded = new ArrayList<>(dataRow);
                 while (padded.size() < fields.size()) {
@@ -341,7 +362,7 @@ public class XlsFormatReader implements TestDataFormatReader {
                 }
                 dataRows.add(new ArrayList<>(padded.subList(0, fields.size())));
                 i++;
-                if (i < rows.size() && !rows.get(i).get(0).isEmpty()) {
+                if (i < rows.size() && isFieldNameRow(rows.get(i), withNoColumn, fixedRecordType)) {
                     break;
                 }
             }
@@ -349,6 +370,41 @@ public class XlsFormatReader implements TestDataFormatReader {
             out.add(new RecordLayout(recordType, fields, dataRows));
         }
         return i;
+    }
+
+    /**
+     * 行がメッセージングブロックのデータ行として解釈できるかを判定する。
+     * <ul>
+     *   <li>no列なし形式（withNoColumn=false）: DataType でなく "no" でもない行（先頭空も許可）</li>
+     *   <li>no列あり形式（withNoColumn=true）: 先頭セルが非空かつ DataType でなく "no" でもない行</li>
+     * </ul>
+     */
+    private boolean isDataRow(List<String> row, boolean withNoColumn) {
+        String first = row.get(0);
+        if (detectDataType(first) != null) {
+            return false;
+        }
+        if (first.equals("no")) {
+            return false;
+        }
+        if (withNoColumn) {
+            return !first.isEmpty();
+        }
+        return true;
+    }
+
+    /**
+     * 行が次のフィールド名称行（ループ継続判定）かを判定する。
+     * データ行ループ内で次のレコードレイアウトの開始を検出するために使用する。
+     */
+    private boolean isFieldNameRow(List<String> row, boolean withNoColumn, String fixedRecordType) {
+        if (withNoColumn) {
+            return row.get(0).equals("no");
+        }
+        if (fixedRecordType == null) {
+            return !row.get(0).isEmpty();
+        }
+        return false;
     }
 
     /** DataType の判定（DT-03: 前方一致）。DEFAULT は対象外。 */
