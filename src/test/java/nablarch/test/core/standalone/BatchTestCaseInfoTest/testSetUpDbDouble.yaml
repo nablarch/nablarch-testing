@@ -1,0 +1,36 @@
+setup_tables:
+  - table: "BATCH_SAMPLE"
+    rows:
+      - ID: "10001"
+        COUNTER: "10"
+        MESSAGE: "こんにちは"
+      - ID: "10002"
+        COUNTER: "20"
+        MESSAGE: "さようなら"
+  - group_id: "additional"
+    table: "BATCH_SAMPLE2"
+    rows:
+      - ID: "20001"
+        COUNTER: "20"
+        MESSAGE: "hello"
+      - ID: "20002"
+        COUNTER: "21"
+        MESSAGE: "goodby"
+expected_tables:
+  - table: "BATCH_SAMPLE"
+    rows:
+      - ID: "10001"
+        COUNTER: "10"
+        MESSAGE: "こんにちは"
+      - ID: "10002"
+        COUNTER: "20"
+        MESSAGE: "さようなら"
+  - group_id: "additional"
+    table: "BATCH_SAMPLE2"
+    rows:
+      - ID: "20001"
+        COUNTER: "20"
+        MESSAGE: "hello"
+      - ID: "20002"
+        COUNTER: "21"
+        MESSAGE: "goodby"

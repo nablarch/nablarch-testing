@@ -56,8 +56,9 @@ public class T7MessagingEquivalenceTest {
     public static SystemRepositoryResource repositoryResource =
             new SystemRepositoryResource("unit-test-yaml.xml");
 
-    private static final String DIR_MSG  = "src/test/java/nablarch/test/core/messaging/";
-    private static final String DIR_DATA = "src/test/java/nablarch/test/core/messaging/data/";
+    private static final String DIR_MSG     = "src/test/java/nablarch/test/core/messaging/";
+    private static final String DIR_DATA    = "src/test/java/nablarch/test/core/messaging/data/";
+    private static final String DIR_RES_MSG = "src/test/resources/nablarch/test/core/messaging/";
 
     private BasicTestDataParser xlsParser;
     private YamlTestDataParser yamlParser;
@@ -336,6 +337,77 @@ public class T7MessagingEquivalenceTest {
         String resource = "RequestTestingSendSyncSupportTest/testGetExpectedRequestMessage";
         // expected_request_header_messages で case1/RM21AA0104_01
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
+    }
+
+    // =======================================================================
+    // MessagingReceiveTestSupportTest (messages)
+    // =======================================================================
+
+    @Test
+    public void messagingReceiveTestSupportTest_testExtends_messages_equivalentToExcel() {
+        String resource = "MessagingReceiveTestSupportTest/testExtends";
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                yamlParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                resource + "[setUpMessages]");
+    }
+
+    @Test
+    public void messagingReceiveTestSupportTest_testUnExtends_messages_equivalentToExcel() {
+        String resource = "MessagingReceiveTestSupportTest/testUnExtends";
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                yamlParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                resource + "[setUpMessages]");
+    }
+
+    // =======================================================================
+    // MessagingRequestTestSupportTest (messages) — java/
+    // NOTE: java/ の XLS は testSuccess, testDbAssertionFailed 等を持つ（testMessagingSample なし）。
+    //       testMessagingSample は resources/ の XLS にのみ存在する。
+    // =======================================================================
+
+    @Test
+    public void messagingRequestTestSupportTest_testSuccess_messages_equivalentToExcel() {
+        String resource = "MessagingRequestTestSupportTest/testSuccess";
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                yamlParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                resource + "[setUpMessages]");
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_MSG, resource, "expectedMessages"),
+                yamlParser.getMessage(DIR_MSG, resource, "expectedMessages"),
+                resource + "[expectedMessages]");
+    }
+
+    @Test
+    public void messagingRequestTestSupportTest_testDbAssertionFailed_messages_equivalentToExcel() {
+        String resource = "MessagingRequestTestSupportTest/testDbAssertionFailed";
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                yamlParser.getMessage(DIR_MSG, resource, "setUpMessages"),
+                resource + "[setUpMessages]");
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_MSG, resource, "expectedMessages"),
+                yamlParser.getMessage(DIR_MSG, resource, "expectedMessages"),
+                resource + "[expectedMessages]");
+    }
+
+    // =======================================================================
+    // resources/messaging/MessagingRequestTestSupportTest (messages)
+    // =======================================================================
+
+    @Test
+    public void resMessagingRequestTestSupportTest_testMessagingSample_messages_equivalentToExcel() {
+        String resource = "MessagingRequestTestSupportTest/testMessagingSample";
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_RES_MSG, resource, "setUpMessages"),
+                yamlParser.getMessage(DIR_RES_MSG, resource, "setUpMessages"),
+                "res/" + resource + "[setUpMessages]");
+        assertEquivalentMessagePool(
+                xlsParser.getMessage(DIR_RES_MSG, resource, "expectedMessages"),
+                yamlParser.getMessage(DIR_RES_MSG, resource, "expectedMessages"),
+                "res/" + resource + "[expectedMessages]");
     }
 
     // =======================================================================

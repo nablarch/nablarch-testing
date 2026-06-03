@@ -1,0 +1,13 @@
+list_maps:
+  - id: "parameters"
+    rows:
+      - single: "foo"
+        multi: "bar,buz"
+  - id: "yen_sign"
+    rows:
+      - single: "\\\\foo\\\\"
+        multi: "\\\\bar,buz\\\\"
+  - id: "escaped"
+    rows:
+      - single: "\\\\1\\,000"
+        multi: ",bar,buz,,\\,"

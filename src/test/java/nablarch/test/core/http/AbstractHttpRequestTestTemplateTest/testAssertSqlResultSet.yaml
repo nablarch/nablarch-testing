@@ -1,0 +1,34 @@
+list_maps:
+  - id: "user"
+    rows:
+      - REQUEST_ID: "USERS00302"
+        USER_ID: "US00000001"
+  - id: "testCases"
+    rows:
+      - no: "1"
+        case: "検索結果のアサート"
+        context: "user"
+        isValidToken: "true"
+        setUpTable: "case1"
+        expectedStatusCode: "200"
+        expectedMessageId: ""
+        expectedSearch: "expectedSearch"
+        expectedTable: "case1"
+        forwardUri: ""
+        responseResult: ""
+  - id: "requestParams"
+    rows:
+      - "[no]": "1"
+  - id: "expectedSearch"
+    rows:
+      - PK_COL1: "value"
+setup_tables:
+  - group_id: "case1"
+    table: "SEARCH_RESULT_ASSERT_TEST"
+    rows:
+      - PK_COL1: "value"
+expected_tables:
+  - group_id: "case1"
+    table: "SEARCH_RESULT_ASSERT_TEST"
+    rows:
+      - PK_COL1: "value"

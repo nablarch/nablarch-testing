@@ -1,0 +1,23 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "ただしくこうしんされます"
+        expectedStatusCode: "100"
+        setUpTable: "default"
+        expectedTable: ""
+        inFile: ""
+        outFile: ""
+        diConfig: "nablarch/test/core/batch/BatchSample.xml"
+        requestPath: "DBtoDBBatchSample"
+        userId: "test"
+        expectedLog: "expectedLog"
+  - id: "expectedLog"
+    rows:
+      - message1: "会員ID[10001]"
+        logLevel: "INFO"
+      - message1: "会員ID[10002]"
+        logLevel: "INFO"
+setup_tables:
+  - table: "HOGE_TABLE"
+    rows: []

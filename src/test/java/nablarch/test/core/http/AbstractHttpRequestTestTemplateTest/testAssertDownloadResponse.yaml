@@ -1,0 +1,24 @@
+list_maps:
+  - id: "user"
+    rows:
+      - REQUEST_ID: "USERS00302"
+        USER_ID: "US00000001"
+  - id: "testCases"
+    rows:
+      - no: "1"
+        case: "ダウンロード"
+        context: "user"
+        isValidToken: "true"
+        setUpTable: ""
+        expectedStatusCode: "200"
+        expectedMessageId: ""
+        expectedSearch: ""
+        expectedTable: ""
+        forwardUri: ""
+        expectedContentLength: "10"
+        expectedContentType: "text/plain; charset=UTF-8"
+        expectedContentFileName: "テスト一時ファイル.txt"
+  - id: "requestParams"
+    rows:
+      - dummy1: "hoge"
+        dummy2: "foo"

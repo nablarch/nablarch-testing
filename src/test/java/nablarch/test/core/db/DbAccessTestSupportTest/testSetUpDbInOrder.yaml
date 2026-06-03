@@ -1,0 +1,23 @@
+setup_tables:
+  - table: "GRANPA"
+    rows:
+      - MYID: "1"
+      - MYID: "2"
+  - table: "FATHER"
+    rows:
+      - MYID: "1"
+        MY_PARENT: "2"
+      - MYID: "2"
+        MY_PARENT: "1"
+  - table: "SON"
+    rows:
+      - MYID: "1"
+        MY_PARENT: "1"
+      - MYID: "2"
+        MY_PARENT: "2"
+  - table: "DAUGHTER"
+    rows:
+      - MYID: "1"
+        MY_PARENT: "1"
+      - MYID: "2"
+        MY_PARENT: "2"

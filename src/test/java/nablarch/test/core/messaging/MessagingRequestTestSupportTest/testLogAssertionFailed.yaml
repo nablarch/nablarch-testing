@@ -1,0 +1,34 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "ユーザ登録"
+        diConfig: "nablarch/test/core/messaging/sample/diConfig.xml"
+        setUpTable: ""
+        expectedStatusCode: "200"
+        expectedTable: ""
+        expectedLog: "expectedLog"
+  - id: "expectedLog"
+    rows:
+      - logLevel: "WARN"
+        message1: "--- MESSAGE RECEIVED ---"
+messages:
+  - id: "setUpMessages"
+    directives:
+      text-encoding: "Windows-31J"
+    fw_header:
+      requestId: "Greeting"
+      userId: "hoge"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "メッセージ", type: "半角"}
+      rows:
+        - ["Kawasaki"]
+  - id: "expectedMessages"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "処理結果コード", type: "半角"}
+      rows:
+        - ["Hello, Kawasaki"]

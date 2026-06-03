@@ -1,0 +1,5 @@
+list_maps:
+  - id: "parameters"
+    rows:
+      - eiji: "${半角英字,1}"
+        kigou: "${半角記号,4096}"

@@ -1,0 +1,23 @@
+setup_files:
+  - path: "./work/テスト1.csv"
+    type: variable
+    directives:
+      text-encoding: "UTF-8"
+      record-separator: "CRLF"
+      quoting-delimiter: "\""
+    records:
+    - record_type: "データレコード"
+      fields:
+        - {name: "項目１", type: "半角"}
+      rows:
+        - ["aaa"]
+setup_tables:
+  - table: "TEST_TABLE"
+    rows: []
+expected_tables:
+  - table: "TEST_TABLE"
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "11"
+        varchar2_col: "あいうえお"
+        BLOB_COL: "${binaryFile:expected1.csv}"

@@ -1,0 +1,54 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "ユーザ登録"
+        requestId: "RM11AC0001"
+        setUpTable: "default"
+        expectedStatusCode: "0"
+        expectedTable: "1"
+        expectedLog: ""
+        diConfig: "nablarch/test/core/messaging/receive/receive.xml"
+        userId: "user1"
+        requestPath: "AsyncMessageReceiveAction/requestId"
+      - no: "2"
+        description: "ユーザ登録"
+        requestId: "RM11AC0001"
+        setUpTable: "default"
+        expectedStatusCode: "0"
+        expectedTable: "2"
+        expectedLog: ""
+        diConfig: "nablarch/test/core/messaging/receive/receive.xml"
+        userId: "user2"
+        requestPath: "AsyncMessageReceiveAction/requestId"
+setup_tables:
+  - table: "RECEIVE_TEST"
+    rows: []
+  - table: "ID_GENERATE"
+    rows:
+      - ID: "00"
+        NO: "100"
+messages:
+  - id: "setUpMessages"
+    directives:
+      text-encoding: "Windows-31J"
+    fw_header:
+      requestId: "RM11AC0001"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "名前", type: "全角"}
+      rows:
+        - ["全角"]
+        - ["ぜんかく"]
+expected_tables:
+  - group_id: "1"
+    table: "RECEIVE_TEST"
+    rows:
+      - ID: "0000000101"
+        NAME: "全角"
+  - group_id: "2"
+    table: "RECEIVE_TEST"
+    rows:
+      - ID: "0000000101"
+        NAME: "ぜんかく"

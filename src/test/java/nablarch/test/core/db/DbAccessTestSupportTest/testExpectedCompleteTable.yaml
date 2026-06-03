@@ -1,0 +1,14 @@
+setup_tables:
+  - table: "TEST_TABLE"
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "11"
+      - PK_COL1: "00002"
+        PK_COL2: "22"
+expected_complete_tables:
+  - table: "TEST_TABLE"
+    rows:
+      - PK_COL1: "00001"
+        PK_COL2: "11"
+      - PK_COL1: "00002"
+        PK_COL2: "22"

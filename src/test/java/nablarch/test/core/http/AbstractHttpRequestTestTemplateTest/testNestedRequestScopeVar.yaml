@@ -1,0 +1,24 @@
+list_maps:
+  - id: "user"
+    rows:
+      - REQUEST_ID: "USERS00302"
+        USER_ID: "US00000001"
+  - id: "testCases"
+    rows:
+      - no: "1"
+        case: "ネストしたパラメータ"
+        context: "user"
+        isValidToken: "true"
+        setUpTable: ""
+        expectedStatusCode: "200"
+        expectedMessageId: ""
+        expectedSearch: ""
+        expectedTable: ""
+        forwardUri: ""
+  - id: "requestParams"
+    rows:
+      - dummy: "\"\""
+        params: "\"\""
+  - id: "responseResult"
+    rows:
+      - foo.bar: "buz"

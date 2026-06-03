@@ -1,0 +1,28 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "ユーザ登録"
+        diConfig: "nablarch/test/core/messaging/sample/useStructuredFwHeaderDefDiConfig.xml"
+        setUpTable: ""
+        expectedStatusCode: ""
+        requestPath: "RM11AD0104"
+messages:
+  - id: "setUpMessages"
+    directives:
+      text-encoding: "UTF-8"
+    fw_header:
+      requestId: "RM11AD0104"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "メッセージ", type: "半角"}
+      rows:
+        - ["{\"id\":\"01\",\"controlheader\":{\"userid\":\"0000000101\",\"resendflg\":0,\"requestId\":\"RM11AD0104\",\"statusCode\":\"100\"}}"]
+  - id: "expectedMessages"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "処理結果コード", type: "半角"}
+      rows:
+        - ["{\"st\":\"02\",\"controlheader\":{\"userid\":\"0000000101\",\"resendflg\":0,\"requestId\":\"RM11AD0104\",\"statusCode\":\"200\"}}"]

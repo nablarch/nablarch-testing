@@ -1,0 +1,25 @@
+list_maps:
+  - id: "user"
+    rows:
+      - REQUEST_ID: "USERS00302"
+        USER_ID: "US00000001"
+  - id: "queryParams1"
+    rows:
+      - lang: "en"
+        paramHoge: "hoge-value"
+  - id: "testCases"
+    rows:
+      - no: "1"
+        case: "クエリパラメータが存在しない"
+        context: "user"
+        isValidToken: "true"
+        setUpTable: ""
+        queryParams: "queryParams0"
+        expectedStatusCode: "200"
+        expectedMessageId: ""
+        expectedSearch: ""
+        expectedTable: ""
+        forwardUri: ""
+  - id: "requestParams"
+    rows:
+      - "[no]": "1"

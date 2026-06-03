@@ -1,0 +1,7 @@
+setup_tables:
+  - table: "SON"
+    rows:
+      - MYID: "1"
+        MY_PARENT: "1"
+      - MYID: "2"
+        MY_PARENT: "2"
