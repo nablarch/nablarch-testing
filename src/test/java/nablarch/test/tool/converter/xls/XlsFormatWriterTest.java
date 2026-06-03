@@ -206,7 +206,7 @@ public class XlsFormatWriterTest {
                 Arrays.asList(Arrays.asList("req1")));
         MessageDataBlock block = new MessageDataBlock(
                 DataType.MESSAGE, "", "sendSyncTestData/REQ001/message",
-                fwHeaders, Arrays.asList(bodyRecord)
+                new LinkedHashMap<>(), fwHeaders, Arrays.asList(bodyRecord)
         );
         TestDataContainer container = container("case01", block);
 

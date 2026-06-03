@@ -418,6 +418,78 @@ public class YamlFormatWriterTest {
         assertThat(yaml, containsString("name: \"FIELD1\""));
     }
 
+    /**
+     * [Given] MESSAGE ブロック（directives あり・FW ヘッダあり）
+     * [When]  write() を呼び出す
+     * [Then]  directives: → fw_header: → records: の順で出力され、fw_header に text-encoding が混入しない（T3: ディレクティブ分離）
+     */
+    @Test
+    public void writeMessageWithDirectivesAndFwHeader() throws Exception {
+        // Given
+        Map<String, String> directives = new LinkedHashMap<>();
+        directives.put("text-encoding", "MS932");
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        List<FieldDef> fields = Arrays.asList(new FieldDef("FIELD1", "X", null));
+        RecordLayout record = new RecordLayout("default", fields,
+                Arrays.asList(Arrays.asList("req1")));
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "", "sendSyncTestData/REQ001/message",
+                directives, fwHeaders, Arrays.asList(record)
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then: directives → fw_header → records の順で出力される
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("directives:"));
+        assertThat(yaml, containsString("text-encoding: \"MS932\""));
+        assertThat(yaml, containsString("fw_header:"));
+        assertThat(yaml, containsString("requestId: \"REQ001\""));
+        // fw_header セクションに text-encoding が混入しない
+        int directivesPos = yaml.indexOf("directives:");
+        int fwHeaderPos = yaml.indexOf("fw_header:");
+        int recordsPos = yaml.indexOf("records:");
+        assertThat(directivesPos < fwHeaderPos, is(true));
+        assertThat(fwHeaderPos < recordsPos, is(true));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_HEADER_MESSAGES ブロック（directives あり・FW ヘッダあり）
+     * [When]  write() を呼び出す
+     * [Then]  directives: のみ出力され fw_header: は出力されない（T3: expected_request は fw_header なし）
+     */
+    @Test
+    public void writeExpectedRequestWithDirectivesNoFwHeader() throws Exception {
+        // Given
+        Map<String, String> directives = new LinkedHashMap<>();
+        directives.put("text-encoding", "UTF-8");
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        List<FieldDef> fields = Arrays.asList(new FieldDef("requestId", "X", null));
+        RecordLayout record = new RecordLayout("default", fields,
+                Arrays.asList(Arrays.asList("REQ001")));
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "", "req/hdr",
+                directives, fwHeaders, Arrays.asList(record)
+        );
+        TestDataContainer container = container("case01", block);
+
+        // When
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // Then: fw_header は出力されず、directives と records のみ
+        String yaml = readYaml(outputDir, "FooTest", "case01");
+        assertThat(yaml, containsString("directives:"));
+        assertThat(yaml, containsString("text-encoding: \"UTF-8\""));
+        assertThat(yaml, not(containsString("fw_header:")));
+        assertThat(yaml, containsString("records:"));
+    }
+
     // -------------------------------------------------------------------------
     // ディレクトリ構成・複数セクション
     // -------------------------------------------------------------------------
@@ -667,7 +739,7 @@ public class YamlFormatWriterTest {
         // Given
         MessageDataBlock block = new MessageDataBlock(
                 DataType.RESPONSE_HEADER_MESSAGES, "", "res/hdr",
-                new LinkedHashMap<>(),
+                new LinkedHashMap<>(), new LinkedHashMap<>(),
                 Collections.emptyList()
         );
         TestDataContainer container = container("case01", block);
@@ -689,7 +761,7 @@ public class YamlFormatWriterTest {
         // Given
         MessageDataBlock block = new MessageDataBlock(
                 DataType.RESPONSE_BODY_MESSAGES, "", "res/body",
-                new LinkedHashMap<>(),
+                new LinkedHashMap<>(), new LinkedHashMap<>(),
                 Collections.emptyList()
         );
         TestDataContainer container = container("case01", block);

@@ -156,6 +156,12 @@ public class XlsFormatWriter implements TestDataFormatWriter {
     private int writeMessageBlock(Sheet sheet, MessageDataBlock block, int rowNum) {
         // identifier row
         setCellStr(sheet, rowNum++, 0, buildIdentifierCell(block));
+        // directives
+        for (Map.Entry<String, String> entry : block.getDirectives().entrySet()) {
+            Row row = sheet.createRow(rowNum++);
+            setCellStrOnRow(row, 0, entry.getKey());
+            setCellStrOnRow(row, 1, entry.getValue());
+        }
         // FW header rows
         for (Map.Entry<String, String> entry : block.getFwHeaderFields().entrySet()) {
             Row row = sheet.createRow(rowNum++);
