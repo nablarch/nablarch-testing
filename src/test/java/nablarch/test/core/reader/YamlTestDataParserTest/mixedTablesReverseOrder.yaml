@@ -1,0 +1,17 @@
+# T6: expected_tables / expected_complete_tables 混在順序非依存テスト用 YAML（逆順）
+# 順序: expected_complete_tables → expected_tables
+
+expected_complete_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000002"
+        PK_COL2: "BB"
+
+expected_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000001"
+        PK_COL2: "AA"
+        VARCHAR2_COL: "normal"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.0"

@@ -1,0 +1,30 @@
+# T6: expected_tables / expected_complete_tables 複数エントリ混在テスト用 YAML
+# 各セクションに複数エントリ（groupIDなし + grpA）を置き、グループID 単位で正しく取得できることを確認する。
+
+expected_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000001"
+        PK_COL2: "AA"
+        VARCHAR2_COL: "first"
+        NUMBER_COL: "1"
+        NUMBER_COL2: "1.0"
+  - group_id: grpA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000003"
+        PK_COL2: "CC"
+        VARCHAR2_COL: "third"
+        NUMBER_COL: "3"
+        NUMBER_COL2: "3.0"
+
+expected_complete_tables:
+  - table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000002"
+        PK_COL2: "BB"
+  - group_id: grpA
+    table: TEST_TABLE
+    rows:
+      - PK_COL1: "0000000004"
+        PK_COL2: "DD"

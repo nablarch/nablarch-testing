@@ -1053,4 +1053,94 @@ public class YamlTestDataParserTest {
         // Given / When / Then: IllegalArgumentException を期待
         sut.getSetupFile(DIR, "YamlTestDataParserTest/oldTypeSymbol");
     }
+
+    // ========================================================================
+    // T6: expected_tables / expected_complete_tables 混在順序非依存
+    // ========================================================================
+
+    /**
+     * getExpectedTableData: expected_tables → expected_complete_tables の順で記述しても
+     * 両セクションが全件取得されること（通常順）。
+     *
+     * <p>
+     * Given: expected_tables(1件) → expected_complete_tables(1件) の順で記述した YAML<br>
+     * When:  getExpectedTableData(dir, resource) を呼ぶ<br>
+     * Then:  expected_tables 1 件 + expected_complete_tables 1 件 = 合計 2 件が取得されること
+     *        （取得順: expected_tables → expected_complete_tables のセクション結合順）
+     * </p>
+     */
+    @Test
+    public void mixedTablesNormalOrderReturnsBothSections() {
+        // Given / When
+        List<TableData> result = sut.getExpectedTableData(DIR, "YamlTestDataParserTest/mixedTablesNormalOrder");
+
+        // Then: expected_tables(1) + expected_complete_tables(1) = 2 件
+        assertThat("通常順: 2 件取得できること", result.size(), is(2));
+        assertThat("通常順: 1 件目は PK_COL1=0000000001 であること",
+                result.get(0).getValue(0, "PK_COL1").toString(), is("0000000001"));
+        assertThat("通常順: 2 件目は PK_COL1=0000000002 であること",
+                result.get(1).getValue(0, "PK_COL1").toString(), is("0000000002"));
+    }
+
+    /**
+     * getExpectedTableData: expected_complete_tables → expected_tables の順で記述しても
+     * 両セクションが全件取得されること（逆順）。
+     *
+     * <p>
+     * Given: expected_complete_tables(1件) → expected_tables(1件) の順で記述した YAML<br>
+     * When:  getExpectedTableData(dir, resource) を呼ぶ<br>
+     * Then:  expected_tables 1 件 + expected_complete_tables 1 件 = 合計 2 件が取得されること
+     *        （取得順は YAML 記述順ではなくセクション結合順: expected_tables → expected_complete_tables）
+     * </p>
+     */
+    @Test
+    public void mixedTablesReverseOrderReturnsBothSections() {
+        // Given / When
+        List<TableData> result = sut.getExpectedTableData(DIR, "YamlTestDataParserTest/mixedTablesReverseOrder");
+
+        // Then: expected_tables(1) + expected_complete_tables(1) = 2 件（YAML 記述順に関係なく両方取得）
+        // 取得順は YAML 記述順ではなくセクション結合順（expected_tables → expected_complete_tables）に従う
+        assertThat("逆順: 2 件取得できること", result.size(), is(2));
+        assertThat("逆順: 1 件目は expected_tables の PK_COL1=0000000001 であること",
+                result.get(0).getValue(0, "PK_COL1").toString(), is("0000000001"));
+        assertThat("逆順: 2 件目は expected_complete_tables の PK_COL1=0000000002 であること",
+                result.get(1).getValue(0, "PK_COL1").toString(), is("0000000002"));
+    }
+
+    /**
+     * getExpectedTableData: 各セクションに複数エントリがあっても
+     * グループID指定で正しくフィルタリングされること（複数エントリ混在）。
+     *
+     * <p>
+     * Given: expected_tables(2件: groupIDなし + grpA) と expected_complete_tables(2件: groupIDなし + grpA) を含む YAML<br>
+     * When(a): getExpectedTableData(dir, resource) を呼ぶ<br>
+     * Then(a): groupID なしの expected_tables 1件 + expected_complete_tables 1件 = 合計 2 件<br>
+     * When(b): getExpectedTableData(dir, resource, "grpA") を呼ぶ<br>
+     * Then(b): grpA の expected_tables 1件 + expected_complete_tables 1件 = 合計 2 件
+     * </p>
+     */
+    @Test
+    public void mixedTablesMultipleEntriesReturnsCorrectEntriesPerGroupId() {
+        final String resource = "YamlTestDataParserTest/mixedTablesMultipleEntries";
+
+        // When(a): groupID なし
+        List<TableData> withoutGroupId = sut.getExpectedTableData(DIR, resource);
+
+        // Then(a): groupID なしの 2 件（expected_tables の groupIDなし + expected_complete_tables の groupIDなし）
+        assertThat("複数エントリ混在: groupIDなし → 2 件取得できること", withoutGroupId.size(), is(2));
+        assertThat("複数エントリ混在: 1 件目は expected_tables の PK_COL1=0000000001 であること",
+                withoutGroupId.get(0).getValue(0, "PK_COL1").toString(), is("0000000001"));
+        assertThat("複数エントリ混在: 2 件目は expected_complete_tables の PK_COL1=0000000002 であること",
+                withoutGroupId.get(1).getValue(0, "PK_COL1").toString(), is("0000000002"));
+
+        // When(b): grpA 指定
+        List<TableData> withGrpA = sut.getExpectedTableData(DIR, resource, "grpA");
+
+        // Then(b): grpA の 2 件（expected_tables の grpA + expected_complete_tables の grpA）
+        assertThat("複数エントリ混在: grpA → 2 件取得できること", withGrpA.size(), is(2));
+        assertThat("複数エントリ混在: grpA 1 件目は expected_tables の PK_COL1=0000000003 であること",
+                withGrpA.get(0).getValue(0, "PK_COL1").toString(), is("0000000003"));
+        assertThat("複数エントリ混在: grpA 2 件目は expected_complete_tables の PK_COL1=0000000004 であること",
+                withGrpA.get(1).getValue(0, "PK_COL1").toString(), is("0000000004"));
+    }
 }
