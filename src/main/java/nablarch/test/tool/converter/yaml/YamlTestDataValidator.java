@@ -122,7 +122,7 @@ public class YamlTestDataValidator {
                 Map<String, Object> block = castMap(blocks.get(blockIdx));
                 String blockLocation = sectionKey + "[" + blockIdx + "]";
 
-                // V-COL / V-FNAME: file 系・message 系のみ適用。setup_tables / expected_tables / list_maps は rows がオブジェクト配列のため対象外
+                // V-COL / V-FNAME / V-DKEY: file 系・message 系のみ適用。setup_tables / expected_tables / list_maps は rows がオブジェクト配列のため対象外
                 if (FILE_AND_MESSAGE_SECTION_KEYS.contains(sectionKey)) {
                     List<Object> records = castList(block.get("records"));
                     for (int recIdx = 0; recIdx < records.size(); recIdx++) {
@@ -169,7 +169,10 @@ public class YamlTestDataValidator {
         return errors;
     }
 
-    /** V-FNAME: 同一 record_fragment 内のフィールド名重複を検証する。 */
+    /**
+     * V-FNAME: 同一 record_fragment 内のフィールド名重複を検証する。
+     * 同一名が N 回出現した場合は (N-1) 件のエラーを報告する。
+     */
     private List<ValidationError> validateFieldNames(String filePath, String recLocation, Map<String, Object> rec) {
         List<ValidationError> errors = new ArrayList<>();
         List<Object> fields = castList(rec.get("fields"));
@@ -190,7 +193,7 @@ public class YamlTestDataValidator {
         return errors;
     }
 
-    /** V-DKEY: directives のキーが既知のディレクティブ名であることを検証する。 */
+    /** V-DKEY: directives のキーが既知のディレクティブ名（{@link MessageDataBlock#KNOWN_DIRECTIVE_NAMES}）であることを検証する。 */
     private List<ValidationError> validateDirectiveKeys(String filePath, String blockLocation, Map<String, Object> block) {
         List<ValidationError> errors = new ArrayList<>();
         if (!block.containsKey("directives")) {
@@ -209,7 +212,10 @@ public class YamlTestDataValidator {
         return errors;
     }
 
-    /** V-MSGROW: expected_request_header_messages と expected_request_body_messages の rows 合計行数ペア検証。 */
+    /**
+     * V-MSGROW: expected_request_header_messages と expected_request_body_messages の rows 合計行数ペア検証。
+     * ブロック数が非対称な場合は少ない方に合わせてペアリングし、余剰ブロックは検証しない。
+     */
     private List<ValidationError> validateMsgRowCounts(String filePath, Map<String, Object> yaml) {
         List<ValidationError> errors = new ArrayList<>();
         List<Object> headers = castList(yaml.get("expected_request_header_messages"));

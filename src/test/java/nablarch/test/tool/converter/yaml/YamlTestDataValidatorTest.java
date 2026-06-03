@@ -21,9 +21,9 @@ import static org.junit.Assert.assertThat;
 public class YamlTestDataValidatorTest {
 
     @Rule
-    public TemporaryFolder tmp = new TemporaryFolder();
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private final YamlTestDataValidator validator = new YamlTestDataValidator();
+    private final YamlTestDataValidator sut = new YamlTestDataValidator();
 
     // -------------------------------------------------------------------------
     // V-COL: fields 件数と rows 配列長の一致検証
@@ -36,7 +36,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void columnCountMismatch_setupFiles() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -50,7 +50,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, b, c]\n"  // fields 2件、rows 3要素 → 不一致
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-COL]"));
@@ -63,7 +63,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void columnCountMismatch_messages() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "messages:\n" +
                 "  - id: msg01\n" +
@@ -76,7 +76,7 @@ public class YamlTestDataValidatorTest {
                 "          - [x]\n"  // fields 2件、rows 1要素 → 不一致
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-COL]"));
@@ -89,7 +89,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void columnCountMatch_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -103,7 +103,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, b]\n"  // fields 2件、rows 2要素 → 一致
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -115,7 +115,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void columnCountMismatch_secondRowOnly() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -130,7 +130,7 @@ public class YamlTestDataValidatorTest {
                 "          - [x, y, z]\n"  // 2行目だけ不一致
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getLocation(), containsString("rows[1]"));
@@ -147,7 +147,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void directiveInFwHeader_knownDirectiveName() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "messages:\n" +
                 "  - id: msg01\n" +
@@ -160,7 +160,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-DIR]"));
@@ -174,7 +174,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void fwHeader_nonDirectiveKey_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "messages:\n" +
                 "  - id: msg01\n" +
@@ -188,7 +188,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -200,7 +200,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void directiveInFwHeader_multipleKeys() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "messages:\n" +
                 "  - id: msg01\n" +
@@ -214,7 +214,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(2));
     }
@@ -226,7 +226,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void directiveInFwHeader_expectedRequestBodyMessages() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_body_messages:\n" +
                 "  - id: msg01\n" +
@@ -239,7 +239,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-DIR]"));
@@ -257,14 +257,14 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void schemaViolation_tableIsArray() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_tables:\n" +
                 "  - table: [invalid, array]\n" +  // table は string のはずが配列
                 "    rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size() >= 1, is(true));
         assertThat(errors.get(0).getMessage(), containsString("[V-SCH]"));
@@ -277,7 +277,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void schemaCompliant_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_tables:\n" +
                 "  - table: USERS\n" +
@@ -285,7 +285,7 @@ public class YamlTestDataValidatorTest {
                 "      - {USER_ID: \"001\", NAME: \"Alice\"}\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -301,7 +301,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void allRulesPassed_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_tables:\n" +
                 "  - table: USERS\n" +
@@ -318,7 +318,7 @@ public class YamlTestDataValidatorTest {
                 "          - [abc]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -330,9 +330,9 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void emptyDirectory_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -344,7 +344,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void multipleFiles_errorFromCorrectFile() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_tables:\n" +
                 "  - table: USERS\n" +
@@ -363,7 +363,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, b]\n"  // fields 1件、rows 2要素 → 不一致
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getFilePath(), containsString("case02.yaml"));
@@ -380,7 +380,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void validationError_hasAllFields() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -393,7 +393,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, b]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         ValidationError e = errors.get(0);
@@ -417,14 +417,14 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void yamlRootIsNotMap_noStructureException() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "- item1\n" +
                 "- item2\n"   // YAML ルートがリスト → parseYaml が null を返し構造検証をスキップ
         );
 
         // スキーマエラーのみが返り、V-COL/V-DIR では例外が出ないこと
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
         for (ValidationError e : errors) {
             assertThat("V-COL/V-DIR による誤検知がないこと", e.getMessage(), containsString("[V-SCH]"));
         }
@@ -437,7 +437,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void unreadableFile_reportsReadError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         File yamlFile = new File(dir, "case01.yaml");
         writeYaml(dir, "case01.yaml",
                 "setup_tables:\n" +
@@ -448,7 +448,7 @@ public class YamlTestDataValidatorTest {
         // root 権限では setReadable(false) が無効なのでスキップ
         Assume.assumeFalse(yamlFile.canRead());
         try {
-            List<ValidationError> errors = validator.validate(dir.toPath());
+            List<ValidationError> errors = sut.validate(dir.toPath());
             assertThat(errors.size(), is(1));
             assertThat(errors.get(0).getMessage(), containsString("ファイル読み込みエラー"));
         } finally {
@@ -467,7 +467,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void fieldNameDuplicate_setupFiles() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -481,7 +481,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, a]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-FNAME]"));
@@ -497,7 +497,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void fieldNameTriplicate_twoErrors() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -512,7 +512,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, a, a]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         long fnameCnt = errors.stream().filter(e -> e.getMessage().contains("[V-FNAME]")).count();
         assertThat(fnameCnt, is(2L));
@@ -525,7 +525,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void fieldNameUnique_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -539,7 +539,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a, b]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -551,7 +551,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void fieldNameDuplicate_acrossFragments_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -569,7 +569,7 @@ public class YamlTestDataValidatorTest {
                 "          - [b]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -581,7 +581,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void fieldNameDuplicate_messages() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "messages:\n" +
                 "  - id: msg01\n" +
@@ -593,7 +593,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-FNAME]"));
@@ -610,7 +610,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void unknownDirectiveKey_setupFiles() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -624,7 +624,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         boolean hasDkeyError = errors.stream().anyMatch(e -> e.getMessage().contains("[V-DKEY]") && e.getMessage().contains("unknown-key"));
         assertThat("V-DKEY エラーが少なくとも1件報告されること", hasDkeyError, is(true));
@@ -642,7 +642,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void emptyDirectives_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -655,7 +655,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        assertThat(validator.validate(dir.toPath()).size(), is(0));
+        assertThat(sut.validate(dir.toPath()).size(), is(0));
     }
 
     /**
@@ -665,7 +665,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void unknownDirectiveKey_multipleKeys_twoErrors() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -680,21 +680,20 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        long cnt = validator.validate(dir.toPath()).stream()
+        long cnt = sut.validate(dir.toPath()).stream()
                 .filter(e -> e.getMessage().contains("[V-DKEY]")).count();
         assertThat(cnt, is(2L));
     }
 
     /**
-     * [Given] setup_tables に未知の directives キーがある（V-DKEY の適用外セクション）
+     * [Given] setup_tables セクションのデータ（V-DKEY の適用外セクション）
      * [When]  validate() を呼び出す
-     * [Then]  V-DKEY は発動せずエラーなし（指摘9: 適用外セクションの仕様文書化）
+     * [Then]  V-DKEY は発動せずエラーなし（setup_tables は FILE_AND_MESSAGE_SECTION_KEYS 外のため適用外）
      */
     @Test
     public void unknownDirectiveKey_setupTables_notApplied() throws Exception {
-        File dir = tmp.newFolder("TestCase");
-        // setup_tables は FILE_AND_MESSAGE_SECTION_KEYS に含まれないため V-DKEY 適用外
-        // → 未知キーを directives に置いても V-DKEY が発動しないことを確認
+        File dir = temporaryFolder.newFolder("TestCase");
+        // setup_tables は FILE_AND_MESSAGE_SECTION_KEYS に含まれないため V-DKEY が適用されないことを確認
         writeYaml(dir, "case01.yaml",
                 "setup_tables:\n" +
                 "  - table: USERS\n" +
@@ -702,7 +701,7 @@ public class YamlTestDataValidatorTest {
                 "      - {USER_ID: \"001\"}\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         boolean hasDkeyError = errors.stream().anyMatch(e -> e.getMessage().contains("[V-DKEY]"));
         assertThat("setup_tables には V-DKEY が適用されないこと", hasDkeyError, is(false));
@@ -715,7 +714,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void knownDirectiveKey_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -730,7 +729,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -742,7 +741,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void unknownDirectiveKey_messages() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "messages:\n" +
                 "  - id: msg01\n" +
@@ -755,7 +754,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         boolean hasDkeyError = errors.stream().anyMatch(e -> e.getMessage().contains("[V-DKEY]"));
         assertThat("V-DKEY エラーが少なくとも1件報告されること", hasDkeyError, is(true));
@@ -768,7 +767,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void noDirectives_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -780,7 +779,7 @@ public class YamlTestDataValidatorTest {
                 "        rows: []\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -796,7 +795,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRowMismatch_requestMessages() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: header01\n" +
@@ -819,7 +818,7 @@ public class YamlTestDataValidatorTest {
                 "          - [y]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-MSGROW]"));
@@ -835,7 +834,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRowMatch_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: header01\n" +
@@ -857,7 +856,7 @@ public class YamlTestDataValidatorTest {
                 "          - [y]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -869,7 +868,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRowOnlyHeader_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: header01\n" +
@@ -881,7 +880,7 @@ public class YamlTestDataValidatorTest {
                 "          - [a]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
     }
@@ -893,7 +892,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRow_headerMoreThanBody_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: h1\n" +
@@ -921,7 +920,7 @@ public class YamlTestDataValidatorTest {
                 "          - [x]\n"
         );
 
-        assertThat(validator.validate(dir.toPath()).size(), is(0));
+        assertThat(sut.validate(dir.toPath()).size(), is(0));
     }
 
     /**
@@ -931,7 +930,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRow_multipleRecordsInBlock_sumMatches_noError() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: h1\n" +
@@ -959,7 +958,7 @@ public class YamlTestDataValidatorTest {
                 "          - [z]\n"
         );
 
-        assertThat(validator.validate(dir.toPath()).size(), is(0));
+        assertThat(sut.validate(dir.toPath()).size(), is(0));
     }
 
     /**
@@ -969,7 +968,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRow_multipleRecordsInBlock_sumMismatch() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: h1\n" +
@@ -996,7 +995,7 @@ public class YamlTestDataValidatorTest {
                 "          - [z]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-MSGROW]"));
@@ -1009,7 +1008,7 @@ public class YamlTestDataValidatorTest {
      */
     @Test
     public void msgRowMismatch_secondPairOnly() throws Exception {
-        File dir = tmp.newFolder("TestCase");
+        File dir = temporaryFolder.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "expected_request_header_messages:\n" +
                 "  - id: header01\n" +
@@ -1044,7 +1043,7 @@ public class YamlTestDataValidatorTest {
                 "          - [y]\n"
         );
 
-        List<ValidationError> errors = validator.validate(dir.toPath());
+        List<ValidationError> errors = sut.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-MSGROW]"));
