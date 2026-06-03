@@ -486,6 +486,36 @@ public class YamlTestDataValidatorTest {
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-FNAME]"));
         assertThat(errors.get(0).getMessage(), containsString("col1"));
+        // location が records[0].fields を指していること（指摘2）
+        assertThat(errors.get(0).getLocation(), containsString("records[0].fields"));
+    }
+
+    /**
+     * [Given] 同一 record_fragment 内でフィールド名が3個重複している
+     * [When]  validate() を呼び出す
+     * [Then]  重複発見のたびに1件エラーが追加されるため2件報告される（指摘1）
+     */
+    @Test
+    public void fieldNameTriplicate_twoErrors() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "setup_files:\n" +
+                "  - path: test.dat\n" +
+                "    type: fixed\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: col1, type: 半角英字, length: \"3\"}\n" +
+                "          - {name: col1, type: 半角英字, length: \"3\"}\n" +
+                "          - {name: col1, type: 半角英字, length: \"3\"}\n" +
+                "        rows:\n" +
+                "          - [a, a, a]\n"
+        );
+
+        List<ValidationError> errors = validator.validate(dir.toPath());
+
+        long fnameCnt = errors.stream().filter(e -> e.getMessage().contains("[V-FNAME]")).count();
+        assertThat(fnameCnt, is(2L));
     }
 
     /**
@@ -598,6 +628,84 @@ public class YamlTestDataValidatorTest {
 
         boolean hasDkeyError = errors.stream().anyMatch(e -> e.getMessage().contains("[V-DKEY]") && e.getMessage().contains("unknown-key"));
         assertThat("V-DKEY エラーが少なくとも1件報告されること", hasDkeyError, is(true));
+        // location が setup_files[0].directives を指していること（指摘4）
+        boolean hasLocation = errors.stream()
+                .filter(e -> e.getMessage().contains("[V-DKEY]"))
+                .anyMatch(e -> e.getLocation().contains("setup_files[0].directives"));
+        assertThat("location が setup_files[0].directives を含むこと", hasLocation, is(true));
+    }
+
+    /**
+     * [Given] directives が空マップ
+     * [When]  validate() を呼び出す
+     * [Then]  エラーなし（指摘3）
+     */
+    @Test
+    public void emptyDirectives_noError() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "setup_files:\n" +
+                "  - path: test.dat\n" +
+                "    type: fixed\n" +
+                "    directives: {}\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: col1, type: 半角英字, length: \"3\"}\n" +
+                "        rows: []\n"
+        );
+
+        assertThat(validator.validate(dir.toPath()).size(), is(0));
+    }
+
+    /**
+     * [Given] directives に未知キーが2つある
+     * [When]  validate() を呼び出す
+     * [Then]  2件の V-DKEY エラーが報告される（指摘5）
+     */
+    @Test
+    public void unknownDirectiveKey_multipleKeys_twoErrors() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "setup_files:\n" +
+                "  - path: test.dat\n" +
+                "    type: fixed\n" +
+                "    directives:\n" +
+                "      bad-key1: v1\n" +
+                "      bad-key2: v2\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: col1, type: 半角英字, length: \"3\"}\n" +
+                "        rows: []\n"
+        );
+
+        long cnt = validator.validate(dir.toPath()).stream()
+                .filter(e -> e.getMessage().contains("[V-DKEY]")).count();
+        assertThat(cnt, is(2L));
+    }
+
+    /**
+     * [Given] setup_tables に未知の directives キーがある（V-DKEY の適用外セクション）
+     * [When]  validate() を呼び出す
+     * [Then]  V-DKEY は発動せずエラーなし（指摘9: 適用外セクションの仕様文書化）
+     */
+    @Test
+    public void unknownDirectiveKey_setupTables_notApplied() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        // setup_tables は FILE_AND_MESSAGE_SECTION_KEYS に含まれないため V-DKEY 適用外
+        // → 未知キーを directives に置いても V-DKEY が発動しないことを確認
+        writeYaml(dir, "case01.yaml",
+                "setup_tables:\n" +
+                "  - table: USERS\n" +
+                "    rows:\n" +
+                "      - {USER_ID: \"001\"}\n"
+        );
+
+        List<ValidationError> errors = validator.validate(dir.toPath());
+
+        boolean hasDkeyError = errors.stream().anyMatch(e -> e.getMessage().contains("[V-DKEY]"));
+        assertThat("setup_tables には V-DKEY が適用されないこと", hasDkeyError, is(false));
     }
 
     /**
@@ -715,6 +823,9 @@ public class YamlTestDataValidatorTest {
 
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-MSGROW]"));
+        // エラーメッセージに具体的な行数が含まれること（指摘8）
+        assertThat(errors.get(0).getMessage(), containsString("rows 合計=3"));
+        assertThat(errors.get(0).getMessage(), containsString("rows 合計=2"));
     }
 
     /**
@@ -773,6 +884,122 @@ public class YamlTestDataValidatorTest {
         List<ValidationError> errors = validator.validate(dir.toPath());
 
         assertThat(errors.size(), is(0));
+    }
+
+    /**
+     * [Given] header が2件、body が1件（ブロック数が非対称）
+     * [When]  validate() を呼び出す
+     * [Then]  ペアが取れた[0]のみチェックされ header[1] はスキップ → エラーなし（指摘6）
+     */
+    @Test
+    public void msgRow_headerMoreThanBody_noError() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "expected_request_header_messages:\n" +
+                "  - id: h1\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [a]\n" +
+                "  - id: h2\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [b]\n" +
+                "          - [c]\n" +
+                "expected_request_body_messages:\n" +
+                "  - id: b1\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [x]\n"
+        );
+
+        assertThat(validator.validate(dir.toPath()).size(), is(0));
+    }
+
+    /**
+     * [Given] header ブロックが records を2つ持ち合計3行、body ブロックが合計3行
+     * [When]  validate() を呼び出す
+     * [Then]  行数一致のためエラーなし（指摘7: countTotalRows の複数 records 対応）
+     */
+    @Test
+    public void msgRow_multipleRecordsInBlock_sumMatches_noError() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "expected_request_header_messages:\n" +
+                "  - id: h1\n" +
+                "    records:\n" +
+                "      - record_type: A\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [a]\n" +
+                "          - [b]\n" +
+                "      - record_type: B\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [c]\n" +
+                "expected_request_body_messages:\n" +
+                "  - id: b1\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [x]\n" +
+                "          - [y]\n" +
+                "          - [z]\n"
+        );
+
+        assertThat(validator.validate(dir.toPath()).size(), is(0));
+    }
+
+    /**
+     * [Given] header の複数 records 合計が body と不一致
+     * [When]  validate() を呼び出す
+     * [Then]  V-MSGROW エラーが報告される（指摘7: countTotalRows の複数 records 対応）
+     */
+    @Test
+    public void msgRow_multipleRecordsInBlock_sumMismatch() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "expected_request_header_messages:\n" +
+                "  - id: h1\n" +
+                "    records:\n" +
+                "      - record_type: A\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [a]\n" +
+                "      - record_type: B\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [b]\n" +
+                "expected_request_body_messages:\n" +
+                "  - id: b1\n" +
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows:\n" +
+                "          - [x]\n" +
+                "          - [y]\n" +
+                "          - [z]\n"
+        );
+
+        List<ValidationError> errors = validator.validate(dir.toPath());
+
+        assertThat(errors.size(), is(1));
+        assertThat(errors.get(0).getMessage(), containsString("[V-MSGROW]"));
     }
 
     /**
