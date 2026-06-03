@@ -32,20 +32,16 @@ import java.util.Set;
  *   <li>V-SCH: ntf-testdata-yaml-schema.json に適合していること</li>
  *   <li>V-FNAME: 同一 record_fragment 内のフィールド名が重複していないこと</li>
  *   <li>V-DKEY: directives のキーが既知のディレクティブ名であること</li>
- *   <li>V-MSGROW: expected_request_header_messages と expected_request_body_messages の rows 合計行数が一致すること</li>
  * </ul>
  */
 public class YamlTestDataValidator {
 
     private static final String SCHEMA_RESOURCE = "/nablarch/test/ntf-testdata-yaml-schema.json";
 
-    private static final String KEY_EXPECTED_REQUEST_HEADER_MESSAGES = "expected_request_header_messages";
-    private static final String KEY_EXPECTED_REQUEST_BODY_MESSAGES = "expected_request_body_messages";
-
     private static final Set<String> MESSAGE_SECTION_KEYS = Set.of(
             "messages",
-            KEY_EXPECTED_REQUEST_HEADER_MESSAGES,
-            KEY_EXPECTED_REQUEST_BODY_MESSAGES,
+            "expected_request_header_messages",
+            "expected_request_body_messages",
             "response_header_messages",
             "response_body_messages"
     );
@@ -108,7 +104,7 @@ public class YamlTestDataValidator {
             return errors;
         }
 
-        // V-COL / V-DIR: 構造検証
+        // V-COL / V-DIR / V-FNAME / V-DKEY: 構造検証
         errors.addAll(validateStructure(filePath, yaml));
 
         return errors;
@@ -125,7 +121,7 @@ public class YamlTestDataValidator {
                 Map<String, Object> block = castMap(blocks.get(blockIdx));
                 String blockLocation = sectionKey + "[" + blockIdx + "]";
 
-                // V-COL / V-FNAME / V-DKEY: file 系・message 系のみ適用。setup_tables / expected_tables / list_maps は rows がオブジェクト配列のため対象外
+                // V-COL / V-FNAME / V-DKEY: file 系・message 系のみ適用（setup_tables / expected_tables / list_maps は rows がオブジェクト配列のため対象外）
                 if (FILE_AND_MESSAGE_SECTION_KEYS.contains(sectionKey)) {
                     List<Object> records = castList(block.get("records"));
                     for (int recIdx = 0; recIdx < records.size(); recIdx++) {
@@ -144,9 +140,6 @@ public class YamlTestDataValidator {
                 }
             }
         }
-
-        // V-MSGROW: expected_request_header_messages と expected_request_body_messages のペア検証
-        errors.addAll(validateMsgRowCounts(filePath, yaml));
 
         return errors;
     }
@@ -213,45 +206,6 @@ public class YamlTestDataValidator {
             }
         }
         return errors;
-    }
-
-    /**
-     * V-MSGROW: expected_request_header_messages と expected_request_body_messages の rows 合計行数ペア検証。
-     * ブロック数が非対称な場合は少ない方に合わせてペアリングし、余剰ブロックは検証しない。
-     */
-    private List<ValidationError> validateMsgRowCounts(String filePath, Map<String, Object> yaml) {
-        List<ValidationError> errors = new ArrayList<>();
-        List<Object> headers = castList(yaml.get(KEY_EXPECTED_REQUEST_HEADER_MESSAGES));
-        List<Object> bodies = castList(yaml.get(KEY_EXPECTED_REQUEST_BODY_MESSAGES));
-        if (headers.isEmpty() || bodies.isEmpty()) {
-            return errors;
-        }
-        int pairCount = Math.min(headers.size(), bodies.size());
-        for (int i = 0; i < pairCount; i++) {
-            Map<String, Object> headerBlock = castMap(headers.get(i));
-            Map<String, Object> bodyBlock = castMap(bodies.get(i));
-            int headerRows = countTotalRows(headerBlock);
-            int bodyRows = countTotalRows(bodyBlock);
-            if (headerRows != bodyRows) {
-                errors.add(new ValidationError(
-                        filePath,
-                        "expected_request_header_messages[" + i + "] / expected_request_body_messages[" + i + "]",
-                        "[V-MSGROW] ヘッダ・ボディ行数不一致: expected_request_header_messages[" + i + "] rows 合計=" + headerRows
-                                + " / expected_request_body_messages[" + i + "] rows 合計=" + bodyRows
-                ));
-            }
-        }
-        return errors;
-    }
-
-    private int countTotalRows(Map<String, Object> block) {
-        int total = 0;
-        List<Object> records = castList(block.get("records"));
-        for (Object recObj : records) {
-            Map<String, Object> rec = castMap(recObj);
-            total += castList(rec.get("rows")).size();
-        }
-        return total;
     }
 
     /** V-DIR: fw_header にディレクティブ名が含まれていないかを検証する。 */
