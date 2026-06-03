@@ -1,5 +1,9 @@
 package nablarch.test.tool.converter.yaml;
 
+import nablarch.core.dataformat.DataRecordFormatterSupport.Directive;
+import nablarch.core.dataformat.FixedLengthDataRecordFormatter.FixedLengthDirective;
+import nablarch.core.dataformat.VariableLengthDataRecordFormatter.VariableLengthDirective;
+import nablarch.test.tool.converter.model.MessageDataBlock;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -7,7 +11,11 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -1048,6 +1056,41 @@ public class YamlTestDataValidatorTest {
         assertThat(errors.size(), is(1));
         assertThat(errors.get(0).getMessage(), containsString("[V-MSGROW]"));
         assertThat(errors.get(0).getLocation(), containsString("[1]"));
+    }
+
+    // -------------------------------------------------------------------------
+    // KNOWN_DIRECTIVE_NAMES と NTF 本体ディレクティブの整合確認
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] NTF 本体の FixedLengthDirective / VariableLengthDirective / Directive（基底）の全キー
+     * [When]  MessageDataBlock.KNOWN_DIRECTIVE_NAMES と比較する
+     * [Then]  完全一致すること（NTF 側に追加・削除があれば即座に検知される）
+     */
+    @Test
+    public void knownDirectiveNames_matchesNtfDirectives() throws Exception {
+        Set<String> ntfDirectives = new HashSet<>();
+
+        // 基底クラス Directive.VALUES は private なのでリフレクションで取得
+        Field baseValues = Directive.class.getDeclaredField("VALUES");
+        baseValues.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Directive> baseMap = (Map<String, Directive>) baseValues.get(null);
+        for (Directive d : baseMap.values()) {
+            ntfDirectives.add(d.getName());
+        }
+
+        // FixedLengthDirective.VALUES は public
+        for (Directive d : FixedLengthDirective.VALUES.values()) {
+            ntfDirectives.add(d.getName());
+        }
+
+        // VariableLengthDirective.VALUES は public
+        for (Directive d : VariableLengthDirective.VALUES.values()) {
+            ntfDirectives.add(d.getName());
+        }
+
+        assertThat(MessageDataBlock.KNOWN_DIRECTIVE_NAMES, is(ntfDirectives));
     }
 
     // -------------------------------------------------------------------------
