@@ -60,7 +60,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - [ ] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`
   - [x] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
   - [x] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
-  - [ ] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
+  - [x] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [ ] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
   - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
   - [ ] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`
@@ -251,19 +251,13 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T3 差し戻し対応のユーザーレビューが完了した。T4 を実施する**
+2. **T4 完了・ユーザーレビュー待ち。T5 を実施する**
 
-### T4 概要
+### T5 概要
 
-**タスク**: 変換ツールの数値書式セル文字列化を `DataFormatter` に修正
-**チェックファイル**: `docs/pr75/checks/T4.md`
-**変更対象**: `src/main/java/nablarch/test/tool/converter/xls/XlsFormatReader.java`（`readCells` メソッド）
-
-**手順（TDD）:**
-1. RED: 数値書式セル（整数 `2` が数値型で保存）を含む Excel を変換し、出力が `"2"` になることを検証するテストを追加し、現状（`cell.toString()`）で `"2.0"` になる失敗を確認する
-2. GREEN: セル値取得を `cell.toString()` から `DataFormatter#formatCellValue(cell)` に変更する
-3. `mvn clean package -Dtest="XlsFormatReaderTest"` で全グリーン確認
-4. セルフチェック・QA・Java・SWE レビュー・T4.md 記入
+**タスク**: 変換ツールに検証モード（リンタ）を追加
+**チェックファイル**: `docs/pr75/checks/T5.md`
+**変更対象**: 設計書 §28 参照
 
 ### 差し戻し対応済みタスク（2026-06-03）
 
