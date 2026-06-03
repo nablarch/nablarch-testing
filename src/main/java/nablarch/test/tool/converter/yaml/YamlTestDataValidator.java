@@ -39,10 +39,13 @@ public class YamlTestDataValidator {
 
     private static final String SCHEMA_RESOURCE = "/nablarch/test/ntf-testdata-yaml-schema.json";
 
+    private static final String KEY_EXPECTED_REQUEST_HEADER_MESSAGES = "expected_request_header_messages";
+    private static final String KEY_EXPECTED_REQUEST_BODY_MESSAGES = "expected_request_body_messages";
+
     private static final Set<String> MESSAGE_SECTION_KEYS = Set.of(
             "messages",
-            "expected_request_header_messages",
-            "expected_request_body_messages",
+            KEY_EXPECTED_REQUEST_HEADER_MESSAGES,
+            KEY_EXPECTED_REQUEST_BODY_MESSAGES,
             "response_header_messages",
             "response_body_messages"
     );
@@ -218,8 +221,8 @@ public class YamlTestDataValidator {
      */
     private List<ValidationError> validateMsgRowCounts(String filePath, Map<String, Object> yaml) {
         List<ValidationError> errors = new ArrayList<>();
-        List<Object> headers = castList(yaml.get("expected_request_header_messages"));
-        List<Object> bodies = castList(yaml.get("expected_request_body_messages"));
+        List<Object> headers = castList(yaml.get(KEY_EXPECTED_REQUEST_HEADER_MESSAGES));
+        List<Object> bodies = castList(yaml.get(KEY_EXPECTED_REQUEST_BODY_MESSAGES));
         if (headers.isEmpty() || bodies.isEmpty()) {
             return errors;
         }
