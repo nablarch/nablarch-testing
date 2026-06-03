@@ -492,6 +492,17 @@ public class ExcelToYamlEquivalenceTest {
     }
 
     @Test
+    public void getSetupTableData_batchRequestTestSupportTest_testCompareStatus_equivalentToExcel() {
+        // testCompareStatus の setup_tables は HOGE_TABLE（空行のみ）のため filterNonEmpty で比較
+        List<TableData> fromXls  = filterNonEmpty(xlsParser.getSetupTableData(DIR_BATCH, "BatchRequestTestSupportTest/testCompareStatus"));
+        List<TableData> fromYaml = yamlParser.getSetupTableData(DIR_BATCH, "BatchRequestTestSupportTest/testCompareStatus");
+        assertThat("テーブル数が等価（非空行のみ）", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "BatchRequestTestSupportTest/testCompareStatus_setup[" + i + "]");
+        }
+    }
+
+    @Test
     public void getListMap_batchRequestTestSupportTest_testExpectedLogNotFound_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound", "testShots");
         List<Map<String, String>> fromYaml = yamlParser.getListMap(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound", "testShots");
@@ -508,6 +519,36 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    @Test
+    public void getExpectedTableData_batchRequestTestSupportTest_testTestCasesNotFound_equivalentToExcel() {
+        List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_BATCH, "BatchRequestTestSupportTest/testTestCasesNotFound");
+        List<TableData> fromYaml = yamlParser.getExpectedTableData(DIR_BATCH, "BatchRequestTestSupportTest/testTestCasesNotFound");
+        assertThat("テーブル数が等価", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "BatchRequestTestSupportTest/testTestCasesNotFound_expected[" + i + "]");
+        }
+    }
+
+    @Test
+    public void getSetupTableData_batchRequestTestSupportTest_testExpectedLogNotFound_equivalentToExcel() {
+        List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound");
+        List<TableData> fromYaml = yamlParser.getSetupTableData(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound");
+        assertThat("テーブル数が等価", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "BatchRequestTestSupportTest/testExpectedLogNotFound_setup[" + i + "]");
+        }
+    }
+
+    @Test
+    public void getExpectedTableData_batchRequestTestSupportTest_testExpectedLogNotFound_equivalentToExcel() {
+        List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound");
+        List<TableData> fromYaml = yamlParser.getExpectedTableData(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound");
+        assertThat("テーブル数が等価", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "BatchRequestTestSupportTest/testExpectedLogNotFound_expected[" + i + "]");
+        }
+    }
+
     // =========================================================================
     // 分類B: DBtoDBBatchSampleTest.xls
     // =========================================================================
@@ -519,6 +560,26 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "DBtoDBBatchSampleTest/testExecute[testShots]");
     }
 
+    @Test
+    public void getSetupTableData_dBtoDBBatchSampleTest_testExecute_equivalentToExcel() {
+        List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute");
+        List<TableData> fromYaml = yamlParser.getSetupTableData(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute");
+        assertThat("テーブル数が等価", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "DBtoDBBatchSampleTest/testExecute_setup[" + i + "]");
+        }
+    }
+
+    @Test
+    public void getExpectedTableData_dBtoDBBatchSampleTest_testExecute_equivalentToExcel() {
+        List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute");
+        List<TableData> fromYaml = yamlParser.getExpectedTableData(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute");
+        assertThat("テーブル数が等価", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "DBtoDBBatchSampleTest/testExecute_expected[" + i + "]");
+        }
+    }
+
     // =========================================================================
     // 分類B: FileToFileBatchSampleTest.xls
     // =========================================================================
@@ -528,6 +589,20 @@ public class ExcelToYamlEquivalenceTest {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "FileToFileBatchSampleTest/testHandle", "testShots");
         List<Map<String, String>> fromYaml = yamlParser.getListMap(DIR_BATCH, "FileToFileBatchSampleTest/testHandle", "testShots");
         assertEquivalentListMap(fromXls, fromYaml, "FileToFileBatchSampleTest/testHandle[testShots]");
+    }
+
+    @Test
+    public void getSetupFile_fileToFileBatchSampleTest_testHandle_equivalentToExcel() {
+        List<DataFile> fromXls  = xlsParser.getSetupFile(DIR_BATCH, "FileToFileBatchSampleTest/testHandle");
+        List<DataFile> fromYaml = yamlParser.getSetupFile(DIR_BATCH, "FileToFileBatchSampleTest/testHandle");
+        assertEquivalentFileList(fromXls, fromYaml, "FileToFileBatchSampleTest/testHandle_setup_files");
+    }
+
+    @Test
+    public void getExpectedFile_fileToFileBatchSampleTest_testHandle_equivalentToExcel() {
+        List<DataFile> fromXls  = xlsParser.getExpectedFile(DIR_BATCH, "FileToFileBatchSampleTest/testHandle");
+        List<DataFile> fromYaml = yamlParser.getExpectedFile(DIR_BATCH, "FileToFileBatchSampleTest/testHandle");
+        assertEquivalentFileList(fromXls, fromYaml, "FileToFileBatchSampleTest/testHandle_expected_files");
     }
 
     // =========================================================================
@@ -633,6 +708,17 @@ public class ExcelToYamlEquivalenceTest {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_MSG, "MessagingReceiveTestSupportTest/testUnExtends", "testShots");
         List<Map<String, String>> fromYaml = yamlParser.getListMap(DIR_MSG, "MessagingReceiveTestSupportTest/testUnExtends", "testShots");
         assertEquivalentListMap(fromXls, fromYaml, "MessagingReceiveTestSupportTest/testUnExtends[testShots]");
+    }
+
+    @Test
+    public void getSetupTableData_messagingReceiveTestSupportTest_testUnExtends_equivalentToExcel() {
+        // YAML パーサは空行テーブル（rows: []）をスキップするため、XLS 側も空行テーブルを除外して比較する
+        List<TableData> fromXls  = filterNonEmpty(xlsParser.getSetupTableData(DIR_MSG, "MessagingReceiveTestSupportTest/testUnExtends"));
+        List<TableData> fromYaml = yamlParser.getSetupTableData(DIR_MSG, "MessagingReceiveTestSupportTest/testUnExtends");
+        assertThat("テーブル数が等価（非空行のみ）", fromYaml.size(), is(fromXls.size()));
+        for (int i = 0; i < fromXls.size(); i++) {
+            assertEquivalentTable(fromXls.get(i), fromYaml.get(i), "MessagingReceiveTestSupportTest/testUnExtends_setup[" + i + "]");
+        }
     }
 
     @Test

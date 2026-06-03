@@ -96,7 +96,9 @@ public final class YamlMessageBuilder {
         String entryId = toStr(map.get(FIELD_ID));
         MockMessages file = new MockMessages(entryId != null ? entryId : "");
         YamlSection.applyDirectives(file, map);
-        fileBuilder.buildFragments(file, map, basePath);
+        // MockMessages は固定長メッセージのため buildFragmentsForMock（skipFwHeader=true）でビルドする。
+        // skipFwHeader=true により、length が未指定でも setLengths が呼ばれ NPE を防ぐ。
+        fileBuilder.buildFragmentsForMock(file, map, basePath);
         return file;
     }
 

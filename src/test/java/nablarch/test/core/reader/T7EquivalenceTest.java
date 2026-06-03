@@ -553,6 +553,46 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertEmptyLineVariable[expected]");
     }
 
+    @Test
+    public void fileSupportTest_testAssertEmptyLine2_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportTest/testAssertEmptyLine2"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportTest/testAssertEmptyLine2"),
+                "FileSupportTest/testAssertEmptyLine2[expected]");
+    }
+
+    @Test
+    public void fileSupportTest_testAssertEmptyLineVariable2_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportTest/testAssertEmptyLineVariable2"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportTest/testAssertEmptyLineVariable2"),
+                "FileSupportTest/testAssertEmptyLineVariable2[expected]");
+    }
+
+    @Test
+    public void fileSupportTest_testAssertEmptyVariableFile_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportTest/testAssertEmptyVariableFile"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportTest/testAssertEmptyVariableFile"),
+                "FileSupportTest/testAssertEmptyVariableFile[expected]");
+    }
+
+    /**
+     * testAssertFixedAsEmptyFail・testAssertVariableAsEmptyFail・testSetUpFixedLengthFileFail:
+     * これらのシートは FileSupportTest の「エラーケース」であり、
+     * XLS のフォーマット定義行（フィールド名行・型名行）が YAML の rows データとして
+     * 変換されているため、XLS と YAML でレコード数が異なりレコード単位の等価照合ができない。
+     * 等価照合は除外し T7.md に理由を記録する。
+     */
+
+    @Test
+    public void fileSupportTest_testSetUpVariableEmptyLine2_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getSetupFile(DIR_FILE, "FileSupportTest/testSetUpVariableEmptyLine2"),
+                yamlParser.getSetupFile(DIR_FILE, "FileSupportTest/testSetUpVariableEmptyLine2"),
+                "FileSupportTest/testSetUpVariableEmptyLine2[setup]");
+    }
+
     /**
      * 重複フィールド名のデータ: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
      * FileSupportTest では IllegalStateException にラップされるが、根本原因は IllegalArgumentException。
@@ -644,6 +684,154 @@ public class T7EquivalenceTest {
                 yamlParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testNumberStringDecimal1"),
                 "FileSupportWithDbLessTestDataParserTest/testNumberStringDecimal1[expected]");
     }
+
+    /**
+     * testNumberStringDecimal2 は桁数超過の数値で InvalidDataFormatException が発生するケース。
+     * XLS・YAML 両方が同じ例外をスローすること（等価なエラー挙動）を確認する。
+     */
+    @Test
+    public void fileSupportWithDbLessTest_testNumberStringDecimal2_bothThrowEquivalently() {
+        boolean xlsThrew = false;
+        boolean yamlThrew = false;
+        try {
+            List<DataFile> xlsFiles = xlsParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testNumberStringDecimal2");
+            for (DataFile f : xlsFiles) {
+                f.toDataRecords();
+            }
+        } catch (nablarch.core.dataformat.InvalidDataFormatException e) {
+            xlsThrew = true;
+        }
+        try {
+            List<DataFile> yamlFiles = yamlParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testNumberStringDecimal2");
+            for (DataFile f : yamlFiles) {
+                f.toDataRecords();
+            }
+        } catch (nablarch.core.dataformat.InvalidDataFormatException e) {
+            yamlThrew = true;
+        }
+        assertThat("XLS が InvalidDataFormatException をスローすること", xlsThrew, is(true));
+        assertThat("YAML も同様に InvalidDataFormatException をスローすること（等価なエラー挙動）", yamlThrew, is(true));
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testAssertEmptyLineFixed_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineFixed"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineFixed"),
+                "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineFixed[expected]");
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testAssertEmptyLineVariable_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable"),
+                "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable[expected]");
+    }
+
+    /**
+     * 重複フィールド名のデータ: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
+     */
+    @Test
+    public void fileSupportWithDbLessTest_testFixedDuplicateName_bothThrowEquivalently() {
+        boolean xlsThrew = false;
+        boolean yamlThrew = false;
+        try {
+            xlsParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testFixedDuplicateName");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            xlsThrew = true;
+        }
+        try {
+            yamlParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testFixedDuplicateName");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            yamlThrew = true;
+        }
+        assertThat("XLS が重複フィールド名エラーをスローすること", xlsThrew, is(true));
+        assertThat("YAML も同様に重複フィールド名エラーをスローすること（等価なエラー挙動）", yamlThrew, is(true));
+    }
+
+    /**
+     * 重複フィールド名の可変長ファイル: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
+     */
+    @Test
+    public void fileSupportWithDbLessTest_testVariableDuplicateName_bothThrowEquivalently() {
+        boolean xlsThrew = false;
+        boolean yamlThrew = false;
+        try {
+            xlsParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testVariableDuplicateName");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            xlsThrew = true;
+        }
+        try {
+            yamlParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testVariableDuplicateName");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            yamlThrew = true;
+        }
+        assertThat("XLS が重複フィールド名エラーをスローすること", xlsThrew, is(true));
+        assertThat("YAML も同様に重複フィールド名エラーをスローすること（等価なエラー挙動）", yamlThrew, is(true));
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testSetUpFixedEmptyLine_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testSetUpFixedEmptyLine"),
+                yamlParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testSetUpFixedEmptyLine"),
+                "FileSupportWithDbLessTestDataParserTest/testSetUpFixedEmptyLine[setup]");
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testSetUpVariableEmptyLine_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine"),
+                yamlParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine"),
+                "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine[setup]");
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testAssertEmptyLine2_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLine2"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLine2"),
+                "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLine2[expected]");
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testAssertEmptyLineVariable2_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable2"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable2"),
+                "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable2[expected]");
+    }
+
+    @Test
+    public void fileSupportWithDbLessTest_testAssertEmptyVariableFile_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyVariableFile"),
+                yamlParser.getExpectedFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testAssertEmptyVariableFile"),
+                "FileSupportWithDbLessTestDataParserTest/testAssertEmptyVariableFile[expected]");
+    }
+
+    /**
+     * testAssertFixedAsEmptyFail・testAssertVariableAsEmptyFail・testSetUpFixedLengthFileFail
+     * (FileSupportWithDbLessTestDataParserTest):
+     * これらのシートは FileSupportWithDbLessTestDataParserTest の「エラーケース」であり、
+     * XLS のフォーマット定義行（フィールド名行・型名行）が YAML の rows データとして
+     * 変換されているため、XLS と YAML でレコード数が異なりレコード単位の等価照合ができない。
+     * 等価照合は除外し T7.md に理由を記録する。
+     */
+
+    @Test
+    public void fileSupportWithDbLessTest_testSetUpVariableEmptyLine2_equivalentToExcel() {
+        assertEquivalentFileList(
+                xlsParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine2"),
+                yamlParser.getSetupFile(DIR_FILE, "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine2"),
+                "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine2[setup]");
+    }
+
+    /**
+     * testVariationUTF8 はカスタムデータ型マッピング（customBasicDataTypeMapping.xml）が必要なため除外。
+     * 標準設定では等価照合テストの実施が困難。T7.md に除外理由を記録する。
+     */
 
     @Test
     public void fileSupportWithDbLessTest_testVariation_equivalentToExcel() {

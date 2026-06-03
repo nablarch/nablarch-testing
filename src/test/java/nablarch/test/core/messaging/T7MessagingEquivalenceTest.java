@@ -2,14 +2,21 @@ package nablarch.test.core.messaging;
 
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.LayoutDefinition;
+import nablarch.core.repository.SystemRepository;
+import nablarch.core.repository.di.DiContainer;
+import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
+import nablarch.test.RepositoryInitializer;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.reader.BasicTestDataParser;
 import nablarch.test.core.reader.DataType;
+import nablarch.test.core.reader.MessageParser;
+import nablarch.test.core.reader.PoiXlsReader;
 import nablarch.test.core.reader.TestDataParser;
 import nablarch.test.core.reader.YamlTestDataParser;
 import nablarch.test.core.reader.yaml.YamlLoader;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import org.junit.After;
@@ -86,13 +93,89 @@ public class T7MessagingEquivalenceTest {
     // =======================================================================
     // MessageParserTest (messages)
     //
-    // NOTE: MessageParserTest.xls の `messages` セクションは全角・半角フィールドの
+    // MessageParserTest.xls の `messages` セクションは全角・半角フィールドの
     // length を省略し、メッセージ全体のバイト長から動的に決定する特殊フォーマット。
-    // このフォーマットは unit-test-yaml.xml のコンバータ設定と競合するため、
-    // 本テストクラスではリポジトリをリセットしてテストするのが正しいアプローチだが、
-    // @ClassRule で共有リポジトリを使用しているため除外する。
-    // 等価照合は別途 convertorSetting.xml 専用リポジトリを使うテストで補完する。
+    // このフォーマットには convertorSetting.xml を使用するリポジトリが必要。
+    // テスト内で一時的に SystemRepository を convertorSetting.xml に切り替え、
+    // テスト後は元のリポジトリに戻す。
     // =======================================================================
+
+    /**
+     * MessageParserTest/testParse の等価照合テスト。
+     * convertorSetting.xml を一時的にロードして実行する。
+     *
+     * <p>XLS 側は {@link MessageParser} + {@link PoiXlsReader} を直接使用する。
+     * これにより {@code @ClassRule} で初期化された {@code xlsParser} コンポーネントが
+     * unit-test-yaml.xml の変換テーブルを使用する問題を回避する。
+     *
+     * <p>NOTE: requestMessages（type 日本語）のみ比較する。
+     * responseMessages は type "X" などの英語型名を使用しており、
+     * YamlTestDataParser の日本語型マッピングでは変換できないため対象外とする。</p>
+     */
+    @Test
+    public void messageParserTest_testParse_equivalentToExcel() {
+        SystemRepository.clear();
+        SystemRepository.load(new DiContainer(new XmlComponentDefinitionLoader("convertorSetting.xml")));
+        try {
+            String path = DIR_MSG;
+            String resource = "MessageParserTest/testParse";
+
+            // XLS 側: MessageParser + PoiXlsReader を直接使用（convertorSetting.xml 準拠）
+            MessageParser xlsMessageParser = new MessageParser(
+                    new PoiXlsReader(),
+                    java.util.Collections.<TestDataInterpreter>emptyList(),
+                    DataType.MESSAGE);
+            xlsMessageParser.parse(path, resource, "requestMessages");
+            MessagePool xlsPool = xlsMessageParser.getResult();
+
+            // YAML 側
+            MessagePool yamlPool = yamlParser.getMessage(path, resource, "requestMessages");
+
+            assertEquivalentMessagePool(xlsPool, yamlPool, resource + "[requestMessages]");
+            // fw_header 比較（assertEquivalentMessagePool 内でも比較するが明示的にも確認）
+        } finally {
+            SystemRepository.clear();
+            RepositoryInitializer.initializeDefaultRepository();
+        }
+    }
+
+    /**
+     * MessageParserTest/testParseAddFields の等価照合テスト。
+     * convertorSetting.xml を一時的にロードして実行する。
+     *
+     * <p>XLS 側は {@link MessageParser} + {@link PoiXlsReader} を直接使用する（testParse と同様）。</p>
+     *
+     * <p>NOTE: requestMessages（type 日本語）のみ比較する。</p>
+     */
+    @Test
+    public void messageParserTest_testParseAddFields_equivalentToExcel() {
+        // testParseAddFields の XLS は nablarch/test/core/messaging/reader.xml で読み込む
+        XmlComponentDefinitionLoader loader = new XmlComponentDefinitionLoader(
+                "nablarch/test/core/messaging/reader.xml");
+        SystemRepository.clear();
+        SystemRepository.load(new DiContainer(loader));
+        try {
+            String path = DIR_MSG;
+            String resource = "MessageParserTest/testParseAddFields";
+
+            // XLS 側: MessageParser + PoiXlsReader を直接使用（reader.xml 準拠）
+            MessageParser xlsMessageParser = new MessageParser(
+                    new PoiXlsReader(),
+                    java.util.Collections.<TestDataInterpreter>emptyList(),
+                    DataType.MESSAGE);
+            xlsMessageParser.parse(path, resource, "requestMessages");
+            MessagePool xlsPool = xlsMessageParser.getResult();
+
+            // YAML 側: yamlParser は convertorSetting.xml で読んだ場合と等価な結果を返す
+            // yamlParser は unit-test-yaml.xml ベースだが、messages の型変換は不要（型情報なし）
+            MessagePool yamlPool = yamlParser.getMessage(path, resource, "requestMessages");
+
+            assertEquivalentMessagePool(xlsPool, yamlPool, resource + "[requestMessages]");
+        } finally {
+            SystemRepository.clear();
+            RepositoryInitializer.initializeDefaultRepository();
+        }
+    }
 
     // =======================================================================
     // RM11AC 系 (getMessageWithoutCache: expected_request_body / response_header / response_body)
@@ -171,6 +254,76 @@ public class T7MessagingEquivalenceTest {
     @Test
     public void rm11ad0101_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0101", "RM11AD0101");
+    }
+
+    @Test
+    public void rm11ac0208_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AC0208", "RM11AC0208");
+    }
+
+    @Test
+    public void rm11ad0102_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AD0102", "RM11AD0102");
+    }
+
+    @Test
+    public void rm11ad0104_equivalentToExcel() {
+        // RM11AD0104 のメッセージ ID は XLS/YAML ともに "RM11AD0102"
+        assertRmMessageEquivalence("RM11AD0104", "RM11AD0102");
+    }
+
+    @Test
+    public void rm11ad0105_equivalentToExcel() {
+        // RM11AD0105: expected_request_header_messages = RM11AD0105, それ以外 = RM11AD0102
+        String resource = "RM11AD0105/message";
+        tryAssertMessagePool(DIR_DATA, resource, DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "RM11AD0105",
+                "RM11AD0105[expected_request_header_messages/RM11AD0105]");
+        tryAssertMessagePool(DIR_DATA, resource, DataType.EXPECTED_REQUEST_BODY_MESSAGES, "RM11AD0102",
+                "RM11AD0105[expected_request_body_messages/RM11AD0102]");
+        tryAssertMessagePool(DIR_DATA, resource, DataType.RESPONSE_HEADER_MESSAGES, "RM11AD0102",
+                "RM11AD0105[response_header_messages/RM11AD0102]");
+        tryAssertMessagePool(DIR_DATA, resource, DataType.RESPONSE_BODY_MESSAGES, "RM11AD0102",
+                "RM11AD0105[response_body_messages/RM11AD0102]");
+    }
+
+    @Test
+    public void rm11ad0106_equivalentToExcel() {
+        // RM11AD0106: expected_request_header_messages = RM11AD0106, expected_request_body = RM11AD0106,
+        //             response_header = RM11AD0102, response_body = RM11AD0102
+        String resource = "RM11AD0106/message";
+        tryAssertMessagePool(DIR_DATA, resource, DataType.EXPECTED_REQUEST_HEADER_MESSAGES, "RM11AD0106",
+                "RM11AD0106[expected_request_header_messages/RM11AD0106]");
+        tryAssertMessagePool(DIR_DATA, resource, DataType.EXPECTED_REQUEST_BODY_MESSAGES, "RM11AD0106",
+                "RM11AD0106[expected_request_body_messages/RM11AD0106]");
+        tryAssertMessagePool(DIR_DATA, resource, DataType.RESPONSE_HEADER_MESSAGES, "RM11AD0102",
+                "RM11AD0106[response_header_messages/RM11AD0102]");
+        tryAssertMessagePool(DIR_DATA, resource, DataType.RESPONSE_BODY_MESSAGES, "RM11AD0102",
+                "RM11AD0106[response_body_messages/RM11AD0102]");
+    }
+
+    @Test
+    public void rm11ad0107_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AD0107", "RM11AD0107");
+    }
+
+    @Test
+    public void rm11ad0108_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AD0108", "RM11AD0108");
+    }
+
+    @Test
+    public void rm11ad0108_original_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AD0108_original", "RM11AD0108");
+    }
+
+    @Test
+    public void rm11ad0108_timestamp_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AD0108_timestamp", "RM11AD0108");
+    }
+
+    @Test
+    public void rm11ad0109_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AD0109", "RM11AD0109");
     }
 
     @Test
@@ -257,12 +410,24 @@ public class T7MessagingEquivalenceTest {
     }
 
     @Test
+    public void requestTestingMessagingContextTest_testExpectedRequestBody_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testExpectedRequestBody";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
+    }
+
+    @Test
     public void requestTestingMessagingContextTest_testNoAssertion_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoAssertion";
         assertEquivalentListMap(
                 xlsParser.getListMap(DIR_MSG, resource, "testShots"),
                 yamlParser.getListMap(DIR_MSG, resource, "testShots"),
                 resource + "[testShots]");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testNoAssertion_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testNoAssertion";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
     @Test
@@ -276,6 +441,76 @@ public class T7MessagingEquivalenceTest {
                 xlsParser.getListMap(DIR_MSG, resource, "expectedLog1"),
                 yamlParser.getListMap(DIR_MSG, resource, "expectedLog1"),
                 resource + "[expectedLog1]");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testResponseBody_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testResponseBody";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testExpectedRequestHeader_listMaps_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testExpectedRequestHeader";
+        assertEquivalentListMap(
+                xlsParser.getListMap(DIR_MSG, resource, "testShots"),
+                yamlParser.getListMap(DIR_MSG, resource, "testShots"),
+                resource + "[testShots]");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testExpectedRequestHeader_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testExpectedRequestHeader";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testNoMatchingBody_listMaps_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testNoMatchingBody";
+        assertEquivalentListMap(
+                xlsParser.getListMap(DIR_MSG, resource, "testShots"),
+                yamlParser.getListMap(DIR_MSG, resource, "testShots"),
+                resource + "[testShots]");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testNoMatchingBody_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testNoMatchingBody";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testNoMatchingHeader_listMaps_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testNoMatchingHeader";
+        assertEquivalentListMap(
+                xlsParser.getListMap(DIR_MSG, resource, "testShots"),
+                yamlParser.getListMap(DIR_MSG, resource, "testShots"),
+                resource + "[testShots]");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testNoMatchingHeader_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testNoMatchingHeader";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testResponseHeader_listMaps_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testResponseHeader";
+        assertEquivalentListMap(
+                xlsParser.getListMap(DIR_MSG, resource, "testShots"),
+                yamlParser.getListMap(DIR_MSG, resource, "testShots"),
+                resource + "[testShots]");
+        assertEquivalentListMap(
+                xlsParser.getListMap(DIR_MSG, resource, "expectedLog1"),
+                yamlParser.getListMap(DIR_MSG, resource, "expectedLog1"),
+                resource + "[expectedLog1]");
+    }
+
+    @Test
+    public void requestTestingMessagingContextTest_testResponseHeader_messages_equivalentToExcel() {
+        String resource = "RequestTestingMessagingContextTest/testResponseHeader";
+        assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
     // =======================================================================
@@ -497,13 +732,22 @@ public class T7MessagingEquivalenceTest {
             }
 
             if (xlsPools == null || xlsPools.isEmpty()) {
-                // XLS にもデータがない場合は YAML も null/empty のはず
+                // XLS にもデータがない（セクション自体が存在しない）ため
+                // YAML も null/empty であることを確認してスキップ（両方なしで等価）
+                String label0 = resource + "[" + dataType.getName() + "/group=" + groupId + "]";
+                assertThat("XLS が null/empty のとき YAML も null/empty のはず [" + label0 + "]",
+                        yamlPools == null || yamlPools.isEmpty(), is(true));
                 continue;
             }
 
             String label = resource + "[" + dataType.getName() + "/group=" + groupId + "]";
             if (yamlPools == null) {
-                // YAML でも null の場合はスキップ（セクション自体が存在しない）
+                // XLS にデータがあるのに YAML が null の場合は等価照合失敗とする。
+                // NOTE: YamlTestDataParser.getSendSyncMessage が null を返すのは
+                //   指定されたセクション（例: expected_request_header_messages）に
+                //   groupId のエントリが YAML 内に存在しない場合（変換漏れの可能性がある）。
+                assertThat("XLS にデータがあるのに YAML が null（変換漏れの可能性） [" + label + "]",
+                        yamlPools, is(xlsPools));
                 continue;
             }
             assertThat("プール数が等価 [" + label + "]", yamlPools.size(), is(xlsPools.size()));
@@ -521,7 +765,7 @@ public class T7MessagingEquivalenceTest {
 
     /**
      * MessagePool の等価性を確認する。
-     * text-encoding ディレクティブ・データレコード（フィールド値）が等価であることを検証する。
+     * text-encoding ディレクティブ・fw_header・データレコード（フィールド値）が等価であることを検証する。
      *
      * <p>NOTE: record-length は各フィールドのバイト長合計から動的に計算されるため、
      * XLS の暗黙のフィールド長（データから計算）と YAML の明示的なフィールド値の長さが
@@ -535,6 +779,11 @@ public class T7MessagingEquivalenceTest {
         Object xlsEncoding = xlsLayout.getDirective().get("text-encoding");
         Object yamlEncoding = yamlLayout.getDirective().get("text-encoding");
         assertThat("text-encoding が等価 [" + label + "]", yamlEncoding, is(xlsEncoding));
+
+        // fw_header 比較
+        Map<String, String> xlsFwHeader  = xlsPool.getFwHeader();
+        Map<String, String> yamlFwHeader = yamlPool.getFwHeader();
+        assertThat("fw_header が等価 [" + label + "]", yamlFwHeader, is(xlsFwHeader));
 
         // データレコード比較
         List<DataRecord> xlsRecords = xlsPool.toDataRecords();
