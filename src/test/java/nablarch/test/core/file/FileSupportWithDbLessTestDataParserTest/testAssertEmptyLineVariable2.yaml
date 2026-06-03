@@ -1,0 +1,22 @@
+expected_files:
+  - path: "work/testAssertEmptyLineVariable2.txt"
+    type: variable
+    directives:
+      text-encoding: "EUC-JP"
+      record-separator: "LF"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+      rows:
+        - ["abc"]
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+      rows:
+        - ["\"\""]
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+      rows:
+        - ["jkl"]

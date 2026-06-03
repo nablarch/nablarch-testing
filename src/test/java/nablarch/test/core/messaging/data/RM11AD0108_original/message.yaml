@@ -1,0 +1,52 @@
+expected_request_header_messages:
+  - group_id: "case1"
+    id: "RM11AD0108"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+expected_request_body_messages:
+  - group_id: "case1"
+    id: "RM11AD0108"
+    directives:
+      text-encoding: "UTF-8"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "半角"}
+      rows:
+response_header_messages:
+  - group_id: "res_case1"
+    id: "RM11AD0108"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM11AD0102", "", "123"]
+response_body_messages:
+  - group_id: "res_case1"
+    id: "RM11AD0108"
+    directives:
+      text-encoding: "UTF-8"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "test", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["test2", "user2", "hoge", ""]

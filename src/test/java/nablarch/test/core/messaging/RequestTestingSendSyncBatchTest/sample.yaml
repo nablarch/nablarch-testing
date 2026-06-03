@@ -1,0 +1,488 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "データベースから読み込んだ内容が、正しくメッセージとして送信されること。また、返却されたメッセージが正しくデータベースに登録されること。"
+        expectedStatusCode: "0"
+        expectedLog: ""
+        diConfig: "batch-test-component-configuration.xml"
+        requestPath: "BM21AA0101"
+        userId: "batch_user"
+        expectedMessage: "case1"
+        responseMessage: "case1"
+      - no: "2"
+        description: "メッセージ送信先から、精査エラーメッセージが返却された場合に、処理が終了し、エラーログが出力されること。"
+        expectedStatusCode: "0"
+        expectedLog: "expectedLog1"
+        diConfig: "batch-test-component-configuration.xml"
+        requestPath: "BM21AA0102"
+        userId: "batch_user"
+        expectedMessage: "case2"
+        responseMessage: "case2"
+      - no: "3"
+        description: "メッセージ送信先から、送信したユーザ情報の登録エラーメッセージが返却された場合に、処理が終了し、エラーログが出力されること。"
+        expectedStatusCode: "20"
+        expectedLog: "expectedLog1"
+        diConfig: "batch-test-component-configuration.xml"
+        requestPath: "BM21AA0103"
+        userId: "batch_user"
+        expectedMessage: "case3"
+        responseMessage: "case1"
+  - id: "expectedLog1"
+    rows:
+      - logLevel: "WARN"
+        message1: "caused by timeout, failed to send message. requestId = [RM21AA0101], retryCount = [0]"
+  - id: "expectedLog2"
+    rows:
+      - logLevel: "WARN"
+        message1: "mesasge exception was happend! this exception was thrown by mock."
+expected_request_header_messages:
+  - group_id: "case1"
+    id: "RM21AA0104"
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "リクエストID", type: "半角"}
+        - {name: "再送フラグ", type: "半角"}
+        - {name: "予約領域", type: "半角"}
+      rows:
+        - ["RM21AA0104", "", ""]
+  - group_id: "case5"
+    id: "RM21AA0104_01"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0104_01", "", "", ""]
+        - ["RM21AA0104_01", "", "", ""]
+  - group_id: "case5"
+    id: "RM21AA0104_02"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0104_02", "", "", ""]
+  - group_id: "case2"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "1", ""]
+        - ["RM21AA0101", "", "2", ""]
+  - group_id: "case2"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "3", ""]
+  - group_id: "case3"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "", ""]
+  - group_id: "case4"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "", ""]
+  - group_id: "case5"
+    id: "RM21AA0104_01"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0104_01", "", "", ""]
+        - ["RM21AA0104_01", "", "", ""]
+  - group_id: "case5"
+    id: "RM21AA0104_02"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0104_02", "", "", ""]
+expected_request_body_messages:
+  - group_id: "case1"
+    id: "RM21AA0104"
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+        - {name: "ユーザID", type: "半角"}
+        - {name: "ログインID", type: "半角"}
+      rows:
+        - ["1", "000000001", "nabura"]
+  - group_id: "case5"
+    id: "RM21AA0104_01"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "userInfoId", type: "半角"}
+        - {name: "userId", type: "半角"}
+        - {name: "loginId", type: "半角"}
+        - {name: "kanjiName", type: "全角"}
+        - {name: "kanaName", type: "全角"}
+      rows:
+        - ["00000000000000000112", "000000001", "HOGEHOGE1", "漢字名１", "カナメイ１"]
+        - ["00000000000000000113", "000000002", "HOGEHOGE2", "漢字名２", "カナメイ２"]
+  - group_id: "case5"
+    id: "RM21AA0104_02"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion", "white spring", "test"]
+  - group_id: "case2"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion", "white spring", "ちか"]
+        - ["lion3", "white spring3", "ちか３"]
+  - group_id: "case2"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion2", "white spring2", "ちか２"]
+  - group_id: "case3"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion", "white spring", "ちか"]
+  - group_id: "case4"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion", "white spring", "ちか"]
+  - group_id: "case5"
+    id: "RM21AA0104_01"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "userInfoId", type: "半角"}
+        - {name: "userId", type: "半角"}
+        - {name: "loginId", type: "半角"}
+        - {name: "kanjiName", type: "全角"}
+        - {name: "kanaName", type: "全角"}
+      rows:
+        - ["00000000000000000112", "000000001", "HOGEHOGE1", "漢字名１", "カナメイ１"]
+        - ["00000000000000000113", "000000002", "HOGEHOGE2", "漢字名２", "カナメイ２"]
+  - group_id: "case5"
+    id: "RM21AA0104_02"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion", "white spring", "test"]
+response_header_messages:
+  - group_id: "case1"
+    id: "RM21AA0104"
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "リクエストID", type: "半角"}
+        - {name: "再送フラグ", type: "半角"}
+        - {name: "予約領域", type: "半角"}
+      rows:
+        - ["RM21AA0104", "", ""]
+  - group_id: "case1"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "", ""]
+        - ["RM21AA0101", "", "", ""]
+  - group_id: "case1"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "", ""]
+  - group_id: "res_case2"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "", ""]
+        - ["RM21AA0101", "", "", ""]
+  - group_id: "res_case2"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "", ""]
+  - group_id: "res_case3"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "", ""]
+  - group_id: "res_case4"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "1", ""]
+  - group_id: "res_case5"
+    id: "RM21AA0104_01"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "", ""]
+        - ["RM21AA0101", "", "", ""]
+response_body_messages:
+  - group_id: "case1"
+    id: "RM21AA0104"
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+        - {name: "ユーザID", type: "半角"}
+        - {name: "ユーザ名", type: "全角"}
+        - {name: "住所１", type: "全角"}
+      rows:
+        - ["1", "0000000001", "那武羅", "東京都"]
+  - group_id: "case1"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["1234567890", "result1", ""]
+        - ["01", "1234567890", ""]
+  - group_id: "res_case1"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["12345678aa", "result2", ""]
+  - group_id: "res_case2"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["12345678bb", "result3", ""]
+        - ["12345678bb", "1234567890", ""]
+  - group_id: "res_case2"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["1234567890", "title001_publisher002_authors003", ""]
+  - group_id: "res_case3"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+      record-separator: "CRLF"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["errorMode:timeout", "", ""]
+        - ["errorMode:msgException", "", ""]
+  - group_id: "res_case4"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["errorMode:msgException", "white spring", "ちか"]
+  - group_id: "res_case5"
+    id: "RM21AA0104_01"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["1234567890", "result1", ""]
+        - ["01", "1234567890", ""]

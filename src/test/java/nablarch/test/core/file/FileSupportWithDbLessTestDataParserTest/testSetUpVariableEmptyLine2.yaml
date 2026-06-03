@@ -1,0 +1,16 @@
+setup_files:
+  - path: "work/testSetUpVariableEmptyLine2.txt"
+    type: variable
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+      quoting-delimiter: "'"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "漢字氏名", type: "半角"}
+      rows:
+        - ["abc"]
+        - ["\"\""]
+        - ["def"]
+        - ["\"\""]

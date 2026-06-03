@@ -1,0 +1,21 @@
+list_maps:
+  - id: "beanProps"
+    rows:
+      - strVal: "テスト"
+        intVal: "101"
+  - id: "beanArrayProps"
+    rows:
+      - strVal: "テスト0"
+        intVal: "100"
+      - strVal: "テスト1"
+        intVal: "101"
+      - strVal: "テスト2"
+        intVal: "102"
+  - id: "beanListProps"
+    rows:
+      - strVal: "テスト0"
+        intVal: "100"
+      - strVal: "テスト1"
+        intVal: "101"
+      - strVal: "テスト2"
+        intVal: "102"

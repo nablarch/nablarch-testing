@@ -1,0 +1,21 @@
+expected_files:
+  - path: "work/testAssertVariableAsEmptyFail.txt"
+    type: variable
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "ヘッダ"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+        - {name: "FILLER", type: "半角"}
+      rows:
+        - ["レコード区分", "カナ氏名"]
+        - ["半角", "半角カナ"]
+    - record_type: "トレーラ"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+        - {name: "FILLER1", type: "半角"}
+        - {name: "総件数", type: "数値"}
+        - {name: "FILLER2", type: "半角"}
+      rows:

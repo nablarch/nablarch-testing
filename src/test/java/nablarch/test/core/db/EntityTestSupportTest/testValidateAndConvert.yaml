@@ -1,0 +1,19 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - "[No]": "1"
+        title: "正常系-1"
+        case: "精査対象のみ精査されることの確認(精査対象以外全てエラーとなる値)"
+        expectedMessageId1: ""
+        propertyName1: ""
+      - "[No]": "2"
+        title: "異常系-1（必須属性が空）"
+        case: "ユーザ名が空"
+        expectedMessageId1: "MSG00010"
+        propertyName1: "userName"
+  - id: "params"
+    rows:
+      - "[No]": "1"
+        userName: "aaa"
+      - "[No]": "2"
+        userName: ""

@@ -1,0 +1,67 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        case: "送信(最大桁)"
+        context: "context"
+        isValidToken: "false"
+        setUpTable: ""
+        useMessageClient: "true"
+        expectedStatusCode: "200"
+        expectedMessageId: ""
+        expectedSearch: ""
+        forwardUri: "/test.html"
+        expectedMessage: "case1"
+        responseMessage: "case1"
+expected_request_header_messages:
+  - group_id: "case1"
+    id: "RM11AD0201"
+    directives:
+      text-encoding: "UTF-8"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "ダミー", type: "半角"}
+      rows:
+        - [""]
+expected_request_body_messages:
+  - group_id: "case1"
+    id: "RM11AD0201"
+    directives:
+      text-encoding: "UTF-8"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "XML1", type: "全半角"}
+        - {name: "XML2", type: "全半角"}
+        - {name: "XML3", type: "全半角"}
+        - {name: "XML4", type: "全半角"}
+        - {name: "XML5", type: "全半角"}
+      rows:
+        - ["<?xml version=\"1.0\" encoding=\"UTF-8\"?><request>", "<dataKbn>0</dataKbn>\n<loginId>LOGINID</loginId>\n<kanjiName>漢字 名１</kanjiName>\n<kanaName>カナ メイ</kanaName>\n<mailAddress>mail@mail.com1</mailAddress>", "<extensionNumber>\n  <building>11</building>\n  <personal>1001</personal>\n</extensionNumber>", "<mobilePhoneNumber>\n  <areaCode>201</areaCode>\n  <cityCode>3001</cityCode>\n  <sbscrCode>4001</sbscrCode>\n</mobilePhoneNumber>", "</request>"]
+response_header_messages:
+  - group_id: "case1"
+    id: "RM11AD0201"
+    directives:
+      text-encoding: "UTF-8"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "STATUS_CODE", type: "半角"}
+      rows:
+        - ["200"]
+        - ["200"]
+response_body_messages:
+  - group_id: "case1"
+    id: "RM11AD0201"
+    directives:
+      text-encoding: "UTF-8"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "XML1", type: "全半角"}
+        - {name: "XML2", type: "全半角"}
+        - {name: "XML3", type: "全半角"}
+      rows:
+        - ["<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>", "<failureCode></failureCode>\n<userInfoId>00000000000000000112</userInfoId>\n<dataKbn>0</dataKbn>\n<_nbctlhdr>\n  <statusCode>200</statusCode>\n</_nbctlhdr>", "</response>"]
+        - ["<?xml version=\"1.0\" encoding=\"UTF-8\"?><response>", "<failureCode></failureCode>\n<userInfoId>00000000000000000112</userInfoId>\n<dataKbn>0</dataKbn>\n<_nbctlhdr>\n  <statusCode>200</statusCode>\n</_nbctlhdr>", "</response>"]

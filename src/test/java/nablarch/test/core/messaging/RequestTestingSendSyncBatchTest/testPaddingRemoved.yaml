@@ -1,0 +1,70 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "メッセージ同期送信のテスト１回目（正常系）"
+        expectedStatusCode: "0"
+        setUpTable: ""
+        expectedTable: ""
+        expectedLog: ""
+        diConfig: "batch-test-component-configuration.xml"
+        requestPath: "BM21AA0107"
+        userId: "batch_user"
+        expectedMessage: "case1"
+        responseMessage: "res_case1"
+expected_request_header_messages:
+  - group_id: "case1"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "リクエストID", type: "半角"}
+        - {name: "再送フラグ", type: "半角"}
+        - {name: "合計数", type: "半角"}
+        - {name: "予約領域", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "1", ""]
+expected_request_body_messages:
+  - group_id: "case1"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "タイトル", type: "半角"}
+        - {name: "出版社", type: "半角"}
+        - {name: "作者", type: "全角"}
+      rows:
+        - ["lion", "                    ", "ちか"]
+response_header_messages:
+  - group_id: "res_case1"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "", ""]
+        - ["RM21AA0101", "", "", ""]
+response_body_messages:
+  - group_id: "res_case1"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["1234567890", "result1", ""]
+        - ["01", "1234567890", ""]

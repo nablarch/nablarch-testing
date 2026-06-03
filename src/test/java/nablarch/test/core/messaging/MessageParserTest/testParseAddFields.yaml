@@ -1,0 +1,27 @@
+messages:
+  - id: "requestMessages"
+    directives:
+      text-encoding: "Windows-31J"
+    fw_header:
+      requestId: "hoge"
+      addFields: "hogehoge"
+      userId: "moge"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "ユーザ名", type: "全角"}
+        - {name: "備考", type: "全角"}
+        - {name: "FILLER", type: "半角"}
+      rows:
+        - ["電文太郎", "特筆なし", ""]
+        - ["", "ユーザ名が空欄なのでエラーが発生します。", ""]
+  - id: "responseMessages"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "処理結果コード", type: "X"}
+        - {name: "会員ID", type: "X"}
+        - {name: "FILLER", type: "X"}
+      rows:
+        - ["00", "1234567890", ""]
+        - ["01", "", ""]

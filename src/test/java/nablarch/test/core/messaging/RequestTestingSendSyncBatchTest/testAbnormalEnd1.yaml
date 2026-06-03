@@ -1,0 +1,123 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - no: "1"
+        description: "要求電文（本文）のアサートに失敗する場合のエラー（異常系）"
+        expectedStatusCode: "0"
+        setUpTable: ""
+        expectedTable: ""
+        expectedLog: ""
+        diConfig: "batch-test-component-configuration.xml"
+        requestPath: "BM21AA0102"
+        userId: "batch_user"
+        expectedMessage: "case5"
+        responseMessage: "res_case5"
+expected_request_header_messages:
+  - group_id: "case5"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA0101", "", "1", ""]
+        - ["RM21AA0101", "", "2", ""]
+  - group_id: "case5"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "3", ""]
+expected_request_body_messages:
+  - group_id: "case5"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion", "white spring", "ちか"]
+        - ["lionERROR", "white spring3", "ちか３"]
+  - group_id: "case5"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "title", type: "半角"}
+        - {name: "publisher", type: "半角"}
+        - {name: "authors", type: "全角"}
+      rows:
+        - ["lion2", "white spring2", "ちか２"]
+response_header_messages:
+  - group_id: "res_case5"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "", ""]
+        - ["RM21AA010102", "", "", ""]
+  - group_id: "res_case5"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "requestId", type: "半角"}
+        - {name: "resendFlag", type: "半角"}
+        - {name: "testCount", type: "半角"}
+        - {name: "reserved", type: "半角"}
+      rows:
+        - ["RM21AA010102", "", "", ""]
+response_body_messages:
+  - group_id: "res_case5"
+    id: "RM21AA0101"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["1234567890", "white spring", "ちか"]
+        - ["1234567890", "white spring", "ちか"]
+  - group_id: "res_case5"
+    id: "RM21AA010102"
+    directives:
+      text-encoding: "ms932"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "failureCode", type: "半角"}
+        - {name: "userInfoId", type: "半角"}
+        - {name: "filler", type: "半角"}
+      rows:
+        - ["1234567890", "white spring", "ちか"]
+        - ["1234567890", "white spring", "ちか"]

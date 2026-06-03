@@ -1,0 +1,18 @@
+setup_files:
+  - path: "work/testSetUpVariableEmptyLine.txt"
+    type: variable
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CR"
+      field-separator: "\\t"
+      quoting-delimiter: "'"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角"}
+        - {name: "カナ氏名", type: "半角"}
+        - {name: "漢字氏名", type: "半角"}
+      rows:
+        - ["abc", "def", "ghi"]
+        - ["\"\"", "", ""]
+        - ["jkl", "mno", "pqr"]

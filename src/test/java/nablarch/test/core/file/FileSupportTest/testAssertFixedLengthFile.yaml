@@ -1,0 +1,33 @@
+expected_files:
+  - path: "./work/testAssertFixedLengthFile.txt"
+    type: fixed
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "ヘッダ"
+      fields:
+        - {name: "レコード区分", type: "半角数字", length: "1"}
+        - {name: "FILLER", type: "半角", length: "129"}
+      rows:
+        - ["1", ""]
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角数字", length: "1"}
+        - {name: "カナ氏名", type: "半角カナ", length: "20"}
+        - {name: "漢字氏名", type: "全角漢字", length: "40"}
+        - {name: "ローマ字氏名", type: "半角英字", length: "23"}
+        - {name: "性別", type: "半角数字", length: "1"}
+        - {name: "e-mail(携帯)", type: "半角記号", length: "30"}
+        - {name: "バイナリカラム", type: "バイナリ", length: "5"}
+        - {name: "FILLER", type: "半角", length: "10"}
+      rows:
+        - ["2", "ﾍﾝｺｳｺﾞ ｶﾅｼﾒｲ", "変更後　漢字氏名", "Henkougo romaji", "1", "henkougo@emal.cellar", "0x3031323334", ""]
+    - record_type: "トレーラ"
+      fields:
+        - {name: "レコード区分", type: "半角数字", length: "1"}
+        - {name: "FILLER1", type: "半角", length: "2"}
+        - {name: "総件数", type: "数値", length: "7"}
+        - {name: "FILLER2", type: "半角", length: "120"}
+      rows:
+        - ["8", "", "1", ""]

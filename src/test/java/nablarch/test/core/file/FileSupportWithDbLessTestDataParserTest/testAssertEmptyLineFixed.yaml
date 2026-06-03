@@ -1,0 +1,15 @@
+expected_files:
+  - path: "work/testAssertEmptyLineFixed.txt"
+    type: fixed
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "LF"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "カナ氏名", type: "半角カナ", length: "5"}
+        - {name: "漢字氏名", type: "全角漢字", length: "10"}
+      rows:
+        - ["ｶﾅｶﾅ", "かなかな"]
+        - ["\"\"", ""]
+        - ["ｶﾅﾅﾝ", "かななん"]

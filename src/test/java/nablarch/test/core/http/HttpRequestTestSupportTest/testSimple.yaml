@@ -1,0 +1,20 @@
+list_maps:
+  - id: "user"
+    rows:
+      - REQUEST_ID: "ForwardSimpleHTML"
+        USER_ID: "US00000001"
+  - id: "testCases"
+    rows:
+      - no: "1"
+        case: "フォワード成功"
+        context: "user"
+        isValidToken: "true"
+        setUpTable: ""
+        expectedStatusCode: "200"
+        expectedMessageId: ""
+        expectedSearch: ""
+        expectedTable: ""
+        forwardUri: "/simple.html"
+  - id: "requestParams"
+    rows:
+      - "[no]": "1"

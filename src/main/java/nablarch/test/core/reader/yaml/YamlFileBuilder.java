@@ -187,7 +187,16 @@ public final class YamlFileBuilder {
             if (skipFwHeader || hasLength) {
                 List<String> cleanedLengths = new ArrayList<String>(lengths.size());
                 for (String l : lengths) {
-                    cleanedLengths.add(l != null ? l : "");
+                    // length が未指定の場合、メッセージファイル（skipFwHeader=true）では
+                    // DataFileFragment の「オンデマンド計算」マーカー "-" を設定する。
+                    // ファイルデータ（skipFwHeader=false）では空文字列を渡す（既存挙動を維持）。
+                    if (l != null) {
+                        cleanedLengths.add(l);
+                    } else if (skipFwHeader) {
+                        cleanedLengths.add("-");
+                    } else {
+                        cleanedLengths.add("");
+                    }
                 }
                 fragment.setLengths(cleanedLengths);
             }

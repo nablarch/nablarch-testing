@@ -1,0 +1,7 @@
+list_maps:
+  - id: "testShots"
+    rows:
+      - "[No]": "1"
+        case: "必須カラムがないため例外が発生する。"
+        expectedMessageId1: ""
+        propertyName1: ""

@@ -1,0 +1,34 @@
+setup_files:
+  - path: "work/testNumberStringDecimal2.txt"
+    type: fixed
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "符号無数値1", type: "符号無数値", length: "10"}
+        - {name: "符号付数値1", type: "符号付数値", length: "9"}
+        - {name: "符号無数値2", type: "符号無数値", length: "1"}
+        - {name: "符号付数値2", type: "符号付数値", length: "1"}
+        - {name: "符号無数値3", type: "符号無数値", length: "10"}
+        - {name: "符号付数値3", type: "符号付数値", length: "10"}
+      rows:
+        - ["1234567890", "1234567890", "0", "1", "12345.6789", "-123.45678"]
+expected_files:
+  - path: "work/testNumberStringDecimal2.txt"
+    type: fixed
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "符号無数値1", type: "符号無数値", length: "10"}
+        - {name: "符号付数値1", type: "符号付数値", length: "9"}
+        - {name: "符号無数値2", type: "符号無数値", length: "1"}
+        - {name: "符号付数値2", type: "符号付数値", length: "1"}
+        - {name: "符号無数値3", type: "符号無数値", length: "10"}
+        - {name: "符号付数値3", type: "符号付数値", length: "10"}
+      rows:
+        - ["1234567890", "1234567890", "0", "1", "12345.6789", "-123.45678"]

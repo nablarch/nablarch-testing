@@ -1,0 +1,24 @@
+expected_files:
+  - group_id: "1"
+    path: "./work/testAssertEmptyVariableFile1.txt"
+    type: variable
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角数字"}
+      rows:
+  - group_id: "1"
+    path: "./work/testAssertEmptyVariableFile2.txt"
+    type: variable
+    directives:
+      text-encoding: "Windows-31J"
+      record-separator: "CRLF"
+    records:
+    - record_type: "データ"
+      fields:
+        - {name: "レコード区分", type: "半角数字"}
+      rows:
+        - ["\"\""]

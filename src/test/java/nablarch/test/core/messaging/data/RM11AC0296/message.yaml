@@ -1,0 +1,44 @@
+expected_request_header_messages:
+  - id: "RM11AC0296"
+    directives:
+      text-encoding: "Shift_JIS"
+      file-type: "UTF8_ENCODE"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "STATUS_CODE", type: "半角"}
+      rows:
+expected_request_body_messages:
+  - id: "RM11AC0296"
+    directives:
+      text-encoding: "Shift_JIS"
+      file-type: "UTF8_ENCODE"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "XML", type: "全半角"}
+      rows:
+response_header_messages:
+  - id: "RM11AC0296"
+    directives:
+      text-encoding: "Shift_JIS"
+      file-type: "UTF8_ENCODE"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "STATUS_CODE", type: "半角"}
+      rows:
+        - ["200"]
+response_body_messages:
+  - id: "RM11AC0296"
+    directives:
+      text-encoding: "Shift_JIS"
+      file-type: "UTF8_ENCODE"
+    records:
+    - record_type: "default"
+      fields:
+        - {name: "XML1", type: "全半角"}
+        - {name: "XML2", type: "全半角"}
+        - {name: "XML3", type: "全半角"}
+      rows:
+        - ["<?xml version=\"1.0\" ?><response>", "<failureCode></failureCode><userInfoId>あ</userInfoId><dataKbn>1</dataKbn>", "</response>"]
