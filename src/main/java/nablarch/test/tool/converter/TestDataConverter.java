@@ -201,17 +201,20 @@ public class TestDataConverter {
 
         YamlTestDataValidator validator = new YamlTestDataValidator();
         int errorCount = 0;
+        int targetCount = 0;
 
         // inputPath 直下の各サブディレクトリ（コンテナ）を検証対象とする
         File[] containers = inputDir.listFiles(File::isDirectory);
         if (containers == null || containers.length == 0) {
             // 直下に YAML ファイルがある場合（セクションディレクトリとして扱う）
+            targetCount = 1;
             List<ValidationError> errors = validator.validate(inputPath);
             errorCount += errors.size();
             for (ValidationError ve : errors) {
                 System.err.println("VALIDATION ERROR: " + ve);
             }
         } else {
+            targetCount = containers.length;
             for (File container : containers) {
                 List<ValidationError> errors = validator.validate(container.toPath());
                 errorCount += errors.size();
@@ -222,7 +225,8 @@ public class TestDataConverter {
         }
 
         System.out.println("=== TestDataConverter 検証サマリー ===");
-        System.out.println("エラー: " + errorCount + " 件");
+        System.out.println("検証対象: " + targetCount + " 件");
+        System.out.println("エラー:   " + errorCount + " 件");
         return errorCount > 0 ? 1 : 0;
     }
 

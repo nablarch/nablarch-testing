@@ -1,5 +1,6 @@
 package nablarch.test.tool.converter.yaml;
 
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -52,7 +53,7 @@ public class YamlTestDataValidatorTest {
         List<ValidationError> errors = validator.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
-        assertThat(errors.get(0).getMessage(), containsString("列数不一致"));
+        assertThat(errors.get(0).getMessage(), containsString("[V-COL]"));
     }
 
     /**
@@ -78,7 +79,7 @@ public class YamlTestDataValidatorTest {
         List<ValidationError> errors = validator.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
-        assertThat(errors.get(0).getMessage(), containsString("列数不一致"));
+        assertThat(errors.get(0).getMessage(), containsString("[V-COL]"));
     }
 
     /**
@@ -162,7 +163,7 @@ public class YamlTestDataValidatorTest {
         List<ValidationError> errors = validator.validate(dir.toPath());
 
         assertThat(errors.size(), is(1));
-        assertThat(errors.get(0).getMessage(), containsString("構造境界違反"));
+        assertThat(errors.get(0).getMessage(), containsString("[V-DIR]"));
         assertThat(errors.get(0).getMessage(), containsString("text-encoding"));
     }
 
@@ -218,6 +219,33 @@ public class YamlTestDataValidatorTest {
         assertThat(errors.size(), is(2));
     }
 
+    /**
+     * [Given] expected_request_body_messages の fw_header に既知ディレクティブ名が含まれる
+     * [When]  validate() を呼び出す
+     * [Then]  構造境界違反エラーが報告される（messages 以外のメッセージ系にも V-DIR が適用されること）
+     */
+    @Test
+    public void directiveInFwHeader_expectedRequestBodyMessages() throws Exception {
+        File dir = tmp.newFolder("TestCase");
+        writeYaml(dir, "case01.yaml",
+                "expected_request_body_messages:\n" +
+                "  - id: msg01\n" +
+                "    fw_header:\n" +
+                "      file-type: Fixed\n" +   // ディレクティブ名がfw_headerに混入
+                "    records:\n" +
+                "      - record_type: \"\"\n" +
+                "        fields:\n" +
+                "          - {name: f1, type: 半角英字}\n" +
+                "        rows: []\n"
+        );
+
+        List<ValidationError> errors = validator.validate(dir.toPath());
+
+        assertThat(errors.size(), is(1));
+        assertThat(errors.get(0).getMessage(), containsString("[V-DIR]"));
+        assertThat(errors.get(0).getMessage(), containsString("file-type"));
+    }
+
     // -------------------------------------------------------------------------
     // V-SCH: JSON Schema 適合検証
     // -------------------------------------------------------------------------
@@ -239,6 +267,7 @@ public class YamlTestDataValidatorTest {
         List<ValidationError> errors = validator.validate(dir.toPath());
 
         assertThat(errors.size() >= 1, is(true));
+        assertThat(errors.get(0).getMessage(), containsString("[V-SCH]"));
     }
 
     /**
@@ -322,7 +351,6 @@ public class YamlTestDataValidatorTest {
                 "    rows:\n" +
                 "      - {USER_ID: \"001\"}\n"
         );
-        File badFile = new File(dir, "case02.yaml");
         writeYaml(dir, "case02.yaml",
                 "setup_files:\n" +
                 "  - path: test.dat\n" +
@@ -372,25 +400,34 @@ public class YamlTestDataValidatorTest {
         assertThat(e.getFilePath().isEmpty(), is(false));
         assertThat(e.getLocation().isEmpty(), is(false));
         assertThat(e.getMessage().isEmpty(), is(false));
+        // toString() が "[filePath] location: message" 形式であること
+        String str = e.toString();
+        assertThat(str, containsString("["));
+        assertThat(str, containsString("] "));
+        assertThat(str, containsString(": "));
+        assertThat(str, containsString(e.getFilePath()));
+        assertThat(str, containsString(e.getLocation()));
+        assertThat(str, containsString(e.getMessage()));
     }
 
     /**
      * [Given] YAML ルートがマップ以外（リスト形式）のファイル
      * [When]  validate() を呼び出す
-     * [Then]  エラーなし（構造不明のためスキップ）
+     * [Then]  スキーマエラーが返るが V-COL/V-DIR 構造検証では例外が出ない
      */
     @Test
-    public void yamlRootIsNotMap_noError() throws Exception {
+    public void yamlRootIsNotMap_noStructureException() throws Exception {
         File dir = tmp.newFolder("TestCase");
         writeYaml(dir, "case01.yaml",
                 "- item1\n" +
-                "- item2\n"   // YAML ルートがリスト → parseYaml が null を返す
+                "- item2\n"   // YAML ルートがリスト → parseYaml が null を返し構造検証をスキップ
         );
 
+        // スキーマエラーのみが返り、V-COL/V-DIR では例外が出ないこと
         List<ValidationError> errors = validator.validate(dir.toPath());
-
-        // スキーマエラーは出るが構造検証はスキップされる（例外なく完了すること）
-        assertThat(errors.isEmpty() || !errors.isEmpty(), is(true));
+        for (ValidationError e : errors) {
+            assertThat("V-COL/V-DIR による誤検知がないこと", e.getMessage(), containsString("[V-SCH]"));
+        }
     }
 
     /**
@@ -408,10 +445,12 @@ public class YamlTestDataValidatorTest {
                 "    rows: []\n"
         );
         yamlFile.setReadable(false);
+        // root 権限では setReadable(false) が無効なのでスキップ
+        Assume.assumeFalse(yamlFile.canRead());
         try {
             List<ValidationError> errors = validator.validate(dir.toPath());
-            // ファイル読み込みエラーが報告される（root 権限では権限制限が無効なため条件判定）
-            assertThat(errors.isEmpty() || errors.get(0).getMessage().contains("ファイル読み込みエラー"), is(true));
+            assertThat(errors.size(), is(1));
+            assertThat(errors.get(0).getMessage(), containsString("ファイル読み込みエラー"));
         } finally {
             yamlFile.setReadable(true);
         }

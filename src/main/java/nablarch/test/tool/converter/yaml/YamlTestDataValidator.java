@@ -9,7 +9,6 @@ import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,9 +47,10 @@ public class YamlTestDataValidator {
     private static final Set<String> FILE_AND_MESSAGE_SECTION_KEYS;
 
     static {
-        FILE_AND_MESSAGE_SECTION_KEYS = new java.util.HashSet<>(MESSAGE_SECTION_KEYS);
-        FILE_AND_MESSAGE_SECTION_KEYS.add("setup_files");
-        FILE_AND_MESSAGE_SECTION_KEYS.add("expected_files");
+        Set<String> s = new HashSet<>(MESSAGE_SECTION_KEYS);
+        s.add("setup_files");
+        s.add("expected_files");
+        FILE_AND_MESSAGE_SECTION_KEYS = Collections.unmodifiableSet(s);
     }
 
     /**
@@ -91,7 +92,7 @@ public class YamlTestDataValidator {
         if (schema != null) {
             List<com.networknt.schema.Error> schemaErrors = schema.validate(yamlText, InputFormat.YAML);
             for (com.networknt.schema.Error schemaError : schemaErrors) {
-                errors.add(new ValidationError(filePath, schemaError.getInstanceLocation().toString(), "スキーマ非適合: " + schemaError.getMessage()));
+                errors.add(new ValidationError(filePath, schemaError.getInstanceLocation().toString(), "[V-SCH] スキーマ非適合: " + schemaError.getMessage()));
             }
         }
 
@@ -118,7 +119,7 @@ public class YamlTestDataValidator {
                 Map<String, Object> block = castMap(blocks.get(blockIdx));
                 String blockLocation = sectionKey + "[" + blockIdx + "]";
 
-                // V-COL: records を持つセクション（setup_files / expected_files / message 系）
+                // V-COL: file 系・message 系のみ適用。setup_tables / expected_tables / list_maps は rows がオブジェクト配列のため対象外
                 if (FILE_AND_MESSAGE_SECTION_KEYS.contains(sectionKey)) {
                     List<Object> records = castList(block.get("records"));
                     for (int recIdx = 0; recIdx < records.size(); recIdx++) {
@@ -152,7 +153,7 @@ public class YamlTestDataValidator {
                 errors.add(new ValidationError(
                         filePath,
                         location,
-                        "列数不一致: fields=" + fieldCount + " 件に対して rows=" + row.size() + " 要素"
+                        "[V-COL] 列数不一致: fields=" + fieldCount + " 件に対して rows=" + row.size() + " 要素"
                 ));
             }
         }
@@ -171,7 +172,7 @@ public class YamlTestDataValidator {
                 errors.add(new ValidationError(
                         filePath,
                         blockLocation + ".fw_header",
-                        "構造境界違反: fw_header にディレクティブ名 \"" + key + "\" が含まれています。directives: に移動してください"
+                        "[V-DIR] 構造境界違反: fw_header にディレクティブ名 \"" + key + "\" が含まれています。directives: に移動してください"
                 ));
             }
         }
@@ -181,18 +182,20 @@ public class YamlTestDataValidator {
     private Schema loadSchema() {
         try (InputStream in = getClass().getResourceAsStream(SCHEMA_RESOURCE)) {
             if (in == null) {
+                System.err.println("WARN: YamlTestDataValidator: スキーマリソースが見つかりません: " + SCHEMA_RESOURCE + " — V-SCH 検証をスキップします");
                 return null;
             }
             SchemaRegistry registry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
             return registry.getSchema(in, InputFormat.JSON);
         } catch (IOException e) {
+            System.err.println("WARN: YamlTestDataValidator: スキーマのロードに失敗しました — V-SCH 検証をスキップします: " + e.getMessage());
             return null;
         }
     }
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseYaml(String yamlText) {
-        LoadSettings settings = LoadSettings.builder().build();
+        LoadSettings settings = LoadSettings.builder().setAllowDuplicateKeys(false).build();
         Load loader = new Load(settings);
         Object loaded = loader.loadFromString(yamlText);
         if (loaded instanceof Map) {

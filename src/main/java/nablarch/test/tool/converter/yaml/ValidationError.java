@@ -1,7 +1,9 @@
 package nablarch.test.tool.converter.yaml;
 
+import java.util.Objects;
+
 /**
- * YAML テストデータ検証エラーを表す不変の値オブジェクト。
+ * YAML テストデータ検証エラーを表す不変クラス。
  */
 public final class ValidationError {
 
@@ -10,9 +12,9 @@ public final class ValidationError {
     private final String message;
 
     public ValidationError(String filePath, String location, String message) {
-        this.filePath = filePath;
-        this.location = location;
-        this.message = message;
+        this.filePath = Objects.requireNonNull(filePath, "filePath");
+        this.location = Objects.requireNonNull(location, "location");
+        this.message  = Objects.requireNonNull(message,  "message");
     }
 
     /** 検証対象ファイルの絶対パス文字列。 */

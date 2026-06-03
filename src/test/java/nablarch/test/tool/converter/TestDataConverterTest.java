@@ -770,6 +770,68 @@ public class TestDataConverterTest {
         assertThat(exitCode, is(2));
     }
 
+    /**
+     * [Given] --validate-on-convert で複数コンテナのうち1つだけ不正
+     * [When]  run() を呼び出す
+     * [Then]  正常コンテナは変換され、不正コンテナはスキップ、終了コード 1 が返される
+     */
+    @Test
+    public void validateOnConvertPartialSuccess_validConverted_invalidSkipped() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        // 正常コンテナ
+        File goodDir = new File(inputDir, "GoodTest");
+        goodDir.mkdir();
+        writeSimpleYaml(new File(goodDir, "case01.yaml"));
+
+        // 不正コンテナ（列数不一致）
+        File badDir = new File(inputDir, "BadTest");
+        badDir.mkdir();
+        writeInvalidYamlColumnMismatch(new File(badDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls", "--validate-on-convert",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(1));
+        assertTrue(new File(outputDir, "GoodTest.xlsx").exists());
+        assertTrue(!new File(outputDir, "BadTest.xlsx").exists());
+    }
+
+    /**
+     * [Given] --validate に存在しないディレクトリパスを渡す
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 1 が返される
+     */
+    @Test
+    public void validateModeWithNonExistentPath_returnsCode1() throws Exception {
+        String nonExistentPath = temporaryFolder.getRoot().getAbsolutePath() + "/nonexistent_validate";
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--validate", nonExistentPath
+        });
+
+        assertThat(exitCode, is(1));
+    }
+
+    /**
+     * [Given] --validate にファイルパス（ディレクトリでない）を渡す
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 1 が返される
+     */
+    @Test
+    public void validateModeWithFilePath_returnsCode1() throws Exception {
+        File file = temporaryFolder.newFile("notadir.yaml");
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--validate", file.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(1));
+    }
+
     // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
