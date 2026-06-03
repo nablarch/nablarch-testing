@@ -3,7 +3,6 @@ package nablarch.test.tool.converter.xls;
 import nablarch.test.core.reader.DataType;
 import nablarch.test.tool.converter.ConverterException;
 import nablarch.test.tool.converter.TestDataFormatReader;
-import nablarch.test.tool.converter.model.ColumnRowDataBlock;
 import nablarch.test.tool.converter.model.FieldDef;
 import nablarch.test.tool.converter.model.FileDataBlock;
 import nablarch.test.tool.converter.model.ListMapBlock;
@@ -20,7 +19,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -240,7 +238,7 @@ public class XlsFormatReader implements TestDataFormatReader {
 
     /** メッセージングデータブロックの解析（MS-01, MS-02）。 */
     private MessageDataBlock parseMessageBlock(DataType dataType, String groupId, String identifier,
-                                                List<List<String>> rows, int[] nextIndex) {
+                                               List<List<String>> rows, int[] nextIndex) {
         Map<String, String> directives = new LinkedHashMap<>();
         Map<String, String> fwHeaderFields = new LinkedHashMap<>();
         List<RecordLayout> records = new ArrayList<>();
@@ -317,8 +315,8 @@ public class XlsFormatReader implements TestDataFormatReader {
                 }
             }
 
-            // フィールド名行（ファイルデータは先頭セルがレコード種別、メッセージングは先頭セルが空またはno）
-            String recordType = fixedRecordType != null ? fixedRecordType : (withNoColumn ? "default" : row.get(0));
+            // フィールド名行（ファイルデータは先頭セルがレコード種別、メッセージングは fixedRecordType="default" 固定）
+            String recordType = fixedRecordType != null ? fixedRecordType : row.get(0);
             List<String> fieldNames = trimTrailingEmpty(row.subList(1, row.size()));
             i++;
 
@@ -336,7 +334,9 @@ public class XlsFormatReader implements TestDataFormatReader {
                 i++;
             }
 
-            // メッセージングでは型行・長さ行読み取り後も先頭空行が残る場合スキップする（データ行は先頭が非空）
+            // メッセージングでは実 Excel に長さ行（先頭空）が存在する。
+            // withLength=false で長さ行は読み取らないが、先頭空行が残るためここでスキップする。
+            // データ行の先頭セルは常にシーケンス番号（非空）であり、先頭空はデータ行と見なさない。
             if (fixedRecordType != null) {
                 while (i < rows.size() && rows.get(i).get(0).isEmpty()) {
                     i++;
@@ -373,10 +373,11 @@ public class XlsFormatReader implements TestDataFormatReader {
     }
 
     /**
-     * 行がメッセージングブロックのデータ行として解釈できるかを判定する。
+     * 行がメッセージングブロックのデータ行として解釈できるかを判定する（MS-02）。
      * <ul>
-     *   <li>no列なし形式（withNoColumn=false）: DataType でなく "no" でもない行（先頭空も許可）</li>
-     *   <li>no列あり形式（withNoColumn=true）: 先頭セルが非空かつ DataType でなく "no" でもない行</li>
+     *   <li>no列なし形式（withNoColumn=false）: DataType でなく "no" でもない行（先頭空を含む）。
+     *       型行・長さ行の残存空行は呼び出し側のスキップ処理で消費済みのため、このパスには実データ行のみ到達する。</li>
+     *   <li>no列あり形式（withNoColumn=true）: 先頭セルが非空かつ DataType でなく "no" でもない行（シーケンス番号行）。</li>
      * </ul>
      */
     private boolean isDataRow(List<String> row, boolean withNoColumn) {
@@ -394,8 +395,12 @@ public class XlsFormatReader implements TestDataFormatReader {
     }
 
     /**
-     * 行が次のフィールド名称行（ループ継続判定）かを判定する。
-     * データ行ループ内で次のレコードレイアウトの開始を検出するために使用する。
+     * データ行ループ内で次のレコードレイアウト開始（フィールド名称行）を検出するためのヘルパー。
+     * <ul>
+     *   <li>no列あり形式: 先頭セルが "no" の行が次のフィールド名称行</li>
+     *   <li>ファイルデータ（fixedRecordType=null）: 先頭非空がレコード種別行（＝フィールド名称行）</li>
+     *   <li>メッセージング先頭空形式（fixedRecordType 非null・withNoColumn=false）: 1ブロックに複数レコードレイアウトをサポートしないため常に false</li>
+     * </ul>
      */
     private boolean isFieldNameRow(List<String> row, boolean withNoColumn, String fixedRecordType) {
         if (withNoColumn) {

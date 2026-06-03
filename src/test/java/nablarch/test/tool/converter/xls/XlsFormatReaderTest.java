@@ -1436,10 +1436,10 @@ public class XlsFormatReaderTest {
                 {"MESSAGE=responseMessages", ""},
                 // ディレクティブ/FWヘッダなし
                 {"no", "処理結果コード", "会員ID", "FILLER"},   // ← "no" が先頭のフィールド名称行
-                {"", "X", "X", "X"},                            // 型行
-                {"", "2", "10", "490"},                         // 長さ行（メッセージはwithLength=false: 型行の次は型行として無視）
-                {"1", "00", "1234567890", ""},                  // データ行（先頭が "1"）
-                {"2", "01", "", ""}                             // データ行（先頭が "2"）
+                {"", "X", "X", "X"},                            // 型行（先頭空、col[1]以降が型）
+                {"", "2", "10", "490"},                         // 長さ行（先頭空。withLength=false のためスキップされる）
+                {"1", "00", "1234567890", ""},                  // データ行（先頭が シーケンス番号 "1"）
+                {"2", "01", "", ""}                             // データ行（先頭が シーケンス番号 "2"）
         });
 
         // When
@@ -1449,10 +1449,11 @@ public class XlsFormatReaderTest {
         MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
         assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
         assertThat(block.getDirectives().containsKey("no"), is(false));
-        // フィールド名が "no" 列を除いた 3 フィールド
+        // フィールド名が "no" 列を除いた 3 フィールドで正しく解析される（1列ずれなし）
         assertThat(block.getRecords().size(), is(1));
         assertThat(block.getRecords().get(0).getFields().size(), is(3));
         assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("処理結果コード"));
+        assertThat(block.getRecords().get(0).getFields().get(0).getType(), is("X"));
         assertThat(block.getRecords().get(0).getFields().get(1).getName(), is("会員ID"));
         assertThat(block.getRecords().get(0).getFields().get(2).getName(), is("FILLER"));
         // データ行が消失しない（"no" 列 = 先頭セル = 除外、残り3値）
@@ -1477,10 +1478,10 @@ public class XlsFormatReaderTest {
                 {"text-encoding", "Windows-31J"},                // ディレクティブ
                 // FWヘッダなし（この電文では省略）
                 {"no", "ユーザ名", "備考", "FILLER"},             // "no" が先頭のフィールド名称行
-                {"", "全角", "全角", "半角"},                    // 型行
-                {"", "50", "200", "252"},                       // 長さ行（メッセージはwithLength=false）
-                {"1", "電文太郎", "特筆なし", ""},               // データ行
-                {"2", "", "エラー", ""}                          // データ行
+                {"", "全角", "全角", "半角"},                    // 型行（先頭空）
+                {"", "50", "200", "252"},                       // 長さ行（先頭空。withLength=false のためスキップ）
+                {"1", "電文太郎", "特筆なし", ""},               // データ行（先頭シーケンス番号）
+                {"2", "", "エラー", ""}                          // データ行（先頭シーケンス番号）
         });
 
         // When
@@ -1497,6 +1498,122 @@ public class XlsFormatReaderTest {
         assertThat(block.getRecords().get(0).getRows().size(), is(2));
         assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("電文太郎", "特筆なし", "")));
         assertThat(block.getRecords().get(0).getRows().get(1), is(Arrays.asList("", "エラー", "")));
+    }
+
+    /**
+     * [Given] MESSAGE ブロックで FWヘッダのみ（ディレクティブなし）かつ "no" 列あり形式
+     * [When]  read() を呼び出す
+     * [Then]  FWヘッダが fwHeaderFields に格納され、フィールド名称行以降が正しく解析される
+     */
+    @Test
+    public void messageBlockWithFwHeaderOnlyAndNoColumn() throws Exception {
+        // Given: no列あり + FWヘッダのみ（ディレクティブなし）
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/msg", ""},
+                {"requestId", "REQ001"},  // FWヘッダのみ
+                {"no", "FIELD1", "FIELD2"},
+                {"", "X", "X"},
+                {"1", "val1", "val2"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().isEmpty(), is(true));
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("val1", "val2")));
+    }
+
+    /**
+     * [Given] MESSAGE ブロックでディレクティブ＋FWヘッダ両方かつ "no" 列あり形式
+     * [When]  read() を呼び出す
+     * [Then]  ディレクティブ・FWヘッダ・フィールド名・データ行がすべて正しく分離される
+     */
+    @Test
+    public void messageBlockWithDirectivesAndFwHeaderAndNoColumn() throws Exception {
+        // Given: no列あり + ディレクティブ + FWヘッダ両方
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"MESSAGE=req/msg", ""},
+                {"text-encoding", "MS932"},  // ディレクティブ
+                {"requestId", "REQ001"},      // FWヘッダ
+                {"userId", "usr001"},          // FWヘッダ
+                {"no", "FIELD1"},
+                {"", "X"},
+                {"1", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getDirectives().get("text-encoding"), is("MS932"));
+        assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
+        assertThat(block.getFwHeaderFields().get("userId"), is("usr001"));
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("val1")));
+    }
+
+    /**
+     * [Given] EXPECTED_REQUEST_BODY_MESSAGES ブロックで "no" 列を持つ形式
+     * [When]  read() を呼び出す
+     * [Then]  "no" 行がフィールド名称行として認識される
+     */
+    @Test
+    public void expectedRequestBodyMessageWithNoColumn() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"EXPECTED_REQUEST_BODY_MESSAGES=req/body", ""},
+                {"no", "FIELD1"},
+                {"", "X"},
+                {"1", "val1"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("val1")));
+    }
+
+    /**
+     * [Given] RESPONSE_BODY_MESSAGES ブロックで "no" 列を持つ形式
+     * [When]  read() を呼び出す
+     * [Then]  "no" 行がフィールド名称行として認識される
+     */
+    @Test
+    public void responseBodyMessageWithNoColumn() throws Exception {
+        // Given
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        writeXls(xls, new String[][]{
+                {"RESPONSE_BODY_MESSAGES=res/body", ""},
+                {"no", "RESULT_CODE"},
+                {"", "X"},
+                {"1", "00"},
+                {"2", "01"}
+        });
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then
+        MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getFwHeaderFields().containsKey("no"), is(false));
+        assertThat(block.getRecords().get(0).getFields().get(0).getName(), is("RESULT_CODE"));
+        assertThat(block.getRecords().get(0).getRows().size(), is(2));
+        assertThat(block.getRecords().get(0).getRows().get(0), is(Arrays.asList("00")));
+        assertThat(block.getRecords().get(0).getRows().get(1), is(Arrays.asList("01")));
     }
 
     /**

@@ -184,10 +184,11 @@ public class XlsFormatWriter implements TestDataFormatWriter {
                 String type = fields.get(i).getType();
                 setCellStrOnRow(typeRow, i + 1, type != null ? type : "");
             }
-            // data rows
+            // data rows (先頭セルにシーケンス番号を書くことで Reader の再読み込みが正しく機能する)
+            int seq = 1;
             for (List<String> dataRow : record.getRows()) {
                 Row row = sheet.createRow(rowNum++);
-                setCellStrOnRow(row, 0, "");
+                setCellStrOnRow(row, 0, String.valueOf(seq++));
                 for (int i = 0; i < dataRow.size(); i++) {
                     setCellStrOnRow(row, i + 1, nullToLiteral(dataRow.get(i)));
                 }

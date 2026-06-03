@@ -223,6 +223,47 @@ public class XlsFormatWriterTest {
         assertThat(cellStr(sheet, 3, 1), is("FIELD1"));
     }
 
+    /**
+     * [Given] MESSAGE ブロック（データ行あり）を Write → Read するラウンドトリップ
+     * [When]  write() で出力した XLS ファイルを XlsFormatReader.read() で再読み込みする
+     * [Then]  元のデータと一致する（データ行が消失しない）
+     */
+    @Test
+    public void messageBlockRoundTrip() throws Exception {
+        // Given: データ行が2件ある MESSAGE ブロック
+        Map<String, String> fwHeaders = new LinkedHashMap<>();
+        fwHeaders.put("requestId", "REQ001");
+        List<FieldDef> bodyFields = Arrays.asList(
+                new FieldDef("FIELD1", "X", null),
+                new FieldDef("FIELD2", "X", null));
+        RecordLayout bodyRecord = new RecordLayout("default", bodyFields,
+                Arrays.asList(
+                        Arrays.asList("val1", "val2"),
+                        Arrays.asList("val3", "val4")));
+        MessageDataBlock block = new MessageDataBlock(
+                DataType.MESSAGE, "", "req/id/msg",
+                new LinkedHashMap<>(), fwHeaders, Arrays.asList(bodyRecord));
+        TestDataContainer container = container("case01", block);
+
+        File outputDir = temporaryFolder.newFolder("out");
+        sut.write(container, outputDir.toPath(), false);
+
+        // When: 出力した XLSX を再読み込みする（XlsFormatWriter のデフォルト出力は outputDir/FooTest.xlsx）
+        File xlsFile = new File(outputDir, "FooTest.xlsx");
+        XlsFormatReader reader = new XlsFormatReader();
+        TestDataContainer result = reader.read(xlsFile.toPath());
+
+        // Then: データ行が消失せず、元の値と一致する
+        nablarch.test.tool.converter.model.MessageDataBlock readBlock =
+                (nablarch.test.tool.converter.model.MessageDataBlock)
+                        result.getSections().get(0).getBlocks().get(0);
+        assertThat(readBlock.getFwHeaderFields().get("requestId"), is("REQ001"));
+        assertThat(readBlock.getRecords().get(0).getFields().get(0).getName(), is("FIELD1"));
+        assertThat(readBlock.getRecords().get(0).getRows().size(), is(2));
+        assertThat(readBlock.getRecords().get(0).getRows().get(0), is(Arrays.asList("val1", "val2")));
+        assertThat(readBlock.getRecords().get(0).getRows().get(1), is(Arrays.asList("val3", "val4")));
+    }
+
     // -------------------------------------------------------------------------
     // セル値の書き出し規則（7.2.1節）
     // -------------------------------------------------------------------------
