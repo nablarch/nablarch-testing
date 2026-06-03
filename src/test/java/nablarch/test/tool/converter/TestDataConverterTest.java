@@ -653,6 +653,124 @@ public class TestDataConverterTest {
     }
 
     // -------------------------------------------------------------------------
+    // 検証モード（--validate / --validate-on-convert）
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] --validate <入力パス> で正常な YAML ディレクトリを指定
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 0 が返される
+     */
+    @Test
+    public void validateModeWithValidYaml_returnsCode0() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--validate", inputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+    }
+
+    /**
+     * [Given] --validate <入力パス> で列数不一致の YAML を指定
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 1 が返される
+     */
+    @Test
+    public void validateModeWithInvalidYaml_returnsCode1() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeInvalidYamlColumnMismatch(new File(containerDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--validate", inputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(1));
+    }
+
+    /**
+     * [Given] --validate と --from を同時に指定する（不正引数）
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void validateWithFromReturnsCode2() throws Exception {
+        File dir = temporaryFolder.newFolder("dir");
+        int exitCode = TestDataConverter.run(new String[]{
+                "--validate", dir.getAbsolutePath(),
+                "--from", "yaml"
+        });
+        assertThat(exitCode, is(2));
+    }
+
+    /**
+     * [Given] --validate-on-convert で正常な YAML を変換
+     * [When]  run() を呼び出す
+     * [Then]  変換が成功し終了コード 0 が返される
+     */
+    @Test
+    public void validateOnConvertWithValidYaml_convertsAndReturnsCode0() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls", "--validate-on-convert",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest.xlsx").exists());
+    }
+
+    /**
+     * [Given] --validate-on-convert で列数不一致の YAML を変換
+     * [When]  run() を呼び出す
+     * [Then]  対象ファイルがスキップされ終了コード 1 が返される
+     */
+    @Test
+    public void validateOnConvertWithInvalidYaml_skipsAndReturnsCode1() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input");
+        File outputDir = temporaryFolder.newFolder("output");
+
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeInvalidYamlColumnMismatch(new File(containerDir, "case01.yaml"));
+
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "yaml", "--to", "xls", "--validate-on-convert",
+                inputDir.getAbsolutePath(), outputDir.getAbsolutePath()
+        });
+
+        assertThat(exitCode, is(1));
+        assertTrue(!new File(outputDir, "FooTest.xlsx").exists());
+    }
+
+    /**
+     * [Given] --validate-on-convert を --from xls（YAML 入力でない）と組み合わせる（不正引数）
+     * [When]  run() を呼び出す
+     * [Then]  終了コード 2 が返される
+     */
+    @Test
+    public void validateOnConvertWithFromXlsReturnsCode2() throws Exception {
+        File dir = temporaryFolder.newFolder("dir");
+        int exitCode = TestDataConverter.run(new String[]{
+                "--from", "xls", "--to", "yaml", "--validate-on-convert",
+                dir.getAbsolutePath(), dir.getAbsolutePath()
+        });
+        assertThat(exitCode, is(2));
+    }
+
+    // -------------------------------------------------------------------------
     // ヘルパー
     // -------------------------------------------------------------------------
 
@@ -697,6 +815,23 @@ public class TestDataConverterTest {
             pw.println("  - table: TBL");
             pw.println("    rows:");
             pw.println("      - COL1: \"val1\"");
+        } finally {
+            pw.close();
+        }
+    }
+
+    private void writeInvalidYamlColumnMismatch(File file) throws Exception {
+        PrintWriter pw = new PrintWriter(file, "UTF-8");
+        try {
+            pw.println("setup_files:");
+            pw.println("  - path: test.dat");
+            pw.println("    type: fixed");
+            pw.println("    records:");
+            pw.println("      - record_type: \"\"");
+            pw.println("        fields:");
+            pw.println("          - {name: col1, type: 半角英字, length: \"3\"}");
+            pw.println("        rows:");
+            pw.println("          - [a, b]");  // fields 1件、rows 2要素 → 不一致
         } finally {
             pw.close();
         }

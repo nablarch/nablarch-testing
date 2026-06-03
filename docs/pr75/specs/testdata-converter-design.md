@@ -979,3 +979,81 @@ TestDataConverter --from <形式> --to <形式> [--include <パターン>]... [-
 エラー:   0 件
 コメント行ロスト: 12 行（3 ファイル）
 ```
+
+---
+
+## 10. 検証モード（リンタ）
+
+### 10.1 目的
+
+YAML テストデータファイルを変換前・変換後に検証し、構造的な誤りを早期に発見する。
+
+### 10.2 実装クラス
+
+| クラス | パッケージ | 役割 |
+|---|---|---|
+| `YamlTestDataValidator` | `nablarch.test.tool.converter.yaml` | YAML ファイル（またはディレクトリ）を検証し、`ValidationError` のリストを返す |
+| `ValidationError` | `nablarch.test.tool.converter.yaml` | ファイルパス・位置・メッセージを保持する不変の値オブジェクト |
+
+### 10.3 検証ルール
+
+| ID | ルール | 対象 |
+|---|---|---|
+| V-COL | `fields` 件数と各 `rows` 配列長が一致すること | `setup_files`・`expected_files`・`messages`・`expected_request_*`・`response_*` の全 `record_fragment` |
+| V-DIR | `fw_header:` にディレクティブ名（`MessageDataBlock.KNOWN_DIRECTIVE_NAMES`）が含まれないこと | `messages`・`expected_request_*`・`response_*` |
+| V-SCH | `ntf-testdata-yaml-schema.json`（クラスパス）に適合していること | 全 YAML ファイル |
+
+### 10.4 `ValidationError` 構造
+
+```
+ValidationError {
+    String filePath   // 検証対象ファイルの絶対パス文字列
+    String location   // セクション・ブロック・行の識別文字列（例: "messages[0].records[1].rows[2]"）
+    String message    // エラーの説明
+}
+```
+
+### 10.5 実行モード
+
+| モード | 説明 | TestDataConverter 引数 |
+|---|---|---|
+| 検証のみ | 変換を行わず検証エラーを一覧出力する | `--validate <入力パス>`（`--from yaml` 不要） |
+| 変換時検証 | 変換前に検証し、エラーがあれば対象ファイルをスキップして続行する | `--validate-on-convert` |
+
+### 10.6 コマンド例
+
+#### 検証のみ
+
+```bash
+mvn exec:java \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
+  -Dexec.args="--validate <入力YAMLディレクトリ>"
+```
+
+#### 変換時検証（変換時にエラーがあればスキップ）
+
+```bash
+mvn exec:java \
+  -Dexec.mainClass=nablarch.test.tool.converter.TestDataConverter \
+  -Dexec.args="--from yaml --to xls --validate-on-convert <入力パス> <出力パス>"
+```
+
+### 10.7 終了コード
+
+| 終了コード | 意味 |
+|---|---|
+| `0` | 検証エラーなし |
+| `1` | 1 件以上の検証エラーあり |
+| `2` | 引数エラー |
+
+### 10.8 引数仕様（追加分）
+
+```
+TestDataConverter --validate <入力パス>
+TestDataConverter --from yaml --to xls [--validate-on-convert] <入力パス> <出力パス>
+```
+
+| 引数 | 説明 |
+|---|---|
+| `--validate <入力パス>` | 検証のみモード。`--from`/`--to` と同時使用不可 |
+| `--validate-on-convert` | 変換時検証モード。`--from yaml` のときのみ有効 |

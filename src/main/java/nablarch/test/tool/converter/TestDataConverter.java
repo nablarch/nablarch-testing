@@ -4,8 +4,10 @@ import nablarch.test.tool.converter.model.TestDataContainer;
 import nablarch.test.tool.converter.model.TestDataSection;
 import nablarch.test.tool.converter.xls.XlsFormatReader;
 import nablarch.test.tool.converter.xls.XlsFormatWriter;
+import nablarch.test.tool.converter.yaml.ValidationError;
 import nablarch.test.tool.converter.yaml.YamlFormatReader;
 import nablarch.test.tool.converter.yaml.YamlFormatWriter;
+import nablarch.test.tool.converter.yaml.YamlTestDataValidator;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -34,8 +36,24 @@ public class TestDataConverter {
         Options opts = parseArgs(args);
         if (opts == null) {
             System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
+            System.err.println("       TestDataConverter --validate <inputPath>");
             return 2;
         }
+
+        // --validate モード
+        if (opts.validateOnly) {
+            if (opts.from != null) {
+                System.err.println("--validate cannot be combined with --from/--to.");
+                return 2;
+            }
+            return runValidateOnly(opts.inputPath);
+        }
+
+        if (opts.from == null || opts.to == null) {
+            System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
+            return 2;
+        }
+
         if (opts.from.equals(opts.to)) {
             System.err.println("--from and --to must be different formats.");
             return 2;
@@ -55,6 +73,12 @@ public class TestDataConverter {
         if (opts.xlsFormat && !opts.to.equals("xls")) {
             System.err.println("--xls option is only valid with --to xls.");
             System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--xls] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
+            return 2;
+        }
+
+        // --validate-on-convert は --from yaml のときのみ有効
+        if (opts.validateOnConvert && !opts.from.equals("yaml")) {
+            System.err.println("--validate-on-convert is only valid with --from yaml.");
             return 2;
         }
 
@@ -87,8 +111,23 @@ public class TestDataConverter {
         int totalCommentLines = 0;
         int commentLineFiles = 0;
 
+        YamlTestDataValidator validator = opts.validateOnConvert ? new YamlTestDataValidator() : null;
+
         for (Path target : targets) {
             try {
+                // --validate-on-convert: 変換前に YAML を検証し、エラーがあればスキップ
+                if (validator != null) {
+                    List<ValidationError> validationErrors = validator.validate(target);
+                    if (!validationErrors.isEmpty()) {
+                        for (ValidationError ve : validationErrors) {
+                            System.err.println("VALIDATION ERROR: " + ve);
+                        }
+                        System.err.println("ERROR: " + target + ": 検証エラーのためスキップ (" + validationErrors.size() + " 件)");
+                        errorCount++;
+                        continue;
+                    }
+                }
+
                 TestDataContainer container = reader.read(target);
 
                 if (xlsReader != null) {
@@ -152,6 +191,41 @@ public class TestDataConverter {
         return errorCount > 0 ? 1 : 0;
     }
 
+    /** --validate モードの実行。YAML ディレクトリを再帰的に検証する。 */
+    private static int runValidateOnly(Path inputPath) {
+        File inputDir = inputPath.toFile();
+        if (!inputDir.isDirectory()) {
+            System.err.println("ERROR: --validate requires a directory: " + inputPath);
+            return 1;
+        }
+
+        YamlTestDataValidator validator = new YamlTestDataValidator();
+        int errorCount = 0;
+
+        // inputPath 直下の各サブディレクトリ（コンテナ）を検証対象とする
+        File[] containers = inputDir.listFiles(File::isDirectory);
+        if (containers == null || containers.length == 0) {
+            // 直下に YAML ファイルがある場合（セクションディレクトリとして扱う）
+            List<ValidationError> errors = validator.validate(inputPath);
+            errorCount += errors.size();
+            for (ValidationError ve : errors) {
+                System.err.println("VALIDATION ERROR: " + ve);
+            }
+        } else {
+            for (File container : containers) {
+                List<ValidationError> errors = validator.validate(container.toPath());
+                errorCount += errors.size();
+                for (ValidationError ve : errors) {
+                    System.err.println("VALIDATION ERROR: " + ve);
+                }
+            }
+        }
+
+        System.out.println("=== TestDataConverter 検証サマリー ===");
+        System.out.println("エラー: " + errorCount + " 件");
+        return errorCount > 0 ? 1 : 0;
+    }
+
     private static void deleteSource(Path target) {
         File f = target.toFile();
         if (f.isFile()) {
@@ -210,11 +284,24 @@ public class TestDataConverter {
                     if (++i >= args.length) return null;
                     opts.excludes.add(args[i]);
                     break;
+                case "--validate":
+                    if (++i >= args.length) return null;
+                    opts.validateOnly = true;
+                    positional.add(args[i]); // 入力パスとして扱う
+                    break;
+                case "--validate-on-convert":
+                    opts.validateOnConvert = true;
+                    break;
                 default:
                     positional.add(arg);
                     break;
             }
             i++;
+        }
+        if (opts.validateOnly) {
+            if (positional.size() < 1) return null;
+            opts.inputPath = Paths.get(positional.get(0));
+            return opts;
         }
         if (opts.from == null || opts.to == null || positional.size() < 2) {
             return null;
@@ -230,6 +317,8 @@ public class TestDataConverter {
         boolean overwrite = false;
         boolean deleteSource = false;
         boolean xlsFormat = false;
+        boolean validateOnly = false;
+        boolean validateOnConvert = false;
         List<String> includes = new ArrayList<>();
         List<String> excludes = new ArrayList<>();
         Path inputPath;
