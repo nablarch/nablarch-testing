@@ -251,7 +251,19 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T4 から実施する**
+2. **T4 を実施する**
+
+### T4 概要
+
+**タスク**: 変換ツールの数値書式セル文字列化を `DataFormatter` に修正
+**チェックファイル**: `docs/pr75/checks/T4.md`
+**変更対象**: `src/main/java/nablarch/test/tool/converter/xls/XlsFormatReader.java`（`readCells` メソッド）
+
+**手順（TDD）:**
+1. RED: 数値書式セル（整数 `2` が数値型で保存）を含む Excel を変換し、出力が `"2"` になることを検証するテストを追加し、現状（`cell.toString()`）で `"2.0"` になる失敗を確認する
+2. GREEN: セル値取得を `cell.toString()` から `DataFormatter#formatCellValue(cell)` に変更する
+3. `mvn clean package -Dtest="XlsFormatReaderTest"` で全グリーン確認
+4. セルフチェック・QA・Java・SWE レビュー・T4.md 記入
 
 ### 完了済みタスク（2026-06-03）
 
