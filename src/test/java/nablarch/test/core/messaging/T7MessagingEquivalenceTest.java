@@ -13,7 +13,6 @@ import nablarch.test.core.reader.BasicTestDataParser;
 import nablarch.test.core.reader.DataType;
 import nablarch.test.core.reader.MessageParser;
 import nablarch.test.core.reader.PoiXlsReader;
-import nablarch.test.core.reader.TestDataParser;
 import nablarch.test.core.reader.YamlTestDataParser;
 import nablarch.test.core.reader.yaml.YamlLoader;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
@@ -25,8 +24,10 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -76,7 +77,7 @@ public class T7MessagingEquivalenceTest {
 
         DbInfo dbInfo = repositoryResource.getComponent("dbInfo");
         DefaultValues defaultValues = new BasicDefaultValues();
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
+        List<TestDataInterpreter> interpreters =
                 repositoryResource.getComponent("interpreters");
 
         yamlParser = new YamlTestDataParser();
@@ -101,16 +102,9 @@ public class T7MessagingEquivalenceTest {
     // =======================================================================
 
     /**
-     * MessageParserTest/testParse の等価照合テスト。
-     * convertorSetting.xml を一時的にロードして実行する。
-     *
-     * <p>XLS 側は {@link MessageParser} + {@link PoiXlsReader} を直接使用する。
-     * これにより {@code @ClassRule} で初期化された {@code xlsParser} コンポーネントが
-     * unit-test-yaml.xml の変換テーブルを使用する問題を回避する。
-     *
-     * <p>NOTE: requestMessages（type 日本語）のみ比較する。
-     * responseMessages は type "X" などの英語型名を使用しており、
-     * YamlTestDataParser の日本語型マッピングでは変換できないため対象外とする。</p>
+     * Given: MessageParserTest/testParse.yaml が配置されている（.xls から変換済み、convertorSetting.xml を使用）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である（requestMessages のみ比較）
      */
     @Test
     public void messageParserTest_testParse_equivalentToExcel() {
@@ -123,7 +117,7 @@ public class T7MessagingEquivalenceTest {
             // XLS 側: MessageParser + PoiXlsReader を直接使用（convertorSetting.xml 準拠）
             MessageParser xlsMessageParser = new MessageParser(
                     new PoiXlsReader(),
-                    java.util.Collections.<TestDataInterpreter>emptyList(),
+                    Collections.<TestDataInterpreter>emptyList(),
                     DataType.MESSAGE);
             xlsMessageParser.parse(path, resource, "requestMessages");
             MessagePool xlsPool = xlsMessageParser.getResult();
@@ -140,12 +134,9 @@ public class T7MessagingEquivalenceTest {
     }
 
     /**
-     * MessageParserTest/testParseAddFields の等価照合テスト。
-     * convertorSetting.xml を一時的にロードして実行する。
-     *
-     * <p>XLS 側は {@link MessageParser} + {@link PoiXlsReader} を直接使用する（testParse と同様）。</p>
-     *
-     * <p>NOTE: requestMessages（type 日本語）のみ比較する。</p>
+     * Given: MessageParserTest/testParseAddFields.yaml が配置されている（.xls から変換済み、reader.xml を使用）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である（requestMessages のみ比較）
      */
     @Test
     public void messageParserTest_testParseAddFields_equivalentToExcel() {
@@ -161,7 +152,7 @@ public class T7MessagingEquivalenceTest {
             // XLS 側: MessageParser + PoiXlsReader を直接使用（reader.xml 準拠）
             MessageParser xlsMessageParser = new MessageParser(
                     new PoiXlsReader(),
-                    java.util.Collections.<TestDataInterpreter>emptyList(),
+                    Collections.<TestDataInterpreter>emptyList(),
                     DataType.MESSAGE);
             xlsMessageParser.parse(path, resource, "requestMessages");
             MessagePool xlsPool = xlsMessageParser.getResult();
@@ -181,97 +172,187 @@ public class T7MessagingEquivalenceTest {
     // RM11AC 系 (getMessageWithoutCache: expected_request_body / response_header / response_body)
     // =======================================================================
 
+    /**
+     * Given: RM11AC0202/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0202_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0202", "RM11AC0202");
     }
 
+    /**
+     * Given: RM11AC0203/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0203_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0203", "RM11AC0203");
     }
 
+    /**
+     * Given: RM11AC0204/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0204_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0204", "RM11AC0204");
     }
 
+    /**
+     * Given: RM11AC0205/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0205_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0205", "RM11AC0205");
     }
 
+    /**
+     * Given: RM11AC0206/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0206_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0206", "RM11AC0206");
     }
 
+    /**
+     * Given: RM11AC0207/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0207_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0207", "RM11AC0207");
     }
 
+    /**
+     * Given: RM11AC0292/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0292_equivalentToExcel() {
         // RM11AC0292 の ID は "RM11AC0202" (XLS のシート内ID)
         assertRmMessageEquivalence("RM11AC0292", "RM11AC0202");
     }
 
+    /**
+     * Given: RM11AC0293/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0293_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0293", "RM11AC0293");
     }
 
+    /**
+     * Given: RM11AC0294/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0294_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0294", "RM11AC0294");
     }
 
+    /**
+     * Given: RM11AC0295/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0295_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0295", "RM11AC0295");
     }
 
+    /**
+     * Given: RM11AC0296/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0296_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0296", "RM11AC0296");
     }
 
+    /**
+     * Given: RM11AC0297/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0297_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0297", "RM11AC0297");
     }
 
+    /**
+     * Given: RM11AC0298/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ac0298_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AC0298", "RM11AC0298");
+    }
+
+    /**
+     * Given: RM11AC0208/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
+    @Test
+    public void rm11ac0208_equivalentToExcel() {
+        assertRmMessageEquivalence("RM11AC0208", "RM11AC0208");
     }
 
     // =======================================================================
     // RM11AD 系 (getMessageWithoutCache)
     // =======================================================================
 
+    /**
+     * Given: RM11AD0101/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0101_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0101", "RM11AD0101");
     }
 
-    @Test
-    public void rm11ac0208_equivalentToExcel() {
-        assertRmMessageEquivalence("RM11AC0208", "RM11AC0208");
-    }
-
+    /**
+     * Given: RM11AD0102/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0102_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0102", "RM11AD0102");
     }
 
+    /**
+     * Given: RM11AD0104/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0104_equivalentToExcel() {
         // RM11AD0104 のメッセージ ID は XLS/YAML ともに "RM11AD0102"
         assertRmMessageEquivalence("RM11AD0104", "RM11AD0102");
     }
 
+    /**
+     * Given: RM11AD0105/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0105_equivalentToExcel() {
         // RM11AD0105: expected_request_header_messages = RM11AD0105, それ以外 = RM11AD0102
@@ -286,6 +367,11 @@ public class T7MessagingEquivalenceTest {
                 "RM11AD0105[response_body_messages/RM11AD0102]");
     }
 
+    /**
+     * Given: RM11AD0106/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0106_equivalentToExcel() {
         // RM11AD0106: expected_request_header_messages = RM11AD0106, expected_request_body = RM11AD0106,
@@ -301,41 +387,81 @@ public class T7MessagingEquivalenceTest {
                 "RM11AD0106[response_body_messages/RM11AD0102]");
     }
 
+    /**
+     * Given: RM11AD0107/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0107_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0107", "RM11AD0107");
     }
 
+    /**
+     * Given: RM11AD0108/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0108_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0108", "RM11AD0108");
     }
 
+    /**
+     * Given: RM11AD0108_original/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0108_original_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0108_original", "RM11AD0108");
     }
 
+    /**
+     * Given: RM11AD0108_timestamp/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0108_timestamp_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0108_timestamp", "RM11AD0108");
     }
 
+    /**
+     * Given: RM11AD0109/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0109_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0109", "RM11AD0109");
     }
 
+    /**
+     * Given: RM11AD0110/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0110_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0110", "RM11AD0110");
     }
 
+    /**
+     * Given: RM11AD0111/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0111_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0111", "RM11AD0111");
     }
 
+    /**
+     * Given: RM11AD0112/message.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessageWithoutCache() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void rm11ad0112_equivalentToExcel() {
         assertRmMessageEquivalence("RM11AD0112", "RM11AD0112");
@@ -345,6 +471,11 @@ public class T7MessagingEquivalenceTest {
     // RequestTestingMessagingClientTest (list_maps + getSendSyncMessage)
     // =======================================================================
 
+    /**
+     * Given: RequestTestingMessagingClientTest/testSendSync.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingClientTest_testSendSync_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingClientTest/testSendSync";
@@ -354,12 +485,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingClientTest/testSendSync.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingClientTest_testSendSync_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingClientTest/testSendSync";
         assertEquivalentSendSyncMessages(resource, "case1", "RM11AD0201");
     }
 
+    /**
+     * Given: RequestTestingMessagingClientTest/testAssertFailNoMatchHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingClientTest_testAssertFailNoMatchHeader_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingClientTest/testAssertFailNoMatchHeader";
@@ -369,6 +510,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingClientTest/testAssertFailNoMatchBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingClientTest_testAssertFailNoMatchBody_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingClientTest/testAssertFailNoMatchBody";
@@ -378,6 +524,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingClientTest/testAssertAsDataRecord.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingClientTest_testAssertAsDataRecord_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingClientTest/testAssertAsDataRecord";
@@ -387,6 +538,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingClientTest/testAssertAsString.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingClientTest_testAssertAsString_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingClientTest/testAssertAsString";
@@ -400,6 +556,11 @@ public class T7MessagingEquivalenceTest {
     // RequestTestingMessagingContextTest (list_maps + getSendSyncMessage)
     // =======================================================================
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testExpectedRequestBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testExpectedRequestBody_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testExpectedRequestBody";
@@ -409,12 +570,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testExpectedRequestBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testExpectedRequestBody_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testExpectedRequestBody";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testNoAssertion.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testNoAssertion_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoAssertion";
@@ -424,12 +595,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testNoAssertion.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testNoAssertion_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoAssertion";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testResponseBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testResponseBody_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testResponseBody";
@@ -443,12 +624,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[expectedLog1]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testResponseBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testResponseBody_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testResponseBody";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testExpectedRequestHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testExpectedRequestHeader_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testExpectedRequestHeader";
@@ -458,12 +649,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testExpectedRequestHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testExpectedRequestHeader_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testExpectedRequestHeader";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testNoMatchingBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testNoMatchingBody_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoMatchingBody";
@@ -473,12 +674,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testNoMatchingBody.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testNoMatchingBody_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoMatchingBody";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testNoMatchingHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testNoMatchingHeader_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoMatchingHeader";
@@ -488,12 +699,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testNoMatchingHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testNoMatchingHeader_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testNoMatchingHeader";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0104_01");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testResponseHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testResponseHeader_listMaps_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testResponseHeader";
@@ -507,6 +728,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[expectedLog1]");
     }
 
+    /**
+     * Given: RequestTestingMessagingContextTest/testResponseHeader.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingMessagingContextTest_testResponseHeader_messages_equivalentToExcel() {
         String resource = "RequestTestingMessagingContextTest/testResponseHeader";
@@ -517,6 +743,11 @@ public class T7MessagingEquivalenceTest {
     // RequestTestingSendSyncBatchTest (list_maps + getSendSyncMessage)
     // =======================================================================
 
+    /**
+     * Given: RequestTestingSendSyncBatchTest/testNormalEnd.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingSendSyncBatchTest_testNormalEnd_listMaps_equivalentToExcel() {
         String resource = "RequestTestingSendSyncBatchTest/testNormalEnd";
@@ -530,12 +761,22 @@ public class T7MessagingEquivalenceTest {
                 resource + "[expectedLog1]");
     }
 
+    /**
+     * Given: RequestTestingSendSyncBatchTest/testNormalEnd.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingSendSyncBatchTest_testNormalEnd_messages_equivalentToExcel() {
         String resource = "RequestTestingSendSyncBatchTest/testNormalEnd";
         assertEquivalentSendSyncMessages(resource, "case1", "RM21AA0101");
     }
 
+    /**
+     * Given: RequestTestingSendSyncBatchTest/testAbnormalEnd1.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingSendSyncBatchTest_testAbnormalEnd1_listMaps_equivalentToExcel() {
         String resource = "RequestTestingSendSyncBatchTest/testAbnormalEnd1";
@@ -545,6 +786,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingSendSyncBatchTest/sample.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingSendSyncBatchTest_sample_listMaps_equivalentToExcel() {
         String resource = "RequestTestingSendSyncBatchTest/sample";
@@ -558,6 +804,11 @@ public class T7MessagingEquivalenceTest {
     // RequestTestingSendSyncSupportTest (list_maps + getSendSyncMessage)
     // =======================================================================
 
+    /**
+     * Given: RequestTestingSendSyncSupportTest/testGetExpectedRequestMessage.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingSendSyncSupportTest_testGetExpectedRequestMessage_listMaps_equivalentToExcel() {
         String resource = "RequestTestingSendSyncSupportTest/testGetExpectedRequestMessage";
@@ -567,6 +818,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[testShots]");
     }
 
+    /**
+     * Given: RequestTestingSendSyncSupportTest/testGetExpectedRequestMessage.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSendSyncMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void requestTestingSendSyncSupportTest_testGetExpectedRequestMessage_messages_equivalentToExcel() {
         String resource = "RequestTestingSendSyncSupportTest/testGetExpectedRequestMessage";
@@ -578,6 +834,11 @@ public class T7MessagingEquivalenceTest {
     // MessagingReceiveTestSupportTest (messages)
     // =======================================================================
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void messagingReceiveTestSupportTest_testExtends_messages_equivalentToExcel() {
         String resource = "MessagingReceiveTestSupportTest/testExtends";
@@ -587,6 +848,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[setUpMessages]");
     }
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testUnExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void messagingReceiveTestSupportTest_testUnExtends_messages_equivalentToExcel() {
         String resource = "MessagingReceiveTestSupportTest/testUnExtends";
@@ -602,6 +868,11 @@ public class T7MessagingEquivalenceTest {
     //       testMessagingSample は resources/ の XLS にのみ存在する。
     // =======================================================================
 
+    /**
+     * Given: MessagingRequestTestSupportTest/testSuccess.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void messagingRequestTestSupportTest_testSuccess_messages_equivalentToExcel() {
         String resource = "MessagingRequestTestSupportTest/testSuccess";
@@ -615,6 +886,11 @@ public class T7MessagingEquivalenceTest {
                 resource + "[expectedMessages]");
     }
 
+    /**
+     * Given: MessagingRequestTestSupportTest/testDbAssertionFailed.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void messagingRequestTestSupportTest_testDbAssertionFailed_messages_equivalentToExcel() {
         String resource = "MessagingRequestTestSupportTest/testDbAssertionFailed";
@@ -632,6 +908,11 @@ public class T7MessagingEquivalenceTest {
     // resources/messaging/MessagingRequestTestSupportTest (messages)
     // =======================================================================
 
+    /**
+     * Given: resources/messaging/MessagingRequestTestSupportTest/testMessagingSample.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getMessage() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void resMessagingRequestTestSupportTest_testMessagingSample_messages_equivalentToExcel() {
         String resource = "MessagingRequestTestSupportTest/testMessagingSample";
@@ -679,11 +960,13 @@ public class T7MessagingEquivalenceTest {
         try {
             xlsPool = xlsParser.getMessageWithoutCache(path, resource, dataType, id);
         } catch (Exception e) {
+            // 指定 ID・セクションが存在しない場合にパーサが RuntimeException をスローするため null 扱いとする
             xlsPool = null;
         }
         try {
             yamlPool = yamlParser.getMessageWithoutCache(path, resource, dataType, id);
         } catch (Exception e) {
+            // 指定 ID・セクションが存在しない場合にパーサが RuntimeException をスローするため null 扱いとする
             yamlPool = null;
         }
         if (xlsPool == null && yamlPool == null) {
@@ -731,16 +1014,14 @@ public class T7MessagingEquivalenceTest {
                 yamlPools = null;
             }
 
+            String label = resource + "[" + dataType.getName() + "/group=" + groupId + "]";
             if (xlsPools == null || xlsPools.isEmpty()) {
                 // XLS にもデータがない（セクション自体が存在しない）ため
                 // YAML も null/empty であることを確認してスキップ（両方なしで等価）
-                String label0 = resource + "[" + dataType.getName() + "/group=" + groupId + "]";
-                assertThat("XLS が null/empty のとき YAML も null/empty のはず [" + label0 + "]",
+                assertThat("XLS が null/empty のとき YAML も null/empty のはず [" + label + "]",
                         yamlPools == null || yamlPools.isEmpty(), is(true));
                 continue;
             }
-
-            String label = resource + "[" + dataType.getName() + "/group=" + groupId + "]";
             if (yamlPools == null) {
                 // XLS にデータがあるのに YAML が null の場合は等価照合失敗とする。
                 // NOTE: YamlTestDataParser.getSendSyncMessage が null を返すのは
@@ -803,6 +1084,12 @@ public class T7MessagingEquivalenceTest {
             Map<String, String> xlsRow = fromXls.get(i);
             Map<String, String> yamlRow = fromYaml.get(i);
             assertThat("キー数が等価 [" + label + "][" + i + "]", yamlRow.size(), is(xlsRow.size()));
+            Set<String> xlsKeys = xlsRow.keySet();
+            Set<String> yamlKeys = yamlRow.keySet();
+            assertThat("キー名集合が等価 [" + label + "][" + i + "]（YAML 側にのみ存在するキーなし）",
+                    yamlKeys.containsAll(xlsKeys), is(true));
+            assertThat("キー名集合が等価 [" + label + "][" + i + "]（Excel 側にのみ存在するキーなし）",
+                    xlsKeys.containsAll(yamlKeys), is(true));
             for (Map.Entry<String, String> entry : xlsRow.entrySet()) {
                 assertThat("値が等価 [" + label + "][" + i + "][" + entry.getKey() + "]",
                         yamlRow.get(entry.getKey()), is(entry.getValue()));

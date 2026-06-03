@@ -16,6 +16,7 @@ import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.http.AbstractHttpRequestTestTemplateTest;
 import nablarch.test.core.messaging.MessagingReceiveTestSupportTest;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.TestSupportTest;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
@@ -31,6 +32,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +40,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
@@ -119,7 +120,7 @@ public class ExcelToYamlEquivalenceTest {
 
         DbInfo dbInfo = repositoryResource.getComponent("dbInfo");
         DefaultValues defaultValues = new BasicDefaultValues();
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
+        List<TestDataInterpreter> interpreters =
                 repositoryResource.getComponent("interpreters");
 
         yamlParser = new YamlTestDataParser();
@@ -433,6 +434,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: DB接続必要 — TestSupportTest.xls
     // =========================================================================
 
+    /**
+     * Given: TestSupportTest/withoutGroupId.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_testSupportTest_withoutGroupId_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_TEST, "TestSupportTest/withoutGroupId");
@@ -443,6 +449,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: TestSupportTest/withoutGroupId.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_testSupportTest_withoutGroupId_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_TEST, "TestSupportTest/withoutGroupId");
@@ -453,6 +464,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: TestSupportTest/withGroupId.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData(groupId="case01") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_testSupportTest_withGroupId_case01_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_TEST, "TestSupportTest/withGroupId", "case01");
@@ -463,6 +479,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: TestSupportTest/withGroupId.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData(groupId="case02") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_testSupportTest_withGroupId_case02_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_TEST, "TestSupportTest/withGroupId", "case02");
@@ -473,6 +494,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: TestSupportTest/testGetParameterMap.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("parameters") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_testSupportTest_testGetParameterMap_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_TEST, "TestSupportTest/testGetParameterMap", "parameters");
@@ -484,6 +510,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: BatchRequestTestSupportTest.xls
     // =========================================================================
 
+    /**
+     * Given: BatchRequestTestSupportTest/testCompareStatus.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_batchRequestTestSupportTest_testCompareStatus_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "BatchRequestTestSupportTest/testCompareStatus", "testShots");
@@ -491,6 +522,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "BatchRequestTestSupportTest/testCompareStatus[testShots]");
     }
 
+    /**
+     * Given: BatchRequestTestSupportTest/testCompareStatus.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_batchRequestTestSupportTest_testCompareStatus_equivalentToExcel() {
         // testCompareStatus の setup_tables は HOGE_TABLE（空行のみ）のため filterNonEmpty で比較
@@ -502,6 +538,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: BatchRequestTestSupportTest/testExpectedLogNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_batchRequestTestSupportTest_testExpectedLogNotFound_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound", "testShots");
@@ -509,6 +550,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "BatchRequestTestSupportTest/testExpectedLogNotFound[testShots]");
     }
 
+    /**
+     * Given: BatchRequestTestSupportTest/testTestCasesNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_batchRequestTestSupportTest_testTestCasesNotFound_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_BATCH, "BatchRequestTestSupportTest/testTestCasesNotFound");
@@ -519,6 +565,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: BatchRequestTestSupportTest/testTestCasesNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_batchRequestTestSupportTest_testTestCasesNotFound_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_BATCH, "BatchRequestTestSupportTest/testTestCasesNotFound");
@@ -529,6 +580,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: BatchRequestTestSupportTest/testExpectedLogNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_batchRequestTestSupportTest_testExpectedLogNotFound_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound");
@@ -539,6 +595,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: BatchRequestTestSupportTest/testExpectedLogNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_batchRequestTestSupportTest_testExpectedLogNotFound_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_BATCH, "BatchRequestTestSupportTest/testExpectedLogNotFound");
@@ -553,6 +614,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: DBtoDBBatchSampleTest.xls
     // =========================================================================
 
+    /**
+     * Given: DBtoDBBatchSampleTest/testExecute.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_dBtoDBBatchSampleTest_testExecute_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute", "testShots");
@@ -560,6 +626,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "DBtoDBBatchSampleTest/testExecute[testShots]");
     }
 
+    /**
+     * Given: DBtoDBBatchSampleTest/testExecute.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_dBtoDBBatchSampleTest_testExecute_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute");
@@ -570,6 +641,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: DBtoDBBatchSampleTest/testExecute.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_dBtoDBBatchSampleTest_testExecute_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_BATCH, "DBtoDBBatchSampleTest/testExecute");
@@ -584,6 +660,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: FileToFileBatchSampleTest.xls
     // =========================================================================
 
+    /**
+     * Given: FileToFileBatchSampleTest/testHandle.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_fileToFileBatchSampleTest_testHandle_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "FileToFileBatchSampleTest/testHandle", "testShots");
@@ -591,6 +672,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "FileToFileBatchSampleTest/testHandle[testShots]");
     }
 
+    /**
+     * Given: FileToFileBatchSampleTest/testHandle.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupFile_fileToFileBatchSampleTest_testHandle_equivalentToExcel() {
         List<DataFile> fromXls  = xlsParser.getSetupFile(DIR_BATCH, "FileToFileBatchSampleTest/testHandle");
@@ -598,6 +684,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentFileList(fromXls, fromYaml, "FileToFileBatchSampleTest/testHandle_setup_files");
     }
 
+    /**
+     * Given: FileToFileBatchSampleTest/testHandle.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedFile_fileToFileBatchSampleTest_testHandle_equivalentToExcel() {
         List<DataFile> fromXls  = xlsParser.getExpectedFile(DIR_BATCH, "FileToFileBatchSampleTest/testHandle");
@@ -609,6 +700,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: SimpleBatchSampleTest.xls
     // =========================================================================
 
+    /**
+     * Given: SimpleBatchSampleTest/testExecute.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_simpleBatchSampleTest_testExecute_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_BATCH, "SimpleBatchSampleTest/testExecute", "testShots");
@@ -620,6 +716,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: DbAccessTestSupportTest.xls
     // =========================================================================
 
+    /**
+     * Given: DbAccessTestSupportTest/testAssertTableEquals.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_dbAccessTestSupportTest_testAssertTableEquals_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_DB, "DbAccessTestSupportTest/testAssertTableEquals");
@@ -630,6 +731,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: DbAccessTestSupportTest/testExpectedCompleteTable.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_dbAccessTestSupportTest_testExpectedCompleteTable_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_DB, "DbAccessTestSupportTest/testExpectedCompleteTable");
@@ -640,6 +746,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: DbAccessTestSupportTest/testExpectedCompleteTable.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である（expected_complete_tables 含む）
+     */
     @Test
     public void getExpectedTableData_dbAccessTestSupportTest_testExpectedCompleteTable_equivalentToExcel() {
         // expected_complete_tables を含む（getExpectedTableData は expected_tables + expected_complete_tables を返す）
@@ -651,6 +762,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: DbAccessTestSupportTest/testSetUpDb.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_dbAccessTestSupportTest_testSetUpDb_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_DB, "DbAccessTestSupportTest/testSetUpDb");
@@ -661,6 +777,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: DbAccessTestSupportTest/testSetUpDbInOrder.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_dbAccessTestSupportTest_testSetUpDbInOrder_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_DB, "DbAccessTestSupportTest/testSetUpDbInOrder");
@@ -675,6 +796,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: MessagingReceiveTestSupportTest.xls
     // =========================================================================
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_messagingReceiveTestSupportTest_testExtends_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_MSG, "MessagingReceiveTestSupportTest/testExtends", "testShots");
@@ -682,6 +808,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "MessagingReceiveTestSupportTest/testExtends[testShots]");
     }
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_messagingReceiveTestSupportTest_testExtends_equivalentToExcel() {
         // YAML パーサは空行テーブル（rows: []）をスキップするため、XLS 側も空行テーブルを除外して比較する
@@ -693,6 +824,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_messagingReceiveTestSupportTest_testExtends_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_MSG, "MessagingReceiveTestSupportTest/testExtends");
@@ -703,6 +839,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testUnExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_messagingReceiveTestSupportTest_testUnExtends_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_MSG, "MessagingReceiveTestSupportTest/testUnExtends", "testShots");
@@ -710,6 +851,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "MessagingReceiveTestSupportTest/testUnExtends[testShots]");
     }
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testUnExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_messagingReceiveTestSupportTest_testUnExtends_equivalentToExcel() {
         // YAML パーサは空行テーブル（rows: []）をスキップするため、XLS 側も空行テーブルを除外して比較する
@@ -721,6 +867,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: MessagingReceiveTestSupportTest/testUnExtends.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_messagingReceiveTestSupportTest_testUnExtends_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_MSG, "MessagingReceiveTestSupportTest/testUnExtends");
@@ -737,6 +888,11 @@ public class ExcelToYamlEquivalenceTest {
     //       testMessagingSample は resources/ の XLS にのみ存在する。
     // =========================================================================
 
+    /**
+     * Given: MessagingRequestTestSupportTest/testSuccess.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_messagingRequestTestSupportTest_testSuccess_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_MSG, "MessagingRequestTestSupportTest/testSuccess", "testShots");
@@ -744,6 +900,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "MessagingRequestTestSupportTest/testSuccess[testShots]");
     }
 
+    /**
+     * Given: MessagingRequestTestSupportTest/testDbAssertionFailed.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_messagingRequestTestSupportTest_testDbAssertionFailed_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_MSG, "MessagingRequestTestSupportTest/testDbAssertionFailed", "testShots");
@@ -751,6 +912,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "MessagingRequestTestSupportTest/testDbAssertionFailed[testShots]");
     }
 
+    /**
+     * Given: MessagingRequestTestSupportTest/testStatusCodeFail.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testShots") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_messagingRequestTestSupportTest_testStatusCodeFail_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_MSG, "MessagingRequestTestSupportTest/testStatusCodeFail", "testShots");
@@ -762,6 +928,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: AbstractHttpRequestTestTemplateTest.xls
     // =========================================================================
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest/testAssertRequest.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("user") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_abstractHttpRequestTestTemplateTest_testAssertRequest_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_HTTP, "AbstractHttpRequestTestTemplateTest/testAssertRequest", "user");
@@ -769,6 +940,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "AbstractHttpRequestTestTemplateTest/testAssertRequest[user]");
     }
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest/testAssertSqlResultSet.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_abstractHttpRequestTestTemplateTest_testAssertSqlResultSet_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_HTTP, "AbstractHttpRequestTestTemplateTest/testAssertSqlResultSet");
@@ -779,6 +955,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest/testAssertSqlResultSet.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_abstractHttpRequestTestTemplateTest_testAssertSqlResultSet_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_HTTP, "AbstractHttpRequestTestTemplateTest/testAssertSqlResultSet");
@@ -789,6 +970,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest/testGetEmptyTestCase.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testCases") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_abstractHttpRequestTestTemplateTest_testGetEmptyTestCase_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_HTTP, "AbstractHttpRequestTestTemplateTest/testGetEmptyTestCase", "testCases");
@@ -796,6 +982,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "AbstractHttpRequestTestTemplateTest/testGetEmptyTestCase[testCases]");
     }
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest/testUpload.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupFile_abstractHttpRequestTestTemplateTest_testUpload_equivalentToExcel() {
         List<DataFile> fromXls  = xlsParser.getSetupFile(DIR_HTTP, "AbstractHttpRequestTestTemplateTest/testUpload");
@@ -803,6 +994,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentFileList(fromXls, fromYaml, "AbstractHttpRequestTestTemplateTest/testUpload_setup_files");
     }
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest/testAssertTablesCRLF.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_abstractHttpRequestTestTemplateTest_testAssertTablesCRLF_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_HTTP, "AbstractHttpRequestTestTemplateTest/testAssertTablesCRLF");
@@ -817,6 +1013,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: MultiResourceDataSetUpTest.xlsx
     // =========================================================================
 
+    /**
+     * Given: MultiResourceDataSetUpTest/testFileAndDatabaseSetUp.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupFile_multiResourceDataSetUpTest_testFileAndDatabaseSetUp_equivalentToExcel() {
         List<DataFile> fromXls  = xlsParser.getSetupFile(DIR_CORE, "MultiResourceDataSetUpTest/testFileAndDatabaseSetUp");
@@ -824,6 +1025,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentFileList(fromXls, fromYaml, "MultiResourceDataSetUpTest/testFileAndDatabaseSetUp_setup_files");
     }
 
+    /**
+     * Given: MultiResourceDataSetUpTest/testFileAndDatabaseSetUp.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_multiResourceDataSetUpTest_testFileAndDatabaseSetUp_equivalentToExcel() {
         // YAML パーサは空行テーブル（rows: []）をスキップするため、XLS 側も空行テーブルを除外して比較する
@@ -835,6 +1041,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: MultiResourceDataSetUpTest/testFileAndDatabaseSetUp.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_multiResourceDataSetUpTest_testFileAndDatabaseSetUp_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_CORE, "MultiResourceDataSetUpTest/testFileAndDatabaseSetUp");
@@ -849,6 +1060,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: BatchTestCaseInfoTest.xls
     // =========================================================================
 
+    /**
+     * Given: BatchTestCaseInfoTest/testSetUpDbDouble.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_batchTestCaseInfoTest_testSetUpDbDouble_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_STANDALONE, "BatchTestCaseInfoTest/testSetUpDbDouble");
@@ -859,6 +1075,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: BatchTestCaseInfoTest/testSetUpDbDouble.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_batchTestCaseInfoTest_testSetUpDbDouble_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_STANDALONE, "BatchTestCaseInfoTest/testSetUpDbDouble");
@@ -875,6 +1096,11 @@ public class ExcelToYamlEquivalenceTest {
     //       FATHER/SON 等は resources/ の MASTER_DATA.xls に存在する（下の resources セクションで照合）。
     // =========================================================================
 
+    /**
+     * Given: MASTER_DATA/hoge.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_masterDataJava_hoge_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_JAVA_ROOT, "MASTER_DATA/hoge");
@@ -885,6 +1111,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: MASTER_DATA2/hoge.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_masterData2Java_hoge_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_JAVA_ROOT, "MASTER_DATA2/hoge");
@@ -901,6 +1132,11 @@ public class ExcelToYamlEquivalenceTest {
     // MASTER_DATA2.xls → sheets: GRANPA, DAUGHTER
     // =========================================================================
 
+    /**
+     * Given: resources/masterdata/MASTER_DATA/FATHER.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_resMasterData_father_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_RES_MASTERDATA, "MASTER_DATA/FATHER");
@@ -911,6 +1147,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: resources/masterdata/MASTER_DATA/SON.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_resMasterData_son_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_RES_MASTERDATA, "MASTER_DATA/SON");
@@ -921,6 +1162,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: resources/masterdata/MASTER_DATA2/DAUGHTER.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_resMasterData2_daughter_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_RES_MASTERDATA, "MASTER_DATA2/DAUGHTER");
@@ -931,6 +1177,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: resources/masterdata/MASTER_DATA2/GRANPA.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_resMasterData2_granpa_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getSetupTableData(DIR_RES_MASTERDATA, "MASTER_DATA2/GRANPA");
@@ -945,6 +1196,11 @@ public class ExcelToYamlEquivalenceTest {
     // 分類B: resources/messaging/MessagingRequestTestSupportTest.xls
     // =========================================================================
 
+    /**
+     * Given: resources/messaging/MessagingRequestTestSupportTest/testMessagingSample.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap("testCases") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getListMap_resMessagingRequestTestSupportTest_testMessagingSample_equivalentToExcel() {
         List<Map<String, String>> fromXls  = xlsParser.getListMap(DIR_RES_MSG, "MessagingRequestTestSupportTest/testMessagingSample", "testCases");
@@ -952,6 +1208,11 @@ public class ExcelToYamlEquivalenceTest {
         assertEquivalentListMap(fromXls, fromYaml, "res/MessagingRequestTestSupportTest/testMessagingSample[testCases]");
     }
 
+    /**
+     * Given: resources/messaging/MessagingRequestTestSupportTest/testMessagingSample.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupTableData(groupId="input") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getSetupTableData_resMessagingRequestTestSupportTest_testMessagingSample_equivalentToExcel() {
         // YAML パーサは空行テーブル（rows: []）をスキップするため、XLS 側も空行テーブルを除外して比較する
@@ -963,6 +1224,11 @@ public class ExcelToYamlEquivalenceTest {
         }
     }
 
+    /**
+     * Given: resources/messaging/MessagingRequestTestSupportTest/testMessagingSample.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedTableData(groupId="case1") を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void getExpectedTableData_resMessagingRequestTestSupportTest_testMessagingSample_equivalentToExcel() {
         List<TableData> fromXls  = xlsParser.getExpectedTableData(DIR_RES_MSG, "MessagingRequestTestSupportTest/testMessagingSample", "case1");
@@ -1038,7 +1304,7 @@ public class ExcelToYamlEquivalenceTest {
      * </p>
      */
     private List<TableData> filterNonEmpty(List<TableData> tables) {
-        List<TableData> result = new java.util.ArrayList<>();
+        List<TableData> result = new ArrayList<>();
         for (TableData t : tables) {
             if (t.size() > 0) {
                 result.add(t);
@@ -1094,10 +1360,21 @@ public class ExcelToYamlEquivalenceTest {
             DataRecord yamlRow = yamlRecords.get(i);
             for (Map.Entry<String, Object> entry : xlsRow.entrySet()) {
                 assertThat("値が等価 [" + label + "][row=" + i + "][" + entry.getKey() + "]",
-                        String.valueOf(yamlRow.get(entry.getKey())),
-                        is(String.valueOf(entry.getValue())));
+                        toComparableString(yamlRow.get(entry.getKey())),
+                        is(toComparableString(entry.getValue())));
             }
         }
+    }
+
+    /**
+     * 値を比較可能な文字列に変換する。
+     * byte[] は内容に基づいた文字列（Arrays.toString）に変換する。
+     */
+    private String toComparableString(Object value) {
+        if (value instanceof byte[]) {
+            return Arrays.toString((byte[]) value);
+        }
+        return String.valueOf(value);
     }
 
     // =========================================================================

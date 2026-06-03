@@ -2,16 +2,16 @@ package nablarch.test.core.reader;
 
 import nablarch.core.dataformat.DataRecord;
 import nablarch.core.dataformat.FieldDefinition;
+import nablarch.core.dataformat.InvalidDataFormatException;
 import nablarch.core.dataformat.LayoutDefinition;
 import nablarch.core.dataformat.RecordDefinition;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
-import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
-import nablarch.test.support.db.helper.VariousDbTestHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -75,7 +75,7 @@ public class T7EquivalenceTest {
 
         DbInfo dbInfo = repositoryResource.getComponent("dbInfo");
         DefaultValues defaultValues = new BasicDefaultValues();
-        List<nablarch.test.core.util.interpreter.TestDataInterpreter> interpreters =
+        List<TestDataInterpreter> interpreters =
                 repositoryResource.getComponent("interpreters");
 
         yamlParser = new YamlTestDataParser();
@@ -93,6 +93,11 @@ public class T7EquivalenceTest {
     // EntityTestSupportTest (list_maps)
     // =======================================================================
 
+    /**
+     * Given: EntityTestSupportTest/test1.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_test1_entity_equivalentToExcel() {
         assertEquivalentListMap(
@@ -101,6 +106,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/test1[entity]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/test1.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_test1_constructor_equivalentToExcel() {
         assertEquivalentListMap(
@@ -109,6 +119,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/test1[constructor]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testBeanValidation.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testBeanValidation_equivalentToExcel() {
         assertEquivalentListMap(
@@ -121,6 +136,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testBeanValidation[params]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/beanValidationWithInterpolate.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_beanValidationWithInterpolate_equivalentToExcel() {
         assertEquivalentListMap(
@@ -133,6 +153,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/beanValidationWithInterpolate[params]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testValidateAndConvert.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testValidateAndConvert_equivalentToExcel() {
         assertEquivalentListMap(
@@ -145,6 +170,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testValidateAndConvert[params]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testValidateAndConvertFail.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testValidateAndConvertFail_equivalentToExcel() {
         assertEquivalentListMap(
@@ -157,6 +187,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testValidateAndConvertFail[params]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testRequiredColumnAbsent.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testRequiredColumnAbsent_equivalentToExcel() {
         assertEquivalentListMap(
@@ -165,6 +200,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testRequiredColumnAbsent[testShots]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testCastFailure.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testCastFailure_equivalentToExcel() {
         assertEquivalentListMap(
@@ -173,6 +213,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testCastFailure[entity]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testParseFailure.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testParseFailure_equivalentToExcel() {
         assertEquivalentListMap(
@@ -181,6 +226,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testParseFailure[entity]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testInvalidInput.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testInvalidInput_equivalentToExcel() {
         assertEquivalentListMap(
@@ -189,6 +239,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testInvalidInput[entity]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testPrivateConstructorEntity.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testPrivateConstructorEntity_equivalentToExcel() {
         assertEquivalentListMap(
@@ -197,6 +252,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testPrivateConstructorEntity[entity]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testValidateParamsNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testValidateParamsNotFound_equivalentToExcel() {
         assertEquivalentListMap(
@@ -205,6 +265,11 @@ public class T7EquivalenceTest {
                 "EntityTestSupportTest/testValidateParamsNotFound[testCases]");
     }
 
+    /**
+     * Given: EntityTestSupportTest/testValidateTestShotsNotFound.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void entityTestSupportTest_testValidateTestShotsNotFound_equivalentToExcel() {
         assertEquivalentListMap(
@@ -217,6 +282,11 @@ public class T7EquivalenceTest {
     // TestBeanTest (list_maps)
     // =======================================================================
 
+    /**
+     * Given: TestBeanTest/testCharsetAndLength.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void testBeanTest_testCharsetAndLength_equivalentToExcel() {
         assertEquivalentListMap(
@@ -225,6 +295,11 @@ public class T7EquivalenceTest {
                 "TestBeanTest/testCharsetAndLength[charsetAndLength]");
     }
 
+    /**
+     * Given: TestBeanTest/testCharsetAndLengthWithGroup.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void testBeanTest_testCharsetAndLengthWithGroup_equivalentToExcel() {
         assertEquivalentListMap(
@@ -258,6 +333,11 @@ public class T7EquivalenceTest {
                 "TestBeanTest/testSingleValidationWithGroup[singleValidation]");
     }
 
+    /**
+     * Given: TestBeanTest/withoutInterpolate1.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void testBeanTest_withoutInterpolate1_equivalentToExcel() {
         assertEquivalentListMap(
@@ -266,6 +346,11 @@ public class T7EquivalenceTest {
                 "TestBeanTest/withoutInterpolate1[singleValidation]");
     }
 
+    /**
+     * Given: TestBeanTest/withoutInterpolate2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void testBeanTest_withoutInterpolate2_equivalentToExcel() {
         assertEquivalentListMap(
@@ -278,6 +363,11 @@ public class T7EquivalenceTest {
     // TestEntityTest (list_maps)
     // =======================================================================
 
+    /**
+     * Given: TestEntityTest/testCharsetAndLength.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void testEntityTest_testCharsetAndLength_equivalentToExcel() {
         assertEquivalentListMap(
@@ -286,6 +376,11 @@ public class T7EquivalenceTest {
                 "TestEntityTest/testCharsetAndLength[charsetAndLength]");
     }
 
+    /**
+     * Given: TestEntityTest/testCharsetAndLengthWithMessage.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void testEntityTest_testCharsetAndLengthWithMessage_equivalentToExcel() {
         assertEquivalentListMap(
@@ -310,6 +405,11 @@ public class T7EquivalenceTest {
     // AbstractHttpRequestTestTemplateTest2 (list_maps)
     // =======================================================================
 
+    /**
+     * Given: AbstractHttpRequestTestTemplateTest2/testAssertRequest.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void abstractHttpRequestTestTemplateTest2_testAssertRequest_equivalentToExcel() {
         String resource = "AbstractHttpRequestTestTemplateTest2/testAssertRequest";
@@ -325,6 +425,11 @@ public class T7EquivalenceTest {
     // HttpRequestTestSupportTest (list_maps)
     // =======================================================================
 
+    /**
+     * Given: HttpRequestTestSupportTest/testAssertObjectPropertyEquals.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testAssertObjectPropertyEquals_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testAssertObjectPropertyEquals";
@@ -336,6 +441,11 @@ public class T7EquivalenceTest {
         }
     }
 
+    /**
+     * Given: HttpRequestTestSupportTest/testAssertObjectPropertyEquals2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testAssertObjectPropertyEquals2_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testAssertObjectPropertyEquals2";
@@ -347,6 +457,11 @@ public class T7EquivalenceTest {
         }
     }
 
+    /**
+     * Given: HttpRequestTestSupportTest/testDelegatingToDbSupport.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testDelegatingToDbSupport_listMaps_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testDelegatingToDbSupport";
@@ -367,6 +482,11 @@ public class T7EquivalenceTest {
      * (See httpRequestTestSupportTest_testDelegatingToDbSupport_listMaps_equivalentToExcel)
      */
 
+    /**
+     * Given: HttpRequestTestSupportTest/testDelegatingToEntitySupport.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testDelegatingToEntitySupport_equivalentToExcel() {
         assertEquivalentListMap(
@@ -375,6 +495,11 @@ public class T7EquivalenceTest {
                 "HttpRequestTestSupportTest/testDelegatingToEntitySupport[entity]");
     }
 
+    /**
+     * Given: HttpRequestTestSupportTest/testExecute.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testExecute_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testExecute";
@@ -386,6 +511,11 @@ public class T7EquivalenceTest {
         }
     }
 
+    /**
+     * Given: HttpRequestTestSupportTest/testExecuteDummy.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testExecuteDummy_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testExecuteDummy";
@@ -397,6 +527,11 @@ public class T7EquivalenceTest {
         }
     }
 
+    /**
+     * Given: HttpRequestTestSupportTest/testPrepareHandlerQueue.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testPrepareHandlerQueue_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testPrepareHandlerQueue";
@@ -408,6 +543,11 @@ public class T7EquivalenceTest {
         }
     }
 
+    /**
+     * Given: HttpRequestTestSupportTest/testSimple.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getListMap() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void httpRequestTestSupportTest_testSimple_equivalentToExcel() {
         String resource = "HttpRequestTestSupportTest/testSimple";
@@ -428,6 +568,11 @@ public class T7EquivalenceTest {
     //  - 数値書式セルが正しく文字列化されているか（testNumberStringDecimal）
     // =======================================================================
 
+    /**
+     * Given: FileSupportTest/testSetUpFixedLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testSetUpFixedLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -436,6 +581,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testSetUpFixedLengthFile[setup]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertFixedLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertFixedLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -444,6 +594,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertFixedLengthFile[expected]");
     }
 
+    /**
+     * Given: FileSupportTest/testSetUpVariableLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testSetUpVariableLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -452,6 +607,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testSetUpVariableLengthFile[setup]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertVariableLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertVariableLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -460,7 +620,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertVariableLengthFile[expected]");
     }
 
-    /** 数値書式セルの文字列化検証（testNumberStringDecimal1）*/
+    /**
+     * Given: FileSupportTest/testNumberStringDecimal1.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile()/getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である（数値書式セルの文字列化検証）
+     */
     @Test
     public void fileSupportTest_testNumberStringDecimal1_equivalentToExcel() {
         assertEquivalentFileList(
@@ -474,9 +638,9 @@ public class T7EquivalenceTest {
     }
 
     /**
-     * testNumberStringDecimal2 は桁数超過の数値で InvalidDataFormatException が発生するケース。
-     * XLS・YAML 両方が同じ例外をスローすること（等価なエラー挙動）を確認する。
-     * setup_files の読み込み時に toDataRecords() 呼び出しで例外が発生する。
+     * Given: FileSupportTest/testNumberStringDecimal2.yaml が配置されている（桁数超過の数値を含む .xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser と YAML パーサの両方が同様に InvalidDataFormatException をスローする
      */
     @Test
     public void fileSupportTest_testNumberStringDecimal2_bothThrowEquivalently() {
@@ -487,7 +651,7 @@ public class T7EquivalenceTest {
             for (DataFile f : xlsFiles) {
                 f.toDataRecords();
             }
-        } catch (nablarch.core.dataformat.InvalidDataFormatException e) {
+        } catch (InvalidDataFormatException e) {
             xlsThrew = true;
         }
         try {
@@ -495,13 +659,18 @@ public class T7EquivalenceTest {
             for (DataFile f : yamlFiles) {
                 f.toDataRecords();
             }
-        } catch (nablarch.core.dataformat.InvalidDataFormatException e) {
+        } catch (InvalidDataFormatException e) {
             yamlThrew = true;
         }
         assertThat("XLS が InvalidDataFormatException をスローすること", xlsThrew, is(true));
         assertThat("YAML も同様に InvalidDataFormatException をスローすること（等価なエラー挙動）", yamlThrew, is(true));
     }
 
+    /**
+     * Given: FileSupportTest/testVariation.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile()/getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testVariation_equivalentToExcel() {
         assertEquivalentFileList(
@@ -521,6 +690,11 @@ public class T7EquivalenceTest {
      * 等価照合はカスタムリポジトリ設定を伴う専用テストに委ねるため本クラスでは対象外とする。
      */
 
+    /**
+     * Given: FileSupportTest/testSetUpFixedEmptyLine.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testSetUpFixedEmptyLine_equivalentToExcel() {
         assertEquivalentFileList(
@@ -529,6 +703,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testSetUpFixedEmptyLine[setup]");
     }
 
+    /**
+     * Given: FileSupportTest/testSetUpVariableEmptyLine.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testSetUpVariableEmptyLine_equivalentToExcel() {
         assertEquivalentFileList(
@@ -537,6 +716,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testSetUpVariableEmptyLine[setup]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertEmptyLineFixed.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertEmptyLineFixed_equivalentToExcel() {
         assertEquivalentFileList(
@@ -545,6 +729,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertEmptyLineFixed[expected]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertEmptyLineVariable.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertEmptyLineVariable_equivalentToExcel() {
         assertEquivalentFileList(
@@ -553,6 +742,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertEmptyLineVariable[expected]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertEmptyLine2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertEmptyLine2_equivalentToExcel() {
         assertEquivalentFileList(
@@ -561,6 +755,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertEmptyLine2[expected]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertEmptyLineVariable2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertEmptyLineVariable2_equivalentToExcel() {
         assertEquivalentFileList(
@@ -569,6 +768,11 @@ public class T7EquivalenceTest {
                 "FileSupportTest/testAssertEmptyLineVariable2[expected]");
     }
 
+    /**
+     * Given: FileSupportTest/testAssertEmptyVariableFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testAssertEmptyVariableFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -585,6 +789,11 @@ public class T7EquivalenceTest {
      * 等価照合は除外し T7.md に理由を記録する。
      */
 
+    /**
+     * Given: FileSupportTest/testSetUpVariableEmptyLine2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportTest_testSetUpVariableEmptyLine2_equivalentToExcel() {
         assertEquivalentFileList(
@@ -594,8 +803,9 @@ public class T7EquivalenceTest {
     }
 
     /**
-     * 重複フィールド名のデータ: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
-     * FileSupportTest では IllegalStateException にラップされるが、根本原因は IllegalArgumentException。
+     * Given: FileSupportTest/testFixedDuplicateName.yaml が配置されている（重複フィールド名を含む .xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser と YAML パーサの両方が同様に例外をスローする
      */
     @Test
     public void fileSupportTest_testFixedDuplicateName_bothThrowEquivalently() {
@@ -616,7 +826,9 @@ public class T7EquivalenceTest {
     }
 
     /**
-     * 重複フィールド名の可変長ファイル: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
+     * Given: FileSupportTest/testVariableDuplicateName.yaml が配置されている（重複フィールド名を含む .xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser と YAML パーサの両方が同様に例外をスローする
      */
     @Test
     public void fileSupportTest_testVariableDuplicateName_bothThrowEquivalently() {
@@ -640,6 +852,11 @@ public class T7EquivalenceTest {
     // FileSupportWithDbLessTestDataParserTest (file data)
     // =======================================================================
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testSetUpFixedLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testSetUpFixedLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -648,6 +865,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testSetUpFixedLengthFile[setup]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertFixedLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertFixedLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -656,6 +878,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testAssertFixedLengthFile[expected]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testSetUpVariableLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testSetUpVariableLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -664,6 +891,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testSetUpVariableLengthFile[setup]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertVariableLengthFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertVariableLengthFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -672,7 +904,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testAssertVariableLengthFile[expected]");
     }
 
-    /** 数値書式セルの文字列化検証 */
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testNumberStringDecimal1.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile()/getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である（数値書式セルの文字列化検証）
+     */
     @Test
     public void fileSupportWithDbLessTest_testNumberStringDecimal1_equivalentToExcel() {
         assertEquivalentFileList(
@@ -686,8 +922,9 @@ public class T7EquivalenceTest {
     }
 
     /**
-     * testNumberStringDecimal2 は桁数超過の数値で InvalidDataFormatException が発生するケース。
-     * XLS・YAML 両方が同じ例外をスローすること（等価なエラー挙動）を確認する。
+     * Given: FileSupportWithDbLessTestDataParserTest/testNumberStringDecimal2.yaml が配置されている（桁数超過の数値を含む .xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser と YAML パーサの両方が同様に InvalidDataFormatException をスローする
      */
     @Test
     public void fileSupportWithDbLessTest_testNumberStringDecimal2_bothThrowEquivalently() {
@@ -698,7 +935,7 @@ public class T7EquivalenceTest {
             for (DataFile f : xlsFiles) {
                 f.toDataRecords();
             }
-        } catch (nablarch.core.dataformat.InvalidDataFormatException e) {
+        } catch (InvalidDataFormatException e) {
             xlsThrew = true;
         }
         try {
@@ -706,13 +943,18 @@ public class T7EquivalenceTest {
             for (DataFile f : yamlFiles) {
                 f.toDataRecords();
             }
-        } catch (nablarch.core.dataformat.InvalidDataFormatException e) {
+        } catch (InvalidDataFormatException e) {
             yamlThrew = true;
         }
         assertThat("XLS が InvalidDataFormatException をスローすること", xlsThrew, is(true));
         assertThat("YAML も同様に InvalidDataFormatException をスローすること（等価なエラー挙動）", yamlThrew, is(true));
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineFixed.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertEmptyLineFixed_equivalentToExcel() {
         assertEquivalentFileList(
@@ -721,6 +963,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineFixed[expected]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertEmptyLineVariable_equivalentToExcel() {
         assertEquivalentFileList(
@@ -730,7 +977,9 @@ public class T7EquivalenceTest {
     }
 
     /**
-     * 重複フィールド名のデータ: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
+     * Given: FileSupportWithDbLessTestDataParserTest/testFixedDuplicateName.yaml が配置されている（重複フィールド名を含む .xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser と YAML パーサの両方が同様に例外をスローする
      */
     @Test
     public void fileSupportWithDbLessTest_testFixedDuplicateName_bothThrowEquivalently() {
@@ -751,7 +1000,9 @@ public class T7EquivalenceTest {
     }
 
     /**
-     * 重複フィールド名の可変長ファイル: XLS・YAML 両方とも IllegalArgumentException をスローすること（等価なエラー挙動）。
+     * Given: FileSupportWithDbLessTestDataParserTest/testVariableDuplicateName.yaml が配置されている（重複フィールド名を含む .xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser と YAML パーサの両方が同様に例外をスローする
      */
     @Test
     public void fileSupportWithDbLessTest_testVariableDuplicateName_bothThrowEquivalently() {
@@ -771,6 +1022,11 @@ public class T7EquivalenceTest {
         assertThat("YAML も同様に重複フィールド名エラーをスローすること（等価なエラー挙動）", yamlThrew, is(true));
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testSetUpFixedEmptyLine.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testSetUpFixedEmptyLine_equivalentToExcel() {
         assertEquivalentFileList(
@@ -779,6 +1035,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testSetUpFixedEmptyLine[setup]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testSetUpVariableEmptyLine_equivalentToExcel() {
         assertEquivalentFileList(
@@ -787,6 +1048,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine[setup]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertEmptyLine2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertEmptyLine2_equivalentToExcel() {
         assertEquivalentFileList(
@@ -795,6 +1061,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLine2[expected]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertEmptyLineVariable2_equivalentToExcel() {
         assertEquivalentFileList(
@@ -803,6 +1074,11 @@ public class T7EquivalenceTest {
                 "FileSupportWithDbLessTestDataParserTest/testAssertEmptyLineVariable2[expected]");
     }
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testAssertEmptyVariableFile.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testAssertEmptyVariableFile_equivalentToExcel() {
         assertEquivalentFileList(
@@ -820,6 +1096,11 @@ public class T7EquivalenceTest {
      * 等価照合は除外し T7.md に理由を記録する。
      */
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testSetUpVariableEmptyLine2.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testSetUpVariableEmptyLine2_equivalentToExcel() {
         assertEquivalentFileList(
@@ -833,6 +1114,11 @@ public class T7EquivalenceTest {
      * 標準設定では等価照合テストの実施が困難。T7.md に除外理由を記録する。
      */
 
+    /**
+     * Given: FileSupportWithDbLessTestDataParserTest/testVariation.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getSetupFile()/getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void fileSupportWithDbLessTest_testVariation_equivalentToExcel() {
         assertEquivalentFileList(
@@ -849,6 +1135,11 @@ public class T7EquivalenceTest {
     // VariableLengthFileParserTest (file data)
     // =======================================================================
 
+    /**
+     * Given: VariableLengthFileParserTest/testEmptyRowSingleItem.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void variableLengthFileParserTest_testEmptyRowSingleItem_equivalentToExcel() {
         assertEquivalentFileList(
@@ -857,6 +1148,11 @@ public class T7EquivalenceTest {
                 "VariableLengthFileParserTest/testEmptyRowSingleItem[expected]");
     }
 
+    /**
+     * Given: VariableLengthFileParserTest/testEmptyRowMultiItems.yaml が配置されている（.xls から変換済み）<br>
+     * When:  YamlTestDataParser で getExpectedFile() を呼ぶ<br>
+     * Then:  BasicTestDataParser で Excel を読んだ結果と等価である
+     */
     @Test
     public void variableLengthFileParserTest_testEmptyRowMultiItems_equivalentToExcel() {
         assertEquivalentFileList(
@@ -912,33 +1208,6 @@ public class T7EquivalenceTest {
             for (Map.Entry<String, String> entry : xlsRow.entrySet()) {
                 assertThat("値が等価 [" + label + "][" + i + "][" + entry.getKey() + "]",
                         yamlRow.get(entry.getKey()), is(entry.getValue()));
-            }
-        }
-    }
-
-    /**
-     * TableData の等価性を確認する。
-     */
-    private void assertEquivalentTable(TableData xlsTable, TableData yamlTable, String label) {
-        assertThat("テーブル名が等価 [" + label + "]",
-                yamlTable.getTableName().toUpperCase(), is(xlsTable.getTableName().toUpperCase()));
-        assertThat("行数が等価 [" + label + "]", yamlTable.size(), is(xlsTable.size()));
-
-        Set<String> xlsCols = new HashSet<>(Arrays.asList(xlsTable.getColumnNames()));
-        Set<String> yamlCols = new HashSet<>(Arrays.asList(yamlTable.getColumnNames()));
-        assertThat("カラム数が等価 [" + label + "]", yamlTable.getColumnNames().length, is(xlsTable.getColumnNames().length));
-        assertThat("カラム名集合が等価 [" + label + "]（YAML 側にのみ存在するカラムなし）",
-                yamlCols.containsAll(xlsCols), is(true));
-        assertThat("カラム名集合が等価 [" + label + "]（Excel 側にのみ存在するカラムなし）",
-                xlsCols.containsAll(yamlCols), is(true));
-
-        for (int row = 0; row < xlsTable.size(); row++) {
-            for (String col : xlsTable.getColumnNames()) {
-                Object xlsVal = xlsTable.getValue(row, col);
-                Object yamlVal = yamlTable.getValue(row, col);
-                assertThat("値が等価 [" + label + "][row=" + row + "][col=" + col + "]",
-                        yamlVal == null ? null : yamlVal.toString(),
-                        is(xlsVal == null ? null : xlsVal.toString()));
             }
         }
     }
