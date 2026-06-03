@@ -679,6 +679,7 @@ public class XlsFormatReaderTest {
         MessageDataBlock block = (MessageDataBlock) result.getSections().get(0).getBlocks().get(0);
         assertThat(block.getDataType(), is(DataType.MESSAGE));
         assertThat(block.getIdentifier(), is("sendSyncTestData/REQ001/message"));
+        assertThat(block.getDirectives().isEmpty(), is(true));
         assertThat(block.getFwHeaderFields().get("requestId"), is("REQ001"));
         assertThat(block.getFwHeaderFields().get("userId"), is("usr001"));
         assertThat(block.getRecords().size(), is(1));

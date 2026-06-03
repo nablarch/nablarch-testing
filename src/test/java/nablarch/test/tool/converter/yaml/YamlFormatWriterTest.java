@@ -16,10 +16,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -410,6 +408,7 @@ public class YamlFormatWriterTest {
         String yaml = readYaml(outputDir, "FooTest", "case01");
         assertThat(yaml, containsString("messages:"));
         assertThat(yaml, containsString("id: \"sendSyncTestData/REQ001/message\""));
+        assertThat(yaml, not(containsString("directives:")));
         assertThat(yaml, containsString("fw_header:"));
         assertThat(yaml, containsString("requestId: \"REQ001\""));
         assertThat(yaml, containsString("userId: \"usr001\""));

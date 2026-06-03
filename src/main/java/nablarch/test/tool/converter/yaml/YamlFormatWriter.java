@@ -17,6 +17,8 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,13 +57,11 @@ public class YamlFormatWriter implements TestDataFormatWriter {
     }
 
     private void writeSection(Writer w, TestDataSection section) throws IOException {
-        // Group blocks by top-level key, preserving order; output each key once
-        // Use a linked map to maintain insertion order
-        java.util.LinkedHashMap<String, List<TestDataBlock>> grouped = new java.util.LinkedHashMap<>();
+        LinkedHashMap<String, List<TestDataBlock>> grouped = new LinkedHashMap<>();
         for (TestDataBlock block : section.getBlocks()) {
             String key = sectionKey(block);
             if (!grouped.containsKey(key)) {
-                grouped.put(key, new java.util.ArrayList<>());
+                grouped.put(key, new ArrayList<>());
             }
             grouped.get(key).add(block);
         }
@@ -187,9 +187,13 @@ public class YamlFormatWriter implements TestDataFormatWriter {
             }
         }
 
-        w.write(indent + "  records:\n");
-        for (RecordLayout record : block.getRecords()) {
-            writeMessageRecord(w, record, indent + "    ");
+        if (block.getRecords().isEmpty()) {
+            w.write(indent + "  records: []\n");
+        } else {
+            w.write(indent + "  records:\n");
+            for (RecordLayout record : block.getRecords()) {
+                writeMessageRecord(w, record, indent + "    ");
+            }
         }
     }
 

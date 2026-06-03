@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * XLS ファイルを読み込んで {@link TestDataContainer} に変換する Reader。
@@ -300,7 +301,7 @@ public class XlsFormatReader implements TestDataFormatReader {
      * FW 制御ヘッダではなくディレクティブとして扱う。
      * NTF の DataRecordFormatterSupport$Directive / FixedLengthDirective / VariableLengthDirective の全名称を網羅する。
      */
-    private static final java.util.Set<String> KNOWN_DIRECTIVE_NAMES = new java.util.HashSet<>(java.util.Arrays.asList(
+    private static final Set<String> KNOWN_DIRECTIVE_NAMES = Set.of(
             "file-type", "text-encoding", "record-separator",
             "record-length",
             "positive-zone-sign-nibble", "negative-zone-sign-nibble",
@@ -308,7 +309,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             "required-decimal-point", "fixed-sign-position", "required-plus-sign",
             "field-separator", "quoting-delimiter", "ignore-blank-lines",
             "requires-title", "max-record-length", "title-record-type-name"
-    ));
+    );
 
     /** メッセージングデータブロックの解析（MS-01, MS-02）。 */
     private MessageDataBlock parseMessageBlock(DataType dataType, String groupId, String identifier,
