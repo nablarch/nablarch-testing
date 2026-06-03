@@ -62,7 +62,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - [x] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
   - [x] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [x] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
-  - [ ] **T5-ext** バリデータに V-FNAME / V-DKEY / V-MSGROW を追加（シフトレフト拡張） — `docs/pr75/checks/T5.md`（同チェックファイルに追記）（担当者・QA・Java・SWE 全 OK。ユーザーレビュー待ち）
+  - [ ] **T5-ext** バリデータに V-FNAME / V-DKEY / V-MSGROW を追加（シフトレフト拡張） — `docs/pr75/checks/T5.md`（担当者・QA・Java・SWE 全 OK。ユーザーレビュー待ち）
   - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
   - [ ] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`
 
@@ -252,7 +252,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T5-ext 担当者・QA・Java・SWE 全 OK（2026-06-03）。ユーザーレビュー待ち。**
+2. **T5-ext ユーザーレビュー待ち。次は T6 または T7 を実施する（T5-ext が OK になってから）。**
 
 ### T5-ext 概要
 
@@ -288,6 +288,14 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - テスト: 166件全グリーン。実Excel確認テスト（MessageParserTest.xls, MessagingRequestTestSupportTest.xls）・ラウンドトリップテスト追加
 - QA・Java・SWE 各レビュー指摘を全件対応済み
 - T3.md チェックファイル更新済み
+
+### T5-ext 追加対応（2026-06-03）
+
+**KNOWN_DIRECTIVE_NAMES と NTF 本体ディレクティブの整合テスト追加**
+- ユーザーレビュー中に指摘：`YamlTestDataValidator`（V-DKEY）は `MessageDataBlock.KNOWN_DIRECTIVE_NAMES`（手書き定数）に依存しており、NTF 本体とのずれを検知するテストがなかった
+- `YamlTestDataValidatorTest#knownDirectiveNames_matchesNtfDirectives` を追加
+  - `Directive` / `FixedLengthDirective` / `VariableLengthDirective` の全キーをリフレクションで動的収集し、`KNOWN_DIRECTIVE_NAMES` と完全一致を検証
+  - NTF 本体でディレクティブが追加・変更・削除されれば即座に検知される
 
 ### 完了済みタスク（2026-06-02）
 
