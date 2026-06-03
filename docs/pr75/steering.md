@@ -59,7 +59,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - 各タスクは「ソースコード変更を含むタスク（5ステップ）」プロセスに従う。完了条件は各チェックファイルに記載
   - [ ] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`
   - [x] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
-  - [ ] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
+  - [x] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`
   - [ ] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [ ] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
   - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
@@ -251,23 +251,17 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T3 の実装を継続する（WIP コミット済み）**
+2. **T4 から実施する**
 
-### T3 現状（WIP）
+### 完了済みタスク（2026-06-03）
 
-**変更済みファイル（コミット済み）:**
-- `MessageDataBlock`: `directives` フィールド追加（コンストラクタ 5引数→6引数）
-- `XlsFormatReader.parseMessageBlock`: 既知ディレクティブ名セット（`KNOWN_DIRECTIVE_NAMES`）で振り分け。`text-encoding` 等は `directives`、それ以外は `fwHeaderFields` へ
-- `YamlFormatWriter.writeMessageBlock`: `directives:` → (`MESSAGE` のみ) `fw_header:` → `records:` 順で出力。`record_type: FW_HEADER` レコード廃止
-- `YamlFormatReader.parseMessageBlock`: `fw_header:` マップ形式で読み込むよう変更（旧 `FW_HEADER` レコード形式から）
-- `YamlFormatWriterTest`: コンストラクタ更新・`writeMessage` テストのアサーションを新形式（`fw_header:` マップ）に更新
-
-**残作業（ここから再開）:**
-1. `YamlFormatWriterTest` の残り2件 `new MessageDataBlock(...)` を6引数に更新（`writeResponseHeaderMessages`・`writeResponseBodyMessages`）
-2. `XlsFormatWriterTest` の `new MessageDataBlock(...)` を6引数に更新
-3. T3 の RED テスト（ディレクティブ分離・fw_header マップ出力を検証するテスト）を `XlsFormatReaderTest` と `YamlFormatWriterTest` に追加
-4. `mvn clean package -Dtest="XlsFormatReaderTest,YamlFormatWriterTest,YamlFormatReaderTest"` で全グリーン確認
-5. セルフチェック・レビュー・T3.md 記入
+**T3: 変換ツール parseMessageBlock の構造分離修正（完了・ユーザーレビュー待ち）**
+- `MessageDataBlock`: `directives` フィールド追加（6引数コンストラクタ）。`KNOWN_DIRECTIVE_NAMES` をモデル層に移動
+- `XlsFormatReader.parseMessageBlock`: 既知ディレクティブ名で `directives`/`fwHeaderFields` に振り分け。`parseRecordLayouts` 共通メソッドに抽出
+- `XlsFormatWriter.writeMessageBlock`: ディレクティブ行を FW ヘッダ前に出力
+- `YamlFormatWriter`: `directives:`→`fw_header:`→`records:` 順。`writeMessageRecord` 削除して `writeRecordLayout` に統合。`INDENT` 定数化
+- テスト: 128件全グリーン（QA・Java・SWE 各レビュー指摘を全件対応済み）
+- T3.md チェックファイル記入済み
 
 ### 完了済みタスク（2026-06-02）
 
