@@ -13,6 +13,7 @@ import nablarch.test.tool.converter.model.TestDataBlock;
 import nablarch.test.tool.converter.model.TestDataContainer;
 import nablarch.test.tool.converter.model.TestDataSection;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -29,6 +30,8 @@ import java.util.Map;
  * XLS ファイルを読み込んで {@link TestDataContainer} に変換する Reader。
  */
 public class XlsFormatReader implements TestDataFormatReader {
+
+    private final DataFormatter dataFormatter = new DataFormatter();
 
     /** 直前の read() 呼び出しで検出したコメント行数。 */
     private int lastCommentLineCount = 0;
@@ -108,12 +111,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             if (cell == null) {
                 value = "";
             } else {
-                // 数値書式・日付書式セルは警告出力（NG-4）
-                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-                    System.err.println("WARN: " + sourcePath + " row=" + rowNum + " col=" + (c + 1)
-                            + ": numeric/date cell detected. Cell.toString() result used.");
-                }
-                value = cell.toString();
+                value = dataFormatter.formatCellValue(cell);
             }
             if (c > 0 && value.startsWith("//")) {
                 // HC-06: 先頭以外のセルが "//" で始まる場合、そのセル以降を切り捨て

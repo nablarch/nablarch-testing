@@ -743,19 +743,48 @@ public class XlsFormatReaderTest {
     }
 
     /**
-     * [Given] データ行のセルが数値型（CELL_TYPE_NUMERIC）
+     * [Given] データ行のセルが数値型で整数値 2 が保存されている
      * [When]  read() を呼び出す
-     * [Then]  cell.toString() の結果が文字列として読まれ、数値警告ログパスが通る
+     * [Then]  DataFormatter により "2" として出力される（"2.0" にならない）
      */
     @Test
-    public void numericCellUsesToString() throws Exception {
+    public void numericCellFormattedAsIntegerNotDecimal() throws Exception {
+        // Given: 整数値 2 が数値型で保存された Excel
+        File xls = temporaryFolder.newFile("FooTest.xls");
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        row(sheet, 0, "SETUP_TABLE=T1", "");
+        row(sheet, 1, "COL1", "");
+        Row dataRow = sheet.createRow(2);
+        dataRow.createCell(0).setCellValue(2.0);
+        FileOutputStream out = new FileOutputStream(xls);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+
+        // When
+        TestDataContainer result = sut.read(xls.toPath());
+
+        // Then: DataFormatter により "2" として出力される（"2.0" にならない）
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().get(0).get(0), is("2"));
+    }
+
+    /**
+     * [Given] データ行のセルが数値型（CELL_TYPE_NUMERIC）
+     * [When]  read() を呼び出す
+     * [Then]  DataFormatter により整数値は整数文字列として読まれる
+     */
+    @Test
+    public void numericCellUsesDataFormatter() throws Exception {
         // Given
         File xls = temporaryFolder.newFile("FooTest.xls");
         Workbook wb = new HSSFWorkbook();
         Sheet sheet = wb.createSheet("case01");
         row(sheet, 0, "SETUP_TABLE=T1", "");
         row(sheet, 1, "COL1", "");
-        // データ行に数値セルを設定
         Row dataRow = sheet.createRow(2);
         dataRow.createCell(0).setCellValue(1.0);
         FileOutputStream out = new FileOutputStream(xls);
@@ -768,11 +797,10 @@ public class XlsFormatReaderTest {
         // When
         TestDataContainer result = sut.read(xls.toPath());
 
-        // Then: cell.toString() の結果（例: "1.0"）が読まれる
+        // Then: DataFormatter により "1" として読まれる
         TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
         assertThat(block.getRows().size(), is(1));
-        // toString() の結果は空でない
-        assertThat(block.getRows().get(0).get(0).isEmpty(), is(false));
+        assertThat(block.getRows().get(0).get(0), is("1"));
     }
 
     /**
