@@ -2,7 +2,6 @@ package nablarch.test.tool.converter.xls;
 
 import nablarch.test.core.reader.DataType;
 import nablarch.test.tool.converter.ConverterException;
-import nablarch.test.tool.converter.model.ColumnRowDataBlock;
 import nablarch.test.tool.converter.model.FileDataBlock;
 import nablarch.test.tool.converter.model.ListMapBlock;
 import nablarch.test.tool.converter.model.MessageDataBlock;
@@ -773,20 +772,20 @@ public class XlsFormatReaderTest {
     }
 
     /**
-     * [Given] データ行のセルが数値型（CELL_TYPE_NUMERIC）
+     * [Given] データ行のセルが数値型で小数値 1.5 が保存されている
      * [When]  read() を呼び出す
-     * [Then]  DataFormatter により整数値は整数文字列として読まれる
+     * [Then]  DataFormatter により "1.5" として出力される
      */
     @Test
-    public void numericCellUsesDataFormatter() throws Exception {
-        // Given
+    public void numericCellWithDecimalValue() throws Exception {
+        // Given: 小数値 1.5 が数値型で保存された Excel
         File xls = temporaryFolder.newFile("FooTest.xls");
         Workbook wb = new HSSFWorkbook();
         Sheet sheet = wb.createSheet("case01");
         row(sheet, 0, "SETUP_TABLE=T1", "");
         row(sheet, 1, "COL1", "");
         Row dataRow = sheet.createRow(2);
-        dataRow.createCell(0).setCellValue(1.0);
+        dataRow.createCell(0).setCellValue(1.5);
         FileOutputStream out = new FileOutputStream(xls);
         try {
             wb.write(out);
@@ -797,10 +796,39 @@ public class XlsFormatReaderTest {
         // When
         TestDataContainer result = sut.read(xls.toPath());
 
-        // Then: DataFormatter により "1" として読まれる
+        // Then: DataFormatter により "1.5" として出力される
         TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
-        assertThat(block.getRows().size(), is(1));
-        assertThat(block.getRows().get(0).get(0), is("1"));
+        assertThat(block.getRows().get(0).get(0), is("1.5"));
+    }
+
+    /**
+     * [Given] XLSX ファイルのデータ行のセルが数値型で整数値 2 が保存されている
+     * [When]  read() を呼び出す
+     * [Then]  DataFormatter により "2" として出力される（XLSX でも "2.0" にならない）
+     */
+    @Test
+    public void numericCellFormattedAsIntegerInXlsx() throws Exception {
+        // Given: 整数値 2 が数値型で保存された XLSX
+        File xlsx = temporaryFolder.newFile("FooTest.xlsx");
+        Workbook wb = new XSSFWorkbook();
+        Sheet sheet = wb.createSheet("case01");
+        row(sheet, 0, "SETUP_TABLE=T1", "");
+        row(sheet, 1, "COL1", "");
+        Row dataRow = sheet.createRow(2);
+        dataRow.createCell(0).setCellValue(2.0);
+        FileOutputStream out = new FileOutputStream(xlsx);
+        try {
+            wb.write(out);
+        } finally {
+            out.close();
+        }
+
+        // When
+        TestDataContainer result = sut.read(xlsx.toPath());
+
+        // Then: XLSX でも DataFormatter により "2" として出力される
+        TableDataBlock block = (TableDataBlock) result.getSections().get(0).getBlocks().get(0);
+        assertThat(block.getRows().get(0).get(0), is("2"));
     }
 
     /**

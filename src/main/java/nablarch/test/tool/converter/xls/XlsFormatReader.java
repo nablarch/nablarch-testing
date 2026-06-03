@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -31,10 +32,11 @@ import java.util.Map;
  */
 public class XlsFormatReader implements TestDataFormatReader {
 
-    private final DataFormatter dataFormatter = new DataFormatter();
+    /** セル値を書式付きで文字列化するフォーマッタ。Locale.ROOT を指定し環境依存を排除する。 */
+    private final DataFormatter dataFormatter = new DataFormatter(Locale.ROOT);
 
     /** 直前の read() 呼び出しで検出したコメント行数。 */
-    private int lastCommentLineCount = 0;
+    private int lastCommentLineCount;
 
     /** 直前の read() 呼び出しで検出したコメント行数を返す。 */
     public int getLastCommentLineCount() {
