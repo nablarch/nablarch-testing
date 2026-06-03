@@ -63,7 +63,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - [x] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [x] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
   - [x] **T5-ext** バリデータに V-FNAME / V-DKEY を追加（シフトレフト拡張） — `docs/pr75/checks/T5.md`（ユーザーレビュー OK 2026-06-03）
-  - [ ] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
+  - [x] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
   - [ ] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`
 
 ---
