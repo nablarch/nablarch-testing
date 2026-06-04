@@ -171,13 +171,28 @@ public final class ConversionRequest {
         /**
          * {@link ConversionRequest} を生成する。
          *
-         * @throws IllegalStateException sourceFormat・targetFormat・inputPath・outputPath のいずれかが未設定の場合
+         * @throws IllegalStateException 必須フィールドが未設定、または入力値の組み合わせが不正な場合
          */
         public ConversionRequest build() {
             if (sourceFormat == null) throw new IllegalStateException("sourceFormat is required");
             if (targetFormat == null) throw new IllegalStateException("targetFormat is required");
             if (inputPath == null) throw new IllegalStateException("inputPath is required");
             if (outputPath == null) throw new IllegalStateException("outputPath is required");
+            if (!sourceFormat.equals("xls") && !sourceFormat.equals("yaml")) {
+                throw new IllegalStateException("sourceFormat must be 'xls' or 'yaml': " + sourceFormat);
+            }
+            if (!targetFormat.equals("xls") && !targetFormat.equals("yaml")) {
+                throw new IllegalStateException("targetFormat must be 'xls' or 'yaml': " + targetFormat);
+            }
+            if (sourceFormat.equals(targetFormat)) {
+                throw new IllegalStateException("sourceFormat and targetFormat must be different");
+            }
+            if (xlsFormat && !targetFormat.equals("xls")) {
+                throw new IllegalStateException("xlsFormat option is only valid when targetFormat is 'xls'");
+            }
+            if (validateOnConvert && !sourceFormat.equals("yaml")) {
+                throw new IllegalStateException("validateOnConvert is only valid when sourceFormat is 'yaml'");
+            }
             return new ConversionRequest(this);
         }
     }

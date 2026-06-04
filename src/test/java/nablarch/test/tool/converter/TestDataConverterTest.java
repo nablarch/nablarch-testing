@@ -820,6 +820,36 @@ public class TestDataConverterTest {
     }
 
     /**
+     * [Given] targetFormat を設定せずに Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithoutTargetFormatThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld3");
+        new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .inputPath(dir.toPath())
+                .outputPath(dir.toPath())
+                .build();
+    }
+
+    /**
+     * [Given] inputPath を設定せずに Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithoutInputPathThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld4");
+        new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .outputPath(dir.toPath())
+                .build();
+    }
+
+    /**
      * [Given] outputPath を設定せずに Builder.build() を呼ぶ
      * [When]  build() を呼び出す
      * [Then]  IllegalStateException がスローされる
@@ -831,6 +861,55 @@ public class TestDataConverterTest {
                 .sourceFormat("xls")
                 .targetFormat("yaml")
                 .inputPath(dir.toPath())
+                .build();
+    }
+
+    /**
+     * [Given] sourceFormat と targetFormat が同じ値で Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithSameSourceAndTargetFormatThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld5");
+        new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("xls")
+                .inputPath(dir.toPath())
+                .outputPath(dir.toPath())
+                .build();
+    }
+
+    /**
+     * [Given] sourceFormat に未知の値（"csv"）を設定して Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithUnknownSourceFormatThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld6");
+        new ConversionRequest.Builder()
+                .sourceFormat("csv")
+                .targetFormat("yaml")
+                .inputPath(dir.toPath())
+                .outputPath(dir.toPath())
+                .build();
+    }
+
+    /**
+     * [Given] xlsFormat=true かつ targetFormat が "yaml"（矛盾した組み合わせ）で Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithXlsFormatAndNonXlsTargetThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld7");
+        new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .xlsFormat(true)
+                .inputPath(dir.toPath())
+                .outputPath(dir.toPath())
                 .build();
     }
 

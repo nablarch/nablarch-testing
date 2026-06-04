@@ -22,6 +22,10 @@ import java.util.List;
  */
 public class TestDataConverter {
 
+    private TestDataConverter() {
+        throw new AssertionError();
+    }
+
     public static void main(String[] args) {
         run(args);
     }
