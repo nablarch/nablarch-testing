@@ -252,7 +252,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次は T7 動的アプローチ STEP 4 を実施する（パッケージ整理）。**
+2. **次は T7 動的アプローチ STEP 4 のユーザー FB を受領してから STEP 5 に進む。FB がない場合はそのまま STEP 5（Runner 新規作成）を実施する。**
 
 ### T7 動的アプローチ（進行中）
 
@@ -270,7 +270,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - 変更: `TestDataConverter.convert(ConversionRequest)` を共通入口として新設。`run(String[])` は「引数解析 → ConversionRequest 組み立て → convert() 呼び出し」の薄いアダプタに変更。`TestDataConverter` にプライベートコンストラクタを追加（ユーティリティクラス規約）。
   - テスト: 共通入口直接呼び出し（ハッピーパス・overwriteなし・exclude・存在しない入力）＋ Builder バリデーション全ケース（13件追加）。全 50 テストグリーン。
   - 追加対応（2026-06-04）: 変換形式を `DataFormat` enum に置き換え。`ConversionRequest` の `sourceFormat`/`targetFormat` を `String` → `DataFormat` に変更。`convert()` 内の文字列比較（`.equals("xls")` 等）を enum 比較（`==`）に置換。`run()` アダプタで `DataFormat.fromArgument()` により CLI 文字列を enum に変換。`DataFormatTest` 6件追加。全 55 テスト（DataFormat 6 + TestDataConverter 49）グリーン。ユーザーレビュー OK。
-- [x] **STEP 4** パッケージ整理（YAML 対応の集約） — 完了（2026-06-04）。HEAD=7245e59。ユーザーレビュー待ち。
+- [x] **STEP 4** パッケージ整理（YAML 対応の集約） — 完了（2026-06-04）。HEAD=7245e59。ユーザーレビュー OK（FB は次回セッションで受領予定）。
 - [ ] **STEP 5** テストデータ駆動テスト用 Runner の新規作成
 - [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）
 - [ ] **STEP 7** 仕上げ（T7.md・steering 更新）
