@@ -155,7 +155,7 @@ response_body_messages:
         rows:
           - ["NO_ID_DATA"]
 
-  # length なしフィールドを持つ response_body_messages エントリ（NPE 再現用）
+  # 全フィールド length なし（NPE 再現用）
   - group_id: noLengthGrp
     id: noLengthResp
     directives:
@@ -167,6 +167,22 @@ response_body_messages:
             type: 半角
         rows:
           - ["TESTDATA"]
+
+  # 一部フィールドに length あり、一部なし（混在ケース）
+  - group_id: mixedLengthGrp
+    id: mixedLengthResp
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: BODY
+        fields:
+          - name: FIXED_FIELD
+            type: 半角
+            length: 5
+          - name: NO_LENGTH_FIELD
+            type: 半角
+        rows:
+          - ["ABCDE", "XYZ"]
 
 response_header_messages:
   - group_id: grp1

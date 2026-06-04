@@ -812,6 +812,31 @@ public class YamlMessageBuilderTest {
     }
 
     /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: length が指定されているフィールドと
+     * 指定されていないフィールドが混在する場合でも NullPointerException が発生しないこと。
+     *
+     * <p>
+     * Given: response_body_messages に group_id=mixedLengthGrp のエントリが
+     *        length ありフィールド（FIXED_FIELD）と length なしフィールド（NO_LENGTH_FIELD）を持つ<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "mixedLengthGrp", path) を呼ぶ<br>
+     * Then:  NullPointerException も NumberFormatException も発生せず、RequestTestingMessagePool が 1 件返ること
+     * </p>
+     */
+    @Test
+    public void testBuildSendSyncMessageList_partialLengthFieldDoesNotThrowException() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: 一部 length あり・一部なしの MockMessages を buildSendSyncMessageList で構築する
+        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+                yaml, "response_body_messages", "mixedLengthGrp", DIR);
+
+        // Then
+        assertNotNull("一部 length なしフィールドでも例外が発生せず結果が返ること", result);
+        assertThat("エントリが 1 件返ること", result.size(), is(1));
+    }
+
+    /**
      * [MS-04] messages の fw_header: がない場合は空 Map を返すこと。
      *
      * <p>
