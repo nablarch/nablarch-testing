@@ -155,6 +155,19 @@ response_body_messages:
         rows:
           - ["NO_ID_DATA"]
 
+  # length なしフィールドを持つ response_body_messages エントリ（NPE 再現用）
+  - group_id: noLengthGrp
+    id: noLengthResp
+    directives:
+      text-encoding: Windows-31J
+    records:
+      - record_type: BODY
+        fields:
+          - name: PAYLOAD
+            type: 半角
+        rows:
+          - ["TESTDATA"]
+
 response_header_messages:
   - group_id: grp1
     id: resp001

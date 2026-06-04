@@ -783,6 +783,34 @@ public class YamlMessageBuilderTest {
         assertThat("真偽値が文字列に変換されること", fwHeader.get("boolFlag"), is("true"));
     }
 
+    // ========================================================================
+    // buildSendSyncMessageList: length なしフィールドを持つエントリでも NPE が起きないこと
+    // ========================================================================
+
+    /**
+     * [YamlMessageBuilder] buildSendSyncMessageList: length が指定されていないフィールドを持つエントリを
+     * 読み込んでも NullPointerException が発生しないこと。
+     *
+     * <p>
+     * Given: response_body_messages に group_id=noLengthGrp のエントリが length なしフィールドで定義されている<br>
+     * When:  buildSendSyncMessageList(yaml, "response_body_messages", "noLengthGrp", path) を呼ぶ<br>
+     * Then:  NullPointerException が発生せず、RequestTestingMessagePool が 1 件返ること
+     * </p>
+     */
+    @Test
+    public void testBuildSendSyncMessageList_fieldWithoutLengthDoesNotThrowNpe() {
+        // Given
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+
+        // When: length なしフィールドの MockMessages を buildSendSyncMessageList で構築する
+        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+                yaml, "response_body_messages", "noLengthGrp", DIR);
+
+        // Then
+        assertNotNull("length なしフィールドでも NPE が発生せず結果が返ること", result);
+        assertThat("エントリが 1 件返ること", result.size(), is(1));
+    }
+
     /**
      * [MS-04] messages の fw_header: がない場合は空 Map を返すこと。
      *

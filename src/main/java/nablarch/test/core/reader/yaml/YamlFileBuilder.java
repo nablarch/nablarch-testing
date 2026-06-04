@@ -126,16 +126,32 @@ public final class YamlFileBuilder {
      * DataFileFragment を構築してファイルに追加する（FW_HEADER スキップなし）。
      *
      * <p>
-     * {@code buildDataFile} および {@link nablarch.test.core.reader.yaml.YamlMessageBuilder} からの
-     * MockMessages フラグメント構築に使用する。
+     * {@code buildDataFile} からの DataFile フラグメント構築に使用する。
      * </p>
      *
-     * @param file     DataFile インスタンス（MockMessages を含む）
+     * @param file     DataFile インスタンス
      * @param map      セクション Map
      * @param basePath インタープリタ用ベースパス
      */
     void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
         buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
+    }
+
+    /**
+     * MockMessages 用に DataFileFragment を構築してファイルに追加する（FW_HEADER スキップあり）。
+     *
+     * <p>
+     * {@link YamlMessageBuilder} からの MockMessages フラグメント構築に使用する。
+     * {@code skipFwHeader=true} を使用することで、length が未指定のフィールドでも
+     * {@code setLengths} が呼ばれ NPE を防ぐ。
+     * </p>
+     *
+     * @param file     MockMessages インスタンス
+     * @param map      セクション Map
+     * @param basePath インタープリタ用ベースパス
+     */
+    void buildFragmentsForMock(DataFile file, Map<String, Object> map, String basePath) {
+        buildFragmentsCore(file, map, true, addBinaryFileInterpreter(basePath, interpreters));
     }
 
     /**
@@ -187,7 +203,9 @@ public final class YamlFileBuilder {
             if (skipFwHeader || hasLength) {
                 List<String> cleanedLengths = new ArrayList<String>(lengths.size());
                 for (String l : lengths) {
-                    cleanedLengths.add(l != null ? l : "");
+                    // skipFwHeader=true（MockMessages）の場合 length 未指定フィールドを "-"（動的計算）として扱う。
+                    // これにより DataFileFragment が addValue 時にバイト長を自動計算し NumberFormatException を防ぐ。
+                    cleanedLengths.add(l != null ? l : (skipFwHeader ? "-" : ""));
                 }
                 fragment.setLengths(cleanedLengths);
             }
