@@ -653,6 +653,85 @@ public class TestDataConverterTest {
     }
 
     // -------------------------------------------------------------------------
+    // 共通入口 convert(ConversionRequest) の直接呼び出しテスト
+    // -------------------------------------------------------------------------
+
+    /**
+     * [Given] XLS→YAML 変換を表す ConversionRequest を組み立てる
+     * [When]  convert(ConversionRequest) を直接呼び出す
+     * [Then]  YAML ファイルが生成され、終了コード 0 が返される
+     */
+    @Test
+    public void convertWithRequestXlsToYaml() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input_req_xls");
+        File outputDir = temporaryFolder.newFolder("output_req_xls");
+        writeSimpleXls(new File(inputDir, "FooTest.xls"));
+
+        ConversionRequest request = new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .inputPath(inputDir.toPath())
+                .outputPath(outputDir.toPath())
+                .build();
+
+        int exitCode = TestDataConverter.convert(request);
+
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest/case01.yaml").exists());
+    }
+
+    /**
+     * [Given] YAML→XLS 変換を表す ConversionRequest を組み立てる
+     * [When]  convert(ConversionRequest) を直接呼び出す
+     * [Then]  XLS ファイルが生成され、終了コード 0 が返される
+     */
+    @Test
+    public void convertWithRequestYamlToXls() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input_req_yaml");
+        File outputDir = temporaryFolder.newFolder("output_req_yaml");
+        File containerDir = new File(inputDir, "FooTest");
+        containerDir.mkdir();
+        writeSimpleYaml(new File(containerDir, "case01.yaml"));
+
+        ConversionRequest request = new ConversionRequest.Builder()
+                .sourceFormat("yaml")
+                .targetFormat("xls")
+                .inputPath(inputDir.toPath())
+                .outputPath(outputDir.toPath())
+                .build();
+
+        int exitCode = TestDataConverter.convert(request);
+
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest.xlsx").exists());
+    }
+
+    /**
+     * [Given] overwrite オプション付きの ConversionRequest
+     * [When]  同一出力先に2回 convert() を呼び出す
+     * [Then]  2回目も終了コード 0 が返される
+     */
+    @Test
+    public void convertWithRequestOverwrite() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input_req_overwrite");
+        File outputDir = temporaryFolder.newFolder("output_req_overwrite");
+        writeSimpleXls(new File(inputDir, "FooTest.xls"));
+
+        ConversionRequest request = new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .inputPath(inputDir.toPath())
+                .outputPath(outputDir.toPath())
+                .overwrite(true)
+                .build();
+
+        TestDataConverter.convert(request);
+        int exitCode = TestDataConverter.convert(request);
+
+        assertThat(exitCode, is(0));
+    }
+
+    // -------------------------------------------------------------------------
     // 検証モード（--validate / --validate-on-convert）
     // -------------------------------------------------------------------------
 

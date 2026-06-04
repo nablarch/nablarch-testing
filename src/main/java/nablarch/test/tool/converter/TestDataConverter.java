@@ -27,7 +27,9 @@ public class TestDataConverter {
     }
 
     /**
-     * 変換処理を実行する。テストからはこのメソッドを直接呼び出して終了コードを検証する。
+     * コマンドライン引数を解析して変換処理を実行する。
+     *
+     * <p>引数解析 → {@link ConversionRequest} 組み立て → {@link #convert(ConversionRequest)} の薄いアダプタ。</p>
      *
      * @param args コマンドライン引数
      * @return 終了コード（0: 正常, 1: 変換エラーあり, 2: 引数エラー）
@@ -82,24 +84,48 @@ public class TestDataConverter {
             return 2;
         }
 
-        XlsFormatReader xlsReader = opts.from.equals("xls") ? new XlsFormatReader() : null;
+        ConversionRequest.Builder builder = new ConversionRequest.Builder()
+                .sourceFormat(opts.from)
+                .targetFormat(opts.to)
+                .inputPath(opts.inputPath)
+                .outputPath(opts.outputPath)
+                .overwrite(opts.overwrite)
+                .deleteSource(opts.deleteSource)
+                .xlsFormat(opts.xlsFormat)
+                .validateOnConvert(opts.validateOnConvert);
+        for (String inc : opts.includes) builder.include(inc);
+        for (String exc : opts.excludes) builder.exclude(exc);
+
+        return convert(builder.build());
+    }
+
+    /**
+     * 変換の意図を表す {@link ConversionRequest} を受け取り、変換処理を実行する共通入口。
+     *
+     * <p>CLI・Maven プラグイン・テスト Runner 等から直接呼び出せる。</p>
+     *
+     * @param request 変換リクエスト
+     * @return 終了コード（0: 正常, 1: 変換エラーあり）
+     */
+    public static int convert(ConversionRequest request) {
+        XlsFormatReader xlsReader = request.getSourceFormat().equals("xls") ? new XlsFormatReader() : null;
         TestDataFormatReader reader;
         TestDataFormatWriter writer;
-        if (opts.from.equals("xls")) {
+        if (request.getSourceFormat().equals("xls")) {
             reader = xlsReader;
             writer = new YamlFormatWriter();
         } else {
             reader = new YamlFormatReader();
-            writer = new XlsFormatWriter(opts.xlsFormat);
+            writer = new XlsFormatWriter(request.isXlsFormat());
         }
 
         int[] skipCount = {0};
         List<Path> targets;
         try {
-            if (opts.from.equals("xls")) {
-                targets = ConverterFileFilter.findXlsFiles(opts.inputPath, opts.includes, opts.excludes, skipCount);
+            if (request.getSourceFormat().equals("xls")) {
+                targets = ConverterFileFilter.findXlsFiles(request.getInputPath(), request.getIncludes(), request.getExcludes(), skipCount);
             } else {
-                targets = ConverterFileFilter.findYamlDirs(opts.inputPath, opts.includes, opts.excludes, skipCount);
+                targets = ConverterFileFilter.findYamlDirs(request.getInputPath(), request.getIncludes(), request.getExcludes(), skipCount);
             }
         } catch (ConverterException e) {
             System.err.println("ERROR: " + e.getMessage());
@@ -111,7 +137,7 @@ public class TestDataConverter {
         int totalCommentLines = 0;
         int commentLineFiles = 0;
 
-        YamlTestDataValidator validator = opts.validateOnConvert ? new YamlTestDataValidator() : null;
+        YamlTestDataValidator validator = request.isValidateOnConvert() ? new YamlTestDataValidator() : null;
 
         for (Path target : targets) {
             try {
@@ -149,7 +175,7 @@ public class TestDataConverter {
                 if (!hasAnyBlock && !container.getSections().isEmpty()) {
                     System.err.println("WARN: " + target + ": no data blocks found (empty sheet or comment-only). Skipping output.");
                     successCount++;
-                    if (opts.deleteSource) {
+                    if (request.isDeleteSource()) {
                         deleteSource(target);
                     }
                     continue;
@@ -157,19 +183,19 @@ public class TestDataConverter {
 
                 // Calculate output path
                 Path outputBase;
-                if (opts.from.equals("xls")) {
+                if (request.getSourceFormat().equals("xls")) {
                     // For YamlFormatWriter, outputPath is the parent of containerName dir
-                    outputBase = ConverterPathResolver.xlsToYamlDir(opts.inputPath, target, opts.outputPath).getParent();
-                    if (outputBase == null) outputBase = opts.outputPath;
+                    outputBase = ConverterPathResolver.xlsToYamlDir(request.getInputPath(), target, request.getOutputPath()).getParent();
+                    if (outputBase == null) outputBase = request.getOutputPath();
                 } else {
                     // For XlsFormatWriter, outputPath is the parent of containerName.xls
-                    outputBase = ConverterPathResolver.yamlDirToXls(opts.inputPath, target, opts.outputPath).getParent();
-                    if (outputBase == null) outputBase = opts.outputPath;
+                    outputBase = ConverterPathResolver.yamlDirToXls(request.getInputPath(), target, request.getOutputPath()).getParent();
+                    if (outputBase == null) outputBase = request.getOutputPath();
                 }
 
-                writer.write(container, outputBase, opts.overwrite);
+                writer.write(container, outputBase, request.isOverwrite());
 
-                if (opts.deleteSource) {
+                if (request.isDeleteSource()) {
                     deleteSource(target);
                 }
                 successCount++;
