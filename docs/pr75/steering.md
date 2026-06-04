@@ -252,7 +252,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次は T7 動的アプローチ STEP 4 を実施する。ただし STEP 3 のユーザーレビュー FB を受けてから着手する。**
+2. **次は T7 動的アプローチ STEP 4 を実施する（パッケージ整理）。**
 
 ### T7 動的アプローチ（進行中）
 
@@ -265,11 +265,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] **STEP 2** NPE 修正を TDD で再投入（独立コミット） — 完了（2026-06-04）。HEAD=1750e0b。ユーザーレビュー OK。
   - 修正内容: `YamlMessageBuilder.buildMockMessages` が `buildFragments(skipFwHeader=false)` を呼んでいたため、length 未指定フィールドで `lengths=null` → NPE。`buildFragmentsForMock(skipFwHeader=true)` を新設し切り替え。`skipFwHeader=true` 経路では length 未指定 → `"-"`（動的計算）に変換。
   - テスト: `testBuildSendSyncMessageList_fieldWithoutLengthDoesNotThrowNpe`（全 length なし）+ `testBuildSendSyncMessageList_partialLengthFieldDoesNotThrowException`（混在）を追加。
-- [x] **STEP 3** 変換ツールの共通入口を構造化インタフェースで切り出す — 完了（2026-06-04）。ユーザーレビュー待ち。
+- [x] **STEP 3** 変換ツールの共通入口を構造化インタフェースで切り出す — 完了（2026-06-04）。ユーザーレビュー OK。
   - 追加: `ConversionRequest`（Builder パターン）— 変換の意図を構造化型で表現。`build()` に必須フィールド null チェック + 入力値整合性チェック（未知形式・from==to・xlsFormat矛盾・validateOnConvert矛盾）。
   - 変更: `TestDataConverter.convert(ConversionRequest)` を共通入口として新設。`run(String[])` は「引数解析 → ConversionRequest 組み立て → convert() 呼び出し」の薄いアダプタに変更。`TestDataConverter` にプライベートコンストラクタを追加（ユーティリティクラス規約）。
   - テスト: 共通入口直接呼び出し（ハッピーパス・overwriteなし・exclude・存在しない入力）＋ Builder バリデーション全ケース（13件追加）。全 50 テストグリーン。
-- [ ] **STEP 4** パッケージ整理（YAML 対応の集約）
+  - 追加対応（2026-06-04）: 変換形式を `DataFormat` enum に置き換え。`ConversionRequest` の `sourceFormat`/`targetFormat` を `String` → `DataFormat` に変更。`convert()` 内の文字列比較（`.equals("xls")` 等）を enum 比較（`==`）に置換。`run()` アダプタで `DataFormat.fromArgument()` により CLI 文字列を enum に変換。`DataFormatTest` 6件追加。全 55 テスト（DataFormat 6 + TestDataConverter 49）グリーン。ユーザーレビュー OK。
 - [ ] **STEP 4** パッケージ整理（YAML 対応の集約）
 - [ ] **STEP 5** テストデータ駆動テスト用 Runner の新規作成
 - [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）
