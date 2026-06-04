@@ -9,12 +9,12 @@ import java.util.List;
  *
  * @author T.Kawasaki
  */
-class MockTestDataReader implements TestDataReader {
+public class MockTestDataReader implements TestDataReader {
     /** 返却する文字列のイテレータ */
     private final Iterator<List<String>> iterator;
 
     /** コンストラクタ */
-    MockTestDataReader() {
+    public MockTestDataReader() {
         this(Collections.<List<String>>emptyList());
     }
 
@@ -22,7 +22,7 @@ class MockTestDataReader implements TestDataReader {
      * コンストラクタ
      * @param lines 返却する文字列
      */
-    MockTestDataReader(List<List<String>> lines) {
+    public MockTestDataReader(List<List<String>> lines) {
         this.iterator = lines.iterator();
     }
 

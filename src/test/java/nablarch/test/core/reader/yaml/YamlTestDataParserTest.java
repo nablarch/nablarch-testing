@@ -1,4 +1,4 @@
-package nablarch.test.core.reader;
+package nablarch.test.core.reader.yaml;
 
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
@@ -11,6 +11,7 @@ import nablarch.test.core.file.VariableLengthFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
 import nablarch.test.core.reader.DataType;
+import nablarch.test.core.reader.MockTestDataReader;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
