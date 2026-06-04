@@ -65,32 +65,38 @@ public class TestDataConverter {
             return 2;
         }
 
-        if (!opts.from.equals("xls") && !opts.from.equals("yaml")) {
+        DataFormat fromFormat;
+        try {
+            fromFormat = DataFormat.fromArgument(opts.from);
+        } catch (IllegalArgumentException e) {
             System.err.println("Invalid --from value: " + opts.from + ". Must be 'xls' or 'yaml'.");
             System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
             return 2;
         }
-        if (!opts.to.equals("xls") && !opts.to.equals("yaml")) {
+        DataFormat toFormat;
+        try {
+            toFormat = DataFormat.fromArgument(opts.to);
+        } catch (IllegalArgumentException e) {
             System.err.println("Invalid --to value: " + opts.to + ". Must be 'xls' or 'yaml'.");
             System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
             return 2;
         }
 
-        if (opts.xlsFormat && !opts.to.equals("xls")) {
+        if (opts.xlsFormat && toFormat != DataFormat.XLS) {
             System.err.println("--xls option is only valid with --to xls.");
             System.err.println("Usage: TestDataConverter --from <xls|yaml> --to <xls|yaml> [--overwrite] [--delete-source] [--xls] [--include <pattern>]... [--exclude <pattern>]... <inputPath> <outputPath>");
             return 2;
         }
 
         // --validate-on-convert は --from yaml のときのみ有効
-        if (opts.validateOnConvert && !opts.from.equals("yaml")) {
+        if (opts.validateOnConvert && fromFormat != DataFormat.YAML) {
             System.err.println("--validate-on-convert is only valid with --from yaml.");
             return 2;
         }
 
         ConversionRequest.Builder builder = new ConversionRequest.Builder()
-                .sourceFormat(opts.from)
-                .targetFormat(opts.to)
+                .sourceFormat(fromFormat)
+                .targetFormat(toFormat)
                 .inputPath(opts.inputPath)
                 .outputPath(opts.outputPath)
                 .overwrite(opts.overwrite)
@@ -112,10 +118,10 @@ public class TestDataConverter {
      * @return 終了コード（0: 正常, 1: 変換エラーあり）
      */
     public static int convert(ConversionRequest request) {
-        XlsFormatReader xlsReader = request.getSourceFormat().equals("xls") ? new XlsFormatReader() : null;
+        XlsFormatReader xlsReader = request.getSourceFormat() == DataFormat.XLS ? new XlsFormatReader() : null;
         TestDataFormatReader reader;
         TestDataFormatWriter writer;
-        if (request.getSourceFormat().equals("xls")) {
+        if (request.getSourceFormat() == DataFormat.XLS) {
             reader = xlsReader;
             writer = new YamlFormatWriter();
         } else {
@@ -126,7 +132,7 @@ public class TestDataConverter {
         int[] skipCount = {0};
         List<Path> targets;
         try {
-            if (request.getSourceFormat().equals("xls")) {
+            if (request.getSourceFormat() == DataFormat.XLS) {
                 targets = ConverterFileFilter.findXlsFiles(request.getInputPath(), request.getIncludes(), request.getExcludes(), skipCount);
             } else {
                 targets = ConverterFileFilter.findYamlDirs(request.getInputPath(), request.getIncludes(), request.getExcludes(), skipCount);
@@ -187,7 +193,7 @@ public class TestDataConverter {
 
                 // Calculate output path
                 Path outputBase;
-                if (request.getSourceFormat().equals("xls")) {
+                if (request.getSourceFormat() == DataFormat.XLS) {
                     // For YamlFormatWriter, outputPath is the parent of containerName dir
                     outputBase = ConverterPathResolver.xlsToYamlDir(request.getInputPath(), target, request.getOutputPath()).getParent();
                     if (outputBase == null) outputBase = request.getOutputPath();

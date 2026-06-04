@@ -4,6 +4,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import nablarch.test.tool.converter.DataFormat;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -668,8 +670,8 @@ public class TestDataConverterTest {
         writeSimpleXls(new File(inputDir, "FooTest.xls"));
 
         ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .inputPath(inputDir.toPath())
                 .outputPath(outputDir.toPath())
                 .build();
@@ -694,8 +696,8 @@ public class TestDataConverterTest {
         writeSimpleYaml(new File(containerDir, "case01.yaml"));
 
         ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat("yaml")
-                .targetFormat("xls")
+                .sourceFormat(DataFormat.YAML)
+                .targetFormat(DataFormat.XLS)
                 .inputPath(inputDir.toPath())
                 .outputPath(outputDir.toPath())
                 .build();
@@ -718,8 +720,8 @@ public class TestDataConverterTest {
         writeSimpleXls(new File(inputDir, "FooTest.xls"));
 
         ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .inputPath(inputDir.toPath())
                 .outputPath(outputDir.toPath())
                 .overwrite(true)
@@ -743,8 +745,8 @@ public class TestDataConverterTest {
         writeSimpleXls(new File(inputDir, "FooTest.xls"));
 
         ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .inputPath(inputDir.toPath())
                 .outputPath(outputDir.toPath())
                 .build();
@@ -768,8 +770,8 @@ public class TestDataConverterTest {
         writeSimpleXls(new File(inputDir, "template.xls"));
 
         ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .inputPath(inputDir.toPath())
                 .outputPath(outputDir.toPath())
                 .exclude("template.xls")
@@ -793,8 +795,8 @@ public class TestDataConverterTest {
         String nonExistentPath = temporaryFolder.getRoot().getAbsolutePath() + "/nonexistent_req";
 
         ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .inputPath(java.nio.file.Paths.get(nonExistentPath))
                 .outputPath(outputDir.toPath())
                 .build();
@@ -813,7 +815,7 @@ public class TestDataConverterTest {
     public void buildWithoutSourceFormatThrowsIllegalState() throws Exception {
         File dir = temporaryFolder.newFolder("dir_bld");
         new ConversionRequest.Builder()
-                .targetFormat("yaml")
+                .targetFormat(DataFormat.YAML)
                 .inputPath(dir.toPath())
                 .outputPath(dir.toPath())
                 .build();
@@ -828,7 +830,7 @@ public class TestDataConverterTest {
     public void buildWithoutTargetFormatThrowsIllegalState() throws Exception {
         File dir = temporaryFolder.newFolder("dir_bld3");
         new ConversionRequest.Builder()
-                .sourceFormat("xls")
+                .sourceFormat(DataFormat.XLS)
                 .inputPath(dir.toPath())
                 .outputPath(dir.toPath())
                 .build();
@@ -843,8 +845,8 @@ public class TestDataConverterTest {
     public void buildWithoutInputPathThrowsIllegalState() throws Exception {
         File dir = temporaryFolder.newFolder("dir_bld4");
         new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .outputPath(dir.toPath())
                 .build();
     }
@@ -858,8 +860,8 @@ public class TestDataConverterTest {
     public void buildWithoutOutputPathThrowsIllegalState() throws Exception {
         File dir = temporaryFolder.newFolder("dir_bld2");
         new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .inputPath(dir.toPath())
                 .build();
     }
@@ -873,31 +875,15 @@ public class TestDataConverterTest {
     public void buildWithSameSourceAndTargetFormatThrowsIllegalState() throws Exception {
         File dir = temporaryFolder.newFolder("dir_bld5");
         new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("xls")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.XLS)
                 .inputPath(dir.toPath())
                 .outputPath(dir.toPath())
                 .build();
     }
 
     /**
-     * [Given] sourceFormat に未知の値（"csv"）を設定して Builder.build() を呼ぶ
-     * [When]  build() を呼び出す
-     * [Then]  IllegalStateException がスローされる
-     */
-    @Test(expected = IllegalStateException.class)
-    public void buildWithUnknownSourceFormatThrowsIllegalState() throws Exception {
-        File dir = temporaryFolder.newFolder("dir_bld6");
-        new ConversionRequest.Builder()
-                .sourceFormat("csv")
-                .targetFormat("yaml")
-                .inputPath(dir.toPath())
-                .outputPath(dir.toPath())
-                .build();
-    }
-
-    /**
-     * [Given] xlsFormat=true かつ targetFormat が "yaml"（矛盾した組み合わせ）で Builder.build() を呼ぶ
+     * [Given] xlsFormat=true かつ targetFormat が YAML（矛盾した組み合わせ）で Builder.build() を呼ぶ
      * [When]  build() を呼び出す
      * [Then]  IllegalStateException がスローされる
      */
@@ -905,8 +891,8 @@ public class TestDataConverterTest {
     public void buildWithXlsFormatAndNonXlsTargetThrowsIllegalState() throws Exception {
         File dir = temporaryFolder.newFolder("dir_bld7");
         new ConversionRequest.Builder()
-                .sourceFormat("xls")
-                .targetFormat("yaml")
+                .sourceFormat(DataFormat.XLS)
+                .targetFormat(DataFormat.YAML)
                 .xlsFormat(true)
                 .inputPath(dir.toPath())
                 .outputPath(dir.toPath())

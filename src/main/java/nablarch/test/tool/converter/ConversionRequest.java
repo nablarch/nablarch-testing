@@ -12,11 +12,11 @@ import java.util.List;
  */
 public final class ConversionRequest {
 
-    /** 変換元形式（"xls" または "yaml"） */
-    private final String sourceFormat;
+    /** 変換元形式 */
+    private final DataFormat sourceFormat;
 
-    /** 変換先形式（"xls" または "yaml"） */
-    private final String targetFormat;
+    /** 変換先形式 */
+    private final DataFormat targetFormat;
 
     /** 変換元ファイル/ディレクトリのパス */
     private final Path inputPath;
@@ -55,13 +55,13 @@ public final class ConversionRequest {
         this.excludes = Collections.unmodifiableList(new ArrayList<>(builder.excludes));
     }
 
-    /** @return 変換元形式（"xls" または "yaml"） */
-    public String getSourceFormat() {
+    /** @return 変換元形式 */
+    public DataFormat getSourceFormat() {
         return sourceFormat;
     }
 
-    /** @return 変換先形式（"xls" または "yaml"） */
-    public String getTargetFormat() {
+    /** @return 変換先形式 */
+    public DataFormat getTargetFormat() {
         return targetFormat;
     }
 
@@ -107,8 +107,8 @@ public final class ConversionRequest {
 
     /** {@link ConversionRequest} のビルダー */
     public static final class Builder {
-        private String sourceFormat;
-        private String targetFormat;
+        private DataFormat sourceFormat;
+        private DataFormat targetFormat;
         private Path inputPath;
         private Path outputPath;
         private boolean overwrite = false;
@@ -118,12 +118,12 @@ public final class ConversionRequest {
         private final List<String> includes = new ArrayList<>();
         private final List<String> excludes = new ArrayList<>();
 
-        public Builder sourceFormat(String sourceFormat) {
+        public Builder sourceFormat(DataFormat sourceFormat) {
             this.sourceFormat = sourceFormat;
             return this;
         }
 
-        public Builder targetFormat(String targetFormat) {
+        public Builder targetFormat(DataFormat targetFormat) {
             this.targetFormat = targetFormat;
             return this;
         }
@@ -178,19 +178,13 @@ public final class ConversionRequest {
             if (targetFormat == null) throw new IllegalStateException("targetFormat is required");
             if (inputPath == null) throw new IllegalStateException("inputPath is required");
             if (outputPath == null) throw new IllegalStateException("outputPath is required");
-            if (!sourceFormat.equals("xls") && !sourceFormat.equals("yaml")) {
-                throw new IllegalStateException("sourceFormat must be 'xls' or 'yaml': " + sourceFormat);
-            }
-            if (!targetFormat.equals("xls") && !targetFormat.equals("yaml")) {
-                throw new IllegalStateException("targetFormat must be 'xls' or 'yaml': " + targetFormat);
-            }
-            if (sourceFormat.equals(targetFormat)) {
+            if (sourceFormat == targetFormat) {
                 throw new IllegalStateException("sourceFormat and targetFormat must be different");
             }
-            if (xlsFormat && !targetFormat.equals("xls")) {
+            if (xlsFormat && targetFormat != DataFormat.XLS) {
                 throw new IllegalStateException("xlsFormat option is only valid when targetFormat is 'xls'");
             }
-            if (validateOnConvert && !sourceFormat.equals("yaml")) {
+            if (validateOnConvert && sourceFormat != DataFormat.YAML) {
                 throw new IllegalStateException("validateOnConvert is only valid when sourceFormat is 'yaml'");
             }
             return new ConversionRequest(this);
