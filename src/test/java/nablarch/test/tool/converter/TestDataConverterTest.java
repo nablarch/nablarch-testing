@@ -731,6 +731,109 @@ public class TestDataConverterTest {
         assertThat(exitCode, is(0));
     }
 
+    /**
+     * [Given] overwrite なしの ConversionRequest で同一出力先に2回変換する
+     * [When]  convert() を2回呼び出す
+     * [Then]  2回目は終了コード 1 が返される
+     */
+    @Test
+    public void convertWithRequestOverwriteAbsentReturnsCode1() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input_req_noover");
+        File outputDir = temporaryFolder.newFolder("output_req_noover");
+        writeSimpleXls(new File(inputDir, "FooTest.xls"));
+
+        ConversionRequest request = new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .inputPath(inputDir.toPath())
+                .outputPath(outputDir.toPath())
+                .build();
+
+        TestDataConverter.convert(request);
+        int exitCode = TestDataConverter.convert(request);
+
+        assertThat(exitCode, is(1));
+    }
+
+    /**
+     * [Given] exclude パターン付きの ConversionRequest
+     * [When]  convert() を呼び出す
+     * [Then]  パターンに合致するファイルがスキップされる
+     */
+    @Test
+    public void convertWithRequestExcludePattern() throws Exception {
+        File inputDir = temporaryFolder.newFolder("input_req_excl");
+        File outputDir = temporaryFolder.newFolder("output_req_excl");
+        writeSimpleXls(new File(inputDir, "FooTest.xls"));
+        writeSimpleXls(new File(inputDir, "template.xls"));
+
+        ConversionRequest request = new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .inputPath(inputDir.toPath())
+                .outputPath(outputDir.toPath())
+                .exclude("template.xls")
+                .build();
+
+        int exitCode = TestDataConverter.convert(request);
+
+        assertThat(exitCode, is(0));
+        assertTrue(new File(outputDir, "FooTest/case01.yaml").exists());
+        assertTrue(!new File(outputDir, "template/case01.yaml").exists());
+    }
+
+    /**
+     * [Given] 存在しない入力パスを持つ ConversionRequest
+     * [When]  convert() を呼び出す
+     * [Then]  終了コード 1 が返される
+     */
+    @Test
+    public void convertWithRequestNonExistentInputReturnsCode1() throws Exception {
+        File outputDir = temporaryFolder.newFolder("output_req_noexist");
+        String nonExistentPath = temporaryFolder.getRoot().getAbsolutePath() + "/nonexistent_req";
+
+        ConversionRequest request = new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .inputPath(java.nio.file.Paths.get(nonExistentPath))
+                .outputPath(outputDir.toPath())
+                .build();
+
+        int exitCode = TestDataConverter.convert(request);
+
+        assertThat(exitCode, is(1));
+    }
+
+    /**
+     * [Given] sourceFormat を設定せずに Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithoutSourceFormatThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld");
+        new ConversionRequest.Builder()
+                .targetFormat("yaml")
+                .inputPath(dir.toPath())
+                .outputPath(dir.toPath())
+                .build();
+    }
+
+    /**
+     * [Given] outputPath を設定せずに Builder.build() を呼ぶ
+     * [When]  build() を呼び出す
+     * [Then]  IllegalStateException がスローされる
+     */
+    @Test(expected = IllegalStateException.class)
+    public void buildWithoutOutputPathThrowsIllegalState() throws Exception {
+        File dir = temporaryFolder.newFolder("dir_bld2");
+        new ConversionRequest.Builder()
+                .sourceFormat("xls")
+                .targetFormat("yaml")
+                .inputPath(dir.toPath())
+                .build();
+    }
+
     // -------------------------------------------------------------------------
     // 検証モード（--validate / --validate-on-convert）
     // -------------------------------------------------------------------------

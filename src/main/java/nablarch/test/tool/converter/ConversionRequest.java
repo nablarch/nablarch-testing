@@ -55,16 +55,55 @@ public final class ConversionRequest {
         this.excludes = Collections.unmodifiableList(new ArrayList<>(builder.excludes));
     }
 
-    public String getSourceFormat() { return sourceFormat; }
-    public String getTargetFormat() { return targetFormat; }
-    public Path getInputPath() { return inputPath; }
-    public Path getOutputPath() { return outputPath; }
-    public boolean isOverwrite() { return overwrite; }
-    public boolean isDeleteSource() { return deleteSource; }
-    public boolean isXlsFormat() { return xlsFormat; }
-    public boolean isValidateOnConvert() { return validateOnConvert; }
-    public List<String> getIncludes() { return includes; }
-    public List<String> getExcludes() { return excludes; }
+    /** @return 変換元形式（"xls" または "yaml"） */
+    public String getSourceFormat() {
+        return sourceFormat;
+    }
+
+    /** @return 変換先形式（"xls" または "yaml"） */
+    public String getTargetFormat() {
+        return targetFormat;
+    }
+
+    /** @return 変換元ファイル/ディレクトリのパス */
+    public Path getInputPath() {
+        return inputPath;
+    }
+
+    /** @return 変換先ディレクトリのパス */
+    public Path getOutputPath() {
+        return outputPath;
+    }
+
+    /** @return 既存ファイルを上書きするか */
+    public boolean isOverwrite() {
+        return overwrite;
+    }
+
+    /** @return 変換後にソースを削除するか */
+    public boolean isDeleteSource() {
+        return deleteSource;
+    }
+
+    /** @return 変換先が .xls 形式（true: .xls, false: .xlsx） */
+    public boolean isXlsFormat() {
+        return xlsFormat;
+    }
+
+    /** @return 変換前に YAML を検証するか（--from yaml のみ有効） */
+    public boolean isValidateOnConvert() {
+        return validateOnConvert;
+    }
+
+    /** @return インクルードパターン（変更不可リスト） */
+    public List<String> getIncludes() {
+        return includes;
+    }
+
+    /** @return エクスクルードパターン（変更不可リスト） */
+    public List<String> getExcludes() {
+        return excludes;
+    }
 
     /** {@link ConversionRequest} のビルダー */
     public static final class Builder {
@@ -129,7 +168,16 @@ public final class ConversionRequest {
             return this;
         }
 
+        /**
+         * {@link ConversionRequest} を生成する。
+         *
+         * @throws IllegalStateException sourceFormat・targetFormat・inputPath・outputPath のいずれかが未設定の場合
+         */
         public ConversionRequest build() {
+            if (sourceFormat == null) throw new IllegalStateException("sourceFormat is required");
+            if (targetFormat == null) throw new IllegalStateException("targetFormat is required");
+            if (inputPath == null) throw new IllegalStateException("inputPath is required");
+            if (outputPath == null) throw new IllegalStateException("outputPath is required");
             return new ConversionRequest(this);
         }
     }
