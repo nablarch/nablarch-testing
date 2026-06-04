@@ -100,27 +100,7 @@ messaging で length なしフィールドを持つ電文を YAML から読む�
 
 ## STEP 5: テストデータ駆動テスト用 Runner の新規作成
 
-### 作業
-1. `nablarch.test.support.db.helper.DatabaseTestRunner` を継承した Runner クラスを新規作成する。クラス名は目的ベース（テストデータを使うテスト向けであることを表す名前。例: `NtfTestdataTestRunner`）。配置は適切なテスト基盤パッケージ。
-2. `runChild` をオーバーライドし、各テストメソッドを次の2回実行する:
-   - 1回目: 現行どおり Excel 入力でテスト実行（`testDataParser` は既存の Excel パーサのまま）。
-   - 2回目: 対象テストが参照する Excel を STEP 3 の共通入口で YAML に変換し、`testDataParser` を YamlTestDataParser に切り替えてから、同じテストメソッドを実行する。実行後、`testDataParser` を元に戻す。
-3. DB 制御は親 `DatabaseTestRunner` を継承して温存する（`runChild` 内で必要に応じ `super.runChild` を呼ぶ）。
-4. Excel→YAML 変換・パーサ切替・後始末のロジックは、この Runner クラス1箇所に閉じる。対象テスト側には一切書かない。
-5. 比較はしない。各入力でテストの assert が通ればよい。
-6. IDE で単一テストクラスを実行しても両入力で動くこと（Maven フェーズに依存しない実装にする）。
-
-### 完了条件（チェック）
-- Runner が `DatabaseTestRunner` を継承している。
-- サンプルのテストクラス1つにこの Runner を付けて実行すると、各テストメソッドが Excel 入力・YAML 入力の2回実行され、両方パスする（ログ等で2回実行を確認）。
-- IDE 単体実行相当（`mvn test -Dtest=サンプルクラス`）でも2回実行される。
-- `mvn test` 全クラスグリーン。
-
-### このステップのルール
-- Runner 名・メソッド名は目的ベース。`dual` 等の現状依存名を使わない。
-- 変換・切替ロジックは Runner 1箇所に集約。対象テストに散らさない。
-- 比較ロジックを入れない（assert で判定）。
-- 着手前・完了時に全クラス `mvn test`。
+詳細は **[CC作業指示-T7-STEP5.md](CC作業指示-T7-STEP5.md)** を参照する。
 
 ---
 
