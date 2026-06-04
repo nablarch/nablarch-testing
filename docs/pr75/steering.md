@@ -252,26 +252,23 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次は T7 動的アプローチ STEP 4 のユーザー FB を受領してから STEP 5 に進む。FB がない場合はそのまま STEP 5（Runner 新規作成）を実施する。**
+2. **次は STEP 5 実装方針（`@Rule` 上書き問題）についてユーザー承認を受けてから着手する。**
 
 ### T7 動的アプローチ（進行中）
 
 **方針**: 静的アプローチ（等価照合テスト）を廃棄し、動的アプローチ（既存テストを Excel/YAML 両入力で2回実行する Runner）で再実装する。
 
-**作業指示書**: `docs/pr75/inspection/CC作業指示-T7再実装.md` を参照する（STEP 1〜7 の全ステップが定義済み）。
+**作業指示書**: `docs/pr75/inspection/CC作業指示-T7再実装.md`（STEP 1〜7）、STEP5 詳細: `docs/pr75/inspection/CC作業指示-T7-STEP5.md`
 
 **進捗**:
-- [x] **STEP 1** T7 等価照合実装を全リバート — 完了（2026-06-04）。HEAD=3818366、afb866b（T6完了）相当に戻した。ユーザーレビュー OK。
-- [x] **STEP 2** NPE 修正を TDD で再投入（独立コミット） — 完了（2026-06-04）。HEAD=1750e0b。ユーザーレビュー OK。
-  - 修正内容: `YamlMessageBuilder.buildMockMessages` が `buildFragments(skipFwHeader=false)` を呼んでいたため、length 未指定フィールドで `lengths=null` → NPE。`buildFragmentsForMock(skipFwHeader=true)` を新設し切り替え。`skipFwHeader=true` 経路では length 未指定 → `"-"`（動的計算）に変換。
-  - テスト: `testBuildSendSyncMessageList_fieldWithoutLengthDoesNotThrowNpe`（全 length なし）+ `testBuildSendSyncMessageList_partialLengthFieldDoesNotThrowException`（混在）を追加。
+- [x] **STEP 1** T7 等価照合実装を全リバート — 完了（2026-06-04）。ユーザーレビュー OK。
+- [x] **STEP 2** NPE 修正を TDD で再投入（独立コミット） — 完了（2026-06-04）。ユーザーレビュー OK。
 - [x] **STEP 3** 変換ツールの共通入口を構造化インタフェースで切り出す — 完了（2026-06-04）。ユーザーレビュー OK。
-  - 追加: `ConversionRequest`（Builder パターン）— 変換の意図を構造化型で表現。`build()` に必須フィールド null チェック + 入力値整合性チェック（未知形式・from==to・xlsFormat矛盾・validateOnConvert矛盾）。
-  - 変更: `TestDataConverter.convert(ConversionRequest)` を共通入口として新設。`run(String[])` は「引数解析 → ConversionRequest 組み立て → convert() 呼び出し」の薄いアダプタに変更。`TestDataConverter` にプライベートコンストラクタを追加（ユーティリティクラス規約）。
-  - テスト: 共通入口直接呼び出し（ハッピーパス・overwriteなし・exclude・存在しない入力）＋ Builder バリデーション全ケース（13件追加）。全 50 テストグリーン。
-  - 追加対応（2026-06-04）: 変換形式を `DataFormat` enum に置き換え。`ConversionRequest` の `sourceFormat`/`targetFormat` を `String` → `DataFormat` に変更。`convert()` 内の文字列比較（`.equals("xls")` 等）を enum 比較（`==`）に置換。`run()` アダプタで `DataFormat.fromArgument()` により CLI 文字列を enum に変換。`DataFormatTest` 6件追加。全 55 テスト（DataFormat 6 + TestDataConverter 49）グリーン。ユーザーレビュー OK。
-- [x] **STEP 4** パッケージ整理（YAML 対応の集約） — 完了（2026-06-04）。HEAD=7245e59。ユーザーレビュー OK（FB は次回セッションで受領予定）。
-- [ ] **STEP 5** テストデータ駆動テスト用 Runner の新規作成
+- [x] **STEP 4** パッケージ整理（YAML 対応の集約） — 完了（2026-06-04）。ユーザーレビュー OK。
+- [ ] **STEP 5** テストデータ駆動テスト用 Runner の新規作成 — **FB待ち（2026-06-04）**
+  - 問題: `@Rule SystemRepositoryResource` がテストメソッドごとに `unit-test.xml` を再ロードするため、`super.runChild()` 前にパーサを差し替えても Rule.before() で BasicTestDataParser に上書きされる
+  - 提案方針: `getTestRules(Object)` をオーバーライドし、YAML モード時にリスト先頭（最内側）に YamlSetupRule を差し込む。Rule 実行後・テスト実行前に差し替えが適用される。ThreadLocal でモードと変換先パスを受け渡す
+  - ベースライン: `Tests run: 1243, Failures: 1, Errors: 26`（既存失敗。変化なし）
 - [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）
 - [ ] **STEP 7** 仕上げ（T7.md・steering 更新）
 
