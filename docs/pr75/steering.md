@@ -252,7 +252,26 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次は T6 または T7 を実施する。**
+2. **次は T7 動的アプローチ STEP 3 を実施する。**
+
+### T7 動的アプローチ（進行中）
+
+**方針**: 静的アプローチ（等価照合テスト）を廃棄し、動的アプローチ（既存テストを Excel/YAML 両入力で2回実行する Runner）で再実装する。
+
+**作業指示書**: ユーザーからチャットで渡された「CC作業指示: T7 再実装（動的アプローチ）」を参照する（STEP 1〜7 の全ステップが定義済み）。
+
+**進捗**:
+- [x] **STEP 1** T7 等価照合実装を全リバート — 完了（2026-06-04）。HEAD=3818366、afb866b（T6完了）相当に戻した。ユーザーレビュー OK。
+- [x] **STEP 2** NPE 修正を TDD で再投入（独立コミット） — 完了（2026-06-04）。HEAD=1750e0b。ユーザーレビュー OK。
+  - 修正内容: `YamlMessageBuilder.buildMockMessages` が `buildFragments(skipFwHeader=false)` を呼んでいたため、length 未指定フィールドで `lengths=null` → NPE。`buildFragmentsForMock(skipFwHeader=true)` を新設し切り替え。`skipFwHeader=true` 経路では length 未指定 → `"-"`（動的計算）に変換。
+  - テスト: `testBuildSendSyncMessageList_fieldWithoutLengthDoesNotThrowNpe`（全 length なし）+ `testBuildSendSyncMessageList_partialLengthFieldDoesNotThrowException`（混在）を追加。
+- [ ] **STEP 3** 変換ツールの共通入口を構造化インタフェースで切り出す
+- [ ] **STEP 4** パッケージ整理（YAML 対応の集約）
+- [ ] **STEP 5** テストデータ駆動テスト用 Runner の新規作成
+- [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）
+- [ ] **STEP 7** 仕上げ（T7.md・steering 更新）
+
+**各ステップの詳細は作業指示書を参照。** ステップごとにユーザーレビューを受けてから次へ進む。
 
 ### T5-ext 概要
 
