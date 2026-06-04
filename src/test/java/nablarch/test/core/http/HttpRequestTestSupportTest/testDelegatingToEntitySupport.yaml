@@ -1,7 +1,0 @@
-list_maps:
-  - id: "entity"
-    rows:
-      - name: "prop1"
-        get: "prop1"
-      - name: "prop2"
-        get: "prop2"

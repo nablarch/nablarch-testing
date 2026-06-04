@@ -1,6 +1,0 @@
-list_maps:
-  - id: "entity"
-    rows:
-      - name: "userName"
-        set: "名前"
-        get: "名前"

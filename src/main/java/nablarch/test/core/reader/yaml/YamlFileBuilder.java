@@ -126,32 +126,16 @@ public final class YamlFileBuilder {
      * DataFileFragment を構築してファイルに追加する（FW_HEADER スキップなし）。
      *
      * <p>
-     * {@code buildDataFile} からの DataFile フラグメント構築に使用する。
+     * {@code buildDataFile} および {@link nablarch.test.core.reader.yaml.YamlMessageBuilder} からの
+     * MockMessages フラグメント構築に使用する。
      * </p>
      *
-     * @param file     DataFile インスタンス
+     * @param file     DataFile インスタンス（MockMessages を含む）
      * @param map      セクション Map
      * @param basePath インタープリタ用ベースパス
      */
     void buildFragments(DataFile file, Map<String, Object> map, String basePath) {
         buildFragmentsCore(file, map, false, addBinaryFileInterpreter(basePath, interpreters));
-    }
-
-    /**
-     * MockMessages 用に DataFileFragment を構築してファイルに追加する（FW_HEADER スキップあり）。
-     *
-     * <p>
-     * {@link YamlMessageBuilder} からの MockMessages フラグメント構築に使用する。
-     * {@code skipFwHeader=true} を使用することで、length が未指定のフィールドでも
-     * {@code setLengths} が呼ばれ NPE を防ぐ。
-     * </p>
-     *
-     * @param file     MockMessages インスタンス
-     * @param map      セクション Map
-     * @param basePath インタープリタ用ベースパス
-     */
-    void buildFragmentsForMock(DataFile file, Map<String, Object> map, String basePath) {
-        buildFragmentsCore(file, map, true, addBinaryFileInterpreter(basePath, interpreters));
     }
 
     /**
@@ -203,16 +187,7 @@ public final class YamlFileBuilder {
             if (skipFwHeader || hasLength) {
                 List<String> cleanedLengths = new ArrayList<String>(lengths.size());
                 for (String l : lengths) {
-                    // length が未指定の場合、メッセージファイル（skipFwHeader=true）では
-                    // DataFileFragment の「オンデマンド計算」マーカー "-" を設定する。
-                    // ファイルデータ（skipFwHeader=false）では空文字列を渡す（既存挙動を維持）。
-                    if (l != null) {
-                        cleanedLengths.add(l);
-                    } else if (skipFwHeader) {
-                        cleanedLengths.add("-");
-                    } else {
-                        cleanedLengths.add("");
-                    }
+                    cleanedLengths.add(l != null ? l : "");
                 }
                 fragment.setLengths(cleanedLengths);
             }

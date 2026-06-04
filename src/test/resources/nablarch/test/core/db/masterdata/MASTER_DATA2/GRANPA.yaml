@@ -1,5 +1,0 @@
-setup_tables:
-  - table: "GRANPA"
-    rows:
-      - MYID: "1"
-      - MYID: "2"

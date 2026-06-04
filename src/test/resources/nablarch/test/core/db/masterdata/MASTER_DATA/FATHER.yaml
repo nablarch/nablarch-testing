@@ -1,7 +1,0 @@
-setup_tables:
-  - table: "FATHER"
-    rows:
-      - MYID: "1"
-        MY_PARENT: "2"
-      - MYID: "2"
-        MY_PARENT: "1"

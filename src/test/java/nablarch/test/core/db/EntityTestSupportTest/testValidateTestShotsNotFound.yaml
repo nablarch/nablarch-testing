@@ -1,9 +1,0 @@
-list_maps:
-  - id: "params"
-    rows:
-      - "[No]": "1"
-        userName: "aaa"
-      - "[No]": "2"
-        userName: "bbb"
-      - "[No]": "3"
-        userName: "ccc"
