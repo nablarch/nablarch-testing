@@ -252,7 +252,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **STEP 6・STEP 7 ともに完了。ユーザーレビュー待ち。** STEP 6 全修正・全テスト green (`Tests run: 1472, Failures: 0, Errors: 0`)。ユーザーレビュー OK が出れば T7 タスク完了、PR マージ判断に進む。
+2. **STEP 6・STEP 7 ともに完了。ユーザーレビュー OK（2026-06-05）。** T7 タスク完了。PR マージ判断に進む。
 
 ### T7 動的アプローチ（進行中）
 
@@ -290,7 +290,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
     - entity テスト群: `ThreadContext.setLanguage()` でロケール設定
     - `TestSupportTest`: パステスト修正
   - 全テスト green: `Tests run: 1472, Failures: 0, Errors: 0, Skipped: 7`
-  - ユーザーレビュー待ち
+  - ユーザーレビュー OK（2026-06-05）
 - [x] **STEP 7** 仕上げ（T7.md・steering 更新）— **完了（2026-06-05）**
 
 **各ステップの詳細は作業指示書を参照。** ステップごとにユーザーレビューを受けてから次へ進む。
