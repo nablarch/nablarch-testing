@@ -252,7 +252,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次は STEP 5 実装方針（`@Rule` 上書き問題）についてユーザー承認を受けてから着手する。**
+2. **次は STEP 5 のユーザーレビューを受けてから STEP 6 に進む。**
 
 ### T7 動的アプローチ（進行中）
 
@@ -265,10 +265,16 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] **STEP 2** NPE 修正を TDD で再投入（独立コミット） — 完了（2026-06-04）。ユーザーレビュー OK。
 - [x] **STEP 3** 変換ツールの共通入口を構造化インタフェースで切り出す — 完了（2026-06-04）。ユーザーレビュー OK。
 - [x] **STEP 4** パッケージ整理（YAML 対応の集約） — 完了（2026-06-04）。ユーザーレビュー OK。
-- [ ] **STEP 5** テストデータ駆動テスト用 Runner の新規作成 — **FB待ち（2026-06-04）**
-  - 問題: `@Rule SystemRepositoryResource` がテストメソッドごとに `unit-test.xml` を再ロードするため、`super.runChild()` 前にパーサを差し替えても Rule.before() で BasicTestDataParser に上書きされる
-  - 提案方針: `getTestRules(Object)` をオーバーライドし、YAML モード時にリスト先頭（最内側）に YamlSetupRule を差し込む。Rule 実行後・テスト実行前に差し替えが適用される。ThreadLocal でモードと変換先パスを受け渡す
-  - ベースライン: `Tests run: 1243, Failures: 1, Errors: 26`（既存失敗。変化なし）
+- [x] **STEP 5** テストデータ駆動テスト用 Runner の新規作成 — **完了（2026-06-05）。ユーザーレビュー待ち**
+  - `NtfTestdataTestRunner`（`DatabaseTestRunner` 継承）を新規作成
+  - `runChild` を2回実行（1回目: Excel、2回目: YAML）
+  - `getTestRules` をオーバーライドし YAML モード時に `YamlSetupRule` をリスト先頭（最内側）に追加
+  - `YamlSetupRule` が `SystemRepositoryResource.before()` 後に変換・差し替え・復元を実行
+  - `IgnoreDetectingNotifier` で `@TargetDb` Ignored メソッドの二重集計を防止
+  - ThreadLocal (`YAML_MODE`) は使用後に必ず `remove()`
+  - `NtfTestdataTestRunnerTest`: 5テスト全グリーン（2回実行・YAML差し替え・復元・Ignored スキップ・例外時復元）
+  - QA/Java/SWE 全レビュー OK
+  - ベースライン `Tests run: 1243 → 1248`（+5新規テスト）、`Failures: 1, Errors: 26`（変化なし）
 - [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）
 - [ ] **STEP 7** 仕上げ（T7.md・steering 更新）
 
