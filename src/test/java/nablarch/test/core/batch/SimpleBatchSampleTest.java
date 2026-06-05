@@ -4,7 +4,7 @@ package nablarch.test.core.batch;
 import nablarch.test.core.db.HogeTable;
 import nablarch.test.core.db.HogeTableSsdMaster;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.BeforeClass;
@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /** {@link SimpleBatchSample}のテストクラス。 */
-@RunWith(DatabaseTestRunner.class)
+@RunWith(NtfTestdataTestRunner.class)
 public class SimpleBatchSampleTest extends BatchRequestTestSupport {
 
     @Rule

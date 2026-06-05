@@ -29,17 +29,20 @@ import nablarch.fw.messaging.realtime.http.exception.HttpMessagingTimeoutExcepti
 import nablarch.test.RepositoryInitializer;
 import nablarch.test.core.file.TestDataConverter;
 import nablarch.test.core.log.LogVerifier;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * {@link RequestTestingMessagingClient}のテストクラス
- * 
+ *
  * @author TIS
  */
+@RunWith(NtfTestdataTestRunner.class)
 public class RequestTestingMessagingClientTest {
 
     /** UTF-8 文字セット名 */

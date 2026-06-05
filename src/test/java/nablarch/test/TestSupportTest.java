@@ -29,7 +29,7 @@ import nablarch.core.repository.SystemRepository;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.reader.BasicTestDataParser;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Before;
@@ -38,7 +38,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(DatabaseTestRunner.class)
+@RunWith(NtfTestdataTestRunner.class)
 public class TestSupportTest {
 
     @Rule

@@ -2,15 +2,18 @@ package nablarch.test.core.entity;
 
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.test.core.db.EntityTestSupport;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author T.Kawasaki
  */
+@RunWith(NtfTestdataTestRunner.class)
 public class TestEntityTest extends EntityTestSupport {
 
     @Rule

@@ -12,12 +12,14 @@ import nablarch.test.core.entity.BeanValidationTestStrategy;
 import nablarch.test.core.entity.EntityTestConfiguration;
 import nablarch.test.core.entity.NablarchValidationTestStrategy;
 import nablarch.test.core.entity.ValidationTestStrategy;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.AssertTrue;
@@ -30,6 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *
  * @author hisaaki sioiri
  */
+@RunWith(NtfTestdataTestRunner.class)
 public class EntityTestSupportTest {
 
     @Rule

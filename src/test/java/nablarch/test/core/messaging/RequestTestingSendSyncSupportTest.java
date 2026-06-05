@@ -4,9 +4,11 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import nablarch.core.dataformat.DataRecord;
 import nablarch.test.core.reader.DataType;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -17,6 +19,7 @@ import static org.junit.Assert.assertThat;
  *
  * @author Ryo TANAKA
  */
+@RunWith(NtfTestdataTestRunner.class)
 public class RequestTestingSendSyncSupportTest {
 
     @Rule

@@ -7,16 +7,19 @@ import static org.junit.Assert.fail;
 import nablarch.test.Trap;
 import nablarch.test.core.batch.BatchRequestTestSupport;
 import nablarch.test.core.messaging.RequestTestingMessagingProvider.RequestTestingMessagingContext;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * {@link RequestTestingMessagingContext}のテストクラス。
  *
  * @author T.Kawasaki
  */
+@RunWith(NtfTestdataTestRunner.class)
 public class RequestTestingMessagingContextTest extends BatchRequestTestSupport {
 
     @Rule

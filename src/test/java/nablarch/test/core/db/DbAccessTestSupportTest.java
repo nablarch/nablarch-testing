@@ -16,7 +16,7 @@ import java.util.List;
 import nablarch.core.db.transaction.SimpleDbTransactionManager;
 import nablarch.test.Trap;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.db.helper.TargetDb;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
@@ -27,7 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(DatabaseTestRunner.class)
+@RunWith(NtfTestdataTestRunner.class)
 public class DbAccessTestSupportTest {
 
     @Rule

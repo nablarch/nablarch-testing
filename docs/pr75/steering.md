@@ -252,7 +252,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次は STEP 6: 対象テストクラス（19クラス）への Runner 適用。**
+2. **次は STEP 6 の不具合修正（継続中）。** 19クラスへの Runner 付与は完了済み。YAML モード (Run 2) で 16クラスに失敗が残っている。下記「STEP 6 不具合一覧」を参照して修正を進める。
 
 ### T7 動的アプローチ（進行中）
 
@@ -265,7 +265,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] **STEP 2** NPE 修正を TDD で再投入（独立コミット） — 完了（2026-06-04）。ユーザーレビュー OK。
 - [x] **STEP 3** 変換ツールの共通入口を構造化インタフェースで切り出す — 完了（2026-06-04）。ユーザーレビュー OK。
 - [x] **STEP 4** パッケージ整理（YAML 対応の集約） — 完了（2026-06-04）。ユーザーレビュー OK。
-- [x] **STEP 5** テストデータ駆動テスト用 Runner の新規作成 — **完了（2026-06-05）。ユーザーレビュー OK**
+- [x] **STEP 5** テストデータ駆動テスト用 Runner の新規作成 — 完了（2026-06-05）。ユーザーレビュー OK。
   - `NtfTestdataTestRunner`（`DatabaseTestRunner` 継承）を新規作成
   - `runChild` を2回実行（1回目: Excel、2回目: YAML）
   - `getTestRules` をオーバーライドし YAML モード時に `YamlSetupRule` をリスト先頭（最内側）に追加
@@ -275,10 +275,31 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - `NtfTestdataTestRunnerTest`: 5テスト全グリーン（2回実行・YAML差し替え・復元・Ignored スキップ・例外時復元）
   - QA/Java/SWE 全レビュー OK
   - ベースライン `Tests run: 1243 → 1248`（+5新規テスト）、`Failures: 1, Errors: 26`（変化なし）
-- [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）
+- [ ] **STEP 6** 対象テストクラスへ Runner を適用（19クラス）— **Runner 付与は完了。不具合修正中。**
+  - 19クラスへの `@RunWith(NtfTestdataTestRunner.class)` 付与済み（2026-06-05）
+  - `YamlLoader` の `basePath` 末尾スラッシュ問題を修正済み（`toFilePath()` 追加）
+  - `YamlSetupRule.DEFAULT_RESOURCE_ROOT` を `"test/java/"` → `"src/test/java/"` に修正済み
+  - **残課題**: YAML モード (Run 2) で 16クラスに失敗あり → 下記「STEP 6 不具合一覧」参照
 - [ ] **STEP 7** 仕上げ（T7.md・steering 更新）
 
 **各ステップの詳細は作業指示書を参照。** ステップごとにユーザーレビューを受けてから次へ進む。
+
+### STEP 6 不具合一覧（2026-06-05 時点、修正待ち）
+
+YAML モード (Run 2) で失敗している問題を分類する。修正は「NTF の不具合として修正、先送り禁止」の原則に従う。
+
+| # | 問題分類 | 主な影響クラス | 内容 |
+|---|---|---|---|
+| P1 | 変換ツール: 空文字列セルの YAML 表現不一致 | `FileSupportTest`, `FileSupportWithDbLessTestDataParserTest` | Excel の `[""]` 特殊表記がYAML変換で `[]` になる。expected: `[""]` but was: `[]` |
+| P2 | 変換ツール or パーサー: 例外クラス不一致 | `FileSupportTest`, `FileSupportWithDbLessTestDataParserTest` | 重複フィールド名・空ファイル等のエラーで、Excel は `IllegalStateException`、YAML は `IllegalArgumentException` または別例外が投げられる |
+| P3 | Runner: `testDataParser` null | `HttpRequestTestSupportTest` | `SystemRepositoryResource` を持たないクラスで YAML モード時に `testDataParser` が null → `UNREACHABLE` エラー。`YamlSetupRule` の null ガード不足 |
+| P4 | パーサー: `dbInfo` null による NPE | `MessagingRequestTestSupportTest` | YAML モードで `YamlTestDataParser` の `dbInfo` が null。`BasicTestDataParser` 側の初期化が YAML パーサーに反映されていない可能性 |
+| P5 | テストコード: エラーメッセージが resource-root 依存 | `TestSupportTest.testGetPathOfFail` | `in [src/test/java/nablarch/test]` とハードコードされた期待値が、YAML モードでは `in [target/generated-test-yaml/nablarch/test]` になるため比較失敗 |
+| P6 | メッセージング系の動作不一致 | `RequestTestingMessagingContextTest`, `RequestTestingSendSyncBatchTest`, `RequestTestingSendSyncSupportTest` | YAML 変換後の messaging データを正しく読めていない（status code 不一致等） |
+| P7 | 文字種パターン変換不一致 | `TestEntityTest`, `TestBeanTest` | `${半角英字,50}` 等の特殊表記がYAML変換で失われているか、YAML パーサーが解釈できていない |
+| P8 | その他 | `AbstractHttpRequestTestTemplateTest`, `BatchRequestTestSupportTest`, `DBtoDBBatchSampleTest`, `DbAccessTestSupportTest`, `MessagingReceiveTestSupportTest` | 個別調査が必要 |
+
+**修正方針（再開時に着手）**: P3（最小修正・ガード追加）、P5（テスト期待値修正）から始め、P1→P4→P6→P7 の順に修正する。P8 は個別調査後に対応。
 
 ### T5-ext 概要
 

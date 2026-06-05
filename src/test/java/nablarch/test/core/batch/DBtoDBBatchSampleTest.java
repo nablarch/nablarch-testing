@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
 import nablarch.test.core.db.HogeTable;
 import nablarch.test.core.db.HogeTableSsdMaster;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.support.db.helper.DatabaseTestRunner;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.AfterClass;
@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /** {@link DBtoDBBatchSample}のテストクラス。 */
-@RunWith(DatabaseTestRunner.class)
+@RunWith(NtfTestdataTestRunner.class)
 public class DBtoDBBatchSampleTest extends BatchRequestTestSupport {
 
     @ClassRule

@@ -14,6 +14,7 @@ import nablarch.test.TestSupport;
 import nablarch.test.Trap;
 import nablarch.test.core.file.SimpleWriter.LS;
 import nablarch.test.core.util.FileUtils;
+import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
 import org.junit.Assert;
 import org.junit.Before;
@@ -22,6 +23,7 @@ import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -48,6 +50,7 @@ import static org.junit.Assert.fail;
  * 
  * @author Shinya Hijiri
  */
+@RunWith(NtfTestdataTestRunner.class)
 public class FileSupportWithDbLessTestDataParserTest {
 
     @Rule

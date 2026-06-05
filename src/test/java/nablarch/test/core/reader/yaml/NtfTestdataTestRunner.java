@@ -159,7 +159,7 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
 
         static final String PARSER_KEY = "testDataParser";
         static final String RESOURCE_ROOT_KEY = "nablarch.test.resource-root";
-        private static final String DEFAULT_RESOURCE_ROOT = "test/java/";
+        private static final String DEFAULT_RESOURCE_ROOT = "src/test/java/";
 
         private final Path yamlOutputRoot;
 
