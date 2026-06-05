@@ -50,21 +50,21 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] **Ph-2** 解説書 FIX — 全145件と1対1対応を確認。ユーザーレビュー OK
 - [x] **Ph-3** YamlTestDataParser TDD 実装 — 138件グリーン。ユーザーレビュー OK（2026-05-27）
 - [x] **Ph-4** トレーサビリティマトリクス完成 — 145件全件3軸記録・未対応ゼロ確認。ユーザーレビュー OK（2026-05-27）
-- [ ] **Ph-5** Excel 並走確認
-    - [ ] **C-1** 変換ツール設計・実装 — 147テスト全グリーン。Ph-6 是正後に再レビュー
+- [x] **Ph-5** Excel 並走確認
+    - [x] **C-1** 変換ツール設計・実装 — 156テスト全グリーン。ユーザーレビュー OK（2026-06-05）
   - [x] **S-6** JSON Schema 整合性確認 — 完了。ユーザーレビュー OK（2026-05-29）
-  - [ ] **V-1** 全Excelテストの YAML 版並走実行 — Ph-6 T7 に統合
-- [ ] **Ph-6** ユーザーレビュー指摘の是正（2026-06-02 ユーザーレビューで確定）
+  - [x] **V-1** 全Excelテストの YAML 版並走実行 — T7 に統合・完了
+- [x] **Ph-6** ユーザーレビュー指摘の是正（2026-06-02 ユーザーレビューで確定）
   - 前提: 文書 `docs/pr75/specs/ntf-testdata-doc.md` / `docs/pr75/design/ntf-testdata-yaml-design.md` / `docs/pr75/ntf-impl-spec-list.md` / `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` / `docs/pr75/specs/ntf-testdata-doc-examples-messaging.md` は是正済み（あるべき姿）。本フェーズはこれら文書を正とし実装を一致させる
   - 各タスクは「ソースコード変更を含むタスク（5ステップ）」プロセスに従う。完了条件は各チェックファイルに記載
-  - [ ] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`
+  - [x] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`（ユーザーレビュー OK 2026-06-05）
   - [x] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
   - [x] **T3** 変換ツール `parseMessageBlock` の構造分離修正 — `docs/pr75/checks/T3.md`（ユーザーレビュー OK 2026-06-03）
   - [x] **T4** 変換ツールの数値書式セル文字列化を `DataFormatter` に修正 — `docs/pr75/checks/T4.md`
   - [x] **T5** 変換ツールに検証モード（リンタ）を追加 — `docs/pr75/checks/T5.md`
   - [x] **T5-ext** バリデータに V-FNAME / V-DKEY を追加（シフトレフト拡張） — `docs/pr75/checks/T5.md`（ユーザーレビュー OK 2026-06-03）
   - [x] **T6** `expected_tables`/`expected_complete_tables` 混在順序非依存の確認テスト — `docs/pr75/checks/T6.md`
-  - [ ] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`
+  - [x] **T7** 等価性テストの拡充（型行を持つ実Excel・messaging 系の並走。旧 V-1 を統合） — `docs/pr75/checks/T7.md`（ユーザーレビュー OK 2026-06-05）
 
 ---
 
