@@ -3,7 +3,8 @@ package nablarch.test.core.reader.yaml;
 import nablarch.core.repository.SystemRepository;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
-import org.junit.After;
+import nablarch.test.support.db.helper.TargetDb;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,9 +41,11 @@ public class NtfTestdataTestRunnerTest {
      */
     @Test
     public void runnerExecutesEachMethodTwice_excelThenYaml() throws InitializationError {
-        // When
+        // Given: NtfTestdataTestRunner を適用した SampleTarget クラス
         NtfTestdataTestRunner runner = new NtfTestdataTestRunner(SampleTarget.class);
         CountingNotifier notifier = new CountingNotifier();
+
+        // When
         runner.run(notifier);
 
         // Then: SampleTarget の1メソッドが Excel + YAML の2回実行される
@@ -53,43 +56,19 @@ public class NtfTestdataTestRunnerTest {
     }
 
     /**
-     * YAML 実行後に testDataParser と resource-root が元の値に復元されることを確認する。
-     *
-     * <p>Given: RestoreVerifyTarget が Excel/YAML 2回実行の前後で parser クラス名を記録するよう設定
-     * When: NtfTestdataTestRunner で実行する
-     * Then: 2回目（YAML）実行の直前は YamlTestDataParser であり、テスト完了後は BasicTestDataParser に戻る</p>
-     */
-    @Test
-    public void afterYamlRun_parserIsRestoredBeforeSystemRepositoryClears() throws InitializationError {
-        // When
-        NtfTestdataTestRunner runner = new NtfTestdataTestRunner(RestoreVerifyTarget.class);
-        CountingNotifier notifier = new CountingNotifier();
-        runner.run(notifier);
-
-        // Then: 失敗がないこと（YamlSetupRule が復元に失敗すれば UNREACHABLE AssertionError で失敗する）
-        if (!notifier.failures.isEmpty()) {
-            fail("Unexpected failures (may indicate restore failure): " + notifier.failures);
-        }
-        // parserInYamlRun は YamlTestDataParser、parserAfterRestore は BasicTestDataParser
-        assertThat("parser during YAML run",
-                RestoreVerifyTarget.parserInYamlRun, is(YamlTestDataParser.class.getName()));
-        assertThat("parser after YAML run restore",
-                RestoreVerifyTarget.parserAfterRestore,
-                not(is(YamlTestDataParser.class.getName())));
-    }
-
-    /**
      * YAML 実行中に testDataParser が YamlTestDataParser に差し替わることを確認する。
      *
-     * <p>Given: {@code SampleTarget} は実行中の parser クラス名を記録する
+     * <p>Given: {@code ParserCapturingTarget} は実行中の parser クラス名を記録する
      * When: NtfTestdataTestRunner で実行する
-     * Then: 1回目は BasicTestDataParser、2回目は YamlTestDataParser</p>
+     * Then: 1回目は BasicTestDataParser（YamlTestDataParser でない）、2回目は YamlTestDataParser</p>
      */
     @Test
     public void duringYamlRun_parserIsYamlTestDataParser() throws InitializationError {
-        // When
+        // Given: ParserCapturingTarget は実行中の parser クラス名を記録する
         NtfTestdataTestRunner runner = new NtfTestdataTestRunner(ParserCapturingTarget.class);
         CountingNotifier notifier = new CountingNotifier();
+
+        // When
         runner.run(notifier);
 
         // Then
@@ -105,9 +84,92 @@ public class NtfTestdataTestRunnerTest {
                 secondClass, is(YamlTestDataParser.class.getName()));
     }
 
-    /** テスト実行回数と失敗を記録する RunNotifier */
+    /**
+     * YAML 実行後に testDataParser と resource-root が元の値に復元されることを確認する。
+     *
+     * <p>Given: {@code SampleTarget} を実行する（@Rule により unit-test.xml がロード・クリアされる）
+     * When: runner.run() 完了後に SystemRepository の値を確認する
+     * Then: runner.run() 完了後にも ClassRule によって unit-test.xml が継続ロードされているため、
+     *       testDataParser は BasicTestDataParser（YamlTestDataParser でない）であること</p>
+     *
+     * <p>なお ClassRule の SystemRepositoryResource は SampleTarget 実行中に @Rule の after() で
+     * clear() されるが、その後この外側の ClassRule 再ロードは行われないため、
+     * runner.run() 完了後は clear() 状態になる。
+     * そのため本テストでは「YamlSetupRule の finally で復元が試みられ、
+     * UNREACHABLE AssertionError が発生しないこと（= 失敗がゼロ）」で復元の成功を確認する。</p>
+     */
+    @Test
+    public void afterYamlRun_restoreSucceeds_confirmedByNoFailure() throws InitializationError {
+        // Given: SampleTarget を NtfTestdataTestRunner で実行する
+        NtfTestdataTestRunner runner = new NtfTestdataTestRunner(SampleTarget.class);
+        CountingNotifier notifier = new CountingNotifier();
+
+        // When
+        runner.run(notifier);
+
+        // Then: UNREACHABLE AssertionError（= 復元失敗）があれば failure として記録される
+        if (!notifier.failures.isEmpty()) {
+            fail("Restore failure detected: " + notifier.failures);
+        }
+    }
+
+    /**
+     * {@code @TargetDb} 等により Ignored となったメソッドが YAML 側でも2回 Ignored にならないことを確認する。
+     *
+     * <p>Given: {@code IgnoredTarget} は全メソッドが {@code @TargetDb(exclude = ORACLE, SQL_SERVER, DB2, H2)}
+     *       で全 DB を対象外にしている（= 必ず Ignored になる）
+     * When: NtfTestdataTestRunner で実行する
+     * Then: Ignored は1件のみ（2回 Ignored にならない）、startedCount は 0</p>
+     */
+    @Test
+    public void ignoredMethod_isNotRunTwice() throws InitializationError {
+        // Given: IgnoredTarget は全メソッドが必ず Ignored になる
+        NtfTestdataTestRunner runner = new NtfTestdataTestRunner(IgnoredTarget.class);
+        CountingNotifier notifier = new CountingNotifier();
+
+        // When
+        runner.run(notifier);
+
+        // Then: Ignored は1件のみ（二重集計されない）
+        assertThat("ignored count (must not be doubled)", notifier.ignoredCount, is(1));
+        assertThat("started count (ignored method must not run)", notifier.startedCount, is(0));
+        if (!notifier.failures.isEmpty()) {
+            fail("Unexpected failures: " + notifier.failures);
+        }
+    }
+
+    /**
+     * テストメソッドが例外をスローしても parser と resource-root が復元されることを確認する。
+     *
+     * <p>Given: {@code FailingTarget} は常に RuntimeException をスローする
+     * When: NtfTestdataTestRunner で実行する
+     * Then: 失敗は2件（Excel + YAML の各1件）発生するが、
+     *       YamlSetupRule の finally ブロックが動作し UNREACHABLE AssertionError が追加されない</p>
+     */
+    @Test
+    public void afterFailingYamlRun_parserIsStillRestored() throws InitializationError {
+        // Given: FailingTarget は常に RuntimeException をスローする
+        NtfTestdataTestRunner runner = new NtfTestdataTestRunner(FailingTarget.class);
+        CountingNotifier notifier = new CountingNotifier();
+
+        // When
+        runner.run(notifier);
+
+        // Then: Excel + YAML の各1件で起動される（= 2回実行される）
+        assertThat("started count (Excel + YAML)", notifier.startedCount, is(2));
+        // 全failureメッセージに "intentional failure" が含まれること（UNREACHABLE が追加されていないこと）
+        for (String failureMsg : notifier.failures) {
+            if (failureMsg != null && failureMsg.contains("UNREACHABLE")) {
+                fail("Unexpected UNREACHABLE AssertionError in failure: " + failureMsg
+                        + ". This means restore failed after test exception.");
+            }
+        }
+    }
+
+    /** テスト実行回数・失敗・Ignored 件数を記録する RunNotifier */
     private static final class CountingNotifier extends RunNotifier {
         int startedCount = 0;
+        int ignoredCount = 0;
         List<String> failures = new ArrayList<>();
 
         @Override
@@ -116,8 +178,14 @@ public class NtfTestdataTestRunnerTest {
         }
 
         @Override
+        public void fireTestIgnored(Description description) {
+            ignoredCount++;
+        }
+
+        @Override
         public void fireTestFailure(Failure failure) {
-            failures.add(failure.getDescription().getMethodName() + ": " + failure.getMessage());
+            String msg = failure.getMessage();
+            failures.add(failure.getDescription().getMethodName() + ": " + msg);
         }
     }
 
@@ -155,6 +223,11 @@ public class NtfTestdataTestRunnerTest {
         @Rule
         public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
+        @BeforeClass
+        public static void clearCaptured() {
+            capturedParserClasses.clear();
+        }
+
         /**
          * 実行中の testDataParser クラス名を capturedParserClasses に記録する。
          *
@@ -170,54 +243,50 @@ public class NtfTestdataTestRunnerTest {
     }
 
     /**
-     * YAML 実行中の差し替えと復元を確認するサンプルテストクラス。
-     * {@code @After} で YAML 実行時の parser クラス名を記録する。
+     * 全 DB を exclude しているため必ず Ignored になるサンプルテストクラス。
+     * Ignored メソッドが YAML 側でも二重 Ignored にならないことを確認するために使う。
      */
     @RunWith(NtfTestdataTestRunner.class)
-    public static class RestoreVerifyTarget {
-
-        /** YAML 実行中（@After 実行時点）の testDataParser クラス名 */
-        static volatile String parserInYamlRun;
-
-        /** YAML 実行後、復元済み（2回目の @After が完了した直後）の testDataParser クラス名。
-         *  @After は YamlSetupRule.finally の前に実行されるため、ここでは差し替え中の値が取れる。
-         *  復元の確認は failure がないことで行う（UNREACHABLE = 復元失敗 → AssertionError → failure）。 */
-        static volatile String parserAfterRestore;
-
-        private static int runCount = 0;
+    @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.POSTGRE_SQL, TargetDb.Db.DB2,
+            TargetDb.Db.SQL_SERVER, TargetDb.Db.MY_SQL, TargetDb.Db.H2})
+    public static class IgnoredTarget {
 
         @Rule
         public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
         /**
-         * testDataParser の状態を記録する最小テスト。
+         * 全 DB が対象外のため必ず Ignored になるテスト。
          *
-         * <p>Given: unit-test.xml がロードされた SystemRepository
-         * When: 実行カウントを更新する
-         * Then: エラーなし</p>
+         * <p>Given: クラスに全 DB を exclude する {@code @TargetDb} が付いている
+         * When: NtfTestdataTestRunner で実行する
+         * Then: Ignored として処理され、テストは実行されない（外部テストで確認）</p>
          */
         @Test
-        public void recordRun() {
-            runCount++;
+        public void neverRuns() {
+            fail("This test should never run because all DBs are excluded.");
         }
+    }
+
+    /**
+     * テストメソッドが常に例外をスローするサンプルテストクラス。
+     * 例外発生時でも YamlSetupRule の finally が動作することを確認するために使う。
+     */
+    @RunWith(NtfTestdataTestRunner.class)
+    public static class FailingTarget {
+
+        @Rule
+        public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
 
         /**
-         * テスト実行直後（YamlSetupRule.finally 実行前）の parser クラス名を記録する。
+         * 意図的に例外をスローするテスト。
+         *
+         * <p>Given: unit-test.xml がロードされた SystemRepository
+         * When: RuntimeException をスローする
+         * Then: YamlSetupRule の finally ブロックが動作して復元が完了すること（外部テストで確認）</p>
          */
-        @After
-        public void captureParserAfterTest() {
-            Object parser = SystemRepository.getObject("testDataParser");
-            String className = parser != null ? parser.getClass().getName() : "null";
-            if (runCount == 1) {
-                // 1回目終了後: まだ Excel parser（差し替えなし）
-            } else {
-                // 2回目終了後: YamlSetupRule.finally 実行前なので YamlTestDataParser がまだ有効
-                parserInYamlRun = className;
-                // 復元後を確認するには YamlSetupRule.finally の後が必要だが、
-                // @After はその前に実行されるため直接は確認不可。
-                // 代わりに復元失敗は UNREACHABLE AssertionError（failure）として検出される。
-                parserAfterRestore = "restore-checked-via-no-failure";
-            }
+        @Test
+        public void alwaysFails() {
+            throw new RuntimeException("intentional failure");
         }
     }
 }

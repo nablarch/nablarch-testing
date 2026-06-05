@@ -9,6 +9,7 @@ import nablarch.test.support.db.helper.DatabaseTestRunner;
 
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -60,11 +61,20 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
      *
      * <p>変換処理は {@link YamlSetupRule} 内で {@code SystemRepositoryResource.before()} の後に実行される。
      * これにより {@code nablarch.test.resource-root} が設定済みの状態で変換元パスを解決できる。</p>
+     *
+     * <p>{@code @TargetDb} 等により1回目が Ignored となったメソッドは2回目の YAML 実行もスキップする。
+     * これにより Ignored が二重集計されるレポート汚染を防ぐ。</p>
      */
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
-        // 1回目: Excel 入力（既存設定のまま）
-        super.runChild(method, notifier);
+        // 1回目: Excel 入力（既存設定のまま）。Ignored かどうかを検知する。
+        IgnoreDetectingNotifier detect = new IgnoreDetectingNotifier(notifier);
+        super.runChild(method, detect);
+
+        // @TargetDb 不一致等で Ignored になった場合は YAML 実行もスキップする
+        if (detect.ignored) {
+            return;
+        }
 
         // 2回目: YAML 入力
         YAML_MODE.set(Boolean.TRUE);
@@ -72,6 +82,46 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
             super.runChild(method, notifier);
         } finally {
             YAML_MODE.remove();
+        }
+    }
+
+    /**
+     * 1回目の {@code runChild} 呼び出しで {@code fireTestIgnored} が呼ばれたかを検知する RunNotifier ラッパー。
+     * Ignored 検知以外のイベントはすべて委譲先 {@link RunNotifier} に転送する。
+     */
+    private static final class IgnoreDetectingNotifier extends RunNotifier {
+
+        private final RunNotifier delegate;
+        boolean ignored = false;
+
+        IgnoreDetectingNotifier(RunNotifier delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void fireTestIgnored(Description description) {
+            ignored = true;
+            delegate.fireTestIgnored(description);
+        }
+
+        @Override
+        public void fireTestStarted(Description description) throws org.junit.runner.notification.StoppedByUserException {
+            delegate.fireTestStarted(description);
+        }
+
+        @Override
+        public void fireTestFailure(Failure failure) {
+            delegate.fireTestFailure(failure);
+        }
+
+        @Override
+        public void fireTestFinished(Description description) {
+            delegate.fireTestFinished(description);
+        }
+
+        @Override
+        public void fireTestAssumptionFailed(Failure failure) {
+            delegate.fireTestAssumptionFailed(failure);
         }
     }
 
@@ -97,6 +147,13 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
      * <p>このクラスは {@link #getTestRules(Object)} からリスト先頭（最内側）に差し込まれるため、
      * {@code SystemRepositoryResource.before()} による XML ロードの後に実行される。
      * この時点で {@code nablarch.test.resource-root} が設定済みであることが保証される。</p>
+     *
+     * <p>{@code nablarch.test.resource-root} がセミコロン区切りで複数パスを持つ場合、
+     * 先頭パスのみを Excel 変換対象とする。</p>
+     *
+     * <p>変換はテストメソッドごとに実行されるが、{@code overwrite(true)} により冪等であるため
+     * 複数回実行しても副作用はない。STEP6 適用後にビルド時間が問題になった場合は
+     * クラス単位に最適化することを検討する。</p>
      */
     static final class YamlSetupRule implements TestRule {
 
@@ -122,13 +179,18 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
                     }
                     String xlsRoot = resourceRootSetting.split(";")[0];
 
-                    TestDataConverter.convert(new ConversionRequest.Builder()
+                    int exitCode = TestDataConverter.convert(new ConversionRequest.Builder()
                             .sourceFormat(DataFormat.XLS)
                             .targetFormat(DataFormat.YAML)
                             .inputPath(Paths.get(xlsRoot))
                             .outputPath(yamlOutputRoot)
                             .overwrite(true)
                             .build());
+                    if (exitCode != 0) {
+                        throw new AssertionError(
+                                "Excel→YAML 変換に失敗しました（exitCode=" + exitCode
+                                + ", xlsRoot=" + xlsRoot + "）");
+                    }
 
                     Object savedParser = SystemRepository.getObject(PARSER_KEY);
                     Object savedResourceRoot = SystemRepository.getObject(RESOURCE_ROOT_KEY);
@@ -147,12 +209,10 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
         }
 
         private void loadComponent(String key, Object value) {
-            final String k = key;
-            final Object v = value;
             SystemRepository.load(new ObjectLoader() {
                 @Override
                 public Map<String, Object> load() {
-                    return Collections.singletonMap(k, v);
+                    return Collections.singletonMap(key, value);
                 }
             });
         }
