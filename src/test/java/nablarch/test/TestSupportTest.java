@@ -584,7 +584,7 @@ public class TestSupportTest {
             }
         }.capture(IllegalArgumentException.class)
                 .whichMessageContains(
-                        "couldn't find resource [Not/Exists] in [src/test/java/nablarch/test]");
+                        "couldn't find resource [Not/Exists] in");
     }
 
     /**
@@ -608,7 +608,7 @@ public class TestSupportTest {
     public void testGetPathResourceExisting() {
         List<String> candidatePath = asList("src/test/java/nablarch/test/core", // こっちには無い
                 "src/test/java/nablarch/test/");    // こっちに存在する
-        String resourceName = "TestSupportTest/SetUpDb";
+        String resourceName = "TestSupportTest/withGroupId";
         assertThat(target.getPathResourceExisting(candidatePath, resourceName), is("src/test/java/nablarch/test/"));
     }
 

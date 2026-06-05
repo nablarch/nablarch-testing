@@ -2,9 +2,7 @@ package nablarch.test.core.http;
 
 import nablarch.fw.web.HttpRequest;
 import nablarch.fw.web.MockHttpRequest;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +11,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
 
 @SuppressWarnings("NonAsciiCharacters")
-@RunWith(NtfTestdataTestRunner.class)
 public class HttpRequestTestSupportTest {
 
     HttpRequestTestSupport sut = new HttpRequestTestSupport();

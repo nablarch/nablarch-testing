@@ -2,6 +2,13 @@ package nablarch.test.core.reader.yaml;
 
 import nablarch.core.repository.ObjectLoader;
 import nablarch.core.repository.SystemRepository;
+import nablarch.test.core.db.DbInfo;
+import nablarch.test.core.messaging.RequestTestingMessagingClient;
+import nablarch.test.core.messaging.RequestTestingMessagingProvider;
+import nablarch.test.core.messaging.RequestTestingSendSyncSupport;
+import nablarch.test.core.messaging.SendSyncSupport;
+import nablarch.test.core.reader.BasicTestDataParser;
+import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.tool.converter.ConversionRequest;
 import nablarch.test.tool.converter.DataFormat;
 import nablarch.test.tool.converter.TestDataConverter;
@@ -15,12 +22,19 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * テストデータを使う NTF 本体テストを、Excel 入力と YAML 入力の両方で実行する Runner。
@@ -76,13 +90,35 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
             return;
         }
 
-        // 2回目: YAML 入力
+        // Run1（Excel）の static キャッシュをクリアしてから Run2（YAML）を実行する。
+        // Run1 で消費済みのイテレータを持つ pool などがキャッシュに残ったまま
+        // Run2 に持ち越されるのを防ぐ。
+        clearAllStaticCaches();
         YAML_MODE.set(Boolean.TRUE);
         try {
             super.runChild(method, notifier);
         } finally {
             YAML_MODE.remove();
         }
+    }
+
+    /**
+     * テストデータ読み込み系の全 static キャッシュをクリアする。
+     *
+     * <p>Run1（Excel）と Run2（YAML）の間でキャッシュが汚染されるのを防ぐため、
+     * 各 Run 開始前に呼び出す。消費済みイテレータ（MessagePool 等）を含む
+     * キャッシュがそのまま次の Run に使われるバグを防ぐ。</p>
+     */
+    private static void clearAllStaticCaches() {
+        // XLS/Excel パーサ系キャッシュ（package-private クラスへのアクセスはファサード経由）
+        BasicTestDataParser.clearAllParseCachesForTest();
+        // YAML パーサキャッシュ
+        YamlLoader.clearCacheForTest();
+        // メッセージング系キャッシュ（消費済みイテレータを含む pool が再利用されるのを防ぐ）
+        SendSyncSupport.clearCacheForTest();
+        RequestTestingSendSyncSupport.clearCacheForTest();
+        RequestTestingMessagingClient.clearSendingMessageCache();
+        RequestTestingMessagingProvider.RequestTestingMessagingContext.clearSendingMessageCache();
     }
 
     /**
@@ -160,6 +196,9 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
         static final String PARSER_KEY = "testDataParser";
         static final String RESOURCE_ROOT_KEY = "nablarch.test.resource-root";
         private static final String DEFAULT_RESOURCE_ROOT = "src/test/java/";
+        /** XLS 変換対象外として YAML 出力ルートにコピーするファイル拡張子 */
+        private static final Set<String> BINARY_EXTENSIONS = new HashSet<>(
+                Arrays.asList(".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf", ".bin", ".zip"));
 
         private final Path yamlOutputRoot;
 
@@ -192,11 +231,26 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
                                 + ", xlsRoot=" + xlsRoot + "）");
                     }
 
+                    // BinaryFileInterpreter が参照するバイナリファイルを YAML 出力ルートにコピーする。
+                    // YAML モードでは resource-root が yamlOutputRoot に切り替わるため、
+                    // xlsRoot 以下のバイナリファイルが見つからなくなることを防ぐ。
+                    copyBinaryFiles(Paths.get(xlsRoot), yamlOutputRoot);
+
                     Object savedParser = SystemRepository.getObject(PARSER_KEY);
                     Object savedResourceRoot = SystemRepository.getObject(RESOURCE_ROOT_KEY);
 
                     try {
-                        loadComponent(PARSER_KEY, new YamlTestDataParser());
+                        YamlTestDataParser yamlParser = new YamlTestDataParser();
+                        DbInfo dbInfo = SystemRepository.get("dbInfo");
+                        if (dbInfo != null) {
+                            yamlParser.setDbInfo(dbInfo);
+                        }
+                        @SuppressWarnings("unchecked")
+                        List<TestDataInterpreter> interps = SystemRepository.get("interpreters");
+                        if (interps != null) {
+                            yamlParser.setInterpreters(interps);
+                        }
+                        loadComponent(PARSER_KEY, yamlParser);
                         loadComponent(RESOURCE_ROOT_KEY, yamlOutputRoot.toString());
                         base.evaluate();
                     } finally {
@@ -206,6 +260,40 @@ public class NtfTestdataTestRunner extends DatabaseTestRunner {
                     }
                 }
             };
+        }
+
+        /**
+         * xlsRoot 以下のバイナリファイルを yamlOutputRoot 以下の対応するパスにコピーする。
+         * すでに存在するファイルは上書きしない（冪等）。
+         */
+        private void copyBinaryFiles(Path xlsRootPath, Path yamlOutputRootPath) throws IOException {
+            if (!Files.exists(xlsRootPath)) {
+                return;
+            }
+            Files.walk(xlsRootPath).forEach(source -> {
+                String fileName = source.getFileName().toString().toLowerCase();
+                boolean isBinary = BINARY_EXTENSIONS.stream().anyMatch(fileName::endsWith);
+                if (!isBinary) {
+                    return;
+                }
+                Path relative = xlsRootPath.relativize(source);
+                Path target = yamlOutputRootPath.resolve(relative);
+                if (!Files.exists(target)) {
+                    try {
+                        Files.createDirectories(target.getParent());
+                        try (InputStream in = Files.newInputStream(source);
+                             OutputStream out = Files.newOutputStream(target)) {
+                            byte[] buf = new byte[8192];
+                            int n;
+                            while ((n = in.read(buf)) != -1) {
+                                out.write(buf, 0, n);
+                            }
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to copy binary file: " + source, e);
+                    }
+                }
+            });
         }
 
         private void loadComponent(String key, Object value) {

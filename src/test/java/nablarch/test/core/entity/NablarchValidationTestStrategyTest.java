@@ -1,5 +1,6 @@
 package nablarch.test.core.entity;
 
+import nablarch.core.ThreadContext;
 import nablarch.core.message.Message;
 import nablarch.core.message.MessageLevel;
 import nablarch.core.message.MockStringResourceHolder;
@@ -11,6 +12,7 @@ import nablarch.core.validation.validator.Length;
 import nablarch.core.validation.validator.NumberChar;
 import nablarch.core.validation.validator.Required;
 import nablarch.test.support.SystemRepositoryResource;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,8 +47,14 @@ public class NablarchValidationTestStrategyTest {
 
     @Before
     public void before() {
+        ThreadContext.setLanguage(Locale.JAPANESE);
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
+    }
+
+    @After
+    public void after() {
+        ThreadContext.setLanguage(null);
     }
 
     /**

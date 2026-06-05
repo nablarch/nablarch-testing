@@ -5,11 +5,14 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.fail;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
+import nablarch.core.ThreadContext;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.test.support.SystemRepositoryResource;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,8 +64,14 @@ public class CharsetTestVariationTest {
 
     @Before
     public void before() {
+        ThreadContext.setLanguage(Locale.JAPANESE);
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
+    }
+
+    @After
+    public void after() {
+        ThreadContext.setLanguage(null);
     }
 
     /**

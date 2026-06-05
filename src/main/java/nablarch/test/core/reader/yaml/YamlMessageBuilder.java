@@ -79,7 +79,8 @@ public final class YamlMessageBuilder {
         for (Object entry : entries) {
             Map<String, Object> map = castMap(entry);
             String entryGroupId = toStr(map.get(FIELD_GROUP_ID));
-            if (entryGroupId != null && entryGroupId.equals(groupId)) {
+            String formattedEntryGid = entryGroupId != null ? "[" + entryGroupId + "]" : null;
+            if (formattedEntryGid != null && formattedEntryGid.equals(groupId)) {
                 MockMessages file = buildMockMessages(map, basePath);
                 RequestTestingMessagePool pool = new RequestTestingMessagePool(file, Collections.emptyMap());
                 String entryId = toStr(map.get(FIELD_ID));

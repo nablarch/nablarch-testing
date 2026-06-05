@@ -195,7 +195,11 @@ public final class YamlFileBuilder {
                 }
             }
 
-            fragment.setNames(names);
+            try {
+                fragment.setNames(names);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
             fragment.setTypes(types);
 
             // メッセージファイル（skipFwHeader=true）は常に固定長のため setLengths が必要。

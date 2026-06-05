@@ -50,8 +50,12 @@ public class SendSyncSupport {
     
     /** Excel情報のキャッシュ */
     private static Map<String, TestDataInfo> fileCache = new HashMap<String, TestDataInfo>();
-    
-    
+
+    /** テスト専用: ファイルキャッシュをクリアする。 */
+    public static void clearCacheForTest() {
+        fileCache.clear();
+    }
+
     /**
      * 要求電文のヘッダと本文をログに出力する。
      * @param requestId リクエストID

@@ -737,12 +737,17 @@ public class YamlTestDataParserTest {
     // ========================================================================
 
     /**
-     * [RS-01] getSetupTableData: rows が空のエントリは結果から除外されること。
+     * [RS-01] getSetupTableData: rows が空のエントリは「テーブルを全件削除する」意味を持つ。
+     *
+     * <p>
+     * Excel の空テーブルシートと同等の動作として、rows: [] のエントリも TableData として返し、
+     * DbAccessTestSupport.setUpDb() の deleteData() が DELETE FROM を発行できるようにする。
+     * </p>
      *
      * <p>
      * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
      * When:  getSetupTableData(dir, resource, "emptyRows") を呼ぶ<br>
-     * Then:  空リストが返ること
+     * Then:  空データ行を持つ TableData 1件が返ること
      * </p>
      */
     @Test
@@ -750,8 +755,8 @@ public class YamlTestDataParserTest {
         // Given / When
         List<TableData> result = sut.getSetupTableData(DIR, "YamlTestDataParserTest/tableData", "emptyRows");
 
-        // Then
-        assertThat(result.size(), is(0));
+        // Then: rows が空でも TableData は生成される（DELETE 対象として扱う）
+        assertThat(result.size(), is(1));
     }
 
     // ========================================================================

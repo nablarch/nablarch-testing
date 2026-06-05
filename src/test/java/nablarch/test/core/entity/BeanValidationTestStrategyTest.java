@@ -50,8 +50,14 @@ public class BeanValidationTestStrategyTest {
 
     @Before
     public void before() {
+        ThreadContext.setLanguage(Locale.JAPANESE);
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                           .setMessages(MESSAGES);
+    }
+
+    @org.junit.After
+    public void after() {
+        ThreadContext.setLanguage(null);
     }
 
     /**

@@ -22,7 +22,12 @@ public class RequestTestingSendSyncSupport {
     
     /** Excel情報のキャッシュ */
     private static Map<String, List<RequestTestingMessagePool>> fileCache = new HashMap<String, List<RequestTestingMessagePool>>();
-    
+
+    /** テスト専用: ファイルキャッシュをクリアする。 */
+    public static void clearCacheForTest() {
+        fileCache.clear();
+    }
+
     /**
      * コンストラクタ。
      * @param testClass テストクラス
@@ -110,7 +115,7 @@ public class RequestTestingSendSyncSupport {
 
         String resourceName = support.getResourceName(sheetName);
         String path = support.getPathOf(resourceName);
-        
+
         List<RequestTestingMessagePool> pools;
         if (useCache) {
             String cacheKey = createCacheKey(messageId, dataType, path, resourceName);

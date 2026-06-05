@@ -269,4 +269,18 @@ public class BasicTestDataParser implements TestDataParser {
     public boolean isResourceExisting(String basePath, String resourceName) {
         return testDataReader.isResourceExisting(basePath, resourceName);
     }
+
+    /**
+     * テスト専用: XLS/Excel パーサ系の全 static キャッシュをクリアする。
+     *
+     * <p>Run1（Excel）と Run2（YAML）の間でキャッシュ汚染が起きないよう、
+     * {@code NtfTestdataTestRunner} から各 Run 開始前に呼び出す。</p>
+     */
+    public static void clearAllParseCachesForTest() {
+        PoiXlsReader.clearCacheForTest();
+        TestDataParsingTemplate.clearCacheForTest();
+        ListMapParser.clearCacheForTest();
+        TableDataParser.clearCacheForTest();
+        DataFileParser.clearCacheForTest();
+    }
 }

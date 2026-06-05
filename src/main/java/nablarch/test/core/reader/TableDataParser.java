@@ -59,6 +59,11 @@ public class TableDataParser extends GroupDataParsingTemplate<List<TableData>> {
     /** キャッシュ(同一データを複数回読み込まないようにするため) */
     private static final Map<String, List<TableData>> CACHE = NablarchTestUtils.createLRUMap(8);
 
+    /** テスト専用: キャッシュをクリアする。 */
+    public static void clearCacheForTest() {
+        CACHE.clear();
+    }
+
     @Override
     void parse(String id) {
         String key = directory + '/' + resource + '/' + targetDataType + '/' + id;

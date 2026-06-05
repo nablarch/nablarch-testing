@@ -194,7 +194,10 @@ public class YamlFormatWriter implements TestDataFormatWriter {
         } else {
             w.write(INDENT + "  records:\n");
             for (RecordLayout record : block.getRecords()) {
-                writeRecordLayout(w, record, INDENT + INDENT, false);
+                // no列あり形式の固定長メッセージは length フィールドを持つため、存在すれば出力する
+                boolean hasLength = record.getFields().stream()
+                        .anyMatch(f -> f.getLength() != null);
+                writeRecordLayout(w, record, INDENT + INDENT, hasLength);
             }
         }
     }

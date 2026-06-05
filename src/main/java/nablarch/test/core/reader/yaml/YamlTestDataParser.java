@@ -158,7 +158,10 @@ public class YamlTestDataParser extends BasicTestDataParser {
                                                                String id, DataType dataType) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
-        return messageBuilder().buildSendSyncMessageList(yaml, sectionKey, id, path);
+        // buildSendSyncMessageList は "[groupId]" 形式の groupId を期待する。
+        // BasicTestDataParser 経由では既にブラケット付きで渡されるが、直接呼び出しではブラケットなし。
+        String groupId = (id != null && id.startsWith("[") && id.endsWith("]")) ? id : "[" + id + "]";
+        return messageBuilder().buildSendSyncMessageList(yaml, sectionKey, groupId, path);
     }
 
     /**

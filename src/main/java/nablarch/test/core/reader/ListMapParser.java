@@ -33,6 +33,11 @@ class ListMapParser extends SingleDataParsingTemplate<List<Map<String, String>>>
     /** キャッシュ(同一データを複数回読み込まないようにするため) */
     private static final Map<String, List<Map<String, String>>> CACHE = NablarchTestUtils.createLRUMap(8);
 
+    /** テスト専用: キャッシュをクリアする。 */
+    public static void clearCacheForTest() {
+        CACHE.clear();
+    }
+
     /**
      * {@inheritDoc}
      *

@@ -118,12 +118,17 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: rows が空のエントリは除外されること。
+     * [YamlTableDataBuilder] buildTableDataList: rows が空のエントリは「テーブルを全件削除する」意味を持つ。
+     *
+     * <p>
+     * Excel の空テーブルシートと同等の動作として、rows: [] のエントリも TableData として返し、
+     * DbAccessTestSupport.setUpDb() の deleteData() が DELETE FROM を発行できるようにする。
+     * </p>
      *
      * <p>
      * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
      * When:  buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, path) を呼ぶ<br>
-     * Then:  空リストが返ること
+     * Then:  空データ行を持つ TableData 1件が返ること
      * </p>
      */
     @Test
@@ -134,8 +139,8 @@ public class YamlTableDataBuilderTest {
         // When
         List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
 
-        // Then
-        assertThat(result.size(), is(0));
+        // Then: rows が空でも TableData は生成される（DELETE 対象として扱う）
+        assertThat(result.size(), is(1));
     }
 
     /**

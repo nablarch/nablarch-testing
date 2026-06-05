@@ -240,7 +240,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp1", DIR);
+                yaml, "response_body_messages", "[grp1]", DIR);
 
         // Then
         assertNotNull(result);
@@ -263,7 +263,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "noSuchGroup", DIR);
+                yaml, "response_body_messages", "[noSuchGroup]", DIR);
 
         // Then
         assertNull(result);
@@ -285,7 +285,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp1", DIR);
+                yaml, "response_body_messages", "[grp1]", DIR);
 
         // Then
         assertNotNull(result);
@@ -342,7 +342,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp1", DIR);
+                yaml, "response_body_messages", "[grp1]", DIR);
 
         // Then: directives が MockMessages に設定されていること（source フィールド経由で確認）
         assertNotNull(result);
@@ -514,7 +514,7 @@ public class YamlMessageBuilderTest {
 
         // When
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "grp2", DIR);
+                yaml, "response_body_messages", "[grp2]", DIR);
 
         // Then
         assertNotNull(result);
@@ -804,7 +804,7 @@ public class YamlMessageBuilderTest {
 
         // When: length なしフィールドの MockMessages を buildSendSyncMessageList で構築する
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "noLengthGrp", DIR);
+                yaml, "response_body_messages", "[noLengthGrp]", DIR);
 
         // Then
         assertNotNull("length なしフィールドでも NPE が発生せず結果が返ること", result);
@@ -829,7 +829,7 @@ public class YamlMessageBuilderTest {
 
         // When: 一部 length あり・一部なしの MockMessages を buildSendSyncMessageList で構築する
         List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
-                yaml, "response_body_messages", "mixedLengthGrp", DIR);
+                yaml, "response_body_messages", "[mixedLengthGrp]", DIR);
 
         // Then
         assertNotNull("一部 length なしフィールドでも例外が発生せず結果が返ること", result);
