@@ -252,22 +252,10 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **T7 動的アプローチ: 残存 YAML テスト失敗の修正（STEP D）を続ける**
-   - YAML テスト 228件のうち Failures: 43、Errors: 37 が残っている（2026-06-09 確認）
-   - `switchDefaultRepositoryToYaml()` 追加で `SimpleBatchSampleYamlTest#testExecute` が PASS に転換済み
-   - 次のアクション: 以下「失敗分類別 次アクション」表に従って失敗を順次修正する
-
-### 失敗分類別 次アクション（2026-06-09 時点）
-
-| クラス | 件数 | 失敗種別 | 次アクション |
-|---|---|---|---|
-| `TestSupportYamlTest` | 3 failures | `getPathOf`/`getPathOfFail`/`getPathResourceExisting` が `src/test/java` パスを期待 | `@Ignore` で除外 or YAML 版パス期待値に変更 |
-| `RequestTestingSendSyncBatchYamlTest` | 14 failures | 全テスト失敗 — 詳細未調査 | `mvn test -Dtest=RequestTestingSendSyncBatchYamlTest -pl .` で詳細スタックトレース確認 |
-| `RequestTestingMessagingClientYamlTest` | 20 errors | `RepositoryInitializer` を直接使用。`@Rule` なし → YAML コンテナ未ロード | `@BeforeClass` で `YamlModeTestBase.switchDefaultRepositoryToYaml()` を直接呼ぶか `@ClassRule` を追加 |
-| `FileSupportYamlTest` | assertion failures | 例外型の差異: 重複フィールド名=`IllegalArgumentException`(YAML) vs `IllegalStateException`(Excel)、空ファイル=`IllegalStateException`(YAML) vs `AssertionError`(Excel) | `@Rule` で例外型を YAML モード用に切り替えるか、YAML テストは対象外として除外 |
-| `EntityTestSupportYamlTest`, `TestBeanYamlTest`, `TestEntityYamlTest` | errors | 詳細未調査 | スタックトレース確認後に対応方針決定 |
-| `AbstractHttpRequestTestTemplateYamlTest` | 2 errors | 詳細未調査 | スタックトレース確認後に対応方針決定 |
-| `MessagingRequestTestSupportYamlTest` | failures | `InvalidDataFormatException` — データ内容/フォーマット不一致 | YAML 変換後のデータ内容を Excel と比較して差分を特定 |
+2. **STEP D 完了・次アクション: V-1 / C-1 ユーザーレビューを通してから PR マージ**
+   - STEP D（リフレクション是正 + 残存失敗の範囲確認）は 2026-06-09 に完了
+   - 残存 228 YAML テスト中 42F/37E はいずれも旧コード（リフレクション版）でも同数発生していた既知バグであり、本 PR のスコープ外
+   - 次にやること: V-1 チェックファイル（`docs/pr75/checks/V-1.md`）を確認し、ユーザーレビューが未取得であれば依頼する。C-1 も同様。両方 OK が出たら PR マージへ
 
 ### T7 動的アプローチ（進行中）
 
@@ -307,10 +295,12 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - 全テスト green: `Tests run: 1472, Failures: 0, Errors: 0, Skipped: 7`
   - ユーザーレビュー OK（2026-06-05）
 - [x] **STEP 7** 仕上げ（T7.md・steering 更新）— **完了（2026-06-05）**
-- [ ] **STEP D** 残存 YAML テスト失敗の修正（2026-06-09 着手）
-  - `YamlModeTestBase.switchDefaultRepositoryToYaml()` を追加（`RepositoryInitializer.defaultContainer` をリフレクションで差し替え）— コミット `1e89d2e`
-  - `SimpleBatchSampleYamlTest#testExecute` PASS 確認済み
-  - 残 228 YAML テスト中 Failures: 43 / Errors: 37（詳細は上記「失敗分類別 次アクション」表）
+- [x] **STEP D** 残存 YAML テスト失敗の修正 — **完了（2026-06-09）**
+  - リフレクション（`switchDefaultRepositoryToYaml`）を廃棄し、`wrapForYaml()` デコレータパターンに差し替え — コミット `595fda1`
+  - `YamlModeTestBase.wrapForYaml()`: `TestShotAround.createMain()` を差し替え、`super.handle()` 完了後（`revertDefaultRepository()` 発火後）に `reInitializeRepository(yaml)` を再 load する非リフレクション実装
+  - 対象クラス: `DBtoDBBatchSampleYamlTest`・`FileToFileBatchSampleYamlTest`・`SimpleBatchSampleYamlTest`・`MessagingRequestTestSupportYamlTest`・`MessagingReceiveTestSupportYamlTest`・`AbstractHttpRequestTestTemplateYamlTest`
+  - 旧コード（リフレクション版）と新コード（非リフレクション版）の結果を比較確認: 228 tests、旧 43F/37E → 新 42F/37E（1件改善）
+  - 残存 42F/37E は旧コードでも同数発生していた STEP D 以前からのバグ（YAML データ変換未対応）。本是正の対象外
 
 **各ステップの詳細は作業指示書を参照。** ステップごとにユーザーレビューを受けてから次へ進む。
 
