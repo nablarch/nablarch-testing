@@ -106,7 +106,7 @@ public class XlsFormatReader implements TestDataFormatReader {
     /** 1行のセルを読み込む。行内コメント（HC-06）を切り捨て、末尾の空セルは保持する。 */
     private List<String> readCells(Row row, Path sourcePath, int rowNum) {
         int lastCell = row.getLastCellNum();
-        List<String> cells = new ArrayList<>();
+        List<String> rawCells = new ArrayList<>();
         for (int c = 0; c < lastCell; c++) {
             Cell cell = row.getCell(c);
             String value;
@@ -119,9 +119,30 @@ public class XlsFormatReader implements TestDataFormatReader {
                 // HC-06: 先頭以外のセルが "//" で始まる場合、そのセル以降を切り捨て
                 break;
             }
-            cells.add(value);
+            rawCells.add(value);
         }
-        return trimTrailingEmpty(cells);
+        // trimTrailingEmpty を生値（"" 記法含む）に適用してから quotation 解釈する。
+        // 先に trimQuotation すると "" → 空文字列になり空行と区別できなくなる。
+        List<String> trimmed = trimTrailingEmpty(rawCells);
+        List<String> cells = new ArrayList<>(trimmed.size());
+        for (String raw : trimmed) {
+            cells.add(trimQuotation(raw));
+        }
+        return cells;
+    }
+
+    /**
+     * QuotationTrimmer と同じルールで前後のダブルクォートを除去する。
+     * Excel 記法 {@code ""} → 空文字列、{@code "foo"} → {@code foo}。
+     * 半角・全角ダブルクォートのどちらも対象とする（QuotationTrimmer に合わせる）。
+     */
+    private static String trimQuotation(String str) {
+        if (str.length() >= 2
+                && ((str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"')
+                || (str.charAt(0) == '“' && str.charAt(str.length() - 1) == '”'))) {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
     }
 
     /** 行リストを走査してデータブロックに分割する。 */
