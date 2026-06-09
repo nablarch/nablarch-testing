@@ -1,11 +1,16 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.repository.SystemRepository;
+import nablarch.core.repository.di.DiContainer;
+import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
+import nablarch.test.RepositoryInitializer;
 import nablarch.test.tool.converter.ConversionRequest;
 import nablarch.test.tool.converter.DataFormat;
 import nablarch.test.tool.converter.TestDataConverter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -82,6 +87,31 @@ public final class YamlModeTestBase {
         Path convertedDir = outputDir.resolve(baseName);
         if (Files.exists(convertedDir) && !baseName.equals(yamlClassName)) {
             copyDirectory(convertedDir, yamlClassDir);
+        }
+
+        // RepositoryInitializer の defaultContainer を YAML 版に差し替える。
+        // MainForRequestTesting.handle() の finally で revertDefaultRepository() が
+        // 呼ばれると defaultContainer が復元されるが、YAML 版にしておけば resource-root が
+        // target/generated-test-yaml に戻る。
+        switchDefaultRepositoryToYaml();
+    }
+
+    /**
+     * {@link RepositoryInitializer} の defaultContainer を YAML モード用コンテナに差し替える。
+     *
+     * <p>リフレクションで private static フィールドを書き換え、
+     * {@code revertDefaultRepository()} 呼び出し後も YAML の resource-root が維持されるようにする。</p>
+     */
+    static void switchDefaultRepositoryToYaml() {
+        try {
+            DiContainer yamlContainer = new DiContainer(
+                    new XmlComponentDefinitionLoader("unit-test-yaml.xml"));
+            Field defaultContainerField = RepositoryInitializer.class.getDeclaredField("defaultContainer");
+            defaultContainerField.setAccessible(true);
+            defaultContainerField.set(null, yamlContainer);
+            SystemRepository.load(yamlContainer);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to switch default repository to YAML mode", e);
         }
     }
 
