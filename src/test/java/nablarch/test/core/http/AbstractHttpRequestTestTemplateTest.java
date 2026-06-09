@@ -99,7 +99,7 @@ public class AbstractHttpRequestTestTemplateTest {
     }
 
     /** テスト対象 */
-    private AbstractHttpRequestTestTemplate<TestCaseInfo> target;
+    protected AbstractHttpRequestTestTemplate<TestCaseInfo> target;
 
     /**
      * テスト対象機能にてリクエストパラメータが変更される場合、
@@ -885,7 +885,7 @@ public class AbstractHttpRequestTestTemplateTest {
     }
 
     /** @see MockHttpRequestTestTemplate */
-    private AbstractHttpRequestTestTemplate<TestCaseInfo> createDefaultMock() {
+    protected AbstractHttpRequestTestTemplate<TestCaseInfo> createDefaultMock() {
         return new MockHttpRequestTestTemplate(getClass());
     }
 

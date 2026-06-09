@@ -1,7 +1,10 @@
 package nablarch.test.core.batch;
 
+import nablarch.test.RepositoryInitializer;
 import nablarch.test.core.reader.yaml.YamlModeTestBase;
+import nablarch.test.core.standalone.TestShot;
 import nablarch.test.support.SystemRepositoryResource;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
@@ -21,5 +24,15 @@ public class DBtoDBBatchSampleYamlTest extends DBtoDBBatchSampleTest {
     @BeforeClass
     public static void prepareYaml() {
         YamlModeTestBase.prepareYamlData(DBtoDBBatchSampleYamlTest.class, DBtoDBBatchSampleTest.class);
+    }
+
+    @Before
+    public void switchToYaml() {
+        RepositoryInitializer.reInitializeRepository("unit-test-yaml.xml");
+    }
+
+    @Override
+    protected TestShot.TestShotAround createTestShotAround(Class<?> testClass) {
+        return YamlModeTestBase.wrapForYaml(super.createTestShotAround(testClass), "unit-test-yaml.xml");
     }
 }

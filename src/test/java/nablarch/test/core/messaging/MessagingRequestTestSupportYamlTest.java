@@ -1,7 +1,10 @@
 package nablarch.test.core.messaging;
 
+import nablarch.test.RepositoryInitializer;
 import nablarch.test.core.reader.yaml.YamlModeTestBase;
+import nablarch.test.core.standalone.TestShot;
 import nablarch.test.support.SystemRepositoryResource;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
@@ -23,5 +26,20 @@ public class MessagingRequestTestSupportYamlTest extends MessagingRequestTestSup
         YamlModeTestBase.prepareYamlData(
                 MessagingRequestTestSupportYamlTest.class,
                 MessagingRequestTestSupportTest.class);
+    }
+
+    {
+        support = new MessagingRequestTestSupport(getClass()) {
+            @Override
+            protected TestShot.TestShotAround createTestShotAround(Class<?> testClass) {
+                return YamlModeTestBase.wrapForYaml(
+                        super.createTestShotAround(testClass), "unit-test-yaml.xml");
+            }
+        };
+    }
+
+    @Before
+    public void switchToYaml() {
+        RepositoryInitializer.reInitializeRepository("unit-test-yaml.xml");
     }
 }

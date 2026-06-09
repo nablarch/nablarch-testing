@@ -1,16 +1,16 @@
 package nablarch.test.core.reader.yaml;
 
-import nablarch.core.repository.SystemRepository;
-import nablarch.core.repository.di.DiContainer;
-import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
+import nablarch.fw.ExecutionContext;
+import nablarch.fw.launcher.CommandLine;
 import nablarch.test.RepositoryInitializer;
+import nablarch.test.core.standalone.MainForRequestTesting;
+import nablarch.test.core.standalone.TestShot;
 import nablarch.test.tool.converter.ConversionRequest;
 import nablarch.test.tool.converter.DataFormat;
 import nablarch.test.tool.converter.TestDataConverter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -28,6 +28,9 @@ import java.util.stream.Stream;
  * <p>使い方:</p>
  * <pre>
  * public class FooYamlTest extends FooTest {
+ *     &#64;Rule
+ *     public SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test-yaml.xml");
+ *
  *     &#64;BeforeClass
  *     public static void prepareYaml() {
  *         YamlModeTestBase.prepareYamlData(FooYamlTest.class, FooTest.class);
@@ -88,31 +91,56 @@ public final class YamlModeTestBase {
         if (Files.exists(convertedDir) && !baseName.equals(yamlClassName)) {
             copyDirectory(convertedDir, yamlClassDir);
         }
-
-        // RepositoryInitializer の defaultContainer を YAML 版に差し替える。
-        // MainForRequestTesting.handle() の finally で revertDefaultRepository() が
-        // 呼ばれると defaultContainer が復元されるが、YAML 版にしておけば resource-root が
-        // target/generated-test-yaml に戻る。
-        switchDefaultRepositoryToYaml();
     }
 
     /**
-     * {@link RepositoryInitializer} の defaultContainer を YAML モード用コンテナに差し替える。
+     * {@code @ClassRule} を使うテストクラス向けに、{@link TestShot.TestShotAround} をラップする。
      *
-     * <p>リフレクションで private static フィールドを書き換え、
-     * {@code revertDefaultRepository()} 呼び出し後も YAML の resource-root が維持されるようにする。</p>
+     * <p>
+     * {@link MainForRequestTesting#handle} の finally で {@code revertDefaultRepository()} が呼ばれ
+     * {@code SystemRepository} が unit-test.xml ベースに戻る。このメソッドが返す
+     * {@code TestShotAround} は、{@code createMain()} で返す {@code Main} の {@code handle()} が
+     * 完了した直後に {@code reInitializeRepository(repositoryXml)} を呼び直すことで、
+     * 後続の {@code assertAll()} で YAML 版リポジトリが使われるようにする。
+     * </p>
+     *
+     * @param original      元の {@link TestShot.TestShotAround} 実装
+     * @param repositoryXml 差し替え先リポジトリ XML（例: {@code "unit-test-yaml.xml"}）
+     * @return ラップされた {@link TestShot.TestShotAround}
      */
-    static void switchDefaultRepositoryToYaml() {
-        try {
-            DiContainer yamlContainer = new DiContainer(
-                    new XmlComponentDefinitionLoader("unit-test-yaml.xml"));
-            Field defaultContainerField = RepositoryInitializer.class.getDeclaredField("defaultContainer");
-            defaultContainerField.setAccessible(true);
-            defaultContainerField.set(null, yamlContainer);
-            SystemRepository.load(yamlContainer);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to switch default repository to YAML mode", e);
-        }
+    public static TestShot.TestShotAround wrapForYaml(
+            TestShot.TestShotAround original, String repositoryXml) {
+        return new TestShot.TestShotAround() {
+            @Override
+            public void setUpInputData(TestShot testShot) {
+                original.setUpInputData(testShot);
+            }
+            @Override
+            public void assertOutputData(String msgOnFail, TestShot testShot) {
+                original.assertOutputData(msgOnFail, testShot);
+            }
+            @Override
+            public boolean isColumnForTestFramework(String columnName) {
+                return original.isColumnForTestFramework(columnName);
+            }
+            @Override
+            public String compareStatus(int actual, TestShot testShot) {
+                return original.compareStatus(actual, testShot);
+            }
+            @Override
+            public nablarch.fw.launcher.Main createMain() {
+                return new MainForRequestTesting() {
+                    @Override
+                    public Integer handle(CommandLine commandLine, ExecutionContext context) {
+                        try {
+                            return super.handle(commandLine, context);
+                        } finally {
+                            RepositoryInitializer.reInitializeRepository(repositoryXml);
+                        }
+                    }
+                };
+            }
+        };
     }
 
     private static void deleteDirectory(Path dir) {

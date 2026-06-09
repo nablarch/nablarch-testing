@@ -34,7 +34,7 @@ public class MessagingRequestTestSupportTest {
     @Rule
     public final TestName testName = new TestName();
 
-    private MessagingRequestTestSupport support = new MessagingRequestTestSupport(getClass());
+    protected MessagingRequestTestSupport support = new MessagingRequestTestSupport(getClass());
 
     @BeforeClass
     public static void beforeClass() {
