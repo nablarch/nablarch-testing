@@ -252,12 +252,18 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **STEP D-1 完了・次アクション: V-1 / C-1 ユーザーレビューを通してから PR マージ**
-   - STEP D（リフレクション是正 + 残存失敗の範囲確認）は 2026-06-09 に完了
-   - STEP D-1（空文字列変換バグ修正）は 2026-06-09 に完了（コミット `b269487`）
-   - `FileSupportYamlTest` 空文字列関連5件グリーン。`TestDataConverterTest` 49件グリーン。新規失敗ゼロ確認済み
-   - 残存 YAML テスト失敗（42F/37E）はいずれも旧コードでも同数発生していた既知バグ（本 PR スコープ外）
-   - 次にやること: V-1 チェックファイル（`docs/pr75/checks/V-1.md`）を確認し、ユーザーレビューが未取得であれば依頼する。C-1 も同様。両方 OK が出たら PR マージへ
+2. **是正2件完了・次アクション: V-1 / C-1 ユーザーレビューを通してから PR マージ**
+   - **是正1（D-1 追加是正）**: `XlsFormatReader.trimQuotation` を `QuotationTrimmer` と文字単位で完全一致させた — コミット `cffee2f`
+     - 全角クォートの判定を開き閉じペア（U+201C/U+201D）から本家と同じ閉じクォート（U+201D）両端に修正
+     - `length >= 2` チェックを削除（本家は `startsWith`/`endsWith` で保証不要）
+   - **是正2（STEP4 パッケージ移動の取り消し）**: `YamlTestDataParser` を `reader` パッケージに戻し、既存本体コードへの変更をゼロにした — コミット `cffee2f`
+     - `BasicTestDataParser.formatGroupId` を package-private（変更前）に戻す → `git diff main..HEAD -- BasicTestDataParser.java` で差分ゼロ確認済み
+     - `MockTestDataReader`・`clearCacheForTest` も package-private に戻す
+     - XML 設定5件・Java import・Javadoc を更新
+   - `TestDataConverterTest`（49件）・`YamlTestDataParserTest`（43件）・`ExcelToYamlEquivalenceTest`（16件）全グリーン
+   - 全テスト `Failures: 44, Errors: 63` は是正前と同一（退行ゼロ）
+   - 残存 YAML テスト失敗（44F/63E）はいずれも旧コードでも同数発生していた既知バグ（本 PR スコープ外）
+   - **次にやること**: V-1 チェックファイル（`docs/pr75/checks/V-1.md`）を確認し、ユーザーレビューが未取得であれば依頼する。C-1 も同様。両方 OK が出たら PR マージへ
 
 ### T7 動的アプローチ（進行中）
 
@@ -307,6 +313,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - `XlsFormatReader.readCells()` に `trimQuotation()` を追加（`QuotationTrimmer` と同一ルール）
   - `trimTrailingEmpty()` を生値に適用してから `trimQuotation()` を適用する順序を厳守（逆順だと `""` → 空文字列後に末尾空セル除去されてデータ行が消える）
   - `FileSupportYamlTest` 空文字列関連5件グリーン。`TestDataConverterTest` 49件グリーン。新規失敗ゼロ
+- [x] **STEP D-1 追加是正** `XlsFormatReader.trimQuotation` を `QuotationTrimmer` と完全一致させ・`YamlTestDataParser` パッケージ移動取り消し — **完了（2026-06-09）**— コミット `cffee2f`
+  - `trimQuotation`: 全角クォート判定を U+201C/U+201D ペアから U+201D 両端（本家と同一）に修正。`length >= 2` チェック削除
+  - `YamlTestDataParser` を `reader/yaml` → `reader` に戻し、`BasicTestDataParser.formatGroupId` を package-private（変更前）に戻す
+  - `git diff main..HEAD -- BasicTestDataParser.java` で差分ゼロ確認済み（既存本体コード無変更）
+  - テスト: 109件グリーン（退行ゼロ）
 
 **各ステップの詳細は作業指示書を参照。** ステップごとにユーザーレビューを受けてから次へ進む。
 
