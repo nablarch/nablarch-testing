@@ -88,3 +88,6 @@ http_dump/
 
 # JaCoCo coverage data
 jacoco.exec
+
+# Generated YAML test data (created by YamlModeTestBase at test runtime)
+target/generated-test-yaml/

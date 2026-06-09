@@ -2,7 +2,7 @@
 <component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./component-configuration.xsd">
-  <import file="unit-test.xml"/>
+  <import file="unit-test-dbless.xml"/>
 
   <!-- resource-root を変換済み YAML ディレクトリに変更（YAML モードテスト用） -->
   <config-file file="unit-test-yaml.config"/>
@@ -10,11 +10,7 @@
   <!-- testDataParser を YamlTestDataParser に差し替える（YAML モードテスト用） -->
   <component name="testDataParser" class="nablarch.test.core.reader.yaml.YamlTestDataParser"
              autowireType="None">
-    <property name="dbInfo" ref="dbInfo"/>
     <property name="interpreters" ref="interpreters"/>
-    <property name="defaultValues">
-      <component class="nablarch.test.core.db.BasicDefaultValues"/>
-    </property>
   </component>
 
 </component-configuration>

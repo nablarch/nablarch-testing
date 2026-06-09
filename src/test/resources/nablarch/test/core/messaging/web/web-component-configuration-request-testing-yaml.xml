@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
-                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./component-configuration.xsd">
-  <import file="unit-test.xml"/>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration  ./component-configuration.xsd">
+
+  <import file="nablarch/test/core/messaging/web/web-component-configuration-request-testing.xml"/>
 
   <!-- resource-root を変換済み YAML ディレクトリに変更（YAML モードテスト用） -->
   <config-file file="unit-test-yaml.config"/>

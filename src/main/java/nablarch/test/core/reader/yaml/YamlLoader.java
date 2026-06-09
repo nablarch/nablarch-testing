@@ -43,15 +43,26 @@ public final class YamlLoader {
     }
 
     /**
+     * basePath と resourceName を "/" 1 つで連結してファイルパスを組み立てる。
+     * basePath が末尾 "/" 付きの場合は余分な "/" を追加しない。
+     */
+    private static String buildFilePath(String basePath, String resourceName) {
+        if (basePath.endsWith("/")) {
+            return basePath + resourceName + YAML_EXTENSION;
+        }
+        return basePath + "/" + resourceName + YAML_EXTENSION;
+    }
+
+    /**
      * YAML ファイルをロードしてトップレベル Map を返す（キャッシュあり）。
      *
-     * @param basePath     ベースパス（末尾 "/" 付き）
+     * @param basePath     ベースパス（末尾 "/" あり・なし両方可）
      * @param resourceName リソース名（拡張子なし）
      * @return YAML トップレベル Map（空ファイルの場合は空 Map）
      * @throws IllegalStateException ファイルが存在しない場合、IO エラー、または重複キーが存在する場合
      */
     public static Map<String, Object> load(String basePath, String resourceName) {
-        String filePath = basePath + resourceName + YAML_EXTENSION;
+        String filePath = buildFilePath(basePath, resourceName);
         Map<String, Object> cached = YAML_CACHE.get(filePath);
         if (cached != null) {
             return cached;
@@ -85,12 +96,12 @@ public final class YamlLoader {
     /**
      * YAML ファイルが存在するかどうかを返す。
      *
-     * @param basePath     ベースパス
+     * @param basePath     ベースパス（末尾 "/" あり・なし両方可）
      * @param resourceName リソース名
      * @return 存在する場合 true
      */
     public static boolean isResourceExisting(String basePath, String resourceName) {
-        return new File(basePath + resourceName + YAML_EXTENSION).exists();
+        return new File(buildFilePath(basePath, resourceName)).exists();
     }
 
     /**
