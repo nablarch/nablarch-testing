@@ -252,9 +252,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **STEP D 完了・次アクション: V-1 / C-1 ユーザーレビューを通してから PR マージ**
+2. **STEP D-1 完了・次アクション: V-1 / C-1 ユーザーレビューを通してから PR マージ**
    - STEP D（リフレクション是正 + 残存失敗の範囲確認）は 2026-06-09 に完了
-   - 残存 228 YAML テスト中 42F/37E はいずれも旧コード（リフレクション版）でも同数発生していた既知バグであり、本 PR のスコープ外
+   - STEP D-1（空文字列変換バグ修正）は 2026-06-09 に完了（コミット `b269487`）
+   - `FileSupportYamlTest` 空文字列関連5件グリーン。`TestDataConverterTest` 49件グリーン。新規失敗ゼロ確認済み
+   - 残存 YAML テスト失敗（42F/37E）はいずれも旧コードでも同数発生していた既知バグ（本 PR スコープ外）
    - 次にやること: V-1 チェックファイル（`docs/pr75/checks/V-1.md`）を確認し、ユーザーレビューが未取得であれば依頼する。C-1 も同様。両方 OK が出たら PR マージへ
 
 ### T7 動的アプローチ（進行中）
@@ -301,6 +303,10 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - 対象クラス: `DBtoDBBatchSampleYamlTest`・`FileToFileBatchSampleYamlTest`・`SimpleBatchSampleYamlTest`・`MessagingRequestTestSupportYamlTest`・`MessagingReceiveTestSupportYamlTest`・`AbstractHttpRequestTestTemplateYamlTest`
   - 旧コード（リフレクション版）と新コード（非リフレクション版）の結果を比較確認: 228 tests、旧 43F/37E → 新 42F/37E（1件改善）
   - 残存 42F/37E は旧コードでも同数発生していた STEP D 以前からのバグ（YAML データ変換未対応）。本是正の対象外
+- [x] **STEP D-1** 空文字列変換バグ修正 — **完了（2026-06-09）**— コミット `b269487`
+  - `XlsFormatReader.readCells()` に `trimQuotation()` を追加（`QuotationTrimmer` と同一ルール）
+  - `trimTrailingEmpty()` を生値に適用してから `trimQuotation()` を適用する順序を厳守（逆順だと `""` → 空文字列後に末尾空セル除去されてデータ行が消える）
+  - `FileSupportYamlTest` 空文字列関連5件グリーン。`TestDataConverterTest` 49件グリーン。新規失敗ゼロ
 
 **各ステップの詳細は作業指示書を参照。** ステップごとにユーザーレビューを受けてから次へ進む。
 
