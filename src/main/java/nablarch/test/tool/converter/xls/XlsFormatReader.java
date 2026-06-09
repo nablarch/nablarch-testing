@@ -133,13 +133,12 @@ public class XlsFormatReader implements TestDataFormatReader {
 
     /**
      * QuotationTrimmer と同じルールで前後のダブルクォートを除去する。
-     * Excel 記法 {@code ""} → 空文字列、{@code "foo"} → {@code foo}。
+     * Excel 記法 {@code “”} → 空文字列、{@code “foo”} → {@code foo}。
      * 半角・全角ダブルクォートのどちらも対象とする（QuotationTrimmer に合わせる）。
      */
     private static String trimQuotation(String str) {
-        if (str.length() >= 2
-                && ((str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"')
-                || (str.charAt(0) == '“' && str.charAt(str.length() - 1) == '”'))) {
+        if ((str.startsWith("\"") && str.endsWith("\""))
+                || (str.startsWith("\u201d") && str.endsWith("\u201d"))) {
             return str.substring(1, str.length() - 1);
         }
         return str;

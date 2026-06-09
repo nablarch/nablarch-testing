@@ -1,4 +1,4 @@
-package nablarch.test.core.reader.yaml;
+package nablarch.test.core.reader;
 
 import com.networknt.schema.Error;
 import com.networknt.schema.InputFormat;

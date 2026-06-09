@@ -1,6 +1,6 @@
 package nablarch.test.core.reader;
 
-import nablarch.test.core.reader.yaml.YamlTestDataParser;
+import nablarch.test.core.reader.YamlTestDataParser;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.core.db.BasicDefaultValues;

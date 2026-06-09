@@ -10,7 +10,7 @@ import org.junit.Rule;
  *
  * <p>
  * {@code repositoryResource} を {@code unit-test-yaml.xml} ベースに差し替えることで、
- * テストデータパーサーを {@link nablarch.test.core.reader.yaml.YamlTestDataParser} に切り替える。
+ * テストデータパーサーを {@link nablarch.test.core.reader.YamlTestDataParser} に切り替える。
  * </p>
  */
 public class TestSupportYamlTest extends TestSupportTest {

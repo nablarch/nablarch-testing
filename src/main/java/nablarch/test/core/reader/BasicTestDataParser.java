@@ -250,7 +250,7 @@ public class BasicTestDataParser implements TestDataParser {
      * @param groupIdVarargs グループIDを格納した可変長引数
      * @return 整形後グループID
      */
-    protected String formatGroupId(String[] groupIdVarargs) {
+    String formatGroupId(String[] groupIdVarargs) {
         if (groupIdVarargs == null) {
             return "";
         }

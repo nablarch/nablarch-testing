@@ -1,4 +1,4 @@
-package nablarch.test.core.reader.yaml;
+package nablarch.test.core.reader;
 
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
@@ -7,9 +7,11 @@ import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
-import nablarch.test.core.reader.BasicTestDataParser;
-import nablarch.test.core.reader.DataType;
-import nablarch.test.core.reader.TestDataReader;
+import nablarch.test.core.reader.yaml.YamlFileBuilder;
+import nablarch.test.core.reader.yaml.YamlLoader;
+import nablarch.test.core.reader.yaml.YamlMessageBuilder;
+import nablarch.test.core.reader.yaml.YamlSection;
+import nablarch.test.core.reader.yaml.YamlTableDataBuilder;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 
 import java.util.Collections;
@@ -165,7 +167,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
      * テスト専用: YAML キャッシュをクリアする。
      * テスト間のキャッシュ汚染を防ぐために {@code @After} メソッドから呼ぶこと。
      */
-    public static void clearCacheForTest() {
+    static void clearCacheForTest() {
         YamlLoader.clearCacheForTest();
     }
 
