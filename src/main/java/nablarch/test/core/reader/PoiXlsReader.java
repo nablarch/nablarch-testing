@@ -158,11 +158,6 @@ public class PoiXlsReader implements TestDataReader {
     /** ブックのキャッシュ */
     private static Map<String, Workbook> bookCache = NablarchTestUtils.createLRUMap(BOOK_CACHE_SIZE);
 
-    /** テスト専用: ブックキャッシュをクリアする。 */
-    public static void clearCacheForTest() {
-        bookCache.clear();
-    }
-
     /**
      * キャッシュされたブックを取得する。<br/>
      * キャッシュにヒットしない場合は、ファイルから読み込みを行う。

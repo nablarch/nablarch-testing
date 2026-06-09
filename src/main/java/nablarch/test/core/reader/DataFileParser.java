@@ -89,11 +89,6 @@ public abstract class DataFileParser<T extends DataFile> extends GroupDataParsin
     /** キャッシュ(同一データを複数回読み込まないようにするため) */
     private static Map<String, List<? extends DataFile>> cache = NablarchTestUtils.createLRUMap(8);
 
-    /** テスト専用: キャッシュをクリアする。 */
-    public static void clearCacheForTest() {
-        cache.clear();
-    }
-
     @Override
     void parse(String id) {
         String key = directory + '/' + resource + '/' + targetType + '/' + id;

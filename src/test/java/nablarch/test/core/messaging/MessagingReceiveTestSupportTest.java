@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.BeforeClass;
@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
  *
  * @author hisaaki sioiri
  */
-@RunWith(NtfTestdataTestRunner.class)
+@RunWith(DatabaseTestRunner.class)
 public class MessagingReceiveTestSupportTest extends MessagingReceiveTestSupport {
 
     @ClassRule

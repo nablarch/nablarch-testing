@@ -29,7 +29,7 @@ import nablarch.core.repository.SystemRepository;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.reader.BasicTestDataParser;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.Before;
@@ -38,7 +38,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(NtfTestdataTestRunner.class)
+@RunWith(DatabaseTestRunner.class)
 public class TestSupportTest {
 
     @Rule
@@ -584,7 +584,7 @@ public class TestSupportTest {
             }
         }.capture(IllegalArgumentException.class)
                 .whichMessageContains(
-                        "couldn't find resource [Not/Exists] in");
+                        "couldn't find resource [Not/Exists] in [src/test/java/nablarch/test]");
     }
 
     /**
@@ -608,7 +608,7 @@ public class TestSupportTest {
     public void testGetPathResourceExisting() {
         List<String> candidatePath = asList("src/test/java/nablarch/test/core", // こっちには無い
                 "src/test/java/nablarch/test/");    // こっちに存在する
-        String resourceName = "TestSupportTest/withGroupId";
+        String resourceName = "TestSupportTest/SetUpDb";
         assertThat(target.getPathResourceExisting(candidatePath, resourceName), is("src/test/java/nablarch/test/"));
     }
 

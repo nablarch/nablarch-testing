@@ -7,7 +7,7 @@ import static org.junit.Assert.fail;
 
 import nablarch.test.core.db.HogeTable;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.BeforeClass;
@@ -18,7 +18,7 @@ import org.junit.runner.RunWith;
 /**
  * @author T.Kawasaki
  */
-@RunWith(NtfTestdataTestRunner.class)
+@RunWith(DatabaseTestRunner.class)
 public class BatchRequestTestSupportTest {
 
     @Rule

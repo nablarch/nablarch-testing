@@ -265,11 +265,10 @@ public class XlsFormatReader implements TestDataFormatReader {
         }
 
         // メッセージングではデータ行の先頭セルが常にシーケンス番号（非空）。
-        // - 先頭が "no": no列あり形式のフィールド名称行（名前行→型行→長さ行→データ行）
+        // - 先頭が "no": no列あり形式のフィールド名称行
         // - 先頭が空: no列なし形式のフィールド名称行（型行・長さ行も先頭空。スキップして番号行をデータ行に）
-        // no列あり形式は固定長レイアウトのため長さ行を読む。no列なし形式は長さ行なし。
         boolean withNoColumn = i < rows.size() && rows.get(i).get(0).equals("no");
-        i = parseRecordLayouts(rows, i, withNoColumn, "default", withNoColumn, records);
+        i = parseRecordLayouts(rows, i, false, "default", withNoColumn, records);
 
         nextIndex[0] = i;
         return new MessageDataBlock(dataType, groupId, identifier, directives, fwHeaderFields, records);
@@ -355,7 +354,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             // データ行（HC-04: フィールド数に合わせて補完）
             // no列あり形式では先頭セルがシーケンス番号（非空・非DataType）もデータ行として読む
             List<List<String>> dataRows = new ArrayList<>();
-            while (i < rows.size() && isDataRow(rows.get(i), withNoColumn, fixedRecordType)) {
+            while (i < rows.size() && isDataRow(rows.get(i), withNoColumn)) {
                 List<String> dataRow = rows.get(i).subList(1, rows.get(i).size());
                 List<String> padded = new ArrayList<>(dataRow);
                 while (padded.size() < fields.size()) {
@@ -381,7 +380,7 @@ public class XlsFormatReader implements TestDataFormatReader {
      *   <li>no列あり形式（withNoColumn=true）: 先頭セルが非空かつ DataType でなく "no" でもない行（シーケンス番号行）。</li>
      * </ul>
      */
-    private boolean isDataRow(List<String> row, boolean withNoColumn, String fixedRecordType) {
+    private boolean isDataRow(List<String> row, boolean withNoColumn) {
         String first = row.get(0);
         if (detectDataType(first) != null) {
             return false;
@@ -391,10 +390,6 @@ public class XlsFormatReader implements TestDataFormatReader {
         }
         if (withNoColumn) {
             return !first.isEmpty();
-        }
-        // ファイルデータ（fixedRecordType=null）: データ行の先頭セルは必ず空（レコード種別なし）
-        if (fixedRecordType == null && !first.isEmpty()) {
-            return false;
         }
         return true;
     }

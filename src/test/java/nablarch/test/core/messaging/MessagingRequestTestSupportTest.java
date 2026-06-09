@@ -9,7 +9,7 @@ import jakarta.persistence.Table;
 import nablarch.test.Trap;
 import nablarch.test.core.db.TestTable;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 
 import org.junit.BeforeClass;
@@ -24,7 +24,7 @@ import junit.framework.AssertionFailedError;
 /**
  * @author T.Kawasaki
  */
-@RunWith(NtfTestdataTestRunner.class)
+@RunWith(DatabaseTestRunner.class)
 public class MessagingRequestTestSupportTest {
 
     @ClassRule

@@ -1,22 +1,15 @@
 package nablarch.test.core.entity;
 
-import nablarch.core.ThreadContext;
 import nablarch.core.message.MockStringResourceHolder;
 import nablarch.test.core.db.EntityTestSupport;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.Locale;
 
 /**
  * @author T.Kawasaki
  */
-@RunWith(NtfTestdataTestRunner.class)
 public class TestBeanTest extends EntityTestSupport {
 
     @Rule
@@ -41,7 +34,6 @@ public class TestBeanTest extends EntityTestSupport {
 
     @Before
     public void before() {
-        ThreadContext.setLanguage(Locale.JAPANESE);
         repositoryResource.getComponentByType(MockStringResourceHolder.class)
                 .setMessages(MESSAGES);
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
@@ -58,11 +50,6 @@ public class TestBeanTest extends EntityTestSupport {
                 .setMinMessageId("{nablarch.core.validation.ee.Length.min.message}");
         repositoryResource.getComponentByType(EntityTestConfiguration.class)
                 .setValidationTestStrategy(new BeanValidationTestStrategy());
-    }
-
-    @After
-    public void after() {
-        ThreadContext.setLanguage(null);
     }
 
     private final Class<TestBean> targetClass = TestBean.class;

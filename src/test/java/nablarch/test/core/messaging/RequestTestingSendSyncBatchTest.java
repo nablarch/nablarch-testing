@@ -4,20 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import nablarch.test.core.batch.BatchRequestTestSupport;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * バッチ処理でメッセージ同期送信を行うテスト。
- *
+ * 
  * @author Masato Inoue
  */
-@RunWith(NtfTestdataTestRunner.class)
 public class RequestTestingSendSyncBatchTest extends BatchRequestTestSupport {
 
     @Rule

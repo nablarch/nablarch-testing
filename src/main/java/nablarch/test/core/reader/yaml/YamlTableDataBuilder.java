@@ -81,25 +81,20 @@ public final class YamlTableDataBuilder {
                         "Missing required field '" + FIELD_TABLE + "' in " + sectionKey + " entry. basePath=" + path);
             }
             List<Object> rows = getList(map, FIELD_ROWS);
-
-            // rows が空のテーブルエントリは「テーブルを全件削除する」意味を持つ（Excel 実装と同等）。
-            // continue せず空の TableData を生成して result に追加することで、
-            // DbAccessTestSupport.setUpDb() の deleteData() が DELETE FROM を発行できる。
-            String[] columnNames;
             if (rows.isEmpty()) {
-                columnNames = new String[0];
-            } else {
-                Map<String, Object> firstRow = castMap(rows.get(0));
-                // SnakeYAML はマッピングを LinkedHashMap としてロードするため、keySet() の順序は YAML の記述順と一致する。
-                // マーカーカラム（[COL] 形式）は DB 操作から除外する（解説書 10.2）。
-                List<String> columnNameList = new ArrayList<String>();
-                for (String key : firstRow.keySet()) {
-                    if (!(key.startsWith("[") && key.endsWith("]"))) {
-                        columnNameList.add(key);
-                    }
-                }
-                columnNames = columnNameList.toArray(new String[0]);
+                continue;
             }
+
+            Map<String, Object> firstRow = castMap(rows.get(0));
+            // SnakeYAML はマッピングを LinkedHashMap としてロードするため、keySet() の順序は YAML の記述順と一致する。
+            // マーカーカラム（[COL] 形式）は DB 操作から除外する（解説書 10.2）。
+            List<String> columnNameList = new ArrayList<String>();
+            for (String key : firstRow.keySet()) {
+                if (!(key.startsWith("[") && key.endsWith("]"))) {
+                    columnNameList.add(key);
+                }
+            }
+            String[] columnNames = columnNameList.toArray(new String[0]);
 
             TableData td = new TableData(dbInfo, tableName, columnNames, defaultValues);
 

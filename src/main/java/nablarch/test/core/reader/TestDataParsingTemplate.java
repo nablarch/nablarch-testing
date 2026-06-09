@@ -33,11 +33,6 @@ abstract class TestDataParsingTemplate<RET> {
     /** テストデータのキャッシュ */
     private static final Map<String, List<List<String>>> TEST_DATA_CACHE = NablarchTestUtils.createLRUMap(8);
 
-    /** テスト専用: テストデータキャッシュをクリアする。 */
-    public static void clearCacheForTest() {
-        TEST_DATA_CACHE.clear();
-    }
-
     /** テストデータ */
     private List<List<String>> testData;
 

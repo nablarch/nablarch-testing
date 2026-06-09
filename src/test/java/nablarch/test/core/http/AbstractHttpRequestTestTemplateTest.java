@@ -46,7 +46,7 @@ import nablarch.test.RepositoryInitializer;
 import nablarch.test.Trap;
 import nablarch.test.core.db.DbAccessTestSupport;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 import nablarch.test.support.tool.Hereis;
 import nablarch.test.tool.sanitizingcheck.util.FileUtil;
@@ -64,7 +64,7 @@ import org.junit.runner.RunWith;
  *
  * @author T.Kawasaki
  */
-@RunWith(NtfTestdataTestRunner.class)
+@RunWith(DatabaseTestRunner.class)
 public class AbstractHttpRequestTestTemplateTest {
 
     @Rule

@@ -38,32 +38,13 @@ public class BinaryFileInterpreter implements TestDataInterpreter {
     /** ファイルの取得元パス */
     private String path;
 
-    /** フォールバック用パス（存在する場合のみ使用） */
-    private String fallbackPath;
-
     /**
      * コンストラクタ。
-     *
+     * 
      * @param path ファイルの取得元パス
      */
     public BinaryFileInterpreter(String path) {
         this.path = path;
-    }
-
-    /**
-     * フォールバックパス付きコンストラクタ。
-     *
-     * <p>
-     * {@code path} にファイルが見つからない場合、{@code fallbackPath} を試みる。
-     * YAML モード時に元の resource-root へのフォールバックとして使用する。
-     * </p>
-     *
-     * @param path         ファイルの取得元パス
-     * @param fallbackPath フォールバック用パス
-     */
-    public BinaryFileInterpreter(String path, String fallbackPath) {
-        this.path = path;
-        this.fallbackPath = fallbackPath;
     }
 
     /** {@inheritDoc} */
@@ -75,19 +56,12 @@ public class BinaryFileInterpreter implements TestDataInterpreter {
 
     /**
      * ファイルパスを取得する。
-     *
+     * 
      * @param value Excelに記述された値（Excelファイルからの相対パス）
      * @return テストデータのファイルパス
      */
     private String getPath(String value) {
-        String primary = concat(path, '/', value);
-        if (fallbackPath != null) {
-            java.io.File f = new java.io.File(primary);
-            if (!f.exists()) {
-                return concat(fallbackPath, '/', value);
-            }
-        }
-        return primary;
+        return concat(path, '/', value);
     }
 
     /**

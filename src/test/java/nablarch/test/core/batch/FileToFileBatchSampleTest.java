@@ -3,7 +3,7 @@ package nablarch.test.core.batch;
 import nablarch.test.core.db.HogeTable;
 import nablarch.test.core.db.HogeTableSsdMaster;
 import nablarch.test.support.SystemRepositoryResource;
-import nablarch.test.core.reader.yaml.NtfTestdataTestRunner;
+import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
 import nablarch.test.support.tool.Hereis;
 
@@ -17,7 +17,7 @@ import java.io.File;
 /**
  * @author T.Kawasaki
  */
-@RunWith(NtfTestdataTestRunner.class)
+@RunWith(DatabaseTestRunner.class)
 public class FileToFileBatchSampleTest extends BatchRequestTestSupport {
 
     @Rule
