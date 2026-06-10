@@ -55,7 +55,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - [x] **S-6** JSON Schema 整合性確認 — 完了。ユーザーレビュー OK（2026-05-29）
   - [x] **V-1** 全Excelテストの YAML 版並走実行 — T7 に統合・完了
 - [x] **Ph-6** ユーザーレビュー指摘の是正（2026-06-02 ユーザーレビューで確定）
-  - 前提: 文書 `docs/pr75/specs/ntf-testdata-doc.md` / `docs/pr75/design/ntf-testdata-yaml-design.md` / `docs/pr75/ntf-impl-spec-list.md` / `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` / `docs/pr75/specs/ntf-testdata-doc-examples-messaging.md` は是正済み（あるべき姿）。本フェーズはこれら文書を正とし実装を一致させる
+  - 前提: 文書 `docs/pr75/docs/ntf-testdata-doc.md` / `docs/pr75/design/ntf-testdata-yaml-design.md` / `docs/pr75/ntf-impl-spec-list.md` / `src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json` / `docs/pr75/docs/ntf-testdata-doc-examples-messaging.md` は是正済み（あるべき姿）。本フェーズはこれら文書を正とし実装を一致させる
   - 各タスクは「ソースコード変更を含むタスク（5ステップ）」プロセスに従う。完了条件は各チェックファイルに記載
   - [x] **T1** フィールド型記法を日本語名称に統一 — チェックファイル: `docs/pr75/checks/T1.md`（ユーザーレビュー OK 2026-06-05）
   - [x] **T2** `fw_header` マップ対応（ランタイム、messages 限定） — `docs/pr75/checks/T2.md`
@@ -202,7 +202,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - 中間データの設計は調査タスク（C-1-0）で決定する（結論: 独自モデル採用）
 - 設計書は特定リポジトリの運用情報（59件・具体パス等）を含めない汎用ツールとして書く
 
-**設計書**: `docs/pr75/specs/testdata-converter-design.md`
+**設計書**: `docs/pr75/docs/testdata-converter-design.md`
 
 **作業内容**:
 - [x] **C-1-0〜C-1-2**: 設計（中間データ方式調査・仕様リスト見直し・設計書全面作成）
