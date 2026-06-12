@@ -120,7 +120,7 @@ public abstract class DataFileParser<T extends DataFile> extends GroupDataParsin
 
     /** {@inheritDoc} */
     @Override
-    List<T> getResult() {
+    protected List<T> getResult() {
         return result;
     }
 

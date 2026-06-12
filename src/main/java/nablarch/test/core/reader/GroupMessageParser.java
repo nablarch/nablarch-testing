@@ -47,7 +47,7 @@ public class GroupMessageParser extends GroupDataParsingTemplate<List<RequestTes
     
     /** {@inheritDoc} */
     @Override
-    List<RequestTestingMessagePool> getResult() {
+    protected List<RequestTestingMessagePool> getResult() {
         FixedLengthFileParser delegateParser = delegate.getDelegate();
         List<FixedLengthFile> dataList = delegateParser.getResult();
         if (dataList.isEmpty()) {

@@ -99,7 +99,7 @@ public class TableDataParser extends GroupDataParsingTemplate<List<TableData>> {
 
     /** {@inheritDoc} */
     @Override
-    List<TableData> getResult() {
+    protected List<TableData> getResult() {
         return result;
     }
 
