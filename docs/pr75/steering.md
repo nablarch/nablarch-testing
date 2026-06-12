@@ -252,11 +252,43 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次アクション: V-1 / C-1 ユーザーレビュー待ち → OK が出たら PR マージ**
-   - V-1（`docs/pr75/checks/V-1.md`）: 担当者・QA ともに OK。ユーザーレビュー依頼済み
-   - C-1（`docs/pr75/checks/C-1.md`）: C-1-15 セルフ・QA ともに OK。ユーザーレビュー依頼済み
-   - 両方ユーザーレビュー OK が出たら PR マージへ
+2. **次アクション: 実装ステップ計画（設計書 6.3 到達）の Step 1 から着手**
+   - 設計書: `docs/pr75/docs/testdata-converter-design.md`
+   - 作業手順: 下記「実装ステップ計画」セクションを参照
    - なお `docs/pr75/specs/` → `docs/pr75/docs/` 改名済み（コミット `4735683`）
+
+---
+
+## 実装ステップ計画（設計書 6.3 までの到達経路）
+
+設計書：`docs/pr75/docs/testdata-converter-design.md`（正）。
+目的：設計書どおり実装し、6.3（既存 Excel テストを YAML へ動的変換して全件 PASS＝振る舞い不変の担保）まで到達する。
+
+### 進め方（全ステップ共通）
+
+1. レビュアー（claude.ai）が当該ステップの作業指示書を作成する（判断不要・Before/After・コマンド・完了ゲートのみ）。
+2. CC が実装し、指定コミットでプッシュして**停止**する。
+3. CC が裏取り報告を出す（コミットハッシュ・`git diff`・テスト結果）。
+4. レビュアーがプルして実物確認する（コミット実在 / ファイル・メソッド実在 / diff が指示どおり / 完了ゲートのテストが実際に GREEN）。
+5. OK なら次ステップの作業指示へ。NG なら同ステップ内で修正指示。
+
+依存の浅い順（＝TDD の依存先順）に進める。前ステップの完了ゲート GREEN が次ステップの前提。
+
+### ステップ一覧
+
+| # | 内容 | 設計書参照 | 完了ゲート |
+|---|---|---|---|
+| 1 | `getResult` を protected 化（`TestDataParsingTemplate` の abstract 宣言＋各サブクラスのオーバーライド） | 3.2「④構造解析―結果を取り出す」 | reader パッケージの既存テスト全 GREEN（振る舞い不変） |
+| 2 | 結果オブジェクトの getter 整備（`DataFile`／`DataFileFragment`／`MessagePool` に読み取り getter 追加、`TableData` に揃える。`DataFileFragment` に `@Published` 付与） | 3.2「④構造解析―結果を取り出す」器ごとの表 | getter の単体テスト GREEN ＋ 既存テスト不変 |
+| 3 | `XlsFormatReader` を本体再利用へ改修（独自実装 `parseBlocks`／`parseRecordLayouts`／`isDataRow`／`trimQuotation` を撤去し、本体構造解析＋空 `interpreters`＋スタブ `DbInfo` で中間モデルを組む） | 3.2「③外す」「④結果を取り出す」、4 章 IN | 既存 `XlsFormatReaderTest` 不変 ＋ 全データ種別の無損失 |
+| 4 | `YamlFormatReader` を本体再利用へ改修＋④の 2 系統統合（YAML→行表現の `TestDataReader` 実装を新設し、`YamlFileBuilder`／`YamlTableDataBuilder` の独自構築を廃して同一の④へ合流） | 3.2「④―2 系統を統合する」、4 章 IN | 既存 Yaml 系テスト不変 ＋ Excel/YAML が同一④経由 |
+| 5 | 6.3 達成（既存 Excel テストを `TestDataConverter` で一時 YAML へ動的変換し、アサーションを変えずに全件 PASS） | 6.3 | `nablarch-testing` 既存テスト全件 GREEN |
+
+### スコープ外（本経路では実施しない）
+
+- 6.4（サンプルアプリでの動作確認）：リポジトリ分割後に実施（設計書 7 章）。
+- リポジトリ分割そのもの（設計書 7 章手順 4）：6.3 完了＋有識者レビュー後。
+- Excel OUT の整形設定（`ExcelFormatConfig`）の作り込み：6.3 は読み込み経路の担保が目的のため、本経路の必須ではない（往復確認 6.2 で別途）。
 
 ### T7 動的アプローチ（進行中）
 
