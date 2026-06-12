@@ -37,10 +37,10 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 | 種別 | ファイル | 内容 |
 |---|---|---|
 | **仕様リスト** | [ntf-impl-spec-list.md](ntf-impl-spec-list.md) | 全145件（解説書マッピング × 実装マッピング × テストメソッド） |
-| **NTFテストデータ解説書** | [specs/ntf-testdata-doc.md](specs/ntf-testdata-doc.md) | YAML テストデータ記述仕様書 |
+| **NTFテストデータ解説書** | [docs/ntf-testdata-doc.md](docs/ntf-testdata-doc.md) | YAML テストデータ記述仕様書 |
 | **スキーマ** | [src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json](../../src/main/resources/nablarch/test/ntf-testdata-yaml-schema.json) | JSON Schema 定義 |
 | **ADR** | [adrs/ADR-001-yaml-library.md](adrs/ADR-001-yaml-library.md) | SnakeYAML Engine 採用根拠 |
-| **NTF変換ツール設計書** | [specs/testdata-converter-design.md](specs/testdata-converter-design.md) | Excel↔YAML変換ツール設計書 |
+| **NTF変換ツール設計書** | [docs/testdata-converter-design.md](docs/testdata-converter-design.md) | Excel↔YAML変換ツール設計書 |
 
 ---
 
