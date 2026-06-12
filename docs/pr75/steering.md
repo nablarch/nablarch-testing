@@ -252,10 +252,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ## 再開手順
 
 1. `git status` でクリーン確認（ブランチ: `convert-testdata-excel-to-text`）
-2. **次アクション: 実装ステップ計画（設計書 6.3 到達）の Step 1 から着手**
+2. **次アクション: 実装ステップ計画（設計書 6.3 到達）の Step 3 から着手**
    - 設計書: `docs/pr75/docs/testdata-converter-design.md`
    - 作業手順: 下記「実装ステップ計画」セクションを参照
-   - なお `docs/pr75/specs/` → `docs/pr75/docs/` 改名済み（コミット `4735683`）
+   - Step 1 完了コミット: `61c79e5`
+   - Step 2 完了コミット: `095bf64`
 
 ---
 
@@ -276,13 +277,13 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 ### ステップ一覧
 
-| # | 内容 | 設計書参照 | 完了ゲート |
-|---|---|---|---|
-| 1 | `getResult` を protected 化（`TestDataParsingTemplate` の abstract 宣言＋各サブクラスのオーバーライド） | 3.2「④構造解析―結果を取り出す」 | reader パッケージの既存テスト全 GREEN（振る舞い不変） |
-| 2 | 結果オブジェクトの getter 整備（`DataFile`／`DataFileFragment`／`MessagePool` に読み取り getter 追加、`TableData` に揃える。`DataFileFragment` に `@Published` 付与） | 3.2「④構造解析―結果を取り出す」器ごとの表 | getter の単体テスト GREEN ＋ 既存テスト不変 |
-| 3 | `XlsFormatReader` を本体再利用へ改修（独自実装 `parseBlocks`／`parseRecordLayouts`／`isDataRow`／`trimQuotation` を撤去し、本体構造解析＋空 `interpreters`＋スタブ `DbInfo` で中間モデルを組む） | 3.2「③外す」「④結果を取り出す」、4 章 IN | 既存 `XlsFormatReaderTest` 不変 ＋ 全データ種別の無損失 |
-| 4 | `YamlFormatReader` を本体再利用へ改修＋④の 2 系統統合（YAML→行表現の `TestDataReader` 実装を新設し、`YamlFileBuilder`／`YamlTableDataBuilder` の独自構築を廃して同一の④へ合流） | 3.2「④―2 系統を統合する」、4 章 IN | 既存 Yaml 系テスト不変 ＋ Excel/YAML が同一④経由 |
-| 5 | 6.3 達成（既存 Excel テストを `TestDataConverter` で一時 YAML へ動的変換し、アサーションを変えずに全件 PASS） | 6.3 | `nablarch-testing` 既存テスト全件 GREEN |
+| # | 内容 | 設計書参照 | 完了ゲート | 状態 |
+|---|---|---|---|---|
+| 1 | `getResult` を protected 化（`TestDataParsingTemplate` の abstract 宣言＋各サブクラスのオーバーライド） | 3.2「④構造解析―結果を取り出す」 | reader パッケージの既存テスト全 GREEN（振る舞い不変） | **完了** `61c79e5` |
+| 2 | 結果オブジェクトの getter 整備（`DataFile`／`DataFileFragment`／`MessagePool` に読み取り getter 追加、`TableData` に揃える。`DataFileFragment` に `@Published` 付与） | 3.2「④構造解析―結果を取り出す」器ごとの表 | getter の単体テスト GREEN ＋ 既存テスト不変 | **完了** `095bf64` |
+| 3 | `XlsFormatReader` を本体再利用へ改修（独自実装 `parseBlocks`／`parseRecordLayouts`／`isDataRow`／`trimQuotation` を撤去し、本体構造解析＋空 `interpreters`＋スタブ `DbInfo` で中間モデルを組む） | 3.2「③外す」「④結果を取り出す」、4 章 IN | 既存 `XlsFormatReaderTest` 不変 ＋ 全データ種別の無損失 | 未着手 |
+| 4 | `YamlFormatReader` を本体再利用へ改修＋④の 2 系統統合（YAML→行表現の `TestDataReader` 実装を新設し、`YamlFileBuilder`／`YamlTableDataBuilder` の独自構築を廃して同一の④へ合流） | 3.2「④―2 系統を統合する」、4 章 IN | 既存 Yaml 系テスト不変 ＋ Excel/YAML が同一④経由 | 未着手 |
+| 5 | 6.3 達成（既存 Excel テストを `TestDataConverter` で一時 YAML へ動的変換し、アサーションを変えずに全件 PASS） | 6.3 | `nablarch-testing` 既存テスト全件 GREEN | 未着手 |
 
 ### スコープ外（本経路では実施しない）
 
