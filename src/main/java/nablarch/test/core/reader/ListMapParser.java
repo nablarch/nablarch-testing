@@ -72,7 +72,7 @@ class ListMapParser extends SingleDataParsingTemplate<List<Map<String, String>>>
     }
     /** {@inheritDoc} */
     @Override
-    protected List<Map<String, String>> getResult() {
+    List<Map<String, String>> getResult() {
         return result;
     }
 }

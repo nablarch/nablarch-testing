@@ -102,14 +102,14 @@ YAML も本体の読み込み（`YamlLoader` ＋ Builder 群）が同じ加工�
 
 ### 共通：器の中身を読む手段
 
-取り出した器の中身は、本体に整備済みの public getter で読める。いずれも**本体無変更**。
+取り出した器の中身は public getter で読める。`TableData` の getter は本体に整備済み（**本体無変更**）。`DataFile`／`DataFileFragment`／`MessagePool` の getter は、変換ツールが器を別パッケージ（`nablarch.test.tool.converter.*`）から読むために必要な**最小限の本体変更**として追加・公開する（いずれも `@Published(tag = "architect")`）。一方、取り出し口 `getResult` と一部 Parser のコンストラクタは、同一パッケージに相乗りするアダプタが直接呼ぶため可視性変更は不要＝**package-private のまま**とする（判断 A）。
 
-| 器 | 中身を読む手段 |
-|---|---|
-| `TableData` | `getTableName`／`getColumnNames`／`getValue` |
-| `DataFile`／`DataFileFragment` | `getAllFragments`／`getNames`／`getTypes`／`getLengths`／`getValues`／`getDirectives` |
-| `MessagePool` | FW 制御ヘッダは `getFwHeader`。本文は `FixedLengthFile` として取る |
-| LIST_MAP | 戻り値が `List<Map<String,String>>` の素の型 |
+| 器 | 中身を読む手段 | 本体変更 |
+|---|---|---|
+| `TableData` | `getTableName`／`getColumnNames`／`getValue` | なし（既存 public） |
+| `DataFile`／`DataFileFragment` | `getAllFragments`／`getDirectives`／`getRecordType`／`getNames`／`getTypes`／`getLengths`／`getValues` | getter 追加（public）。`getRecordType` は 1 章「空欄のレコード種別も無損失で保持」のため必須 |
+| `MessagePool` | FW 制御ヘッダは `getFwHeader`。本文は `FixedLengthFile` として取る | `getFwHeader` を package-private→public 化 |
+| LIST_MAP | 戻り値が `List<Map<String,String>>` の素の型 | なし |
 
 テーブル系は構造解析（`TableData.addRow`）の途中で `dbInfo.getColumnType` を要求する。値は文字列のままで型に依存しないが `dbInfo` が null だと読めないため、カラム型を返すだけの**スタブ `DbInfo`** を構成で差し込む。
 

@@ -81,7 +81,7 @@ abstract class TestDataParsingTemplate<RET> {
      *
      * @return 解析結果
      */
-    protected abstract RET getResult();
+    abstract RET getResult();
 
     /**
      * コンストラクタ。
