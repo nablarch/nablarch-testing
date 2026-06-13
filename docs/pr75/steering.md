@@ -166,7 +166,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 - [x] `TestDataContainer` / `TestDataSection` / `TestDataBlock`(sealed; permits `ColumnRowDataBlock`/`FileDataBlock`/`MessageDataBlock`) / `ColumnRowDataBlock`(sealed; permits `TableDataBlock`/`ListMapBlock`) / `TableDataBlock` / `ListMapBlock` / `FileDataBlock` / `MessageDataBlock` / `RecordLayout` / `FieldDef` を作成（`nablarch.test.tool.converter.model`・本体 `DataType` 再利用・`KNOWN_DIRECTIVE_NAMES` 非搭載）
 - [x] 各モデルの単体テスト（TDD・RED→GREEN）。8 クラス 27 件 GREEN・model C0/C1 100%（JaCoCo 実測）
-- [ ] セルフチェック（`docs/pr75/checks/P3-4.md` 記載済。4 観点レビュー＝アーキ/SWE/Java PASS・QA はイテレ1 FAIL→指摘対応済、**QA イテレ2 再レビューが中断＝未確定**。次セッションで QA 再レビューを完了させ全 PASS を確認）
+- [x] セルフチェック（`docs/pr75/checks/P3-4.md` 記載済。4 観点レビュー＝QA イテレ2／Java／SWE を本セッションで再実施し全 **PASS**。QA イテレ1 FAIL（全 13 DataType 網羅漏れ＋エッジ不足）はテスト 20→27 件で解消確認）
 
 **Completion criteria**:
 - 設計書 3 章のクラス図と継承/sealed 関係が一致
