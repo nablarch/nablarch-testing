@@ -372,14 +372,10 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-13
-- **Last completed**: ドラフト PR #1 を作成（base: `convert-testdata-excel-to-text`、head: `add-yaml`、新規 push）。PR タイトルを「NTF テストデータ変換ツール 再構築フェーズ（設計書 6.3 到達）」に、本文を **steering へのリンク 1 行のみ**（説明文・絵文字なし）に設定。steering 冒頭に PR リンク＋「steering が唯一の真実・本文はリンクのみ」方針を追記。タスク節の Markdown を修正（`**Purpose/Prerequisites/Steps/Completion criteria**` 各行が空行欠如で連結する問題を全 14 タスクで解消）。実コードのタスクは未着手
-- **Next**: ユーザーに本 steering の**最終承認**を確認 → OK なら Phase 1 / #1（本体再利用面の設計書照合・是正）に着手
-- **Notes**:
-  - **ドラフト PR #1**: https://github.com/lovaizu/nablarch-testing/pull/1 （Draft、base: `convert-testdata-excel-to-text`、head: `add-yaml`）。開発の最初に作る**作業 PR**で、Phase 1〜6 の進行に伴いコミットが積み上がる。PR 本文は本 steering へのリンクのみ（重複排除＝形骸化・不整合回避）。状況共有・相談は本ファイルの更新で行う。**運用ルール: steering を常に更新し、PR 本文に内容を二重化しない／絵文字・装飾を入れない。**
-  - steering 自体は本セッション分すべてコミット＆プッシュ済み。`add-yaml` は `origin/add-yaml` を追跡（既存 `origin/convert-testdata-excel-to-text` から +3 docs コミット）。
-  - 最終承認は未取得のまま `/rn:bb` で中断。次セッションはまず承認確認から。`/rn:gm` の計画提示時のユーザー指示（旧プラン削除・全 TDD・フェーズ単位 4 観点レビュー＋ユーザーレビュー・ゴールを自分の文で）は反映済み。
-  - **重要事実**: ②変換ツールは本体を一切再利用しない 100% 独自実装（`XlsFormatReader`=POI 直叩き約 500 行、`YamlFormatReader`=SnakeYAML 直叩き約 301 行）。`TestDataParserAdapter` は不在。①本体 YAML は builder 内で構造写しと値加工が混在し空 interpreters の暗黙切替に依存（判断 B で廃止対象）。③変換ツール依存点は `YamlModeTestBase` 87 行目の `TestDataConverter.convert()` のみ＋`TestDataConverterTest`（ツール自体のテスト）。`*YamlTest` 18 クラスが利用。
-  - 設計書 §共通 は器 getter を「本体無変更」と記すが実際はこのブランチで getter 追加済み（`DataFile.getAllFragments/getDirectives`、`DataFileFragment.getRecordType/getNames/getTypes/getLengths/getValues`、`MessagePool.getFwHeader` public 化）→ #1 で「再利用に必要な最小集合」へ収束させ整合を取る。
-  - 環境: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミットのまま残置（コミットしない方針）。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
