@@ -49,7 +49,8 @@ public class YamlTableDataBuilderTest {
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/yaml/";
 
     private DbInfo dbInfo;
-    private YamlTableDataBuilder sut;
+    private YamlValueProcessor valueProcessor;
+    private final YamlTableStructureMapper tableMapper = new YamlTableStructureMapper();
 
     @BeforeClass
     public static void beforeClass() {
@@ -60,12 +61,27 @@ public class YamlTableDataBuilderTest {
     public void before() {
         dbInfo = repositoryResource.getComponent("dbInfo");
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        sut = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
+        valueProcessor = new YamlValueProcessor(dbInfo, new BasicDefaultValues(), interpreters);
     }
 
     @After
     public void after() {
         YamlLoader.clearCacheForTest();
+    }
+
+    // ------------------------------------------------------------------------
+    // 構造マッピング層（Map→Raw*）→ 値加工層（Raw*→本体器）の 2 層を通すヘルパー。
+    // 本テストは両層を通したエンドツーエンドの本体器構築を検証する。
+    // ------------------------------------------------------------------------
+
+    private List<TableData> buildTableDataList(Map<String, Object> yaml, String sectionKey,
+                                               String groupId, boolean fillDefaults, String path) {
+        return valueProcessor.toTableDataList(
+                tableMapper.mapTables(yaml, sectionKey), sectionKey, groupId, fillDefaults, path);
+    }
+
+    private List<Map<String, String>> buildListMapRows(Map<String, Object> yaml, String id, String path) {
+        return valueProcessor.toListMapRows(tableMapper.mapListMaps(yaml), id, path);
     }
 
     // ========================================================================
@@ -87,7 +103,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "", false, DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -110,7 +126,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[groupA]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[groupA]", false, DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -132,7 +148,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
 
         // Then
         assertThat(result.size(), is(0));
@@ -153,7 +169,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/completedTable");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "expected_complete_tables", "", true, DIR);
+        List<TableData> result = buildTableDataList(yaml, "expected_complete_tables", "", true, DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -178,7 +194,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/emptyYaml");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "", false, DIR);
 
         // Then
         assertThat(result.size(), is(0));
@@ -203,7 +219,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "testListMap", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "testListMap", DIR);
 
         // Then
         assertThat(result.size(), is(2));
@@ -228,7 +244,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "markerColTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "markerColTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -251,7 +267,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "noSuchId", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "noSuchId", DIR);
 
         // Then
         assertThat(result.size(), is(0));
@@ -272,7 +288,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "nativeTypeTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "nativeTypeTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -295,7 +311,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[dupTable]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[dupTable]", false, DIR);
 
         // Then
         assertThat("同一グループの同一テーブル名エントリが 2 件返ること", result.size(), is(2));
@@ -319,7 +335,7 @@ public class YamlTableDataBuilderTest {
 
         // When / Then
         try {
-            sut.buildTableDataList(yaml, "setup_tables", "[missingTable]", false, DIR);
+            buildTableDataList(yaml, "setup_tables", "[missingTable]", false, DIR);
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
             assertThat("フィールド名がメッセージに含まれること", e.getMessage(), containsString("table"));
@@ -344,7 +360,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "dupIdFirst", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "dupIdFirst", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -367,7 +383,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[emptyRowMixed]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRowMixed]", false, DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -393,7 +409,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, DIR);
 
         // Then
         assertThat("先頭行が {} の場合も TableData は 1 件生成されること", result.size(), is(1));
@@ -417,7 +433,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "setup_tables", "[markerColInTable]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "setup_tables", "[markerColInTable]", false, DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -444,7 +460,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<TableData> result = sut.buildTableDataList(yaml, "expected_tables", "[markerColInTable]", false, DIR);
+        List<TableData> result = buildTableDataList(yaml, "expected_tables", "[markerColInTable]", false, DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -470,7 +486,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "interpreterTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "interpreterTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -493,7 +509,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "interpreterTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "interpreterTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -516,7 +532,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "interpreterTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "interpreterTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -539,7 +555,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "dateTimeTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "dateTimeTest", DIR);
 
         // Then
         // 期待値 "2010-09-14 12:34:56.0" は unit-test-yaml.xml の dateProvider（BasicDateTimeProvider）に
@@ -567,7 +583,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "binaryFileTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "binaryFileTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -591,7 +607,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "charGenTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "charGenTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -620,7 +636,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "quotationTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "quotationTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -645,7 +661,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "singleQuoteNotationTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "singleQuoteNotationTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -676,11 +692,11 @@ public class YamlTableDataBuilderTest {
                 new QuotationTrimmer(),
                 dateTimeInterpreter
         );
-        YamlTableDataBuilder sutWithSetUp = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
+        YamlValueProcessor vpWithSetUp = new YamlValueProcessor(dbInfo, new BasicDefaultValues(), interpreters);
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sutWithSetUp.buildListMapRows(yaml, "quotationTest", DIR);
+        List<Map<String, String>> result = vpWithSetUp.toListMapRows(tableMapper.mapListMaps(yaml), "quotationTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -707,7 +723,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "partialBracketColTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "partialBracketColTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -732,7 +748,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "nonMapRowTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "nonMapRowTest", DIR);
 
         // Then
         assertThat("Map でない行はスキップされ 2 件のみ返ること", result.size(), is(2));
@@ -756,7 +772,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "quotationTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "quotationTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -780,7 +796,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "testShots", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "testShots", DIR);
 
         // Then
         assertThat("2件取得できること", result.size(), is(2));
@@ -809,7 +825,7 @@ public class YamlTableDataBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When
-        List<Map<String, String>> result = sut.buildListMapRows(yaml, "nativeTypeTest", DIR);
+        List<Map<String, String>> result = buildListMapRows(yaml, "nativeTypeTest", DIR);
 
         // Then
         assertThat(result.size(), is(1));

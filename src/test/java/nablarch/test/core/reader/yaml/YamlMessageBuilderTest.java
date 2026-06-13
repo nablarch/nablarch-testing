@@ -42,17 +42,41 @@ public class YamlMessageBuilderTest {
     private static final String RESOURCE_ROOT = "src/test/java/";
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/yaml/";
 
-    private YamlMessageBuilder sut;
+    private YamlValueProcessor valueProcessor;
+    private final YamlMessageStructureMapper messageMapper = new YamlMessageStructureMapper();
 
     @Before
     public void before() {
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        sut = new YamlMessageBuilder(interpreters);
+        // メッセージ経路は dbInfo・defaultValues を使用しないため null で差し支えない。
+        valueProcessor = new YamlValueProcessor(null, null, interpreters);
     }
 
     @After
     public void after() {
         YamlLoader.clearCacheForTest();
+    }
+
+    // ------------------------------------------------------------------------
+    // 構造マッピング層（Map→Raw*）→ 値加工層（Raw*→本体器）の 2 層を通すヘルパー。
+    // fw_header を使うのは messages 経路のみ（expected_*/response_* は空 Map）。
+    // ------------------------------------------------------------------------
+
+    private MessagePool buildMessagePool(Map<String, Object> yaml, String sectionKey, String id, String path) {
+        boolean useFwHeader = YamlSection.KEY_MESSAGES.equals(sectionKey);
+        return valueProcessor.toMessagePool(messageMapper.mapMessages(yaml, sectionKey), id, useFwHeader, path);
+    }
+
+    private List<RequestTestingMessagePool> buildSendSyncMessageList(Map<String, Object> yaml, String sectionKey,
+                                                                     String groupId, String path) {
+        return valueProcessor.toSendSyncList(messageMapper.mapMessages(yaml, sectionKey), groupId, path);
+    }
+
+    /** MessagePool の内部 FixedLengthFile（source）を取り出すヘルパー。 */
+    private static FixedLengthFile sourceOf(MessagePool pool) throws Exception {
+        Field sourceField = MessagePool.class.getDeclaredField("source");
+        sourceField.setAccessible(true);
+        return (FixedLengthFile) sourceField.get(pool);
     }
 
     @SuppressWarnings("unchecked")
@@ -82,7 +106,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -114,7 +138,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "noSuchId", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "noSuchId", DIR);
 
         // Then
         assertNull(result);
@@ -139,7 +163,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -162,7 +186,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -185,7 +209,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "sendSyncTestData/REQ001/message", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "sendSyncTestData/REQ001/message", DIR);
 
         // Then
         assertNotNull(result);
@@ -213,7 +237,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
+        MessagePool result = buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
 
         // Then
         assertNotNull(result);
@@ -239,7 +263,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "grp1", DIR);
 
         // Then
@@ -262,7 +286,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "noSuchGroup", DIR);
 
         // Then
@@ -284,7 +308,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "grp1", DIR);
 
         // Then
@@ -311,9 +335,10 @@ public class YamlMessageBuilderTest {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
-        // When
-        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<TestDataInterpreter>>getComponent("interpreters"));
-        FixedLengthFile file = fileBuilder.buildMessageFile(yaml, "messages", "req001", DIR);
+        // When: MessagePool を構築し、内部の FixedLengthFile（source）の構造を検証する
+        MessagePool pool = buildMessagePool(yaml, "messages", "req001", DIR);
+        assertNotNull(pool);
+        FixedLengthFile file = sourceOf(pool);
 
         // Then: records に BODY のみ 1 フラグメントであること
         assertNotNull(file);
@@ -341,7 +366,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "grp1", DIR);
 
         // Then: directives が MockMessages に設定されていること（source フィールド経由で確認）
@@ -369,10 +394,9 @@ public class YamlMessageBuilderTest {
     public void testBuildMessageFile_idNotFound() {
         // Given
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
-        YamlFileBuilder fileBuilder = new YamlFileBuilder(repositoryResource.<List<TestDataInterpreter>>getComponent("interpreters"));
 
-        // When
-        FixedLengthFile result = fileBuilder.buildMessageFile(yaml, "messages", "noSuchId", DIR);
+        // When: 存在しない id では MessagePool が null になること
+        MessagePool result = buildMessagePool(yaml, "messages", "noSuchId", DIR);
 
         // Then
         assertNull(result);
@@ -398,7 +422,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "emptyRows001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "emptyRows001", DIR);
 
         // Then: 例外なく返り、fwHeader は空 Map
         assertNotNull(result);
@@ -430,7 +454,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
 
         // Then
         assertNotNull(result);
@@ -462,7 +486,7 @@ public class YamlMessageBuilderTest {
 
         // When / Then
         try {
-            sut.buildMessagePool(yaml, "messages", "malformed001", DIR);
+            buildMessagePool(yaml, "messages", "malformed001", DIR);
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
             assertThat("id がメッセージに含まれること", e.getMessage(), containsString("malformed001"));
@@ -513,7 +537,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "grp2", DIR);
 
         // Then
@@ -542,7 +566,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "partialHeader001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "partialHeader001", DIR);
 
         // Then
         assertNotNull(result);
@@ -572,12 +596,10 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_customFwHeaderFields() throws Exception {
         // Given
-        List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        YamlMessageBuilder customSut = new YamlMessageBuilder(interpreters);
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
 
         // When
-        MessagePool result = customSut.buildMessagePool(yaml, "messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
 
         // Then: fw_header に記述した全キーが保持されること（フィルタなし）
         assertNotNull(result);
@@ -609,7 +631,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -639,7 +661,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -666,7 +688,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -692,7 +714,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
+        MessagePool result = buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
 
         // Then
         assertNotNull(result);
@@ -718,7 +740,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
+        MessagePool result = buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
 
         // Then
         assertNotNull(result);
@@ -744,7 +766,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "response_header_messages", "resp001", DIR);
+        MessagePool result = buildMessagePool(yaml, "response_header_messages", "resp001", DIR);
 
         // Then
         assertNotNull(result);
@@ -770,7 +792,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "numericValues001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "numericValues001", DIR);
 
         // Then
         assertNotNull(result);
@@ -803,7 +825,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When: length なしフィールドの MockMessages を buildSendSyncMessageList で構築する
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "noLengthGrp", DIR);
 
         // Then
@@ -828,7 +850,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
 
         // When: 一部 length あり・一部なしの MockMessages を buildSendSyncMessageList で構築する
-        List<RequestTestingMessagePool> result = sut.buildSendSyncMessageList(
+        List<RequestTestingMessagePool> result = buildSendSyncMessageList(
                 yaml, "response_body_messages", "mixedLengthGrp", DIR);
 
         // Then
@@ -851,7 +873,7 @@ public class YamlMessageBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
 
         // When
-        MessagePool result = sut.buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
+        MessagePool result = buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
 
         // Then
         assertNotNull(result);

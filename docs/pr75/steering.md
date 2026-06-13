@@ -113,14 +113,15 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 **Steps**（option C・D-F 参照）:
 
-- [ ] 現 builder（`YamlFileBuilder`/`YamlTableDataBuilder`/`YamlMessageBuilder`）の構造写し処理と値加工（interpret・補完・マージ・`-`長注入）箇所を特定
-- [ ] 生の構造レコード `Raw*`（`reader.yaml.model`）を新設（値未加工・マーカー保持・YAML 順・長さ省略 null・FW_HEADER 保持・大文字化なし）
-- [ ] 構造マッピング層 `Yaml*StructureMapper`（Map→`Raw*`）を新設（変換ツールも呼ぶ public API）
-- [ ] 値加工＋組み立て層 `YamlValueProcessor`（`Raw*`→本体器。interpret・BinaryFileInterpreter・`-`長注入・fillDefaultValues）を新設
-- [ ] `YamlTestDataParser` を「structureMapper → valueProcessor」明示 2 呼び出しへ再配線。「空 interpreters 素通し」暗黙切替を廃止
-- [ ] 既存 Yaml 系本体テスト全 GREEN（振る舞い不変）。構造層テストと値加工層テストへ整理
-- [ ] 要確認 2 件（list_maps TreeMap 順／fw_header 非 interpret）の挙動不変を確認
-- [ ] セルフチェック（`docs/pr75/checks/P1-2.md`）
+- [x] 現 builder（`YamlFileBuilder`/`YamlTableDataBuilder`/`YamlMessageBuilder`）の構造写し処理と値加工（interpret・補完・マージ・`-`長注入）箇所を特定
+- [x] 生の構造レコード `Raw*`（`reader.yaml.model`：`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`）を新設（値未加工・マーカー保持・YAML 順・長さ省略 null・FW_HEADER 保持・大文字化なし）
+- [x] 構造マッピング層 `Yaml{Table,File,Message}StructureMapper`（Map→`Raw*`）を新設（変換ツールも呼ぶ public API）
+- [x] 値加工＋組み立て層 `YamlValueProcessor`（`Raw*`→本体器。interpret・BinaryFileInterpreter・`-`長注入・fillDefaultValues・マーカー除外・グループ絞り込み）を新設
+- [x] `YamlTestDataParser` を「structureMapper → valueProcessor」明示 2 呼び出しへ再配線。「空 interpreters 素通し」暗黙切替を廃止。旧 builder 3 本を削除
+- [x] 既存 Yaml 系本体テスト全 GREEN（振る舞い不変）。builder テスト 73 件を valueProcessor+mapper 経由へ移送＋構造層テスト新設。**reader 系 159 件全 GREEN**（Table30/File14/Message29/Parser43/Section10/Loader11/Schema1/Mapper5/Equivalence16）
+- [x] 要確認 2 件: list_maps は valueProcessor 出力を TreeMap 維持（本体不変）・RawListMap は YAML 順保持／fw_header は非 interpret（objectToString のみ）を維持。いずれも GREEN で確認
+- [ ] 全モジュールのフルテスト実行（reader 以外への波及がないこと）— **未実施**
+- [ ] セルフチェック（`docs/pr75/checks/P1-2.md`）— **未実施**
 
 **Completion criteria**:
 - 構造マッピング層が `${...}`・`null`・`""`・マーカー・長さ省略・大文字小文字を記法のまま保持した `Raw*` を返すことをテストで実証
@@ -386,12 +387,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: in_progress
+- **Status**: paused
 - **Date**: 2026-06-13
 - **Operating mode（ユーザー指示・2026-06-13）**: **私に確認せず 6.3 まで自律的に目指す**。原則設計書通り／問題が起きたら常にあるべき姿を優先。NTF の YAML 対応・変換ツール・テストコードは自由に変更可。**released な NTF 本体プロダクションコードのみ後方互換維持があるので変更前にユーザーへ相談**（できるだけ変更しない）。困ったらエキスパート（サブエージェント）に相談。どうにもならない場合のみユーザーに相談。git でいつでも戻せる。フェーズ完了ゲートのユーザーレビューも「確認不要」指示によりスキップしてよい（必要時のみ相談）。
-- **Last completed**: #1（`bb76b97`）。本セッションで **#2 の設計を option C へ確定**（D-F・設計書 §判断B補足）＝構造マッピング層は「本体器」でなく「生の構造レコード `Raw*`」を返し、本体テストと変換ツールが**構造ウォークを共有**。当初の「本体器を返す」案はエキスパート照合で YAML 経路では非可逆（大文字化・`-`長破壊・マーカー脱落）と判明し是正。released 本体コードは未変更。
-- **Next**: **#2 実装に着手（TDD）**。順序＝(1) `Raw*` モデル＋最初の `Yaml*StructureMapper`（TableData が最小）を RED→GREEN、(2) `YamlValueProcessor`、(3) 残り mapper（File/Message）、(4) `YamlTestDataParser` 再配線、(5) 既存テスト整理して全 GREEN。要確認 2 件（list_maps TreeMap 順・fw_header 非 interpret）を実装中に検証。
+- **Last completed**: **#2 の実装本体が完了**（コミット未push分あり）。option C（D-F）に従い 2 層分離を実装＝(1) `reader.yaml.model` に `Raw*` 6 クラス、(2) `Yaml{Table,File,Message}StructureMapper`（Map→Raw*・構造のみ）、(3) `YamlValueProcessor`（Raw*→本体器・interpret/補完/`-`長注入/マーカー除外/グループ絞り込み）、(4) `YamlTestDataParser` を明示 2 呼び出しへ再配線・暗黙切替廃止、(5) 旧 builder 3 本削除＋builder テスト 73 件を valueProcessor 経由へ移送、(6) 構造層テスト新設。**reader 系 159 件全 GREEN**。released 本体コードは未変更。
+- **Next**: **#2 の残ステップ**（State の Tasks 参照）＝(a) **全モジュールのフルテスト実行**で reader 以外への波及がないこと確認（`rm -rf target/surefire-reports && mvn -o test` 全体。重い場合は tool/converter・messaging・db 系を中心に）、(b) **セルフチェック `docs/pr75/checks/P1-2.md`** 作成（task-workflow の Check file format）。その後 **Phase 1 完了ゲート**＝4 観点サブエージェントレビュー（アーキ/SWE/QA/Java）→ 指摘対応 → #3（Phase 2 変換ツール全削除）へ。ユーザーレビューは「確認不要」指示によりスキップ可。
 - **Notes**:
+  - **実装で確定した設計判断（重要）**: ① 空マッピング `{}` 行は構造層が **空リスト `[]`** として保持（行の有無を後段が判別）。テーブルは値加工層でスキップ、list_maps は空行として残す（本体差異を再現）。② `fw_header` の「マップ検証」は **値加工層が読み出すメッセージに対してのみ遅延実行**（`RawMessage.fwHeader` は生 `Object` 保持）。同一ファイル内の誤記エントリが他エントリ読み出しを巻き添えにしない旧挙動を維持。③ `toTableDataList`/`toDataFileList` は例外メッセージ用に `sectionKey` 引数を取る（テストがセクション名を要求）。④ list_maps 出力は TreeMap 維持（本体不変）、RawListMap は YAML 順保持（変換ツール用）。
   - **環境**: ブランチ `add-yaml`（`origin/add-yaml` 追跡）。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**）。ドラフト PR #1: https://github.com/lovaizu/nablarch-testing/pull/1 （本文は steering へのリンクのみ）。
-  - **テスト実行メモ**: `-Dtest` 絞り込み実行の前に `rm -rf target/surefire-reports`。`mvn -o`（オフライン）可。カバレッジは `mvn clean package -Dtest=...` → `mvn jacoco:report`（`package` まで必要）。Javadoc プラグインは `JAVA_HOME` 未設定で BUILD FAILURE になるがテストは GREEN（`Tests run`/`Failures:0 Errors:0` で確認）。
-  - **Phase 1 完了ゲート**: #1+#2 完了後に 4 観点サブエージェントレビュー（アーキ/SWE/QA/Java）。ユーザーレビューは「確認不要」指示によりスキップ可。
+  - **テスト実行メモ**: `-Dtest` 絞り込み実行の前に `rm -rf target/surefire-reports`。`mvn -o`（オフライン）可。`mvn -q` 成功時は無出力なので surefire-reports で `Tests run` 集計。Javadoc プラグインは `JAVA_HOME` 未設定で BUILD FAILURE になるがテストは GREEN。
+  - **未renameの軽微負債**: builder テスト 3 ファイル（`Yaml{Table,File,Message}DataBuilderTest`／fixture ディレクトリ名）は中身を valueProcessor+mapper 経由に移送済みだがファイル名は旧称のまま（テスト対象クラスは削除済み）。機能負債なし・命名負債のみ。Phase 1 レビューで rename 要否を判断。

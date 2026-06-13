@@ -70,7 +70,7 @@ public final class YamlSection {
      * FW制御ヘッダレコード種別名。
      *
      * <p>
-     * {@link YamlFileBuilder} が messages セクションの records から FW_HEADER レコードを
+     * {@link YamlValueProcessor} が messages セクションの records から FW_HEADER レコードを
      * スキップする際に使用する。FW制御ヘッダ自体は {@link #FIELD_FW_HEADER} マップから取得する。
      * </p>
      */

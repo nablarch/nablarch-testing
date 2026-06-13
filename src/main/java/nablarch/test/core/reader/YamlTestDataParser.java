@@ -7,11 +7,12 @@ import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
-import nablarch.test.core.reader.yaml.YamlFileBuilder;
+import nablarch.test.core.reader.yaml.YamlFileStructureMapper;
 import nablarch.test.core.reader.yaml.YamlLoader;
-import nablarch.test.core.reader.yaml.YamlMessageBuilder;
+import nablarch.test.core.reader.yaml.YamlMessageStructureMapper;
 import nablarch.test.core.reader.yaml.YamlSection;
-import nablarch.test.core.reader.yaml.YamlTableDataBuilder;
+import nablarch.test.core.reader.yaml.YamlTableStructureMapper;
+import nablarch.test.core.reader.yaml.YamlValueProcessor;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 
 import java.util.Collections;
@@ -22,8 +23,17 @@ import java.util.Map;
  * YAML 形式のテストデータを読み込むパーサ。
  *
  * <p>
- * {@link BasicTestDataParser} を継承し、各 getter を YAML ファイルから直接構築するよう
- * オーバーライドする。構築処理は {@code nablarch.test.core.reader.yaml} パッケージの各ビルダーに委譲する。
+ * {@link BasicTestDataParser} を継承し、各 getter を YAML ファイルから直接構築するようオーバーライドする。
+ * 読み込みは <b>2 層</b>で構成する（設計書 判断 B / option C）。
+ * </p>
+ * <ol>
+ *   <li><b>構造マッピング層</b>（{@code Yaml*StructureMapper}）: YAML Map を値未加工の生の構造レコード
+ *       （{@code Raw*}）へ写し取る。変換ツールと共有する公開 API。</li>
+ *   <li><b>値加工＋組み立て層</b>（{@link YamlValueProcessor}）: 生の構造レコードに特殊記法の解釈・
+ *       デフォルト値補完・メッセージ長の {@code -} 注入を施し、本体の器を組み立てる。</li>
+ * </ol>
+ * <p>
+ * 2 層を明示的に順に呼び出すため、旧実装の「空の interpreters を渡すと加工が外れる」暗黙の切り替えは持たない。
  * {@link TestDataReader} は使用しない（{@link #setTestDataReader} は {@link UnsupportedOperationException} をスローする）。
  * </p>
  *
@@ -35,13 +45,17 @@ public class YamlTestDataParser extends BasicTestDataParser {
     private DefaultValues defaultValues = new BasicDefaultValues();
     private List<TestDataInterpreter> interpreters;
 
-    private YamlTableDataBuilder tableDataBuilder;
-    private YamlFileBuilder fileBuilder;
-    private YamlMessageBuilder messageBuilder;
+    /** 構造マッピング層（状態を持たないため使い回す）。 */
+    private final YamlTableStructureMapper tableMapper = new YamlTableStructureMapper();
+    private final YamlFileStructureMapper fileMapper = new YamlFileStructureMapper();
+    private final YamlMessageStructureMapper messageMapper = new YamlMessageStructureMapper();
 
-    /** デフォルトコンストラクタ。ビルダーをデフォルト設定で初期化する。 */
+    /** 値加工＋組み立て層（dbInfo・defaultValues・interpreters 設定時に再構築する）。 */
+    private YamlValueProcessor valueProcessor;
+
+    /** デフォルトコンストラクタ。値加工層をデフォルト設定で初期化する。 */
     public YamlTestDataParser() {
-        rebuildBuilders();
+        rebuildValueProcessor();
     }
 
     /**
@@ -67,7 +81,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public void setDbInfo(DbInfo dbInfo) {
         this.dbInfo = dbInfo;
         super.setDbInfo(dbInfo);
-        rebuildBuilders();
+        rebuildValueProcessor();
     }
 
     /** {@inheritDoc} */
@@ -75,7 +89,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public void setInterpreters(List<TestDataInterpreter> interpretersPrototype) {
         this.interpreters = interpretersPrototype;
         super.setInterpreters(interpretersPrototype);
-        rebuildBuilders();
+        rebuildValueProcessor();
     }
 
     /** {@inheritDoc} */
@@ -83,7 +97,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public void setDefaultValues(DefaultValues defaultValues) {
         this.defaultValues = defaultValues;
         super.setDefaultValues(defaultValues);
-        rebuildBuilders();
+        rebuildValueProcessor();
     }
 
     /** {@inheritDoc} */
@@ -100,7 +114,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
         }
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String gid = formatGroupId(groupId);
-        return tableDataBuilder().buildTableDataList(yaml, YamlSection.KEY_SETUP_TABLES, gid, false, path);
+        return valueProcessor.toTableDataList(
+                tableMapper.mapTables(yaml, YamlSection.KEY_SETUP_TABLES),
+                YamlSection.KEY_SETUP_TABLES, gid, false, path);
     }
 
     /** {@inheritDoc} */
@@ -108,10 +124,12 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public List<TableData> getExpectedTableData(String path, String resourceName, String... groupId) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String gid = formatGroupId(groupId);
-        List<TableData> expected = tableDataBuilder().buildTableDataList(
-                yaml, YamlSection.KEY_EXPECTED_TABLES, gid, false, path);
-        List<TableData> completed = tableDataBuilder().buildTableDataList(
-                yaml, YamlSection.KEY_EXPECTED_COMPLETE_TABLES, gid, true, path);
+        List<TableData> expected = valueProcessor.toTableDataList(
+                tableMapper.mapTables(yaml, YamlSection.KEY_EXPECTED_TABLES),
+                YamlSection.KEY_EXPECTED_TABLES, gid, false, path);
+        List<TableData> completed = valueProcessor.toTableDataList(
+                tableMapper.mapTables(yaml, YamlSection.KEY_EXPECTED_COMPLETE_TABLES),
+                YamlSection.KEY_EXPECTED_COMPLETE_TABLES, gid, true, path);
         expected.addAll(completed);
         return expected;
     }
@@ -120,7 +138,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
     @Override
     public List<Map<String, String>> getListMap(String path, String resourceName, String id) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
-        return tableDataBuilder().buildListMapRows(yaml, id, path);
+        return valueProcessor.toListMapRows(tableMapper.mapListMaps(yaml), id, path);
     }
 
     /** {@inheritDoc} */
@@ -128,7 +146,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public List<DataFile> getSetupFile(String path, String resourceName, String... groupId) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String gid = formatGroupId(groupId);
-        return fileBuilder().buildFileList(yaml, YamlSection.KEY_SETUP_FILES, gid, path);
+        return valueProcessor.toDataFileList(
+                fileMapper.mapFiles(yaml, YamlSection.KEY_SETUP_FILES),
+                YamlSection.KEY_SETUP_FILES, gid, path);
     }
 
     /** {@inheritDoc} */
@@ -136,14 +156,17 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public List<DataFile> getExpectedFile(String path, String resourceName, String... groupId) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String gid = formatGroupId(groupId);
-        return fileBuilder().buildFileList(yaml, YamlSection.KEY_EXPECTED_FILES, gid, path);
+        return valueProcessor.toDataFileList(
+                fileMapper.mapFiles(yaml, YamlSection.KEY_EXPECTED_FILES),
+                YamlSection.KEY_EXPECTED_FILES, gid, path);
     }
 
     /** {@inheritDoc} */
     @Override
     public MessagePool getMessage(String path, String resourceName, String id) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
-        return messageBuilder().buildMessagePool(yaml, YamlSection.KEY_MESSAGES, id, path);
+        return valueProcessor.toMessagePool(
+                messageMapper.mapMessages(yaml, YamlSection.KEY_MESSAGES), id, true, path);
     }
 
     /** {@inheritDoc} */
@@ -151,7 +174,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
     public MessagePool getMessageWithoutCache(String path, String resourceName, DataType dataType, String id) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
-        return messageBuilder().buildMessagePool(yaml, sectionKey, id, path);
+        boolean useFwHeader = YamlSection.KEY_MESSAGES.equals(sectionKey);
+        return valueProcessor.toMessagePool(
+                messageMapper.mapMessages(yaml, sectionKey), id, useFwHeader, path);
     }
 
     /** {@inheritDoc} */
@@ -160,7 +185,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
                                                                String id, DataType dataType) {
         Map<String, Object> yaml = YamlLoader.load(path, resourceName);
         String sectionKey = YamlSection.dataTypeToSectionKey(dataType);
-        return messageBuilder().buildSendSyncMessageList(yaml, sectionKey, id, path);
+        return valueProcessor.toSendSyncList(messageMapper.mapMessages(yaml, sectionKey), id, path);
     }
 
     /**
@@ -171,21 +196,7 @@ public class YamlTestDataParser extends BasicTestDataParser {
         YamlLoader.clearCacheForTest();
     }
 
-    private void rebuildBuilders() {
-        tableDataBuilder = new YamlTableDataBuilder(dbInfo, defaultValues, interpreters);
-        fileBuilder = new YamlFileBuilder(interpreters);
-        messageBuilder = new YamlMessageBuilder(interpreters);
-    }
-
-    private YamlTableDataBuilder tableDataBuilder() {
-        return tableDataBuilder;
-    }
-
-    private YamlFileBuilder fileBuilder() {
-        return fileBuilder;
-    }
-
-    private YamlMessageBuilder messageBuilder() {
-        return messageBuilder;
+    private void rebuildValueProcessor() {
+        valueProcessor = new YamlValueProcessor(dbInfo, defaultValues, interpreters);
     }
 }

@@ -41,17 +41,25 @@ public class YamlFileBuilderTest {
     private static final String RESOURCE_ROOT = "src/test/java/";
     private static final String DIR = RESOURCE_ROOT + "nablarch/test/core/reader/yaml/";
 
-    private YamlFileBuilder sut;
+    private YamlValueProcessor valueProcessor;
+    private final YamlFileStructureMapper fileMapper = new YamlFileStructureMapper();
 
     @Before
     public void before() {
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        sut = new YamlFileBuilder(interpreters);
+        // ファイル経路は dbInfo・defaultValues を使用しないため null で差し支えない。
+        valueProcessor = new YamlValueProcessor(null, null, interpreters);
     }
 
     @After
     public void after() {
         YamlLoader.clearCacheForTest();
+    }
+
+    // 構造マッピング層（Map→Raw*）→ 値加工層（Raw*→本体器）の 2 層を通すヘルパー。
+    private List<DataFile> buildFileList(Map<String, Object> yaml, String sectionKey,
+                                        String groupId, String basePath) {
+        return valueProcessor.toDataFileList(fileMapper.mapFiles(yaml, sectionKey), sectionKey, groupId, basePath);
     }
 
     // ========================================================================
@@ -73,7 +81,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
 
         // Then
         assertThat(result.size(), is(2));
@@ -96,7 +104,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
 
         // Then
         assertThat(result.get(0).getPath(), is("dummy/setup_fixed.dat"));
@@ -118,7 +126,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[grp1]", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[grp1]", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -140,7 +148,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "expected_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "expected_files", "", DIR);
 
         // Then: 末尾セクションが欠落していないこと
         assertThat(result.size(), is(2));
@@ -163,7 +171,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/emptyYaml");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
 
         // Then
         assertThat(result.size(), is(0));
@@ -189,7 +197,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
 
         // Then: グループIDなしの 2 件のみ
         assertThat(result.size(), is(2));
@@ -214,7 +222,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
 
         // Then
         assertThat(result.get(0).createLayout().getDirective().get("text-encoding"), is("Windows-31J"));
@@ -239,7 +247,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[noRecordType]", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[noRecordType]", DIR);
 
         // Then: record_type がない場合 "default" にフォールバックすること
         assertThat(result.size(), is(1));
@@ -268,7 +276,7 @@ public class YamlFileBuilderTest {
 
         // When / Then
         try {
-            sut.buildFileList(yaml, "setup_files", "[missingPath]", DIR);
+            buildFileList(yaml, "setup_files", "[missingPath]", DIR);
             fail("IllegalStateException が期待される");
         } catch (IllegalStateException e) {
             assertThat("フィールド名がメッセージに含まれること", e.getMessage(), containsString("path"));
@@ -297,7 +305,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[multiRecord]", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[multiRecord]", DIR);
 
         // Then: DataFile にフラグメント数を返す公開 API がないため、private フィールド "all" をリフレクションで確認する。
         assertThat(result.size(), is(1));
@@ -332,7 +340,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "[emptyFile]", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "[emptyFile]", DIR);
 
         // Then
         assertThat(result.size(), is(1));
@@ -358,7 +366,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "setup_files", "", DIR);
+        List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
         VariableLengthFile variableFile = (VariableLengthFile) result.get(1);
 
         // Then: length なしフィールドの場合 record-length ディレクティブが null であること（setLengths は呼ばれない）
@@ -384,7 +392,7 @@ public class YamlFileBuilderTest {
 
         // When / Then: buildFileList 内の directive 設定時に IllegalArgumentException がスローされること
         try {
-            sut.buildFileList(yaml, "expected_files", "[twoCharSeparator]", DIR);
+            buildFileList(yaml, "expected_files", "[twoCharSeparator]", DIR);
             fail("IllegalArgumentException が期待される");
         } catch (IllegalArgumentException e) {
             // OK
@@ -407,7 +415,7 @@ public class YamlFileBuilderTest {
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
 
         // When
-        List<DataFile> result = sut.buildFileList(yaml, "expected_files", "[tabSeparator]", DIR);
+        List<DataFile> result = buildFileList(yaml, "expected_files", "[tabSeparator]", DIR);
 
         // Then
         assertThat("1件取得できること", result.size(), is(1));
