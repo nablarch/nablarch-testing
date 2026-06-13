@@ -398,16 +398,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-13
-- **Last completed**: **#3 完了＋Phase 2 ゲート通過**（commit `8668af3`・push 済）。変換ツール `tool/converter/` を main 24／test 9（合計 33・全 .java）一括削除、`YamlModeTestBase.prepareYamlData` を `UnsupportedOperationException` スタブ化（ユーティリティゆえ @Ignore 不可・`wrapForYaml`/`YAML_ROOT` 温存）、18 `*YamlTest` にクラスレベル `@Ignore` 付与。`docs/pr75/checks/P2-3.md` に記録。アーキ PASS・SWE PASS（イテレ2）。`mvn -o test` Failures=0（残 Error は既存 Mockito 環境 2 クラスのみ・#3 非起因）。
-- **Next**: **#4（Phase 3）中間モデルの再構築を仕上げる**。実装＋テストは WIP commit `2642e7d` 済（10 クラス＋8 テスト 27 件 GREEN・model C0/C1 100%）。**残作業＝QA イテレ2 再レビューの完了のみ**。QA イテレ1 の FAIL 指摘（全 13 DataType 網羅漏れ＋エッジケース）は対応済（テスト 20→27 件に増。`TableDataBlockTest`/`FileDataBlockTest`/`MessageDataBlockTest`/`FieldDefTest` に変種網羅・大文字保持・FW_HEADER 保持・空Map・複数レコード順を追加）。QA サブエージェント（前回 agentId `a0bd979f946d8264d`。新規セッションでは履歴喪失のため新規 QA サブエージェントへ同等プロンプトで再依頼）に「全 13 種別到達＋エッジ漏れ解消」を確認させ、PASS なら `P3-4.md` の「4 観点レビュー」節に結果追記→#4 を `complete task #4` でコミット→push。その後 #5（TestDataParserAdapter 新設）へ。
-- **Notes**:
-  - **#4 設計判断（確定済・P3-4.md／D 節相当）**: ①本体 `nablarch.test.core.reader.DataType`（13 種別）を再利用し変換ツール独自 enum を作らない（依存方向 変換ツール→本体 一方向）。②`FieldDef.type`/`length` は形式中立 String（YAML 型は日本語名称・`"-"`長もリテラル保持）。③旧 `MessageDataBlock` の静的セット `KNOWN_DIRECTIVE_NAMES` は中間モデルに**持たせない**（name|value 行の分類規則＝Excel リーダ #6／検証 #11 の責務。#11 は KNOWN_DIRECTIVE_NAMES 整合テストを持つ＝#6/#11 で配置先を決める）。④leaf クラスと Container/Section/RecordLayout を `final` 化。⑤getter は防御コピーせず参照返却（Javadoc に「読み取り専用」明記・`Raw*` と一貫）。
-  - **#4 設計ソース**: 中間モデルのフィールド契約は旧モデル（`git show 5a160c4:src/main/java/nablarch/test/tool/converter/model/`）＋ `Raw*`（`src/main/java/nablarch/test/core/reader/yaml/model/`）＋本体器（`DataFile`/`TableData`/`MessagePool`/`DataFileFragment`）の getter を突き合わせて確定。設計書 §3 はクラス図のみ（フィールド非規定）。
-  - **#7 申し送り（再掲）**: 変換ツール `YamlFormatReader` の独自 YAML ウォークを削除し `Yaml*StructureMapper`（`Raw*` を返す `@Published` 公開 API）へ再接続。`RawMessage.fwHeader` は生 `Object` 保持なので #7 で Map<String,String> へ検証・変換して `MessageDataBlock.fwHeaderFields` に詰める。
-  - **テスト環境（恒久・上の「運用ノート」節参照）**: hamcrest-all 1.1 のため iterable matcher `contains`/`containsInAnyOrder` は**使用不可**。順序検証は `new ArrayList<>(map.keySet())` を `CoreMatchers.is(List.of(...))` で、集合は `is(Set.of(...))` で代替（#4 テストはこの方針で記述済）。JaCoCo は `mvn package -Dmaven.javadoc.skip=true`（online）→`mvn jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`。`target/` の jacoco インストルメント済クラス残存でビルド汚染しうるので `rm -rf target` 後に実行。
-  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**）。`pom.xml:216-224` の `exec-maven-plugin` mainClass が削除済変換ツールを指す残存参照＝#10 の CLI/Mojo 再構築で是正（非ビルド経路）。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
