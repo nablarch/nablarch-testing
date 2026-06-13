@@ -1,8 +1,9 @@
 # NTF テストデータ変換ツール 再構築フェーズ（設計書 6.3 到達）
 
 ブランチ: `add-yaml`
+ドラフト PR（開発の最初に作成・常時更新）: [lovaizu/nablarch-testing#1](https://github.com/lovaizu/nablarch-testing/pull/1)
 
-このファイルはプロジェクトの進行管理・経緯記録です。PR レビュアーは「成果物」までを参照してください。
+このファイルはプロジェクトの進行管理・経緯記録であり、**唯一の真実（single source of truth）**です。PR 本文は本ファイルへのリンクのみとし、内容を二重化しません（重複は形骸化・不整合の元になるため）。進捗・状況共有・相談はすべて本ファイルの更新を通じて行います。PR レビュアーは「成果物」までを参照してください。
 
 ---
 
@@ -341,6 +342,7 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - **Last completed**: 計画策定。設計書・既存コードを精査し、本 steering を新プラン（全削除→設計書通り再構築・フェーズ単位レビュー・全工程 TDD）へ全面書き換え。実コードのタスクは未着手
 - **Next**: ユーザーに本 steering の**最終承認**を確認 → OK なら Phase 1 / #1（本体再利用面の設計書照合・是正）に着手
 - **Notes**:
+  - **ドラフト PR #1 作成済み**（base: `convert-testdata-excel-to-text`、head: `add-yaml`）。これは開発の最初に作る**作業 PR**で、Phase 1〜6 の進行に伴いコミットが積み上がる。PR 本文は本 steering へのリンクのみ（重複排除）。状況共有・相談は本ファイルの更新で行う。
   - `/rn:gm` で計画を提示しユーザー指示（旧プラン削除・全 TDD・フェーズ単位 4 観点レビュー＋ユーザーレビュー・ゴールを自分の文で）を反映済み。ただしファイル反映後の最終承認は未取得のまま `/rn:bb` で中断。次セッションはまず承認確認から。
   - **重要事実**: ②変換ツールは本体を一切再利用しない 100% 独自実装（`XlsFormatReader`=POI 直叩き約 500 行、`YamlFormatReader`=SnakeYAML 直叩き約 301 行）。`TestDataParserAdapter` は不在。①本体 YAML は builder 内で構造写しと値加工が混在し空 interpreters の暗黙切替に依存（判断 B で廃止対象）。③変換ツール依存点は `YamlModeTestBase` 87 行目の `TestDataConverter.convert()` のみ＋`TestDataConverterTest`（ツール自体のテスト）。`*YamlTest` 18 クラスが利用。
   - 設計書 §共通 は器 getter を「本体無変更」と記すが実際はこのブランチで getter 追加済み（`DataFile.getAllFragments/getDirectives`、`DataFileFragment.getRecordType/getNames/getTypes/getLengths/getValues`、`MessagePool.getFwHeader` public 化）→ #1 で「再利用に必要な最小集合」へ収束させ整合を取る。
