@@ -111,19 +111,21 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 **Prerequisites**: なし
 
-**Steps**:
+**Steps**（option C・D-F 参照）:
 
-- [ ] 現 builder（`YamlFileBuilder`/`YamlTableDataBuilder`/`YamlMessageBuilder`）の構造写し処理と値加工（interpret・補完・マージ）箇所を特定
-- [ ] 構造マッピング層を分離: `DataFile`/`TableData`/`MessagePool` を値未加工で返す public メソッド/クラスを新設
-- [ ] 値加工層を上に重ねる構成へ再編し、`YamlTestDataParser`（本体テスト読み込み）は両層を通す
-- [ ] 「空 interpreters に頼る暗黙切替」を廃し、層の呼び分けを明示にする
-- [ ] 既存 Yaml 系本体テスト全 GREEN（振る舞い不変）
+- [ ] 現 builder（`YamlFileBuilder`/`YamlTableDataBuilder`/`YamlMessageBuilder`）の構造写し処理と値加工（interpret・補完・マージ・`-`長注入）箇所を特定
+- [ ] 生の構造レコード `Raw*`（`reader.yaml.model`）を新設（値未加工・マーカー保持・YAML 順・長さ省略 null・FW_HEADER 保持・大文字化なし）
+- [ ] 構造マッピング層 `Yaml*StructureMapper`（Map→`Raw*`）を新設（変換ツールも呼ぶ public API）
+- [ ] 値加工＋組み立て層 `YamlValueProcessor`（`Raw*`→本体器。interpret・BinaryFileInterpreter・`-`長注入・fillDefaultValues）を新設
+- [ ] `YamlTestDataParser` を「structureMapper → valueProcessor」明示 2 呼び出しへ再配線。「空 interpreters 素通し」暗黙切替を廃止
+- [ ] 既存 Yaml 系本体テスト全 GREEN（振る舞い不変）。構造層テストと値加工層テストへ整理
+- [ ] 要確認 2 件（list_maps TreeMap 順／fw_header 非 interpret）の挙動不変を確認
 - [ ] セルフチェック（`docs/pr75/checks/P1-2.md`）
 
 **Completion criteria**:
-- 構造マッピング層が `${...}`・`null`・`""` 等を記法のまま保持した本体器を返すことをテストで実証
+- 構造マッピング層が `${...}`・`null`・`""`・マーカー・長さ省略・大文字小文字を記法のまま保持した `Raw*` を返すことをテストで実証
 - `YamlTestDataParser` が両層経由で従来と同一結果（既存テスト全 GREEN）
-- 変換ツールから呼べる public 構造マッピング API が存在する
+- 変換ツールから呼べる public 構造マッピング API（`Yaml*StructureMapper`＋`Raw*`）が存在する
 
 **Phase 1 完了ゲート**: 4 観点サブエージェントレビュー → ユーザーレビュー OK
 
@@ -315,16 +317,17 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **Conclusion**: 本ファイルを継続更新。旧プラン部は削除して新プランへ置換
 - **Rationale**: checks/・決定事項・PR 参照が docs/pr75 に集約され単一の真実として扱える
 
-## D-F: #2 本体 YAML 2 層分離は「案2＝構造マッピング層を別に分ける（あるべき姿）」を採用
-- **Conclusion**: 新規追加の未リリースコードゆえ「安全（既存挙動維持）」は論点でなく**負債ゼロ**を優先（memory `new-code-prefer-ideal-design`）。実装方針は以下：
-  1. **構造マッピング層**＝既存ビルダー（`YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder`）を「構造写しのみ」に純化（`interpret`・`fillDefaultValues`・`BinaryFileInterpreter` を除去 → 生値の本体器を返す）。歩き処理を再利用するので重複ゼロ。変換ツールはこれを直接呼ぶ公開 API。
-  2. **値加工層**＝新設。構造マッピング層が返した生値器を **#1 の getter（`getValues`/`getNames`/`getColumnNames`/`getValue` 等）で読み → interpret → 器を組み直す**＋`fillDefaultValues`。構造層は interpret を一切知らない（純粋）。`BinaryFileInterpreter`（`${binaryFile:}`）は値加工層が basePath 付きで担う。
-  3. `YamlTestDataParser` を両層経由に再配線。`YamlSection.interpret()` の「interpreters が空なら素通し」暗黙切替を廃止し、層の呼び分けで明示化。
-  4. 既存 YAML テスト約 150 件を「構造層=生値／値加工層=解釈」に整理しつつ全 GREEN 維持。
-- **Rationale**: 設計書 判断 B（値加工層を上に乗せる）に忠実。ユーザー判断で案2 採用。
-- **Evidence（調査済み）**: 本体は解釈をビルド時にセル単位で行う（`TestDataParsingTemplate.parse` L179 が各行に `interpret` を適用してから器へ）。コンテナ（`TableData`/`DataFileFragment`）は interpreters を持たない。よって値加工層は「生値器を読み直して解釈・再構築」が正しい形。
-- **テスト移送の注意**: 現 `YamlTableDataBuilderTest` には builder が解釈する前提のテスト（例 `testBuildListMapRows_updateTimeAndSetUpTimeConverted`／`...escapedDoubleQuoteIsDoubleQuoteChar`）がある。構造層を純化したらこれらは「生値（`${updateTime}` のまま等）」を期待するよう書き換え、解釈の検証は新設する値加工層のテストへ移す。
-- **未確定（着手前にユーザー確認）**: 構造マッピング層の公開 API 形（クラス名・メソッド名）を先にすり合わせるか、このまま着手か。
+## D-F: #2 本体 YAML 2 層分離 — 共有するのは「本体器」でなく「構造ウォーク」（option C・あるべき姿）
+- **Conclusion**: 新規追加の未リリースコードゆえ「安全（既存挙動維持）」は論点でなく**負債ゼロ**を優先（memory `new-code-prefer-ideal-design`）。当初案（構造マッピング層が本体器を返す＝判断 B 文言どおり）はエキスパート照合の結果、YAML 経路では非可逆で誤りと判明したため **option C** を採用。実装方針：
+  1. **構造マッピング層**＝`Yaml*StructureMapper`（`YamlTableStructureMapper`/`YamlFileStructureMapper`/`YamlMessageStructureMapper`）。YAML Map → **生の構造レコード `Raw*`**（`nablarch.test.core.reader.yaml.model`：`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`）。値未加工・マーカー保持・YAML 順保持・長さ省略は `null`・FW_HEADER もデータ保持・**大文字化しない**。本体テストと変換ツールが共有する公開 API。
+  2. **値加工＋組み立て層**＝`YamlValueProcessor`（仮）。`Raw*` を受け取り `interpret`＋`BinaryFileInterpreter`(basePath)＋メッセージ長 `-` 注入＋`fillDefaultValues` を施して**本体器を組み立てる**。本体テスト専用。構造層は interpret を一切知らない。
+  3. `YamlTestDataParser` を「structureMapper → valueProcessor」の明示 2 呼び出しに再配線。`interpret()` の「interpreters 空なら素通し」暗黙切替を廃止。
+  4. 既存 YAML テストを「構造層=生値／値加工層=解釈・組み立て」に整理しつつ全 GREEN 維持。
+- **なぜ本体器を共有しないか（実コードで確認）**: `TableData#setColumnNames`/`addRow` がカラム名・テーブル名を**大文字化**（`TableData.java:489-494,96-98,530`）→ `emp_name`→`EMP_NAME` で往復破壊。メッセージは長さ省略に `-` を注入し `addValue`→`replaceFieldSize` が**実値バイト長で `-` を上書き破壊**（`DataFileFragment.java:111-114,140-154,289-296`）→「長さ省略」復元不能。マーカー `[COL]` は `TableData` 構築時に脱落。list_maps は `TreeMap` でキー順変化（`YamlTableDataBuilder.java:154`）。**決定打**: 変換ツールの現 `YamlFormatReader`(`tool/converter/yaml/`)は既に本体器を経由せず生 YAML Map を独自ウォーク（`:93-250`）→ 共有すべきは器でなくウォーク。
+- **判断 A（Excel）は不変**: Excel は本体 Parser 再利用の都合上「本体器」が唯一の共有点ゆえ §共通 の getter 経由は正。option C は YAML 経路（判断 B）のみの精緻化。設計書 §判断 B の補足に反映済み。
+- **#7 への波及**: 変換ツール `YamlFormatReader` の独自ウォーク（重複）は #7 で削除し `Yaml*StructureMapper` へ再接続（Raw*→中間モデル）。これが「本体/変換ツールの読み込み二重実装」解消＝6.3 不整合の根治。
+- **着手前に要確認だった事項（解決済み）**: 公開 API 形 → ユーザー指示「設計書通り・あるべき姿優先・確認不要」により上記で確定。
+- **実装中の要確認（2 件・潜在挙動）**: ① list_maps の `TreeMap` キー順変更が本体テスト assertion に影響しないか（構造層は YAML 順保持＝挙動が変わりうる）。② fw_header 値は現状 interpret されない（`YamlMessageBuilder.extractFwHeader` は素の `objectToString`）— 分離時に挙動を変えないこと。
 
 ## 既存の有効な決定事項（YAML 仕様・本体①に適用、継続有効）
 
@@ -383,10 +386,12 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
-- **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Status**: in_progress
+- **Date**: 2026-06-13
+- **Operating mode（ユーザー指示・2026-06-13）**: **私に確認せず 6.3 まで自律的に目指す**。原則設計書通り／問題が起きたら常にあるべき姿を優先。NTF の YAML 対応・変換ツール・テストコードは自由に変更可。**released な NTF 本体プロダクションコードのみ後方互換維持があるので変更前にユーザーへ相談**（できるだけ変更しない）。困ったらエキスパート（サブエージェント）に相談。どうにもならない場合のみユーザーに相談。git でいつでも戻せる。フェーズ完了ゲートのユーザーレビューも「確認不要」指示によりスキップしてよい（必要時のみ相談）。
+- **Last completed**: #1（`bb76b97`）。本セッションで **#2 の設計を option C へ確定**（D-F・設計書 §判断B補足）＝構造マッピング層は「本体器」でなく「生の構造レコード `Raw*`」を返し、本体テストと変換ツールが**構造ウォークを共有**。当初の「本体器を返す」案はエキスパート照合で YAML 経路では非可逆（大文字化・`-`長破壊・マーカー脱落）と判明し是正。released 本体コードは未変更。
+- **Next**: **#2 実装に着手（TDD）**。順序＝(1) `Raw*` モデル＋最初の `Yaml*StructureMapper`（TableData が最小）を RED→GREEN、(2) `YamlValueProcessor`、(3) 残り mapper（File/Message）、(4) `YamlTestDataParser` 再配線、(5) 既存テスト整理して全 GREEN。要確認 2 件（list_maps TreeMap 順・fw_header 非 interpret）を実装中に検証。
+- **Notes**:
+  - **環境**: ブランチ `add-yaml`（`origin/add-yaml` 追跡）。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**）。ドラフト PR #1: https://github.com/lovaizu/nablarch-testing/pull/1 （本文は steering へのリンクのみ）。
+  - **テスト実行メモ**: `-Dtest` 絞り込み実行の前に `rm -rf target/surefire-reports`。`mvn -o`（オフライン）可。カバレッジは `mvn clean package -Dtest=...` → `mvn jacoco:report`（`package` まで必要）。Javadoc プラグインは `JAVA_HOME` 未設定で BUILD FAILURE になるがテストは GREEN（`Tests run`/`Failures:0 Errors:0` で確認）。
+  - **Phase 1 完了ゲート**: #1+#2 完了後に 4 観点サブエージェントレビュー（アーキ/SWE/QA/Java）。ユーザーレビューは「確認不要」指示によりスキップ可。
