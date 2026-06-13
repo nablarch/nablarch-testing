@@ -388,19 +388,23 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 `mvn test` だけでは `restore-instrumented-classes` が走らず `jacoco:report` でエラーになる。`package` まで実行すること。
 
+### 運用ノート（恒久・過去タスクで確定）
+
+- **オフライン/オンラインの可否**: オフライン `mvn -o test` は可。ただし `package`（jacoco.exec 生成に必要）は clean-plugin/git-commit-id-plugin 等が未キャッシュで**オフライン不可**＝**online `mvn package -Dmaven.javadoc.skip=true`** で jacoco.exec を生成する。`clean` ゴールもオフライン不可なので `rm -rf target` で代替。Javadoc プラグインは BUILD FAILURE になるがテストは GREEN。
+- **失敗集合ベースライン（既存事象・PR75 非起因）**: 全モジュール 16 失敗クラス（43F/44E）＝Mockito 環境起因 3 クラス（`MockHttpRequestTest`/`MockServletExecutionContextTest`/`ConverterFileFilterTest`）＋ `*YamlTest` 統合 13 クラス（旧変換ツール経由・6.3 で解消対象）。`d3cd139`↔最終で完全一致。等価性テストの IllegalArgument/IllegalState ラップ差は T7 由来で PR75 マージ前に別途解消が必要。
+- **テスト集計の罠**: surefire-reports 走査で `failures="[1-9]"` は 1 桁しか拾わない。**`failures="[1-9][0-9]*"` を使うこと**（10 件以上の失敗を取りこぼす）。
+
 ---
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-13
-- **Last completed**: **#2 完了＋Phase 1 完了ゲート通過**。本体 YAML 読み込みの 2 層分離（構造マッピング層＋値加工層・option C）を実装し、4 観点レビュー（アーキ/SWE/QA/Java）をイテレーション 2 まで回して全 PASS。レビュー対応＝(a) File/Message 構造層の直接単体テスト新設（`Yaml{File,Message}StructureMapperTest`）、(b) 移送済 builder テスト 3 本を `Yaml{File,Message,Table}ValueProcessorTest` へリネーム＋ stale `{@link}`/タグ修正、(c) `YamlMessageStructureMapper` クラス Javadoc の矛盾是正、(d) `YamlSection.applyDirectives` デッドコード削除、(e) `Yaml*StructureMapper`＋`Raw*` に `@Published(tag="architect")` 付与、(f) Javadoc 微修正。**reader-YAML 171 件全 GREEN／全モジュール 1490 件で波及ゼロ（ベースライン比較で失敗集合完全一致）**。Phase 1（#1+#2）完了。
-- **Next**: **#3（Phase 2）変換ツール一括削除＋テスト基盤一時無効化**。`src/main|test/java/nablarch/test/tool/converter/` 配下を全削除、`YamlModeTestBase`＋18 `*YamlTest` を一時無効化（`@Ignore`）、無効化一覧と復帰方針を `docs/pr75/checks/P2-3.md` に記録、コンパイル成功＋Excel 経路既存テスト GREEN を確認。task-workflow 準拠（Phase 2 ゲートはアーキ/SWE レビュー）。
-- **Notes**:
-  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**）。オフライン `mvn -o test` 可だが `package`（jacoco 用）は clean-plugin/git-commit-id-plugin 等が未キャッシュでオフライン不可＝**online `mvn package -Dmaven.javadoc.skip=true`** で jacoco.exec 生成。`clean` ゴールはオフライン不可なので `rm -rf target` で代替。Javadoc プラグインは BUILD FAILURE になるがテストは GREEN。
-  - **失敗集合ベースライン（既存事象・#2 非起因）**: 全モジュール 16 失敗クラス（43F/44E）＝Mockito 環境起因 3 クラス（`MockHttpRequestTest`/`MockServletExecutionContextTest`/`ConverterFileFilterTest`）＋ `*YamlTest` 統合 13 クラス（旧変換ツール経由・6.3 で解消対象）。`d3cd139`↔最終で完全一致。**等価性テストの IllegalArgument/IllegalState ラップ差は T7 由来で #2 非起因**（PR75 マージ前に別途解消が必要）。
-  - **テスト集計の罠**: surefire-reports 走査で `failures="[1-9]"` は 1 桁しか拾わない。**`failures="[1-9][0-9]*"` を使うこと**（10 件以上の失敗を取りこぼす）。
-  - **#7 への申し送り**: 変換ツール `YamlFormatReader` の独自 YAML ウォークを削除し `Yaml*StructureMapper`（`Raw*` を返す公開 API・`@Published` 済）へ再接続する。`@Published` 付与済なので別 pkg から呼べる。`isMarker` null 列分岐の明示テストは値加工層側でこの頃に追加検討。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
