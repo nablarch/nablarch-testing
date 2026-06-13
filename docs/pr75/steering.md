@@ -89,8 +89,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #1: 本体再利用面の設計書照合・是正
 
 **Purpose**: 設計書 判断 A・共通が要求する「本体の構造解析を再利用するための取り出し面」を設計書と照合し、過不足を最小集合へ収束させる。
+
 **Prerequisites**: なし
+
 **Steps**:
+
 - [ ] 設計書 判断 A（アダプタが空 interpreters で parse→getResult／相乗りはアダプタ 1 枚に閉じる）と「共通：器の中身を読む手段」表を精読
 - [ ] `git diff main..HEAD` で本体 reader/file/messaging の現変更（`getResult` 可視性・`DataFile`/`DataFileFragment`/`MessagePool` の getter・各 Parser コンストラクタ可視性）を棚卸し
 - [ ] アダプタを `nablarch.test.core.reader` 同一パッケージに置く前提で、真に必要な可視性・getter を確定。過剰公開（例: `getResult` が package-private で足りるなら戻す）は是正
@@ -105,8 +108,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #2: 本体 YAML 読み込みの 2 層分離（判断 B）
 
 **Purpose**: YAML 読み込みを「構造マッピング層（値未加工で本体器を返す）」と「値加工層（interpret・補完・マージ）」に明示分離し、変換ツールが構造マッピング層だけを呼べる public API を本体に設ける。
+
 **Prerequisites**: なし
+
 **Steps**:
+
 - [ ] 現 builder（`YamlFileBuilder`/`YamlTableDataBuilder`/`YamlMessageBuilder`）の構造写し処理と値加工（interpret・補完・マージ）箇所を特定
 - [ ] 構造マッピング層を分離: `DataFile`/`TableData`/`MessagePool` を値未加工で返す public メソッド/クラスを新設
 - [ ] 値加工層を上に重ねる構成へ再編し、`YamlTestDataParser`（本体テスト読み込み）は両層を通す
@@ -126,8 +132,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #3: 変換ツール一括削除＋テスト基盤一時無効化
 
 **Purpose**: 独自再実装の変換ツールを main・test とも一括削除し、設計書通りの再構築に向けて白紙化する。削除で壊れる③テスト基盤は一時無効化してビルドを維持する。
+
 **Prerequisites**: なし
+
 **Steps**:
+
 - [ ] `src/main/java/nablarch/test/tool/converter/` 配下を全削除
 - [ ] `src/test/java/nablarch/test/tool/converter/` 配下を全削除
 - [ ] `YamlModeTestBase` と 18 `*YamlTest` を一時無効化（`@Ignore` 等）。無効化したクラス一覧と復帰方針を `docs/pr75/checks/P2-3.md` に記録
@@ -147,8 +156,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #4: 中間モデルの再構築
 
 **Purpose**: 設計書 3 章の中間モデルを新規作成する。
+
 **Prerequisites**: #3
+
 **Steps**:
+
 - [ ] `TestDataContainer` / `TestDataSection` / `TestDataBlock`(sealed; permits `ColumnRowDataBlock`/`FileDataBlock`/`MessageDataBlock`) / `ColumnRowDataBlock`(sealed; permits `TableDataBlock`/`ListMapBlock`) / `TableDataBlock` / `ListMapBlock` / `FileDataBlock` / `MessageDataBlock` / `RecordLayout` / `FieldDef` を作成
 - [ ] 各モデルの単体テスト（TDD）
 - [ ] セルフチェック
@@ -160,8 +172,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #5: TestDataParserAdapter 新設（判断 A）
 
 **Purpose**: `nablarch.test.core.reader` に薄いアダプタを 1 枚新設し、本体 Parser を空 interpreters＋スタブ `DbInfo` で配線して parse→getResult で生の器を取り出す。MESSAGE 本文は `MessageParser.getDelegate()` の `FixedLengthFile` を再利用。
+
 **Prerequisites**: #1, #4
+
 **Steps**:
+
 - [ ] `readFiles`/`readTables`/`readListMap`/`readMessage` 相当を実装（本体器を返す）
 - [ ] スタブ `DbInfo`（カラム型を返すだけ）を構成
 - [ ] 空 interpreters で `${...}`/`null`/`""` が未加工・補完/マージが起きないことをテストで実証
@@ -175,8 +190,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #6: XlsFormatReader 再構築（Excel IN）
 
 **Purpose**: アダプタ経由で本体器を受け取り中間モデルへ写す。独自 POI パースは持たない。
+
 **Prerequisites**: #4, #5
+
 **Steps**:
+
 - [ ] アダプタ呼び出し→中間モデル組み立てを実装
 - [ ] 全データ種別の単体テスト（TDD）
 - [ ] セルフチェック
@@ -189,8 +207,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #7: YamlFormatReader 再構築（YAML IN・判断 B）
 
 **Purpose**: 本体の構造マッピング層(#2)を直接呼び、生の器を中間モデルへ写す。SnakeYAML 直叩きの構造解析は持たない。
+
 **Prerequisites**: #2, #4
+
 **Steps**:
+
 - [ ] 構造マッピング層呼び出し→中間モデル組み立てを実装
 - [ ] 全データ種別の単体テスト（TDD）
 - [ ] セルフチェック
@@ -207,25 +228,33 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #8: YamlFormatWriter 再構築（YAML OUT）
 
 **Purpose**: 中間モデル→YAML を記法どおりに書き出す。
+
 **Prerequisites**: #4
+
 **Completion criteria**: 全種別を YAML 出力／単体テスト GREEN・C0/C1 100%（番人除く）
 
 ### #9: XlsFormatWriter＋ExcelFormatConfig 再構築（Excel OUT）
 
 **Purpose**: 中間モデル→Excel を整形設定（`ExcelFormatConfig`、デフォルト備え上書き可）に従い書き出す。
+
 **Prerequisites**: #4
+
 **Completion criteria**: 全種別を Excel 出力／整形はデフォルトで見やすい既定値／単体テスト GREEN
 
 ### #10: 変換ツール入口・周辺の再構築
 
 **Purpose**: `convert(from,to,input,output)` 入口、CLI/Mojo、ディレクトリ走査・include/exclude・上書き可否を再構築（`TestDataConverter`/`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。
+
 **Prerequisites**: #6, #7, #8, #9
+
 **Completion criteria**: 4 方向変換が入口から実行可能／単体テスト GREEN
 
 ### #11: YamlTestDataValidator 再構築（検証モード）
 
 **Purpose**: リンタ（列数一致・構造境界・スキーマ適合＋V-FNAME/V-DKEY/V-MSGROW 等）を再構築。
+
 **Prerequisites**: #4, #7
+
 **Completion criteria**: 各検証ルールをテストで実証／`KNOWN_DIRECTIVE_NAMES` が本体ディレクティブと一致する整合テストを含む
 
 **Phase 4 完了ゲート**: 4 観点レビュー → ユーザーレビュー OK
@@ -235,7 +264,9 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #12: 往復変換の可逆性確認
 
 **Purpose**: Excel→中間→Excel、YAML→中間→YAML で NTF 仕様上の意味が不変であることを検証する。
+
 **Prerequisites**: #6, #7, #8, #9, #10
+
 **Completion criteria**: 全データ種別で往復が意味不変／色・書式・コメント等は対象外と明記
 
 **Phase 5 完了ゲート**: 4 観点レビュー → ユーザーレビュー OK
@@ -245,13 +276,17 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 ### #13: 6.3 テスト基盤の再接続
 
 **Purpose**: `YamlModeTestBase` を再構築後の `TestDataConverter.convert` API へ再接続し、18 `*YamlTest` を再有効化する。
+
 **Prerequisites**: #10
+
 **Completion criteria**: `YamlModeTestBase` が新 API で Excel→一時 YAML 変換／18 テスト再有効化
 
 ### #14: 6.3 全件 PASS 確認
 
 **Purpose**: nablarch-testing 既存テストを Excel データの一時 YAML 変換で実行し全件 PASS（振る舞い不変）を確認する。
+
 **Prerequisites**: #2, #13, 全 Reader/Writer
+
 **Completion criteria**: 全件 GREEN（Excel ベースラインと同一の `Tests run`／`Failures:0 Errors:0`、既知 Skip 除く）／ベースライン数値を記録
 
 **Phase 6 完了ゲート**: 4 観点レビュー → ユーザーレビュー OK（＝ゴール達成）
