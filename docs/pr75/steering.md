@@ -398,13 +398,21 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-14
+- **Last completed**: **#4 完了**（commit `7fd59f7`・push 済）。中間モデル 10 クラス＋テスト 8 クラス 27 件 GREEN・model C0/C1 100%。本セッションで QA イテレ2／Java 言語エキスパート／ソフトウェアエンジニアの 3 独立サブエージェントレビューを再実施し全 **PASS**（`P3-4.md`「4 観点レビュー」節に記録）。QA イテレ1 FAIL（全 13 DataType 網羅漏れ＋エッジ不足）はテスト 20→27 件で解消確認。実装本体は WIP `2642e7d`、完了記録は `7fd59f7`。
+- **Next**: **#5（Phase 3）TestDataParserAdapter 新設（判断 A）に着手**。本セッションは設計＋本体コード調査（グラウンディング）まで完了・コード未着手。TDD で RED→GREEN→4 観点レビュー。
+- **Notes**:
+  - **#5 ゴール（設計書 §判断 A・§70-84/§103-116）**: `nablarch.test.core.reader` に薄いアダプタ `TestDataParserAdapter` を 1 枚新設。本体 `BasicTestDataParser` の配線を**空 interpreters**（`Collections.emptyList()`・`BinaryFileInterpreter` を積まない）で行い `parse(dir,resource,id)`→`getResult()` で生の本体器を取り出す。**後処理しない**（`fillDefaultValues`・EXPECTED マージをしない＝`getExpectedTableData` の挙動は持ち込まない）。相乗り（package-private 越え）はこの 1 クラスに限局。
+  - **#5 公開メソッド（本体器を返す）**: ①`readTables(path,resource,id,DataType)`→`List<TableData>`（DataType∈SETUP_TABLE_DATA/EXPECTED_TABLE_DATA/EXPECTED_COMPLETED。`new TableDataParser(reader, EMPTY, dbInfo, defaultValues, type)`）。②`readListMap(path,resource,id)`→`List<Map<String,String>>`（`new ListMapParser(reader, EMPTY)`）。③ファイル：`new FixedLengthFileParser(reader,EMPTY,type)`／`new VariableLengthFileParser(...)`（type∈SETUP_FIXED/EXPECTED_FIXED/SETUP_VARIABLE/EXPECTED_VARIABLE）→`List<? extends DataFile>`。④`readMessage(path,resource,id)`→`MessagePool`（`new MessageParser(reader,EMPTY,DataType.MESSAGE)`→getResult。FW ヘッダ＋本文 FixedLengthFile を持つ）。expected_request_*/response_* 系メッセージは `SendSyncMessageParser`（`getMessageWithoutCache` 相当・saveCache=false）または `GroupMessageParser` 経由＝#5 で対応するか #6/#10 送りか着手時に判断（中間モデル MessageDataBlock は 5 種別対応済）。
+  - **#5 スタブ DbInfo**: `parse` 経路で実際に呼ばれる DbInfo メソッドは `getColumnType(table,col)` のみ（`TableData.getColumnTypes`→`addRow`。L540-548）。`isBinary/isNumber/isDate/isBoolean/getColumns/getPrimaryKeys` 等は DB 書込み経路（insertData/replaceData）専用で変換ツールは触れない。スタブは全 11 メソッドを良性実装（`getColumnType`→`java.sql.Types.VARCHAR`(12)、bool→false、配列→空、length→0）。**値は型に依存せず生のまま格納**（`TableData.addRow` L522-533：`map.put(col.toUpperCase(), value)` で value 無加工）。
+  - **#5 既知の本体器の非可逆性（判断 A では許容＝Excel パスの仕様）**: `TableData.setColumnNames` がカラム名を**大文字化**（L489-494）、テーブル名も大文字化。よって `readTables` 戻り値の `getColumnNames`/`getTableName` は大文字。これは Excel 経路の TableData 器固有挙動で判断 A では受容（YAML 判断 B が本体器を避けた理由＝D-F）。#5/#6 の「IN 値が記法のまま」検証は**セル値**（`${...}`/null/""）が生であることを対象とし、カラム名の大文字化は器の性質として別扱い。
+  - **#5 行フォーマット（テスト用 fake TestDataReader のための仕様・確認済）**: ブロック先頭行 = 第0セルが `<DataType.getName()><groupId>=<値>`（例 `SETUP_TABLE=USERS`、group 付きは `SETUP_TABLE[g1]=USERS`）。`getTargetType().getName()+groupId+'='` で `startsWith` 判定（`GroupDataParsingTemplate.isTargetType`／Single は `==dataType && typeValue.equals(id)`）。次行=ヘッダ（カラム名行。マーカーカラムは `[` 始まり `]` 終わりで `HeaderLine` が除外）。以降 DEFAULT 行（第0セルがどの DataType 名でも始まらない）=データ行→`onReadLine`。別 DataType 行で停止（Group は `shouldStopOnNextOne`=false で複数収集、Single は true）。`readTestData()` が各セルに `interpret()` を通すが**空 interpreters なら `InterpretationContext.invokeNext()` が値素通し**（`${...}`/null/"" 不加工）。`getTypeValue` は `=` 以降を返す。
+  - **#5 テスト戦略**: `.xls` 実ファイル不要。テスト専用 fake `TestDataReader`（`open`/`close`/`readLine`/`isResourceExisting`/`isDataExisting` を実装し canned `List<List<String>>` を返す）を注入。**静的キャッシュ注意**：`TestDataParsingTemplate.TEST_DATA_CACHE`（key=dir/resource）＋各 Parser の static `CACHE`（key=dir/resource/type/id）があるため、テストごとに **dir/resource/id を一意**にしてキャッシュ衝突を避ける。`${userName}`・null セル・空文字・マーカーカラム `[COL]` を含む行で生値保持を実証。
+  - **#5 完了条件（steering §#5）**: 各メソッドが本体器（DataFile/TableData/MessagePool/List<Map>）を返す／IN 値が記法のまま（未加工）をテスト実証／相乗りがこのアダプタ 1 クラスに限局。
+  - **#5 アダプタ設計案**: `public class TestDataParserAdapter`（コンストラクタで `TestDataReader` 注入＋内部で stub DbInfo・`new BasicDefaultValues()` を保持）。同一パッケージゆえ package-private な `TableDataParser`/`ListMapParser` コンストラクタと全 `getResult` に直接アクセス可。
+  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**・[[new-code-prefer-ideal-design]]）。`pom.xml:216-224` の `exec-maven-plugin` mainClass が削除済変換ツールを指す残存参照＝#10 で是正（非ビルド経路）。テスト環境恒久ノート（hamcrest-all 1.1 で iterable matcher 不可・JaCoCo 手順）は「運用ノート」節参照。
+  - **#7 申し送り（再掲）**: 変換ツール `YamlFormatReader` の独自 YAML ウォークを削除し `Yaml*StructureMapper`（`Raw*` を返す公開 API）へ再接続。`RawMessage.fwHeader` は生 `Object` 保持なので #7 で Map<String,String> へ検証・変換して `MessageDataBlock.fwHeaderFields` に詰める。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
