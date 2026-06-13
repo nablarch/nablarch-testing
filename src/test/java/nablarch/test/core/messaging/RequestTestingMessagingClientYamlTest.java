@@ -1,6 +1,7 @@
 package nablarch.test.core.messaging;
 
 import nablarch.test.core.reader.yaml.YamlModeTestBase;
+import org.junit.Ignore;
 import org.junit.BeforeClass;
 
 /**
@@ -15,6 +16,7 @@ import org.junit.BeforeClass;
  *
  * TODO: RepositoryInitializer 経由のリポジトリに YamlTestDataParser を注入する方法を検討する。
  */
+@Ignore("Phase 2 (#3): 変換ツール再構築中につき一時無効化。#13 で再有効化する。")
 public class RequestTestingMessagingClientYamlTest extends RequestTestingMessagingClientTest {
 
     @BeforeClass

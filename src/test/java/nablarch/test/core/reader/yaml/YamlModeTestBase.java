@@ -5,18 +5,6 @@ import nablarch.fw.launcher.CommandLine;
 import nablarch.test.RepositoryInitializer;
 import nablarch.test.core.standalone.MainForRequestTesting;
 import nablarch.test.core.standalone.TestShot;
-import nablarch.test.tool.converter.ConversionRequest;
-import nablarch.test.tool.converter.DataFormat;
-import nablarch.test.tool.converter.TestDataConverter;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
-import java.util.stream.Stream;
 
 /**
  * YAML モードテストを支援するユーティリティ。
@@ -56,41 +44,21 @@ public final class YamlModeTestBase {
      * テスト実行前に Excel を YAML に変換し、自クラス名ディレクトリへ複製する。
      *
      * <p>
-     * YAML 版テストクラスの {@code @BeforeClass} メソッドから呼ぶ。
+     * <strong>Phase 2（タスク #3）で変換ツールを一括削除したため、現在は一時的に無効化されている。</strong>
+     * 本メソッドを呼ぶ 18 個の {@code *YamlTest} は同フェーズ中 {@code @Ignore} 済み。
+     * 設計書どおりに再構築した変換ツールの入口 API（{@code TestDataConverter.convert}）へ
+     * タスク #13 で再接続し、本メソッドの Excel→YAML 変換ロジックを復旧する。
+     * 復旧時は本タスク（#3）の削除コミット直前 {@code 5a160c4} の実装を起点とする。
      * </p>
      *
      * @param concreteClass YAML 版テストクラス自身（自クラス名ディレクトリ名に使用）
      * @param baseTestClass 変換元 Excel が置かれているテストクラス（Excel 版クラス）
+     * @throws UnsupportedOperationException 変換ツール再構築中（#13 で再接続するまで）常に送出
      */
     public static void prepareYamlData(Class<?> concreteClass, Class<?> baseTestClass) {
-        String packagePath = baseTestClass.getPackage().getName().replace('.', '/');
-        String baseName = baseTestClass.getSimpleName();
-        String yamlClassName = concreteClass.getSimpleName();
-
-        Path inputDir = Paths.get("src/test/java", packagePath);
-        Path outputDir = Paths.get(YAML_ROOT, packagePath);
-
-        // 自クラス名ディレクトリの古い YAML を削除してから生成
-        Path yamlClassDir = outputDir.resolve(yamlClassName);
-        deleteDirectory(yamlClassDir);
-
-        // Excel → YAML 変換（拡張子込みグロブで include 指定）
-        ConversionRequest request = new ConversionRequest.Builder()
-                .sourceFormat(DataFormat.XLS)
-                .targetFormat(DataFormat.YAML)
-                .inputPath(inputDir)
-                .outputPath(outputDir)
-                .overwrite(true)
-                .include(baseName + ".xls")
-                .include(baseName + ".xlsx")
-                .build();
-        TestDataConverter.convert(request);
-
-        // 変換出力ディレクトリ名（元ブック名）を自クラス名ディレクトリへ複製
-        Path convertedDir = outputDir.resolve(baseName);
-        if (Files.exists(convertedDir) && !baseName.equals(yamlClassName)) {
-            copyDirectory(convertedDir, yamlClassDir);
-        }
+        throw new UnsupportedOperationException(
+                "Phase 2（#3）で変換ツールを一括削除したため一時的に利用不可。"
+                        + "#13 で再構築後の TestDataConverter.convert API へ再接続する。");
     }
 
     /**
@@ -141,42 +109,5 @@ public final class YamlModeTestBase {
                 };
             }
         };
-    }
-
-    private static void deleteDirectory(Path dir) {
-        if (!Files.exists(dir)) {
-            return;
-        }
-        try (Stream<Path> walk = Files.walk(dir)) {
-            walk.sorted(Comparator.reverseOrder()).forEach(p -> {
-                try {
-                    Files.delete(p);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static void copyDirectory(Path src, Path dest) {
-        try (Stream<Path> walk = Files.walk(src)) {
-            walk.forEach(source -> {
-                Path target = dest.resolve(src.relativize(source));
-                try {
-                    if (Files.isDirectory(source)) {
-                        Files.createDirectories(target);
-                    } else {
-                        Files.createDirectories(target.getParent());
-                        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }

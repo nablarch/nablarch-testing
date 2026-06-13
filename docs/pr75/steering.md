@@ -140,11 +140,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 **Steps**:
 
-- [ ] `src/main/java/nablarch/test/tool/converter/` 配下を全削除
-- [ ] `src/test/java/nablarch/test/tool/converter/` 配下を全削除
-- [ ] `YamlModeTestBase` と 18 `*YamlTest` を一時無効化（`@Ignore` 等）。無効化したクラス一覧と復帰方針を `docs/pr75/checks/P2-3.md` に記録
-- [ ] `mvn` コンパイル成功・Excel 経路の既存テストが従来通り GREEN
-- [ ] セルフチェック
+- [x] `src/main/java/nablarch/test/tool/converter/` 配下を全削除（24 ファイル）
+- [x] `src/test/java/nablarch/test/tool/converter/` 配下を全削除（9 ファイル・全 .java）
+- [x] `YamlModeTestBase` と 18 `*YamlTest` を一時無効化（base は `UnsupportedOperationException` スタブ化＝ユーティリティゆえ @Ignore 不可、18 テストは クラスレベル `@Ignore`）。一覧と復帰方針を `docs/pr75/checks/P2-3.md` に記録
+- [x] `mvn -o test-compile` 成功・`mvn -o test` で Failures=0（残 Error は既存 Mockito 環境起因 2 クラスのみ・#3 非起因）＝Excel 経路 GREEN
+- [x] セルフチェック（`docs/pr75/checks/P2-3.md`）
 
 **Completion criteria**:
 - `tool/converter/` 配下が main/test とも存在しない
@@ -152,7 +152,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - Excel 経路の既存テストが従来 GREEN
 - 無効化した 18 テストの一覧と復帰方針が記録済み
 
-**Phase 2 完了ゲート**: アーキテクト/SWE レビュー（不要物の残存・必要物の喪失がないか）→ ユーザーレビュー OK
+**Phase 2 完了ゲート**: ✅ **通過**（アーキテクト PASS・SWE PASS〔イテレーション 2〕。`docs/pr75/checks/P2-3.md` 記録。ユーザーレビューは Operating mode によりスキップ）。残存: `pom.xml` exec mainClass が削除クラスを指す（非ビルド経路・#10 で CLI/Mojo 再構築時に是正）。
 
 ## Phase 3 — 中間モデル＋IN（読み込み）の再構築（TDD）
 
