@@ -329,6 +329,11 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **#7 への波及**: 変換ツール `YamlFormatReader` の独自ウォーク（重複）は #7 で削除し `Yaml*StructureMapper` へ再接続（Raw*→中間モデル）。これが「本体/変換ツールの読み込み二重実装」解消＝6.3 不整合の根治。
 - **着手前に要確認だった事項（解決済み）**: 公開 API 形 → ユーザー指示「設計書通り・あるべき姿優先・確認不要」により上記で確定。
 - **実装中の要確認（2 件・潜在挙動）**: ① list_maps の `TreeMap` キー順変更が本体テスト assertion に影響しないか（構造層は YAML 順保持＝挙動が変わりうる）。② fw_header 値は現状 interpret されない（`YamlMessageBuilder.extractFwHeader` は素の `objectToString`）— 分離時に挙動を変えないこと。
+- **#2 実装で確定した設計判断（reader 系 159 件 GREEN で実証済み・#7 へ波及）**:
+  - ① 空マッピング `{}` 行は構造層が **空リスト `[]`** として保持（行の有無を後段が判別）。テーブルは値加工層でスキップ、list_maps は空行として残す（本体差異を再現）。
+  - ② `fw_header` の「マップ検証」は **値加工層が読み出すメッセージに対してのみ遅延実行**（`RawMessage.fwHeader` は生 `Object` 保持）。同一ファイル内の誤記エントリが他エントリ読み出しを巻き添えにしない旧挙動を維持。
+  - ③ `toTableDataList`/`toDataFileList` は例外メッセージ用に `sectionKey` 引数を取る（テストがセクション名を要求）。
+  - ④ list_maps 出力は TreeMap 維持（本体不変）、`RawListMap` は YAML 順保持（変換ツール用）。
 
 ## 既存の有効な決定事項（YAML 仕様・本体①に適用、継続有効）
 
@@ -387,13 +392,14 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-13
-- **Operating mode（ユーザー指示・2026-06-13）**: **私に確認せず 6.3 まで自律的に目指す**。原則設計書通り／問題が起きたら常にあるべき姿を優先。NTF の YAML 対応・変換ツール・テストコードは自由に変更可。**released な NTF 本体プロダクションコードのみ後方互換維持があるので変更前にユーザーへ相談**（できるだけ変更しない）。困ったらエキスパート（サブエージェント）に相談。どうにもならない場合のみユーザーに相談。git でいつでも戻せる。フェーズ完了ゲートのユーザーレビューも「確認不要」指示によりスキップしてよい（必要時のみ相談）。
-- **Last completed**: **#2 の実装本体が完了**（コミット未push分あり）。option C（D-F）に従い 2 層分離を実装＝(1) `reader.yaml.model` に `Raw*` 6 クラス、(2) `Yaml{Table,File,Message}StructureMapper`（Map→Raw*・構造のみ）、(3) `YamlValueProcessor`（Raw*→本体器・interpret/補完/`-`長注入/マーカー除外/グループ絞り込み）、(4) `YamlTestDataParser` を明示 2 呼び出しへ再配線・暗黙切替廃止、(5) 旧 builder 3 本削除＋builder テスト 73 件を valueProcessor 経由へ移送、(6) 構造層テスト新設。**reader 系 159 件全 GREEN**。released 本体コードは未変更。
-- **Next**: **#2 の残ステップ**（State の Tasks 参照）＝(a) **全モジュールのフルテスト実行**で reader 以外への波及がないこと確認（`rm -rf target/surefire-reports && mvn -o test` 全体。重い場合は tool/converter・messaging・db 系を中心に）、(b) **セルフチェック `docs/pr75/checks/P1-2.md`** 作成（task-workflow の Check file format）。その後 **Phase 1 完了ゲート**＝4 観点サブエージェントレビュー（アーキ/SWE/QA/Java）→ 指摘対応 → #3（Phase 2 変換ツール全削除）へ。ユーザーレビューは「確認不要」指示によりスキップ可。
-- **Notes**:
-  - **実装で確定した設計判断（重要）**: ① 空マッピング `{}` 行は構造層が **空リスト `[]`** として保持（行の有無を後段が判別）。テーブルは値加工層でスキップ、list_maps は空行として残す（本体差異を再現）。② `fw_header` の「マップ検証」は **値加工層が読み出すメッセージに対してのみ遅延実行**（`RawMessage.fwHeader` は生 `Object` 保持）。同一ファイル内の誤記エントリが他エントリ読み出しを巻き添えにしない旧挙動を維持。③ `toTableDataList`/`toDataFileList` は例外メッセージ用に `sectionKey` 引数を取る（テストがセクション名を要求）。④ list_maps 出力は TreeMap 維持（本体不変）、RawListMap は YAML 順保持（変換ツール用）。
-  - **環境**: ブランチ `add-yaml`（`origin/add-yaml` 追跡）。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**）。ドラフト PR #1: https://github.com/lovaizu/nablarch-testing/pull/1 （本文は steering へのリンクのみ）。
-  - **テスト実行メモ**: `-Dtest` 絞り込み実行の前に `rm -rf target/surefire-reports`。`mvn -o`（オフライン）可。`mvn -q` 成功時は無出力なので surefire-reports で `Tests run` 集計。Javadoc プラグインは `JAVA_HOME` 未設定で BUILD FAILURE になるがテストは GREEN。
-  - **未renameの軽微負債**: builder テスト 3 ファイル（`Yaml{Table,File,Message}DataBuilderTest`／fixture ディレクトリ名）は中身を valueProcessor+mapper 経由に移送済みだがファイル名は旧称のまま（テスト対象クラスは削除済み）。機能負債なし・命名負債のみ。Phase 1 レビューで rename 要否を判断。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
+
+## Operating mode（ユーザー指示・2026-06-13・継続有効）
+
+**私に確認せず 6.3 まで自律的に目指す**。原則設計書通り／問題が起きたら常にあるべき姿を優先。NTF の YAML 対応・変換ツール・テストコードは自由に変更可。**released な NTF 本体プロダクションコードのみ後方互換維持があるので変更前にユーザーへ相談**（できるだけ変更しない）。困ったらエキスパート（サブエージェント）に相談。どうにもならない場合のみユーザーに相談。git でいつでも戻せる。フェーズ完了ゲートのユーザーレビューも「確認不要」指示によりスキップしてよい（必要時のみ相談）。
