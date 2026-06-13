@@ -392,7 +392,7 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: in-progress
+- **Status**: paused
 - **Date**: 2026-06-13
 - **Last completed**: **#2 完了＋Phase 1 完了ゲート通過**。本体 YAML 読み込みの 2 層分離（構造マッピング層＋値加工層・option C）を実装し、4 観点レビュー（アーキ/SWE/QA/Java）をイテレーション 2 まで回して全 PASS。レビュー対応＝(a) File/Message 構造層の直接単体テスト新設（`Yaml{File,Message}StructureMapperTest`）、(b) 移送済 builder テスト 3 本を `Yaml{File,Message,Table}ValueProcessorTest` へリネーム＋ stale `{@link}`/タグ修正、(c) `YamlMessageStructureMapper` クラス Javadoc の矛盾是正、(d) `YamlSection.applyDirectives` デッドコード削除、(e) `Yaml*StructureMapper`＋`Raw*` に `@Published(tag="architect")` 付与、(f) Javadoc 微修正。**reader-YAML 171 件全 GREEN／全モジュール 1490 件で波及ゼロ（ベースライン比較で失敗集合完全一致）**。Phase 1（#1+#2）完了。
 - **Next**: **#3（Phase 2）変換ツール一括削除＋テスト基盤一時無効化**。`src/main|test/java/nablarch/test/tool/converter/` 配下を全削除、`YamlModeTestBase`＋18 `*YamlTest` を一時無効化（`@Ignore`）、無効化一覧と復帰方針を `docs/pr75/checks/P2-3.md` に記録、コンパイル成功＋Excel 経路既存テスト GREEN を確認。task-workflow 準拠（Phase 2 ゲートはアーキ/SWE レビュー）。
