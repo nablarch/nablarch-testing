@@ -1,99 +1,79 @@
 # NTF テストデータ仕様 カバレッジ クラス一覧
 
-## 0. 前提: 調査リポジトリの範囲（P4-0）
-
-### 0.1 調査リポジトリ
+YAML スキーマ設計の根拠調査（P4）で、全行走査の対象クラスを引くための一覧。調査範囲・外部依存・各クラスの関連度をパッケージ単位で参照する。
 
 - **リポジトリ**: `nablarch-testing`（`com.nablarch.framework:nablarch-testing`）
 - **調査日**: 2026-05-15
 - **ブランチ**: `convert-testdata-excel-to-text`
 
-### 0.2 「このリポジトリだけを見ればよいか」の判断
+---
 
-**結論: このリポジトリだけでは仕様を完全に把握できない。`nablarch-core-dataformat` の参照も必要。**
+## 0. 調査範囲（P4-0）
 
-ただし、YAML スキーマ設計の主目的である「テストデータの構造（どの項目をどう書くか）」については、  
-このリポジトリ内のパーサ・インタープリタクラスを読むことで大半を把握できる。  
-フォーマッタ本体（実際のバイト列変換ロジック）は外部にあるが、YAMLスキーマが扱うのは  
-「フォーマット定義のテスト記述」であり、変換ロジックの詳細まで YAML に落とす必要はない。
+### このリポジトリだけで仕様を把握できるか
 
-### 0.3 外部依存の整理
+**結論: 把握しきれない。`nablarch-core-dataformat` の参照も要る。**
+
+ただし YAML スキーマ設計の主目的「テストデータの構造（どの項目をどう書くか）」は、本リポジトリのパーサ・インタープリタクラスで大半を把握できる。フォーマッタ本体（バイト列変換ロジック）は外部にあるが、YAML スキーマが扱うのは「フォーマット定義のテスト記述」であり、変換ロジックの詳細を YAML に落とす必要はない。
+
+### 仕様がどこにあるか
+
+```mermaid
+flowchart LR
+  subgraph IN[nablarch-testing 内で完結]
+    A[Excel 読み込み<br/>PoiXlsReader]
+    B[パーサ構造<br/>BasicTestDataParser / TestDataReader]
+    C[DB テストデータ<br/>TableData / DbAccessTestSupport]
+    D[値インタープリタ<br/>NullInterpreter ほか]
+    E[メッセージング構造定義<br/>各パーサクラス]
+  end
+  subgraph EXT[nablarch-core-dataformat を要参照]
+    F[ディレクティブ一覧<br/>FixedLengthDirective / VariableLengthDirective]
+    G[フィールド型 DataType<br/>convertor.datatype.*]
+    H[レコード構造<br/>LayoutDefinition / FieldDefinition / RecordDefinition]
+    I[フォーマッタの変換動作<br/>DataRecordFormatter 各実装]
+  end
+```
+
+`nablarch-core-dataformat` 側の仕様（ディレクティブ・フィールド型）は、設計済みスキーマ（`ntf-testdata-yaml-schema.json`）・設計文書（`ntf-testdata-yaml-design.md`）・構造解析文書（`ntf-testdata-structure.md`）に取り込み済みの内容を参照して補完する。
+
+### 外部依存
 
 | artifactId | scope | テストデータ仕様への関わり |
 |---|---|---|
 | `nablarch-core-dataformat` | compile（`nablarch-fw-web-extension` からは exclude 済み） | **重要**: 固定長・可変長フォーマットの定義・変換ロジック本体。`LayoutDefinition`, `FieldDefinition`, `DataRecordFormatter`, `FixedLengthDataRecordFormatter`, `VariableLengthDataRecordFormatter` 等を提供 |
-| `nablarch-fw-messaging-mom` | provided | メッセージング系テストデータ（`MessagePool`, `MockMessagingClient` 等が依存） |
+| `nablarch-fw-messaging-mom` | provided | メッセージング系テストデータ（`MessagePool`, `MockMessagingClient` 等が依存）|
 | `nablarch-fw-messaging-http` | provided | HTTP メッセージング系テストデータ |
-| `nablarch-common-dao` | compile | DB テストデータ（`TableData` 等が依存） |
-| `org.apache.poi:poi-ooxml:3.8` | compile | Excel 読み込み（`PoiXlsReader` が直接使用）。このリポジトリ内で完結 |
+| `nablarch-common-dao` | compile | DB テストデータ（`TableData` 等が依存）|
+| `org.apache.poi:poi-ooxml:3.8` | compile | Excel 読み込み（`PoiXlsReader` が直接使用）。本リポジトリ内で完結 |
 
-### 0.4 nablarch-core-dataformat への依存状況
+`nablarch-core-dataformat` のクラスを直接 import して使うのは次の 19 クラス。
 
-このリポジトリの以下のクラスが `nablarch-core-dataformat` のクラスを直接 import して使用している:
+| パッケージ | クラス |
+|---|---|
+| `nablarch.test.core.file`（10）| `DataFile`, `DataFileFragment`, `FixedLengthFile`, `FixedLengthFileFragment`, `VariableLengthFile`, `VariableLengthFileFragment`, `FileSupport`, `MockMessages`, `StringDataType`, `TestDataConverter` |
+| `nablarch.test.core.reader`（2）| `FixedLengthFileParser`, `VariableLengthFileParser` |
+| `nablarch.test.core.messaging`（6）| `MessagePool`, `MessagingRequestTestSupport`, `MockMessagingClient`, `RequestTestingMessagePool`, `RequestTestingMessagingClient`, `RequestTestingMessagingProvider`, `SendSyncSupport` |
+| その他（1）| `nablarch.test.Assertion` |
 
-**`nablarch.test.core.file` パッケージ（10クラス）**
-- `DataFile`, `DataFileFragment`, `FixedLengthFile`, `FixedLengthFileFragment`
-- `VariableLengthFile`, `VariableLengthFileFragment`, `FileSupport`
-- `MockMessages`, `StringDataType`, `TestDataConverter`
+使用される外部クラス（計 23 種）:
+`DataRecord`, `DataRecordFormatter`, `DataRecordFormatterSupport`, `DataRecordFormatterSupport.Directive`, `FieldDefinition`, `FileRecordWriter`, `FormatterFactory`, `LayoutDefinition`, `RecordDefinition`, `FixedLengthDataRecordFormatter`, `FixedLengthDataRecordFormatter.FixedLengthDirective`, `VariableLengthDataRecordFormatter`, `VariableLengthDataRecordFormatter.VariableLengthDirective`, `InvalidDataFormatException`, `SimpleDataConvertResult`, `SimpleDataConvertUtil`, `convertor.ConvertorFactorySupport`, `convertor.FixedLengthConvertorSetting`, `convertor.VariableLengthConvertorSetting`, `convertor.datatype.ByteStreamDataSupport`, `convertor.datatype.Bytes`, `convertor.datatype.CharacterStreamDataString`, `convertor.datatype.DataType`
 
-**`nablarch.test.core.reader` パッケージ（2クラス）**
-- `FixedLengthFileParser`, `VariableLengthFileParser`
-
-**`nablarch.test.core.messaging` パッケージ（6クラス）**
-- `MessagePool`, `MessagingRequestTestSupport`, `MockMessagingClient`
-- `RequestTestingMessagePool`, `RequestTestingMessagingClient`, `RequestTestingMessagingProvider`, `SendSyncSupport`
-
-**その他（1クラス）**
-- `nablarch.test.Assertion`
-
-使用される外部クラス（計23種）:
-`DataRecord`, `DataRecordFormatter`, `DataRecordFormatterSupport`, `DataRecordFormatterSupport.Directive`,
-`FieldDefinition`, `FileRecordWriter`, `FormatterFactory`, `LayoutDefinition`, `RecordDefinition`,
-`FixedLengthDataRecordFormatter`, `FixedLengthDataRecordFormatter.FixedLengthDirective`,
-`VariableLengthDataRecordFormatter`, `VariableLengthDataRecordFormatter.VariableLengthDirective`,
-`InvalidDataFormatException`, `SimpleDataConvertResult`, `SimpleDataConvertUtil`,
-`convertor.ConvertorFactorySupport`, `convertor.FixedLengthConvertorSetting`, `convertor.VariableLengthConvertorSetting`,
-`convertor.datatype.ByteStreamDataSupport`, `convertor.datatype.Bytes`,
-`convertor.datatype.CharacterStreamDataString`, `convertor.datatype.DataType`
-
-### 0.5 このリポジトリ内で完結している仕様の範囲
-
-- **Excel テストデータ読み込み**: `PoiXlsReader`（POI のみ依存、外部 Nablarch ライブラリ不要）
-- **テストデータパーサの構造**: `BasicTestDataParser`, `TestDataReader` 等のインタフェースと実装
-- **DB テストデータ処理**: `TableData`, `DbAccessTestSupport` 等（`nablarch-common-dao` への依存はあるが仕様の核心はこのリポジトリ内）
-- **テストデータ値のインタープリタ**: `nablarch.test.core.util.interpreter` 配下（`NullInterpreter`, `BasicJapaneseCharacterInterpreter` 等）
-- **メッセージング系テストデータの構造定義**: 各パーサクラスはこのリポジトリ内
-
-### 0.6 nablarch-core-dataformat を参照すべき仕様の範囲
-
-以下の仕様は `nablarch-core-dataformat` 側に定義があり、必要に応じて参照が必要:
-
-- **固定長ファイルのディレクティブ一覧**: `FixedLengthDataRecordFormatter.FixedLengthDirective` で定義
-- **可変長ファイルのディレクティブ一覧**: `VariableLengthDataRecordFormatter.VariableLengthDirective` で定義
-- **フィールド型（DataType）の一覧**: `convertor.datatype.*` で実装
-- **レコード構造の詳細**: `LayoutDefinition`, `FieldDefinition`, `RecordDefinition`
-- **フォーマッタの実際の変換動作**: `DataRecordFormatter` の各実装
-
-### 0.7 P4-1 以降の調査方針
-
-P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）の `src/main/java` を主たる調査対象とする。  
-ディレクティブ・フィールド型など `nablarch-core-dataformat` 側の仕様については、  
-現在設計済みのスキーマ（`ntf-testdata-yaml-schema.json`）・設計文書（`ntf-testdata-yaml-design.md`）・  
-既存の構造解析文書（`ntf-testdata-structure.md`）に既に取り込まれている内容を参照することで補完する。
+> [要確認] `messaging` の依存クラスは表で 7 クラス挙げているが見出しは「6クラス」。原文どおり保持（元文書の記載差）。
 
 ---
 
-## 1. 対象クラス一覧（P4-1）
+## 1. 対象クラス一覧（P4-1） — `src/main/java`
 
-### 凡例
+### 関連度の凡例
 
-- **直接影響**: YAMLスキーマの構造・制約・有効値に直接関わる仕様を持つ
+- **直接影響**: YAML スキーマの構造・制約・有効値に直接関わる仕様を持つ
 - **参照情報**: スキーマ設計の背景理解に有用だが、スキーマ項目の直接根拠にはならない
-- **対象外**: テストデータ構造定義と無関係（テスト実行支援・HTTP処理・HTML検証等）
+- **対象外**: テストデータ構造定義と無関係（テスト実行支援・HTTP 処理・HTML 検証等）
 
----
+P4-2 の全行走査対象は、本節の「直接影響」クラスのみ。
 
-### 1.1 `nablarch.test.core.reader` パッケージ
+### 1.1 `nablarch.test.core.reader`
 
 | クラス | 種別 | 関連度 | 役割・スキーマへの影響 |
 |---|---|---|---|
@@ -116,9 +96,7 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `TestDataReader` | interface | 対象外 | 低レベル読み込みインタフェース。スキーマ構造に直接影響なし |
 | `PoiXlsReader` | class | 対象外 | Excel読み込み実装。YAMLスキーマとは無関係 |
 
----
-
-### 1.2 `nablarch.test.core.file` パッケージ
+### 1.2 `nablarch.test.core.file`
 
 | クラス | 種別 | 関連度 | 役割・スキーマへの影響 |
 |---|---|---|---|
@@ -128,17 +106,15 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `FixedLengthFileFragment` | class | 参照情報 | 固定長レコード種別実体。バイナリ型フィールドのゼロ埋め処理の根拠 |
 | `VariableLengthFile` | class | **直接影響** | 可変長ファイル実体。デフォルトフィールド区切り `,`。`\\t` → タブ文字変換を実装 |
 | `VariableLengthFileFragment` | class | 参照情報 | 可変長レコード種別実体。長さ行不要の実装上の根拠 |
-| `BasicDataTypeMapping` | class | **直接影響** | 設計書データ型記法→フレームワークシンボル変換のデフォルト実装。有効な設計書記法**22種**を定義（`半角英字`→`X`, `全角`→`N`, `数値`→`Z`, `符号付パック10進数`→`SP`, `バイナリ`→`B` 等） |
+| `BasicDataTypeMapping` | class | **直接影響** | 設計書データ型記法→フレームワークシンボル変換のデフォルト実装。有効な設計書記法**22種**を定義（`半角英字`→`X`, `全角`→`N`, `数値`→`Z`, `符号付パック10進数`→`SP`, `バイナリ`→`B` 等）|
 | `DataTypeMapping` | interface | 参照情報 | カスタムデータ型マッピングの拡張ポイント |
 | `LineSeparator` | enum | **直接影響** | `record-separator` ディレクティブの有効値。`NONE` / `CR` / `LF` / `CRLF` のほか列挙名以外の文字列もリテラルとして使用可能 |
 | `MockMessages` | class | 参照情報 | `FixedLengthFile` の同期送信テスト用サブクラス。`errorMode:*` 特殊値がパディング処理を受けない実装根拠 |
 | `StringDataType` | class | 参照情報 | テスト用 `TEST_` プレフィクスシンボルの動作（パディングなし・サイズ不一致で例外）の根拠 |
-| `TestDataConverter` | interface | 参照情報 | カスタム変換処理の拡張ポイント（`TestDataConverter_{file-type}` キーで登録） |
+| `TestDataConverter` | interface | 参照情報 | カスタム変換処理の拡張ポイント（`TestDataConverter_{file-type}` キーで登録）|
 | `FileSupport` | class | 対象外 | テスト実行サポートユーティリティ。スキーマ構造に影響なし |
 
----
-
-### 1.3 `nablarch.test.core.messaging` パッケージ
+### 1.3 `nablarch.test.core.messaging`
 
 | クラス | 種別 | 関連度 | 役割・スキーマへの影響 |
 |---|---|---|---|
@@ -157,9 +133,7 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `AsyncMessageSendActionForUt` | class | 対象外 | 非同期送信アクション。スキーマ構造に影響なし |
 | `RequestTestingSendSyncSupport` | class | 対象外 | リクエストテスト用同期送信サポート。スキーマ構造に影響なし |
 
----
-
-### 1.4 `nablarch.test.core.db` パッケージ
+### 1.4 `nablarch.test.core.db`
 
 | クラス | 種別 | 関連度 | 役割・スキーマへの影響 |
 |---|---|---|---|
@@ -167,11 +141,9 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `DbAccessTestSupport` | class | 対象外 | テスト実行サポート。スキーマ構造に影響なし |
 | `BasicDefaultValues` | class | 対象外 | デフォルト値設定クラス |
 | `DefaultValues` | interface | 対象外 | デフォルト値インタフェース |
-| その他（`DbInfo`, `EntityDependencyParser` 等） | class | 対象外 | DB操作ユーティリティ群 |
+| その他（`DbInfo`, `EntityDependencyParser` 等）| class | 対象外 | DB操作ユーティリティ群 |
 
----
-
-### 1.5 `nablarch.test.core.util.interpreter` パッケージ
+### 1.5 `nablarch.test.core.util.interpreter`
 
 | クラス | 種別 | 関連度 | 役割・スキーマへの影響 |
 |---|---|---|---|
@@ -185,9 +157,7 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `TestDataInterpreter` | interface | 参照情報 | インタープリタ拡張ポイント |
 | `InterpretationContext` | class | 対象外 | 内部実装クラス |
 
----
-
-### 1.6 `nablarch.test.core.util.generator` パッケージ
+### 1.6 `nablarch.test.core.util.generator`
 
 | クラス | 種別 | 関連度 | 役割・スキーマへの影響 |
 |---|---|---|---|
@@ -196,11 +166,9 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `CharacterGenerator` | interface | 参照情報 | 文字生成拡張インタフェース |
 | `CharacterGeneratorBase` | abstract class | 参照情報 | 文字生成基底クラス |
 
----
+### 1.7 対象外パッケージ（全クラス）
 
-### 1.7 対象外パッケージ（全クラス） — `src/main/java`
-
-以下のパッケージはテストデータ構造定義とは無関係なため P4-2 の対象外とする:
+テストデータ構造定義とは無関係なため P4-2 の対象外。
 
 | パッケージ | 理由 |
 |---|---|
@@ -215,11 +183,9 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `nablarch.test.tool.htmlcheck` | HTML構文チェックツール |
 | `nablarch.test.tool.sanitizingcheck` | サニタイズチェックツール |
 | `nablarch.test.event` | テストイベントリスナ |
-| `nablarch.test`（ルート） | テスト基底ユーティリティ（`TestSupport`, `Assertion` 等） |
+| `nablarch.test`（ルート）| テスト基底ユーティリティ（`TestSupport`, `Assertion` 等）|
 
----
-
-### 1.8 直接影響クラス 集計 — `src/main/java`
+### 1.8 直接影響クラス 集計
 
 | パッケージ | 直接影響クラス数 | 主要な仕様 |
 |---|---|---|
@@ -231,24 +197,24 @@ P4-1（対象クラス一覧）はこのリポジトリ（`nablarch-testing`）�
 | `generator` | 2 | 文字種トークン完全一覧 |
 | **合計** | **29** | |
 
+> [要確認] データ型マッピングの種数は、1.2 の `BasicDataTypeMapping` 行が「22種」、本集計表が「17種」で不一致。両方とも原文の記載どおり保持。正値の確定が必要。
+
 ---
 
 ## 2. `src/test/java` クラス一覧（P4-1 追補）
 
-### 2.1 `src/test/java` の分類方針
+### 2.1 分類方針
 
-テストクラスはスキーマ仕様の根拠にはならない（テストは実装の動作確認であり、仕様定義は `src/main/java` 側にある）。  
-ただし、仕様上の挙動が `src/main/java` コードだけでは読み取りにくい場合に、テストコードが補助的な証拠になりうる。
+テストクラスはスキーマ仕様の根拠にはならない（テストは実装の動作確認であり、仕様定義は `src/main/java` 側にある）。ただし `src/main/java` のコードだけでは挙動が読み取りにくい場合、テストコードが補助的な証拠になる。
 
 **凡例（`src/test/java` 向け）**
+
 - **参照情報**: テストケースが仕様の境界値・特殊ケースを明示しており、`src/main/java` 仕様確認の補助に使える
 - **対象外**: テストデータ構造定義と直接無関係。P4-2 の全行走査対象にしない
 
-P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス（29クラス）のみ** とする。
+P4-2 の全行走査対象は **`src/main/java` の「直接影響」29クラスのみ**。
 
----
-
-### 2.2 `nablarch.test.core.reader` テストクラス（11クラス）
+### 2.2 `nablarch.test.core.reader`（11クラス）
 
 | クラス | 関連度 | 備考 |
 |---|---|---|
@@ -259,14 +225,12 @@ P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス�
 | `HeaderLineTest` | 参照情報 | `[MARKER_COL]` 処理の境界値テスト。マーカーカラム仕様確認に使える |
 | `MockTestDataReader` | 対象外 | テスト用スタブ実装 |
 | `PoiXlsReaderTest` | 対象外 | Excel読み込みテスト。YAML スキーマと無関係 |
-| `SendSyncMessageParserTest` | 対象外 | `getFwHeader()` の例外確認のみ（17行） |
+| `SendSyncMessageParserTest` | 対象外 | `getFwHeader()` の例外確認のみ（17行）|
 | `SingleDataParsingTemplateTest` | 対象外 | 単一IDパースの動作テスト |
 | `TestDataParsingTemplateTest` | 参照情報 | コメント行スキップ・セクション先頭一致の境界値テスト |
 | `VariableLengthFileParserTest` | 参照情報 | 可変長パーサの長さ行スキップ動作確認に使える |
 
----
-
-### 2.3 `nablarch.test.core.file` テストクラス（9クラス）
+### 2.3 `nablarch.test.core.file`（9クラス）
 
 | クラス | 関連度 | 備考 |
 |---|---|---|
@@ -277,12 +241,10 @@ P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス�
 | `FixedLengthFileFragmentTest` | 参照情報 | バイナリ型ゼロ埋め・パディングの境界値確認に使える |
 | `FixedLengthFileTest` | 参照情報 | 固定長ファイル書き込み動作の網羅的テスト（241行）。ディレクティブ動作確認に使える |
 | `LineSeparatorTest` | 対象外 | `LineSeparator` enum の基本確認のみ |
-| `SimpleWriter` | 対象外 | テスト用ヘルパークラス（スタブ） |
+| `SimpleWriter` | 対象外 | テスト用ヘルパークラス（スタブ）|
 | `VariableLengthFileTest` | 参照情報 | 可変長ファイルのデフォルト区切り・`\\t` → タブ変換等の確認に使える |
 
----
-
-### 2.4 `nablarch.test.core.messaging` テストクラス（15クラス + サンプル21クラス）
+### 2.4 `nablarch.test.core.messaging`（15クラス + サンプル21クラス）
 
 | クラス | 関連度 | 備考 |
 |---|---|---|
@@ -301,17 +263,15 @@ P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス�
 | `RequestTestingMessagingProviderTest` | 対象外 | スキーマ構造に影響なし |
 | `RequestTestingSendSyncBatchTest` | 対象外 | スキーマ構造に影響なし |
 | `HttpStatusSyncMessagingEventHook` | 対象外 | テスト用フッククラス |
-| `sample/` 配下（21クラス） | 対象外 | テスト用サンプルアクション・フォームクラス群。スキーマ構造に影響なし |
+| `sample/` 配下（21クラス）| 対象外 | テスト用サンプルアクション・フォームクラス群。スキーマ構造に影響なし |
 | `receive/form/RM11AC0001Form` | 対象外 | テスト用フォームクラス |
 
----
-
-### 2.5 `nablarch.test.core.db` テストクラス（38クラス）
+### 2.5 `nablarch.test.core.db`（38クラス）
 
 | クラス群 | 関連度 | 備考 |
 |---|---|---|
 | `TableDataTest` | 参照情報 | 日付フォーマット・`rows:[]` 全件削除・`EXPECTED_COMPLETE_TABLE` デフォルト補完の境界値確認に使える |
-| `TableDataTestForPostgreAndDB2` | 参照情報 | DB依存動作の補助確認（PostgreSQL/DB2向け） |
+| `TableDataTestForPostgreAndDB2` | 参照情報 | DB依存動作の補助確認（PostgreSQL/DB2向け）|
 | `BasicDefaultValuesTest` | 対象外 | デフォルト値設定のテスト |
 | `DbAccessTestSupportTest` | 対象外 | テスト実行サポートのテスト |
 | `EntityDependencyParserTest` | 対象外 | エンティティ依存パーサのテスト |
@@ -324,11 +284,9 @@ P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス�
 | `TableDataSorterTest` | 対象外 | テーブルデータソートのテスト |
 | `TransactionTemplateTest` | 対象外 | トランザクションテンプレートのテスト |
 | `TableRestorerTest` | 対象外 | テーブルリストアのテスト |
-| `*Table`, `*SsdMaster`, `Father`, `Son`, `Daughter` 等のエンティティクラス群 | 対象外 | テスト用エンティティ定義クラス（18クラス） |
+| `*Table`, `*SsdMaster`, `Father`, `Son`, `Daughter` 等のエンティティクラス群 | 対象外 | テスト用エンティティ定義クラス（18クラス）|
 
----
-
-### 2.6 `nablarch.test.core.util.interpreter` テストクラス（8クラス）
+### 2.6 `nablarch.test.core.util.interpreter`（8クラス）
 
 | クラス | 関連度 | 備考 |
 |---|---|---|
@@ -341,18 +299,14 @@ P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス�
 | `CompositeInterpreterTest` | 参照情報 | 複合 `${...}` 記法の境界値確認に使える |
 | `InterpretationContextTest` | 対象外 | 内部実装クラスのテスト |
 
----
-
-### 2.7 `nablarch.test.core.util.generator` テストクラス（2クラス）
+### 2.7 `nablarch.test.core.util.generator`（2クラス）
 
 | クラス | 関連度 | 備考 |
 |---|---|---|
 | `BasicJapaneseCharacterGeneratorTest` | 参照情報 | 文字種トークン一覧の境界値・エラーケース確認に使える |
 | `RandomStringGeneratorTest` | 対象外 | スキーマ構造に影響なし |
 
----
-
-### 2.8 `src/test/java` の残パッケージ（全クラス対象外）
+### 2.8 残パッケージ（全クラス対象外）
 
 | パッケージ | クラス数 | 理由 |
 |---|---|---|
@@ -361,31 +315,28 @@ P4-2 の全行走査対象は **`src/main/java` の「直接影響」クラス�
 | `nablarch.test.core.entity` | 14 | エンティティバリデーションテストサポート |
 | `nablarch.test.core.log` | 4 | ログ検証サポート |
 | `nablarch.test.core.standalone` | 1 | スタンドアロンテストサポート |
-| `nablarch.test.core.util` | 4 | 汎用ユーティリティテスト（ByteArrayAwareMap等） |
+| `nablarch.test.core.util` | 4 | 汎用ユーティリティテスト（ByteArrayAwareMap等）|
 | `nablarch.test.event` | 2 | テストイベントリスナ |
 | `nablarch.test` | 17 | テスト基底ユーティリティのテスト群 |
 | `nablarch.test.tool.htmlcheck` | 4 + 1 | HTML構文チェックツールのテスト |
 | `nablarch.test.tool.sanitizingcheck` + サブパッケージ | 6 + 2 | サニタイズチェックツールのテスト |
 | `nablarch.fw.web` + サブパッケージ | 2 + 2 | HTTPモック実装のテスト |
-| `nablarch.core.validation.*` | 8 + 17 + 1 | バリデーション実装のテスト（テストデータ構造と無関係） |
+| `nablarch.core.validation.*` | 8 + 17 + 1 | バリデーション実装のテスト（テストデータ構造と無関係）|
 | `nablarch.common.validation` | 5 | バリデーション実装のテスト |
 | `nablarch.core.message` | 1 | メッセージリソーステスト用スタブ |
-| `nablarch.test.core` （ルート1クラス） | 1 | `MultiResourceDataSetUpTest`（マルチリソーステスト） |
+| `nablarch.test.core`（ルート1クラス）| 1 | `MultiResourceDataSetUpTest`（マルチリソーステスト）|
 
----
-
-### 2.9 `src/test/java` 集計
+### 2.9 集計
 
 | パッケージ | 参照情報クラス数 | 対象外クラス数 | 合計 |
 |---|---|---|---|
 | `reader` | 5 | 6 | 11 |
 | `file` | 5 | 4 | 9 |
-| `messaging`（サンプル含む） | 6 | 30 | 36 |
+| `messaging`（サンプル含む）| 6 | 30 | 36 |
 | `db` | 2 | 36 | 38 |
 | `interpreter` | 7 | 1 | 8 |
 | `generator` | 1 | 1 | 2 |
-| その他（http/batch/entity/log/tool/fw 等） | 0 | 129 | 129 |
+| その他（http/batch/entity/log/tool/fw 等）| 0 | 129 | 129 |
 | **合計** | **26** | **207** | **233** |
 
-**P4-2 の全行走査対象外**: `src/test/java` 全 233 クラス  
-（仕様根拠は `src/main/java` の「直接影響」29クラスにある。テストコードは必要に応じて参照情報として参照する）
+**P4-2 の全行走査対象外**: `src/test/java` 全 233 クラス。仕様根拠は `src/main/java` の「直接影響」29クラスにあり、テストコードは必要に応じて参照情報として参照する。

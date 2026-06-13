@@ -2,6 +2,8 @@
 
 <a name="table-data"></a>
 
+テーブル系データブロック（SETUP_TABLE / EXPECTED_TABLE / EXPECTED_COMPLETE_TABLE / LIST_MAP）の Excel・YAML 記法を種別ごとに引く。各種別とも Excel と YAML の対応例を並べ、末尾に制約を示す。
+
 ## 5.1 テーブルデータの基本形式
 
 <a name="setup-table"></a>
@@ -18,11 +20,8 @@
 | 0000000101 | 山田太郎 | 1 | 85000 | 1.5 | ゴールド会員です | ${binaryFile:testdata.txt} |
 | 0000000102 | 鈴木花子 | 2 | Null | 2.25 | シルバー会員 | ${binaryFile:member_photo.jpg} |
 
-- カラム名を1行目に並べ、2行目以降にデータを記述します
-- `//` で始まる行はコメントです（型情報・桁数などの注記に使われます）
-- **主キーカラムは省略不可**です。省略すると `"0"` やスペースのデフォルト値が INSERT されます
-- `NULL` 文字列は `NullInterpreter` により Java null に変換されます
-- `${binaryFile:パス}` でファイル内容をバイナリ読み込みして HexString に変換できます
+- 1 行目にカラム名、2 行目以降にデータ
+- `//` で始まる行はコメント（型情報・桁数などの注記に使う）
 
 #### YAML
 
@@ -46,9 +45,15 @@ setup_tables:
         PHOTO: "${binaryFile:member_photo.jpg}"
 ```
 
-- 各行がオブジェクトになりカラム名がキーになります
-- 全値は文字列として記述します（`"0000000101"` のようにクォートします）
-- NULL 値はアンクォートの `null` で記述します。`"null"` とクォートすると文字列として格納されます
+- 1 行が 1 オブジェクト、カラム名がキー
+- 値は文字列で記述（`"0000000101"` のようにクォート）
+- NULL 値はアンクォートの `null`。`"null"` とクォートすると文字列として格納される
+
+#### 制約
+
+- **主キーカラムは省略不可**。省略すると `"0"` やスペースのデフォルト値が INSERT される
+- `NULL` 文字列は `NullInterpreter` により Java null に変換される（YAML ではアンクォート `null`）
+- `${binaryFile:パス}` はファイル内容をバイナリ読み込みして HexString に変換する
 
 ---
 
@@ -71,10 +76,6 @@ setup_tables:
 | ORDER_ID | ITEM_COUNT | STATUS | UPDATE_DATE |
 | 10001 | 3 | 1 | 2024-04-01 12:30:00.0 |
 | 10002 | 5 | 1 | |
-
-- `EXPECTED_TABLE`: 省略したカラムは比較対象外になります。検証したいカラムだけを列挙できます
-- `EXPECTED_COMPLETE_TABLE`: 省略カラムには `BasicDefaultValues` のデフォルト値が補完されてから比較されます
-- **混在禁止**: 同一ファイル内で `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を混在させると後半のデータが読み込まれません
 
 #### YAML
 
@@ -106,8 +107,17 @@ expected_complete_tables:
         # UPDATE_DATE を省略 → BasicDefaultValues のデフォルト値で補完されて比較
 ```
 
-- 省略したいカラムのキーを書かないだけです
-- `expected_tables:` と `expected_complete_tables:` は別キーのため混在可能です（YAMLパーサーが両方を独立して読み込んでマージします）
+#### 省略カラムの扱い
+
+| キーワード | 省略カラムの扱い | YAML での省略 |
+|---|---|---|
+| `EXPECTED_TABLE` / `expected_tables:` | 比較対象外。検証したいカラムだけ列挙できる | キーを書かない |
+| `EXPECTED_COMPLETE_TABLE` / `expected_complete_tables:` | `BasicDefaultValues` のデフォルト値を補完してから比較 | キーを書かない |
+
+#### 制約
+
+- **Excel は混在禁止**: 同一ファイル内で `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を混在させると後半のデータが読み込まれない
+- **YAML は混在可**: `expected_tables:` と `expected_complete_tables:` は別キーのため、YAML パーサーが両方を独立に読み込んでマージする
 
 ---
 
@@ -115,7 +125,7 @@ expected_complete_tables:
 
 ### LIST_MAP
 
-キーバリュー形式の汎用データ。マーカーカラム・期待ログ・リクエストパラメータ等に使用します。
+キーバリュー形式の汎用データ。マーカーカラム・期待ログ・リクエストパラメータ等に使う。
 
 #### Excel — リクエストパラメータ（マーカーカラム付き）
 
@@ -126,9 +136,6 @@ expected_complete_tables:
 | [no] | memberId | orderStatus | fromDate | toDate | [desc] |
 | 1 | 0000000101 | 1 | 2024-04-01 | 2024-04-30 | 4月注文検索 |
 | 2 | 0000000102 | | 2024-01-01 | | 全件検索 |
-
-- `[no]`・`[desc]` のように角括弧で囲まれたカラムはマーカーカラムです。DB 操作から除外されます
-- マーカーカラムは Excel 上の見やすさのために使われることが多いです
 
 #### Excel — 期待ログ
 
@@ -164,6 +171,12 @@ list_maps:
         logLevel: "INFO"
 ```
 
-- マーカーカラム `[no]`・`[desc]` は `"[no]"` とダブルクォートで囲みます（YAML の角括弧構文との衝突を避けるため）
-- `testShots` は予約 ID です。フレームワークがテストケース定義として自動読み込みします
-- ID は完全一致で検索されます。同一 ID の重複エントリは先着一致で 2 件目以降は無視されます
+#### マーカーカラム
+
+- 角括弧で囲んだカラム（`[no]`・`[desc]`）はマーカーカラム。DB 操作から除外される（Excel 上の見やすさのために使うことが多い）
+- YAML ではダブルクォートで囲む（`"[no]"`）。YAML の角括弧構文との衝突を避けるため
+
+#### 制約
+
+- `testShots` は予約 ID。フレームワークがテストケース定義として自動読み込みする
+- ID は完全一致で検索される。同一 ID の重複エントリは先着一致で、2 件目以降は無視される

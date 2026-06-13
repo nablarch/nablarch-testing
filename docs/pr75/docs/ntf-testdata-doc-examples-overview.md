@@ -4,7 +4,7 @@
 
 ## 1. NTF テストデータ
 
-リクエスト単体テスト（バッチ処理）の例。テストケース・セットアップ・検証の3種類が共存しています。
+リクエスト単体テスト（バッチ処理）の例。1 ファイルにテストケース・セットアップ・検証が共存する。
 
 ### Excel
 
@@ -31,7 +31,7 @@
 | 注文ID[10001] | INFO | |
 | 注文ID[10002] | INFO | |
 
-- `LIST_MAP=testShots` がテストケース定義、`SETUP_TABLE` がセットアップ、`EXPECTED_TABLE` が検証、`LIST_MAP=expectedLog` が期待ログ
+- 種別はブロック先頭のラベルで決まる：`LIST_MAP=testShots` がテストケース定義、`SETUP_TABLE` がセットアップ、`EXPECTED_TABLE` が検証、`LIST_MAP=expectedLog` が期待ログ
 
 ### YAML
 
@@ -80,9 +80,11 @@ expected_tables:
         UPDATE_DATE: "2010-09-13 12:34:56.0"
 ```
 
-- `list_maps:` の `id: testShots` がテストケース定義、`setup_tables:` がセットアップ、`expected_tables:` が検証です
-- `id: expectedLog` のような任意 ID の `list_maps:` エントリも同一ファイルに共存できます
-- 同一の `list_maps:` キーに複数エントリをリストとして並べます（YAMLはトップレベルキーの重複不可）
+- 種別はトップレベルキーで決まる：`list_maps:` の `id: testShots` がテストケース定義、`setup_tables:` がセットアップ、`expected_tables:` が検証
+- `id: expectedLog` のような任意 ID の `list_maps:` エントリも同一ファイルに共存できる
+- 同一の `list_maps:` キーには複数エントリをリストとして並べる（YAML はトップレベルキーの重複不可のため）
+
+> [要確認] `description` カラムが Excel 例（注文カウンタが正しくインクリメントされます）と YAML 例（正しく更新されます）で食い違う。両形式は同一データを表すべきなのでどちらかが誤り。正しい文言を確認のうえ揃える。
 
 ---
 
@@ -90,14 +92,18 @@ expected_tables:
 
 ## 4.3 セクションのグループ化（groupId）
 
-テストケースごとに異なるセットアップデータを使い分けるシナリオ。
+テストケースごとに異なるセットアップ／検証データを使い分けるシナリオ。`testShots` の `setUpTable`／`expectedTable` カラムに書いた値が groupId となり、その groupId が付いたセクションだけが対象になる。
 
-**ポイント**: `testShots` の `setUpTable` カラムに groupId を書く → そのgroupIdが付いたセクションだけが投入される。
+| ケース | setUpTable | 投入されるセクション |
+|---|---|---|
+| ケース1（正常注文） | `case01` | `SETUP_TABLE[case01]` |
+| ケース2（大量注文） | `case02` | `SETUP_TABLE[case02]` |
 
-- ケース1（正常注文）: `setUpTable=case01` → `SETUP_TABLE[case01]` のデータが使われる
-- ケース2（大量注文）: `setUpTable=case02` → `SETUP_TABLE[case02]` のデータが使われる
+`expectedTable` も同様に、書いた値の groupId が付いた `EXPECTED_TABLE[...]` セクションが検証に使われる。groupId を省略したセクションは `setUpTable` が空のケースで使われる（groupId なし = デフォルトグループ）。
 
 ### Excel
+
+groupId はセクションラベルの `[...]` で表す。
 
 | LIST_MAP=testShots | | | | |
 |---|---|---|---|---|
@@ -127,10 +133,9 @@ expected_tables:
 | 2001 | P-003 | 100 | 500 | |
 | 2001 | P-004 | 200 | 300 | |
 
-- `testShots` の `setUpTable` カラムに groupId（`case01`/`case02`）を指定することで、そのケースで使うセクションを選択します
-- `expectedTable` も同様に groupId を指定して検証データを切り替えます
-
 ### YAML
+
+groupId は各セクションの `group_id` キーで表す。
 
 ```yaml
 list_maps:
@@ -187,7 +192,3 @@ expected_tables:
         QUANTITY: "200"
         UNIT_PRICE: "300"
 ```
-
-- `testShots` の `setUpTable`/`expectedTable` に書いた値（`case01`/`case02`）がそのまま groupId として使われ、対応するセクションが収集されます
-- groupId を省略したセクションは `setUpTable` が空のケースで使われます（groupId なし = デフォルトグループ）
-

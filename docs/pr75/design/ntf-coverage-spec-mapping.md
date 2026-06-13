@@ -1,21 +1,120 @@
 # NTF テストデータ仕様 カバレッジ スペックマッピング（P4-2 再実施版）
 
-## 概要
+NTF 本体クラスを全行走査し、YAML スキーマ・設計文書へ未反映の仕様を洗い出した記録。読み手は反映作業の担当者と、反映の根拠を遡って検証する監査者。担当者は「どの未反映仕様を、どの優先度で、どの文書のどこに反映するか」を §1 で決め、各仕様の根拠（クラス名・行番号）は §4 のクラス別表を引いて確認する。通読より参照を前提とする。
 
 - **作成日**: 2026-05-15（P4-2 再実施）
-- **調査クラス数**: 29クラス（`src/main/java` の直接影響クラス）
+- **走査対象**: 29 クラス（`src/main/java` の直接影響クラス）
 - **参照文書**: `ntf-coverage-class-list.md` §1
-- **調査方針**: 各クラスを全行走査し、行番号付きで「仕様あり」「対象外」を記録する。全行を漏れなくカバーすることで「目立つメソッドのみ拾った」という旧版の問題を解消する。
-
-**凡例**
-- **仕様あり**: YAMLスキーマの構造・有効値・必須/任意・セクション識別・行順序・特殊値などに影響する行
-- **対象外**: 内部実装・ログ・例外ハンドリング・getter/setter 等、スキーマ設計に直接影響しない行
 
 ---
 
-## 1. reader パッケージ
+## 1. 反映すべき未反映仕様（推奨）
 
-### 1.1 DataType（92行）
+全行走査で確認した未反映仕様を、反映先と優先度で整理する。優先度の根拠は各行の「理由」列、仕様の根拠（クラス・行番号）は §4 の該当クラスを引く。各仕様の詳細は §3 を参照。
+
+優先度の基準: 誤った記述でユーザーが誤動作を期待しうる／頻出のテストデータ記法／利用時に必須の情報を **高**、一般的ユースケースで挙動差が問題になるものを **中**、高度なカスタマイズ向けを **低** とする。
+
+### schema.json への追加
+
+| # | 優先度 | 追加箇所 | 内容 | 理由 |
+|---|---|---|---|---|
+| S-1 | 高 | `$defs.directives.properties.record-length` description | `record-length` は固定長ファイルのフィールド長合計から自動計算されるため**通常は記述不要** | 手動設定不要な旨が未記載 |
+| S-2 | 中 | `$defs.directives.properties.field-separator` description | `"\\t"` を指定するとタブ文字（U+0009）に変換される。値は1文字のみ有効 | タブ区切りファイルは一般的なユースケース |
+| S-5 | 中 | `$defs.table_data.properties.rows` description | `SETUP_TABLE` / `EXPECTED_TABLE` でも省略カラムには `DefaultValues` によるデフォルト値が INSERT 時に補完される | `SETUP_TABLE` でも補完されることを知らないと誤ったテストになる |
+| S-3 | — | `$defs.record_fragment.properties.fields` description | 同一レコード種別内のフィールド名は重複不可 | — |
+| S-4 | — | `$defs.field_def.properties.length` description（const:"-" 部分） | `"-"` を指定したフィールドの値は格納時に改行コードと前後空白が除去される | — |
+
+### design.md への追加
+
+| # | 優先度 | 追加箇所 | 内容 | 理由 |
+|---|---|---|---|---|
+| D-6 | 高 | AI向けプロンプト §BasicJapaneseCharacterInterpreter | 「書式 `${...,...}` にマッチしない場合はスルー。書式はマッチするが文字種が未知の場合は `IllegalArgumentException` がスローされる」に修正（旧: 「スペルミスは素通り」は不正確） | 現在の記述が誤っており、ユーザーが誤動作を期待する |
+| D-3 | 高 | §7 または §4 日付フォーマット | 日付型カラムは17文字未満でも後置0埋めで処理される（例: `"20240101"` も有効）。JDBC タイムスタンプエスケープ形式（`"2024-01-01"` 等）も受け付ける。さらに `"yyyyMMdd HHmmss"`（スペース区切り14文字）および `"yyyyMMddHHmmssS"`（ミリ秒1桁15文字）も有効 | テストデータ作成時によく使われる書き方 |
+| D-4 | 高 | §4 `expected_complete_tables` の説明 | `BasicDefaultValues` のデフォルト値一覧を表形式で追記。DATE のデフォルトは `new Timestamp(0L)` を JVM タイムゾーンで文字列化した値（JST 環境では `"1970-01-01 09:00:00.0"`、UTC 環境では `"1970-01-01 00:00:00.0"`）。`CHAR`/`NCHAR` はカラム長分スペース、`VARCHAR`/`NVARCHAR` は常に1スペース。`"半角数字"` → `X`（`Z` ではない）を注記 | `expected_complete_tables` 利用時に必須の情報 |
+| D-7 | 中 | AI向けプロンプト §文字種トークン | `${半角記号}` 生成では `"`, `#`, `,`, `\` は含まれない | テストデータ生成で予期しない文字列になる |
+| D-10 | 中 | §ファイル系 注意事項（新規追加） | 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される。固定長ファイルの空行はスペースパディングされた定長レコードとして書き出される | 固定長と可変長で挙動が異なることは重要 |
+| D-14 | 中 | §ファイル系 注意事項（新規） | 1つのファイルセクション内にフィールド名行→型行→[長さ行]→データ行のブロックを複数連続して記述することで複数レコードレイアウトを表現できる | 1セクション内に複数レコードレイアウトを持つファイルの YAML 化方法が不明 |
+| D-9 | 低 | 新節「デフォルトディレクティブの DI」 | SystemRepository キー `defaultDirectives`（全共通）、`fixedLengthDirectives`（固定長専用、後者が優先上書き）、`variableLengthDirectives`（可変長専用）でデフォルトディレクティブを一括設定できる | 高度なカスタマイズポイント。実用ユーザーの多くは不要 |
+| D-1 | — | §7 特殊値 null テーブル | `NullInterpreter` は大文字小文字不問（`"NULL"` / `"Null"` も null になる） | — |
+| D-2 | — | §7 特殊値 QuotationTrimmer | 全角ダブルクォート（U+201C/U+201D）でも外側クォートが除去される。半角は先頭・末尾が同じ `"` (U+0022) のペア、全角は先頭が `"` (U+201C) かつ末尾が `"` (U+201D) という**異なる文字のペア**で判定（片側のみはスルー）。`""abc""` → `"abc"` | — |
+| D-5 | — | §11 MESSAGE 系 record_type 説明の近くに追記 | Excel 上の FW 制御ヘッダは「フィールド名｜値」の2列ディレクティブ行形式だったが YAML では通常の `fields` に統合される | — |
+| D-8 | — | AI向けプロンプト §field-separator 追加 | `"\\t"` でタブ区切りを指定できる | — |
+| D-11 | — | §LIST_MAP 注意事項 | 同一シート内に同じ `LIST_MAP=id` セクションが複数存在する場合、最初の1つのみが読まれる（後続は黙って無視） | — |
+| D-12 | — | §9 group_id の説明に補足 | 存在しない groupId を指定した場合は例外でなく空リストが返る | — |
+| D-13 | — | §11 messaging に追補 | テストデータにステータスコード列がない場合デフォルト `"200"` が使用される。EXPECTED_REQUEST_HEADER_MESSAGES と EXPECTED_REQUEST_BODY_MESSAGES の行数一致が必須 | — |
+| D-15 | — | §特殊値 §DateTimeInterpreter | `${systemTime}` 等は完全一致のみ変換。部分文字列（例: `"${systemTime}_suffix"`）は変換されないため `CompositeInterpreter` との組み合わせが必要 | — |
+| D-16 | — | §ファイル系 `"-"` 長フィールド | `"-"` 長フィールドの最終的な長さは、追加された全レコード中の**最大バイト長**になる（各レコード追加時にバイト長が比較更新される） | — |
+
+### examples.yaml への追加
+
+| # | 追加内容 |
+|---|---|
+| E-1 | `field-separator: "\\t"` を使ったタブ区切りファイルの directives 例 |
+| E-2 | `type: B`（バイナリ型）の `field_def` 使用例（`${binaryFile:...}` との組み合わせ） |
+| E-3 | JDBC タイムスタンプ形式の日付値の例（`"2024-01-01"` など） |
+| E-4 | `response_*_messages` の通常データ行（errorMode なし）の例 |
+
+> 優先度 — の行は §7 で優先順位を付与していない仕様。反映自体は必要。
+
+---
+
+## 2. 走査方法（評価基準）
+
+旧版は「目立つメソッドのみ拾った」漏れがあった。これを解消するため、各クラスを全行走査し、行番号付きで「仕様あり」「対象外」を記録する。全行を漏れなく分類することで、未反映仕様の見落としがないことを担保する。
+
+| 区分 | 定義 |
+|---|---|
+| 仕様あり | YAMLスキーマの構造・有効値・必須/任意・セクション識別・行順序・特殊値などに影響する行 |
+| 対象外 | 内部実装・ログ・例外ハンドリング・getter/setter 等、スキーマ設計に直接影響しない行 |
+
+§4 のクラス別表が走査の生データ（測定値）。§1・§3 の判断（反映先・優先度）はこの測定値から導く。
+
+---
+
+## 3. 未反映仕様の詳細
+
+§1 の各仕様の根拠と注意点。クラス別の行レベル根拠は §4 を引く。
+
+### 特殊値・インタープリタ
+
+- **D-1 `NullInterpreter`**: `"null"`（半角小文字）を `equalsIgnoreCase` で比較するため `"NULL"` / `"Null"` も null になる。根拠 §4 NullInterpreter 10-11。
+- **D-2 `QuotationTrimmer`**: 半角は先頭・末尾が同じ `"` (U+0022) のペア、全角は先頭 `"` (U+201C)・末尾 `"` (U+201D) という異なる文字のペアで判定。両立必須で片側のみはスルー。`""abc""` → `"abc"`（最外側1層のみ除去）。根拠 §4 QuotationTrimmer 18-30。
+- **D-6 `BasicJapaneseCharacterInterpreter`**: 書式 `${文字種,文字数}` に完全一致しない場合は次のインタープリタへスルー。書式はマッチするが文字種が未知の場合は `BasicJapaneseCharacterGenerator` 側が `IllegalArgumentException` をスロー。旧記述「スペルミスは素通り」は不正確。根拠 §4 BasicJapaneseCharacterInterpreter 25-37。
+- **D-7 `${半角記号}` の除外文字**: `ASCII_SYMBOL` はダブルクォート `"`・シャープ `#`・カンマ `,`・バックスラッシュ `\` の4文字を除外する。根拠 §4 JapaneseCharacterSet 22-36。
+- **D-15 `DateTimeInterpreter`**: `${systemTime}` / `${updateTime}` / `${setUpTime}` は完全一致のみ変換。部分文字列は変換されないため `CompositeInterpreter` との組み合わせが必要。根拠 §4 DateTimeInterpreter 48-55。
+
+### 日付・テーブル
+
+- **D-3 日付フォーマット**: 17文字未満は後置0埋めで処理（`"20240101"` も有効）。JDBC タイムスタンプエスケープ形式（`"2024-01-01"` 等）、`"yyyyMMdd HHmmss"`（スペース区切り14文字）、`"yyyyMMddHHmmssS"`（ミリ秒1桁15文字）も有効。根拠 §4 TableData 214-273。
+- **D-4 `BasicDefaultValues` デフォルト値**: DATE は `new Timestamp(0L)` を JVM タイムゾーンで文字列化（JST `"1970-01-01 09:00:00.0"`、UTC `"1970-01-01 00:00:00.0"`）。`CHAR`/`NCHAR` はカラム長分スペース、`VARCHAR`/`NVARCHAR` は常に1スペース。`"半角数字"` → `X`（`Z` ではない）。根拠 §4 TableData 701-745、BasicDataTypeMapping 30-56。[要確認] `BasicDefaultValues` クラスは本走査の29クラスに含まれず、デフォルト値一覧の全項目は未確認。
+- **S-5 省略カラムのデフォルト補完**: `SETUP_TABLE` / `EXPECTED_TABLE` でも省略カラムに `DefaultValues` が INSERT 時に補完される。根拠 §4 TableData 180-212、BasicTestDataParser 170-181。
+- **D-12 存在しない groupId**: 例外でなく空リストが返る。根拠 §4 BasicTestDataParser 49-57（`isDataExisting` = false で空リスト）。
+
+### ファイル系
+
+- **S-1 `record-length` 自動計算**: 固定長ファイルのフィールド長合計から自動計算されるため通常は記述不要。根拠 §4 FixedLengthFile 60-92。
+- **S-2 / S-8 `field-separator: "\\t"`**: `"\\t"` でタブ文字（U+0009）に変換。1文字のみ有効（違反は `IllegalArgumentException`）。根拠 §4 VariableLengthFile 62-82。
+- **S-3 フィールド名重複不可**: 同一レコード種別内のフィールド名は重複不可。根拠 §4 DataFileFragment 185-194, 348-362。
+- **S-4 / D-16 `"-"` 長フィールド**: 値は格納時に改行コードと前後空白を除去（S-4）。最終的な長さは追加された全レコード中の最大バイト長になる（D-16）。根拠 §4 DataFileFragment 97-115, 129-152, 154-161。
+- **D-9 デフォルトディレクティブ DI**: SystemRepository キー `defaultDirectives`（全共通）→ `fixedLengthDirectives` / `variableLengthDirectives`（ファイル種別専用、後者が優先上書き）の順で適用。根拠 §4 DataFile 59-81、FixedLengthFile 19-27、VariableLengthFile 22-31。
+- **D-10 空行の挙動差**: 可変長はスキップされず全フィールド `""` のレコードとして保持、固定長はスペースパディングされた定長レコードとして書き出される。[要確認] この挙動差の根拠は §4 の走査範囲（Parser 層）だけでは確定できず、書き出し処理側の確認が必要。
+- **D-14 複数レコードレイアウトの連続記述**: 1セクション内にフィールド名行→型行→[長さ行]→データ行のブロックを複数連続して記述できる。根拠 §4 DataFileParser 177-191。
+
+### メッセージ系
+
+- **D-5 FW 制御ヘッダ**: Excel では「フィールド名｜値」の2列ディレクティブ行形式だったが YAML では通常の `fields` に統合される。根拠 §4 MessageParser 29-30, 77-92。
+- **D-11 LIST_MAP の重複セクション**: 同一シート内に同じ `LIST_MAP=id` が複数あると最初の1つのみ読まれる（後続は無視）。根拠 §4 ListMapParser 15、SingleDataParsingTemplate 43-53。
+- **D-13 messaging**: ステータスコード列がない場合デフォルト `"200"`。EXPECTED_REQUEST_HEADER_MESSAGES と EXPECTED_REQUEST_BODY_MESSAGES の行数一致が必須。根拠 §4 RequestTestingMessagingClient 124-204, 294-443。
+
+---
+
+## 4. クラス別 全行走査結果（根拠）
+
+§1・§3 の各仕様の行レベル根拠。クラスを引いて該当行を確認する。
+
+### 4.1 reader パッケージ
+
+#### DataType（92行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -40,7 +139,7 @@
 | 75-91 | 対象外 | `getType()` / `getName()` getter（定型コード） |
 | 92 | 対象外 | クラス終端 |
 
-### 1.2 TestDataParsingTemplate（337行）
+#### TestDataParsingTemplate（337行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -66,7 +165,7 @@
 | 319-335 | 対象外 | `interpret()`: インタープリタ委譲（内部実装） |
 | 336-337 | 対象外 | クラス終端 |
 
-### 1.3 GroupDataParsingTemplate（55行）
+#### GroupDataParsingTemplate（55行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -77,7 +176,7 @@
 | 45-53 | 仕様あり | `shouldStopOnNextOne()` が常に `false`: 同一 groupId のセクションが複数存在しても全部収集し続ける（複数テーブルを1シートに並べられる） |
 | 54-55 | 対象外 | クラス終端 |
 
-### 1.4 SingleDataParsingTemplate（55行）
+#### SingleDataParsingTemplate（55行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -88,7 +187,7 @@
 | 43-53 | 仕様あり | `shouldStopOnNextOne()` が常に `true`: 最初の一致セクションを読み終えたら次の同型セクションが現れた時点で停止（同一シート内に同じID のセクションが複数あっても最初の1つのみ読まれる） |
 | 54-55 | 対象外 | クラス終端 |
 
-### 1.5 HeaderLine（97行）
+#### HeaderLine（97行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -102,7 +201,7 @@
 | 87-96 | 仕様あり | `MARKER_COLUMN_CONDITION`: `[` で始まり `]` で終わるカラム名をマーカーカラムとして扱う（マーカーカラムの書式仕様: `[カラム名]` 形式） |
 | 97 | 対象外 | クラス終端 |
 
-### 1.6 TableDataParser（107行）
+#### TableDataParser（107行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -115,7 +214,7 @@
 | 84-98 | 仕様あり | `onTargetTypeFound`: (1) 先頭列の `=` 以降をテーブル名として取得; (2) 直後の次行をカラム名ヘッダ行として読み込む; (3) マーカーカラムを除外した有効カラム名で `TableData` を生成してリストに追加 |
 | 100-107 | 対象外 | `getResult()` 定型コード |
 
-### 1.7 ListMapParser（79行）
+#### ListMapParser（79行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -128,14 +227,14 @@
 | 67-72 | 仕様あり | `onReadLine`: `header.getMapExcludingMarkerColumns(line)` でマーカーカラムを除外した `Map<String,String>` を生成してリストに追加。`LIST_MAP` でもマーカーカラムは除外される |
 | 73-79 | 対象外 | `getResult()` 定型コード |
 
-### 1.8 MessageParser（150行）
+#### MessageParser（150行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
 | 1-23 | 対象外 | パッケージ宣言・import文・Javadoc |
 | 24 | 仕様あり | `SingleDataParsingTemplate<MessagePool>` を継承。1セクションで1つのメッセージプールを解析 |
 | 26-27 | 対象外 | `delegate` フィールド |
-| 29-30 | 仕様あり | `fwHeader` フィールド: FW制御ヘッダのキー→値 Map。Excel では「フィールド名 | 値」の2列ディレクティブ行形式だったが YAML では通常の `fields` に統合される |
+| 29-30 | 仕様あり | `fwHeader` フィールド: FW制御ヘッダのキー→値 Map。Excel では「フィールド名 ｜ 値」の2列ディレクティブ行形式だったが YAML では通常の `fields` に統合される |
 | 32-33 | 仕様あり | `FW_HEADER_KEY = "reader.fwHeaderfields"`: SystemRepository にこのキーでカンマ区切り文字列を設定することで FW 制御ヘッダフィールド名をカスタマイズ可能 |
 | 35-45 | 対象外 | コンストラクタ（delegate の生成） |
 | 60-67 | 仕様あり | `onReadingNames` オーバーライド: フィールド名行の**先頭列（NO列相当）を無条件に `"default"` に書き換えてから**親クラスに渡す。YAMLでは `record_type` が常に `"default"` に固定される仕様 |
@@ -147,7 +246,7 @@
 | 135-141 | 対象外 | `getDelegate()` accessor |
 | 143-149 | 仕様あり | `getFwHeader()`: FWヘッダマップを返却（`SendSyncMessageParser` でオーバーライドされ使用禁止になる） |
 
-### 1.9 SendSyncMessageParser（145行）
+#### SendSyncMessageParser（145行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -167,7 +266,7 @@
 | 137-142 | 仕様あり | `createNewFile` オーバーライド: `FixedLengthFile` でなく `MockMessages` を生成。`errorMode:*` 値に対してパディング除去処理をスキップする実装 |
 | 143-145 | 対象外 | クラス終端 |
 
-### 1.10 GroupMessageParser（67行）
+#### GroupMessageParser（67行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -181,7 +280,7 @@
 | 57-58 | 仕様あり | `emptyMap()` を FWヘッダとして使用: GroupMessageParser では FW 制御ヘッダは一切使用されない |
 | 66-67 | 対象外 | クラス終端 |
 
-### 1.11 DataFileParser（268行）
+#### DataFileParser（268行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -205,14 +304,14 @@
 | 243-252 | 仕様あり | `createNewFragment`: 先頭列をレコード種別名、2列目以降をフィールド名として設定。**フィールド名行の構造: 先頭列 = レコード種別名、2列目以降 = フィールド名の列挙** |
 | 254-267 | 対象外 | `tail()` ユーティリティ（先頭要素除去） |
 
-### 1.12 FixedLengthFileParser（39行）
+#### FixedLengthFileParser（39行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
 | 1-26 | 対象外 | パッケージ宣言・import文・Javadoc・コンストラクタ・`createNewFile` |
 | 34-38 | 仕様あり | `isDirective`: `FixedLengthDirective.VALUES` に含まれるキーのみがディレクティブとして有効。固定長セクションで記述できるディレクティブキーは `FixedLengthDirective` 列挙体の定義に限定される |
 
-### 1.13 VariableLengthFileParser（47行）
+#### VariableLengthFileParser（47行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -221,7 +320,7 @@
 | 40-46 | 仕様あり | `onReadingTypes` オーバーライド: 型行読み取り後に `READING_LENGTHS` をスキップして直接 `READING_VALUES` へ遷移。**可変長ファイルにはフィールド長行が存在しない** |
 | 47 | 対象外 | クラス終端 |
 
-### 1.14 BasicTestDataParser（272行）
+#### BasicTestDataParser（272行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -242,11 +341,9 @@
 | 267-271 | 仕様あり | `isResourceExisting`: testDataReader に委譲してリソース存在確認を行う |
 | 272 | 対象外 | クラス終端 |
 
----
+### 4.2 file パッケージ
 
-## 2. file パッケージ
-
-### 2.1 DataFile（366行）
+#### DataFile（366行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -270,7 +367,7 @@
 | 336-342 | 仕様あり | `valueOf(String)` 抽象メソッド: サブクラスがディレクティブ名から `Directive` を解決（ファイル種別ごとに許容ディレクティブが異なる） |
 | 344-365 | 対象外 | `getEncodingFromDirectives()` / `createFormatter()` 内部ヘルパー |
 
-### 2.2 DataFileFragment（608行）
+#### DataFileFragment（608行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -300,7 +397,7 @@
 | 541-554 | 仕様あり | `isSizeValid()` 抽象メソッド: サブクラスが names/types/lengths 各リストのサイズ整合性チェック条件を定義（固定長は3リスト必須、可変長は lengths 不要） |
 | 556-608 | 対象外 | `toString()` / `writeWith()` / `getNumberOfRecords()` / `getLengthOf()` 系（内部実装） |
 
-### 2.3 FixedLengthFile（159行）
+#### FixedLengthFile（159行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -317,7 +414,7 @@
 | 135-149 | 仕様あり | `convertData(LayoutDefinition, DataRecord)`: 同 `TestDataConverter` 経由でテストデータ自体を変換できる拡張ポイント |
 | 151-158 | 仕様あり | `getTestDataConverter()`: SystemRepository キー `"TestDataConverter_" + fileType` でコンバータを取得（キー名規則: `"TestDataConverter_Fixed"` / `"TestDataConverter_Variable"`） |
 
-### 2.4 FixedLengthFileFragment（145行）
+#### FixedLengthFileFragment（145行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -331,7 +428,7 @@
 | 140-144 | 仕様あり | `isSizeValid()`: 固定長では names・types・lengths の3リストがすべて同じサイズでなければならない（可変長と異なり lengths も必須） |
 | 145 | 対象外 | クラス終端 |
 
-### 2.5 VariableLengthFile（83行）
+#### VariableLengthFile（83行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -346,7 +443,7 @@
 | 62-82 | 仕様あり | `convertDirectiveValue()`: `field-separator` に `\t` が指定された場合はタブ文字 `"\t"` に変換。`field-separator` は**1文字のみ有効**（違反時 `IllegalArgumentException`） |
 | 83 | 対象外 | クラス終端 |
 
-### 2.6 VariableLengthFileFragment（71行）
+#### VariableLengthFileFragment（71行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -359,7 +456,7 @@
 | 66-70 | 仕様あり | `isSizeValid()`: 可変長では names と types が同じサイズであれば良く、lengths のサイズ一致は不要（固定長と異なり長さ指定は任意） |
 | 71 | 対象外 | クラス終端 |
 
-### 2.7 BasicDataTypeMapping（100行）
+#### BasicDataTypeMapping（100行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -371,7 +468,7 @@
 | 75-90 | 仕様あり | `setMappingTable(Map)` でデフォルトマッピング表を外部から上書き可能。null を渡すと `IllegalArgumentException` |
 | 92-100 | 対象外 | private getter（`mappingTable` null チェックしてデフォルト返却） |
 
-### 2.8 LineSeparator（66行）
+#### LineSeparator（66行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -382,11 +479,9 @@
 | 41-65 | 仕様あり | `evaluate(String expression)`: `NONE/CR/LF/CRLF` のいずれかに一致する場合は対応する改行コードを返す。一致しない場合は引数をそのまま返す（**任意文字列をリテラル改行コードとして使用可能**） |
 | 66 | 対象外 | クラス終端 |
 
----
+### 4.3 messaging パッケージ
 
-## 3. messaging パッケージ
-
-### 3.1 RequestTestingMessagingClient（572行）
+#### RequestTestingMessagingClient（572行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -405,7 +500,7 @@
 | 445-571 | 対象外 | 内部ヘルパーメソッド群 |
 | 572 | 対象外 | クラス終端 |
 
-### 3.2 SendSyncSupport（474行）
+#### SendSyncSupport（474行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -419,11 +514,9 @@
 | 404-432 | 仕様あり | `getMessages()`: SystemRepository から `"messagingTestDataParser"` キーで `BasicTestDataParser` を取得。取得できない場合 `IllegalStateException`。対応メッセージが見つからない場合も `IllegalStateException` |
 | 433-474 | 対象外 | `TestDataInfo` 内部クラス（内部実装） |
 
----
+### 4.4 db パッケージ
 
-## 4. db パッケージ
-
-### 4.1 TableData（745行）
+#### TableData（745行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -441,11 +534,9 @@
 | 397-700 | 対象外 | その他 getter/setter/toString 等 |
 | 701-745 | 仕様あり | `fillDefaultValues()`: テストデータで省略されたカラムに対してデフォルト値を補完。DB 上の全カラムを取得し、`columnNames` にないものにデフォルト値を設定し、`columnNames` を DB 全カラムに更新する |
 
----
+### 4.5 interpreter / generator パッケージ
 
-## 5. interpreter / generator パッケージ
-
-### 5.1 NullInterpreter（20行）
+#### NullInterpreter（20行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -456,7 +547,7 @@
 | 13-19 | 仕様あり | `equalsIgnoreCase` で一致すれば `null` を返却、不一致は次のインタープリタに委譲 |
 | 20 | 対象外 | クラス終端 |
 
-### 5.2 QuotationTrimmer（32行）
+#### QuotationTrimmer（32行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -467,7 +558,7 @@
 | 18-30 | 仕様あり | `trimQuotation()`: 半角ダブルクォートまたは全角ダブルクォートで前後が囲われている場合のみ除去（`startsWith` かつ `endsWith` の両立が必須）。**片側のみはスルー**。`""abc""` → `"abc"`（最外側の1層のみ除去） |
 | 31-32 | 対象外 | クラス終端 |
 
-### 5.3 DateTimeInterpreter（105行）
+#### DateTimeInterpreter（105行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -480,7 +571,7 @@
 | 96-104 | 対象外 | `interpret()` マップルックアップ（内部実装） |
 | 105 | 対象外 | クラス終端 |
 
-### 5.4 LineSeparatorInterpreter（89行）
+#### LineSeparatorInterpreter（89行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -493,7 +584,7 @@
 | 78-88 | 仕様あり | `setMatchPattern(String pattern)`: Java 正規表現文字列を受け取り `Pattern.compile()` でコンパイル（カスタマイズ可能な拡張ポイント） |
 | 89 | 対象外 | クラス終端 |
 
-### 5.5 BinaryFileInterpreter（93行）
+#### BinaryFileInterpreter（93行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -506,7 +597,7 @@
 | 66-92 | 対象外 | `fileToHexString()` ファイル読み込みと Hex 変換（内部実装） |
 | 93 | 対象外 | クラス終端 |
 
-### 5.6 BasicJapaneseCharacterInterpreter（46行）
+#### BasicJapaneseCharacterInterpreter（46行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -519,7 +610,7 @@
 | 38-45 | 仕様あり | `setCharacterGenerator(CharacterGenerator)`: 委譲先の文字生成クラスを外部から差し替え可能（カスタム文字種の拡張ポイント） |
 | 46 | 対象外 | クラス終端 |
 
-### 5.7 CompositeInterpreter（64行）
+#### CompositeInterpreter（64行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -532,7 +623,7 @@
 | 55-63 | 仕様あり | `setInterpreters(List<TestDataInterpreter>)`: 各 `${...}` 要素の解釈に使用するインタープリタリストを設定（DI が必要） |
 | 64 | 対象外 | クラス終端 |
 
-### 5.8 BasicJapaneseCharacterGenerator（63行）
+#### BasicJapaneseCharacterGenerator（63行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -541,7 +632,7 @@
 | 40-56 | 仕様あり | `TYPE_CHARS_PAIRS` で文字種名と対応する文字集合の定義。有効な文字種トークン（14種）: `半角英字`、`半角数字`、`半角記号`、`半角カナ`、`全角英字`、`全角数字`、`全角ひらがな`、`全角カタカナ`、`全角漢字`、`全角記号その他`、`中国語`（`"你"` 1文字のみ）、`サロゲートペア`（`"𩸽𠮷"` の2文字）、`改行`（`"\r\n"` = CRLF）、`外字`（`"㈱"` 1文字のみ） |
 | 58-63 | 対象外 | コンストラクタ（`super(TYPE_CHARS_PAIRS)` を呼び出すだけ） |
 
-### 5.9 JapaneseCharacterSet（270行）
+#### JapaneseCharacterSet（270行）
 
 | 行番号 | 仕様あり/対象外 | 内容 |
 |---|---|---|
@@ -558,64 +649,8 @@
 
 ---
 
-## 6. 未反映仕様まとめ（P4-2 再実施版）
+## 5. 次の一歩
 
-P4-2（再）の全行走査で確認した未反映仕様を以下に列挙する。
-
-### 6.1 schema.json への追加
-
-| # | 追加箇所 | 内容 |
-|---|---|---|
-| S-1 | `$defs.directives.properties.record-length` description | `record-length` は固定長ファイルのフィールド長合計から自動計算されるため**通常は記述不要** |
-| S-2 | `$defs.directives.properties.field-separator` description | `"\\t"` を指定するとタブ文字（U+0009）に変換される。値は1文字のみ有効 |
-| S-3 | `$defs.record_fragment.properties.fields` description | 同一レコード種別内のフィールド名は重複不可 |
-| S-4 | `$defs.field_def.properties.length` description（const:"-" 部分） | `"-"` を指定したフィールドの値は格納時に改行コードと前後空白が除去される |
-| S-5 | `$defs.table_data.properties.rows` description | `SETUP_TABLE` / `EXPECTED_TABLE` でも省略カラムには `DefaultValues` によるデフォルト値が INSERT 時に補完される |
-
-### 6.2 design.md への追加
-
-| # | 追加箇所 | 内容 |
-|---|---|---|
-| D-1 | §7 特殊値 null テーブル | `NullInterpreter` は大文字小文字不問（`"NULL"` / `"Null"` も null になる） |
-| D-2 | §7 特殊値 QuotationTrimmer | 全角ダブルクォート（U+201C/U+201D）でも外側クォートが除去される。半角は先頭・末尾が同じ `"` (U+0022) のペア、全角は先頭が `"` (U+201C) かつ末尾が `"` (U+201D) という**異なる文字のペア**で判定（片側のみはスルー）。`""abc""` → `"abc"` |
-| D-3 | §7 または §4 日付フォーマット | 日付型カラムは17文字未満でも後置0埋めで処理される（例: `"20240101"` も有効）。JDBC タイムスタンプエスケープ形式（`"2024-01-01"` 等）も受け付ける。さらに `"yyyyMMdd HHmmss"`（スペース区切り14文字）および `"yyyyMMddHHmmssS"`（ミリ秒1桁15文字）も有効 |
-| D-4 | §4 `expected_complete_tables` の説明 | `BasicDefaultValues` のデフォルト値一覧を表形式で追記。DATE のデフォルトは `new Timestamp(0L)` を JVM タイムゾーンで文字列化した値（JST 環境では `"1970-01-01 09:00:00.0"`、UTC 環境では `"1970-01-01 00:00:00.0"`）。`CHAR`/`NCHAR` はカラム長分スペース、`VARCHAR`/`NVARCHAR` は常に1スペース。`"半角数字"` → `X`（`Z` ではない）を注記 |
-| D-5 | §11 MESSAGE 系 record_type 説明の近くに追記 | Excel 上の FW 制御ヘッダは「フィールド名|値」の2列ディレクティブ行形式だったが YAML では通常の `fields` に統合される |
-| D-6 | AI向けプロンプト §BasicJapaneseCharacterInterpreter | 「書式 `${...,...}` にマッチしない場合はスルー。書式はマッチするが文字種が未知の場合は `IllegalArgumentException` がスローされる」に修正（旧: 「スペルミスは素通り」は不正確） |
-| D-7 | AI向けプロンプト §文字種トークン | `${半角記号}` 生成では `"`, `#`, `,`, `\` は含まれない |
-| D-8 | AI向けプロンプト §field-separator 追加 | `"\\t"` でタブ区切りを指定できる |
-| D-9 | 新節「デフォルトディレクティブの DI」 | SystemRepository キー `defaultDirectives`（全共通）、`fixedLengthDirectives`（固定長専用、後者が優先上書き）、`variableLengthDirectives`（可変長専用）でデフォルトディレクティブを一括設定できる |
-| D-10 | §ファイル系 注意事項（新規追加） | 可変長ファイルの空行はスキップされず全フィールド `""` のレコードとして保持される。固定長ファイルの空行はスペースパディングされた定長レコードとして書き出される |
-| D-11 | §LIST_MAP 注意事項 | 同一シート内に同じ `LIST_MAP=id` セクションが複数存在する場合、最初の1つのみが読まれる（後続は黙って無視） |
-| D-12 | §9 group_id の説明に補足 | 存在しない groupId を指定した場合は例外でなく空リストが返る |
-| D-13 | §11 messaging に追補 | テストデータにステータスコード列がない場合デフォルト `"200"` が使用される。EXPECTED_REQUEST_HEADER_MESSAGES と EXPECTED_REQUEST_BODY_MESSAGES の行数一致が必須 |
-| D-14 | §ファイル系 注意事項（新規） | 1つのファイルセクション内にフィールド名行→型行→[長さ行]→データ行のブロックを複数連続して記述することで複数レコードレイアウトを表現できる |
-| D-15 | §特殊値 §DateTimeInterpreter | `${systemTime}` 等は完全一致のみ変換。部分文字列（例: `"${systemTime}_suffix"`）は変換されないため `CompositeInterpreter` との組み合わせが必要 |
-| D-16 | §ファイル系 `"-"` 長フィールド | `"-"` 長フィールドの最終的な長さは、追加された全レコード中の**最大バイト長**になる（各レコード追加時にバイト長が比較更新される） |
-
-### 6.3 examples.yaml への追加
-
-| # | 追加内容 |
-|---|---|
-| E-1 | `field-separator: "\\t"` を使ったタブ区切りファイルの directives 例 |
-| E-2 | `type: B`（バイナリ型）の `field_def` 使用例（`${binaryFile:...}` との組み合わせ） |
-| E-3 | JDBC タイムスタンプ形式の日付値の例（`"2024-01-01"` など） |
-| E-4 | `response_*_messages` の通常データ行（errorMode なし）の例 |
-
----
-
-## 7. 影響度別優先度
-
-| 優先度 | 未反映仕様 | 理由 |
-|---|---|---|
-| **高** | D-6（`BasicJapaneseCharacterInterpreter` の「素通り」記述が不正確） | 現在の記述が誤っており、ユーザーが誤動作を期待する |
-| **高** | D-3（日付型カラムの短縮形/JDBC エスケープ形式） | テストデータ作成時によく使われる書き方 |
-| **高** | D-4（`BasicDefaultValues` のデフォルト値一覧） | `expected_complete_tables` 利用時に必須の情報 |
-| **高** | S-1（`record-length` 自動計算） | 手動設定不要な旨が未記載 |
-| **中** | S-2（`field-separator: "\\t"` タブ変換と1文字制約） | タブ区切りファイルは一般的なユースケース |
-| **中** | S-5（省略カラムのデフォルト補完） | `SETUP_TABLE` でも補完されることを知らないと誤ったテストになる |
-| **中** | D-7（`${半角記号}` の除外文字） | テストデータ生成で予期しない文字列になる |
-| **中** | D-10（ファイル系空行の動作差異） | 固定長と可変長で挙動が異なることは重要 |
-| **中** | D-14（複数レコードレイアウトの連続記述） | 1セクション内に複数レコードレイアウトを持つファイルの YAML 化方法が不明 |
-| **低** | D-9（デフォルトディレクティブ DI） | 高度なカスタマイズポイント。実用ユーザーの多くは不要 |
-| **低** | その他の拡張ポイント（`TestDataConverter`、`setCharacterGenerator` 等） | カスタム実装者向け情報 |
+1. §1 の優先度 **高** の仕様（S-1・D-3・D-4・D-6）から反映先（schema.json / design.md）へ反映する。
+2. §3 で `[要確認]` を付した D-4（`BasicDefaultValues` のデフォルト値一覧）・D-10（空行の書き出し挙動差）は、走査範囲外のクラス・処理を追加確認してから反映する。
+3. examples.yaml の E-1〜E-4 を追加し、反映済み仕様の記法例を補う。

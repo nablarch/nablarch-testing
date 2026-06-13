@@ -2,6 +2,8 @@
 
 <a name="messaging"></a>
 
+メッセージング系データブロック（MESSAGE / SendSync 期待値 / sendSyncTestData 配置 / ステータスコードデフォルト）の Excel・YAML 記法をケースごとに引く。各ケースとも Excel と YAML の対応例を並べ、末尾に制約・補足を示す。
+
 ## 7.1 MESSAGE セクション（メッセージ送受信）
 
 受信電文と応答電文を定義するケース。実物のデータは `MessageParserTest.xls` の `testParse` シートを参照。
@@ -26,10 +28,6 @@
 | | 2 | 10 | 490 |
 | 1 | 00 | 1234567890 | |
 | 2 | 01 | | |
-
-- ディレクティブ行（`text-encoding` など）はフィールド定義より前に記述します
-- フィールド名称行の先頭セルは空にします（Excel 固有）
-- `no` 列（先頭列）はフレームワークが除去します。データとして保存されません
 
 ### YAML
 
@@ -62,7 +60,12 @@ messages:
           - ["01", "",           ""]
 ```
 
-- `record_type` の値はフレームワーク内部で `"default"` に置き換えられます。任意の値を記述できます（`FW_HEADER` のような予約値はありません。FW制御ヘッダは `fw_header:` マップに記述します）
+### 制約・補足
+
+- ディレクティブ行（`text-encoding` など）はフィールド定義より前に記述する
+- Excel のフィールド名称行の先頭セルは空にする（Excel 固有）
+- `no` 列（先頭列）はフレームワークが除去する。データとして保存されない
+- `record_type` の値はフレームワーク内部で `"default"` に置き換えられる。任意の値を記述できる（`FW_HEADER` のような予約値はない。FW制御ヘッダは `fw_header:` マップに記述する）
 
 ---
 
@@ -84,9 +87,6 @@ messages:
 | | 半角 | | |
 | | 20 | | |
 | 1 | RM21AA0104_01 | | |
-
-- `expectedMessage` カラムには要求電文の groupId、`responseMessage` カラムには応答電文の groupId を指定します
-- ヘッダとボディのエントリ数（rows 合計）は一致が必須です
 
 ### YAML
 
@@ -119,9 +119,12 @@ expected_request_header_messages:
           - ["RM21AA0104_01"]
 ```
 
-- `expected_request_header_messages:` の `group_id:` が `testShots` の `expectedMessage` カラムに対応します
-- `id:` はリクエスト ID（フォーマット定義ファイルの解決に使われます）
-- ヘッダとボディのエントリ数（rows 合計）は一致が必須です
+### 制約・補足
+
+- `expectedMessage` カラムには要求電文の groupId、`responseMessage` カラムには応答電文の groupId を指定する
+- YAML では `expected_request_header_messages:` の `group_id:` が `testShots` の `expectedMessage` カラムに対応する
+- `id:` はリクエスト ID（フォーマット定義ファイルの解決に使われる）
+- ヘッダとボディのエントリ数（rows 合計）は一致が必須
 
 ---
 
@@ -136,10 +139,6 @@ expected_request_header_messages:
 | no | errorMode | field1 | field2 |
 | 1 | | value1 | value2 |
 | 2 | | value3 | value4 |
-
-- `MESSAGE=sendSyncTestData/{requestId}/message` というパスで配置します
-- `no` 列の値は送信順序と一致させます
-- `errorMode` に `errorMode:timeout` を指定するとタイムアウトエラー、`errorMode:msgException` を指定すると例外エラーのシミュレーションになります
 
 ### YAML
 
@@ -158,8 +157,12 @@ messages:
           - ["2", "",        "value3", "value4"]
 ```
 
-- `errorMode` に `errorMode:timeout` または `errorMode:msgException` を指定すると他フィールドはパース対象外になります
-- N 回送信する場合はヘッダ件数とボディ件数をともに N 件ずつ記述します
+### 制約・補足
+
+- `MESSAGE=sendSyncTestData/{requestId}/message` というパスで配置する
+- `no` 列の値は送信順序と一致させる
+- `errorMode` に `errorMode:timeout` を指定するとタイムアウトエラー、`errorMode:msgException` を指定すると例外エラーのシミュレーションになる。どちらを指定した場合も他フィールドはパース対象外になる
+- N 回送信する場合はヘッダ件数とボディ件数をともに N 件ずつ記述する
 
 ---
 
@@ -176,8 +179,6 @@ HTTP 同期応答テストでステータスコードカラムを省略するケ
 | | 10 | |
 | 1 | RESULT_OK | |
 
-- ステータスコードカラムがない場合はデフォルト値 `"200"` が使用されます
-
 ### YAML
 
 ```yaml
@@ -191,4 +192,6 @@ response_body_messages:
           - ["RESULT_OK"]
 ```
 
-- ステータスコード列がない場合、実行時にデフォルト値 `"200"` が使用されます
+### 制約・補足
+
+- ステータスコード列がない場合、実行時にデフォルト値 `"200"` が使用される
