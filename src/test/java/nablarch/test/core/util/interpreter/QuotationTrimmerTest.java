@@ -79,6 +79,31 @@ public class QuotationTrimmerTest {
     }
 
     /**
+     * 引用符1文字だけの場合、囲みではないためそのまま返却されること（長さ1の境界値）。
+     *
+     * <p>
+     * 半角・全角の２重引用符が1文字だけの場合、前後を囲っているとは見なせない。
+     * 長さ1を囲みと誤判定すると {@code substring(1, 0)} で例外となるため、そのまま返すこと。
+     * </p>
+     */
+    @Test
+    public void testInterpretSingleQuotationChar() {
+        // 半角ダブルクォート1文字は囲みではないためそのまま
+        assertResult("\"", "\"");
+        // 全角ダブルクォート1文字は囲みではないためそのまま
+        assertResult("”", "”");
+    }
+
+    /**
+     * ２重引用符で囲われた空文字列は、空文字列になること（長さ2の境界値）。
+     */
+    @Test
+    public void testInterpretEmptyQuoted() {
+        assertResult("\"\"", "");
+        assertResult("””", "");
+    }
+
+    /**
      * テスト対象の実行結果をアサートする。
      *
      * @param input 入力値
