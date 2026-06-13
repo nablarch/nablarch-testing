@@ -372,10 +372,18 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-13
+- **Last completed**: **#1 完了**（コミット `bb76b97`）＝本体再利用面の設計書照合・是正。`getResult` の protected 化 5 件を package-private へ revert（過剰公開是正・main と差分ゼロ）。再利用 getter（`DataFile`/`DataFileFragment`/`MessagePool`）は別パッケージから器を読むため public で確定。設計書 §共通 の「本体無変更」誤記を是正＋無損失保持に必須の `getRecordType` を表へ追記。reader 振る舞い不変を stash ベースライン比較で証明。セルフチェック `docs/pr75/checks/P1-1.md`。 さらに **QuotationTrimmer 本体バグ修正**（コミット `c33e121`）＝引用符1文字 `"` で `substring(1,0)` 例外 → 長さ2未満を囲み対象外に。これで `YamlTableDataBuilderTest` の既存 4 RED が解消し **reader パッケージ全 GREEN**。
+- **Next**: **#2 本体 YAML 読み込みの 2 層分離（判断 B）の実装本体に着手**。設計方針は確定済み（下記 Notes 参照）。最初の縦スライス＝構造マッピング層への純化（まず ListMap か TableData から）。着手前にユーザーへ「構造マッピング層の公開 API 形（クラス名・メソッド名）を先にすり合わせるか、このまま着手か」を確認すること（中断時に質問を投げて未回答）。
+- **Notes**:
+  - **#2 の確定設計（あるべき姿・案2）**: ユーザー判断で「案2＝構造マッピング層を別に分ける・あるべき姿」を採用。新規追加の未リリースコードゆえ「安全（既存挙動維持）」は論点でなく**負債ゼロ**を優先（memory `new-code-prefer-ideal-design` 参照）。
+    1. **構造マッピング層**＝既存ビルダー（`YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder`）を「構造写しのみ」に純化（`interpret`・`fillDefaultValues`・`BinaryFileInterpreter` を除去 → 生値の本体器を返す）。歩き処理を再利用するので重複ゼロ。変換ツールはこれを直接呼ぶ公開 API。
+    2. **値加工層**＝新設。構造マッピング層が返した生値器を **#1 の getter（`getValues`/`getNames`/`getColumnNames`/`getValue` 等）で読み → interpret → 器を組み直す**＋`fillDefaultValues`。構造層は interpret を一切知らない（純粋）。「値加工層を上に乗せる」（判断 B）に忠実。BinaryFileInterpreter（`${binaryFile:}`）は値加工層が basePath 付きで担う。
+    3. `YamlTestDataParser` を両層経由に再配線。`YamlSection.interpret()` の「interpreters が空なら素通し」暗黙切替を廃止し、層の呼び分けで明示化。
+    4. 既存 YAML テスト約 150 件を「構造層=生値／値加工層=解釈」に整理しつつ全 GREEN 維持。
+  - **重要な技術的事実（調査済み）**: 本体は解釈をビルド時にセル単位で行う（`TestDataParsingTemplate.parse` L179 が各行に `interpret` を適用してから器へ）。コンテナ（TableData/DataFileFragment）は interpreters を持たない。よって値加工層は「生値器を読み直して解釈・再構築」が正しい形。
+  - **テスト移送の注意**: 現 `YamlTableDataBuilderTest` には builder が解釈する前提のテスト（例 `testBuildListMapRows_updateTimeAndSetUpTimeConverted`／`...escapedDoubleQuoteIsDoubleQuoteChar` 等）がある。構造層を純化したらこれらは「生値（`${updateTime}` のまま等）」を期待するよう書き換え、解釈の検証は新設する値加工層のテストへ移す。
+  - **Phase 1 完了ゲート**: #1+#2 完了後に 4 観点サブエージェントレビュー（アーキテクト/SWエンジニア/QA/Java エキスパート）→ ユーザーレビュー OK で Phase 2 へ。#1 のセルフチェックは済だがフェーズレビューは #2 完了後にまとめて実施。
+  - **環境**: ブランチ `add-yaml`（`origin/add-yaml` 追跡）。`pom.xml` の `6u3` ローカル変更は未コミットのまま残置（**コミットしない方針**）。ドラフト PR #1: https://github.com/lovaizu/nablarch-testing/pull/1 （本文は steering へのリンクのみ）。
+  - **テスト実行メモ**: `target/surefire-reports` は前回実行分が残るため、`-Dtest` 絞り込み実行の前に `rm -rf target/surefire-reports` してから集計すること。`mvn -o`（オフライン）で実行可。
