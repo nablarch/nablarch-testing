@@ -33,14 +33,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * {@link YamlTableDataBuilder} のテストクラス。
+ * {@link YamlValueProcessor} のテーブル系メソッド（{@code toTableDataList}／{@code toListMapRows}）のテストクラス。
  *
  * <p>
- * TableData・ListMap の構築ロジックを検証する。
+ * 構造マッピング層 {@link YamlTableStructureMapper} が返した生の構造レコードを {@link YamlValueProcessor}
+ * が値加工（{@code ${...}} の解釈・マーカー列除外・グループ絞り込み・{@code fillDefaultValues}・
+ * list_maps の TreeMap ソート）して {@link TableData}・ListMap を組み立てる一連のロジックを検証する。
+ * 構造層が記法のまま保持することの直接検証は {@link YamlTableStructureMapperTest} が担う。
  * </p>
  */
 @RunWith(DatabaseTestRunner.class)
-public class YamlTableDataBuilderTest {
+public class YamlTableValueProcessorTest {
 
     @ClassRule
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test-yaml.xml");
@@ -89,7 +92,7 @@ public class YamlTableDataBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: グループ ID なしで setup_tables の TableData が取得できること。
+     * [YamlTableValueProcessor] buildTableDataList: グループ ID なしで setup_tables の TableData が取得できること。
      *
      * <p>
      * Given: setup_tables にグループ ID なしの 1 エントリ<br>
@@ -100,7 +103,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_noGroupId() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "", false, DIR);
@@ -112,7 +115,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: グループ ID 指定で対象グループのみ取得されること。
+     * [YamlTableValueProcessor] buildTableDataList: グループ ID 指定で対象グループのみ取得されること。
      *
      * <p>
      * Given: setup_tables に groupA / groupB のエントリがある<br>
@@ -123,7 +126,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_withGroupId() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[groupA]", false, DIR);
@@ -134,7 +137,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: rows が空のエントリは除外されること。
+     * [YamlTableValueProcessor] buildTableDataList: rows が空のエントリは除外されること。
      *
      * <p>
      * Given: setup_tables に rows: [] のエントリ（emptyRows グループ）<br>
@@ -145,7 +148,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_emptyRowsExcluded() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRows]", false, DIR);
@@ -155,7 +158,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: fillDefaults=true の場合、fillDefaultValues が適用されること。
+     * [YamlTableValueProcessor] buildTableDataList: fillDefaults=true の場合、fillDefaultValues が適用されること。
      *
      * <p>
      * Given: expected_complete_tables に PK_COL1/PK_COL2 のみのエントリ<br>
@@ -166,7 +169,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_fillDefaultValues() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/completedTable");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/completedTable");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "expected_complete_tables", "", true, DIR);
@@ -180,7 +183,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: セクションが存在しない場合は空リストが返ること。
+     * [YamlTableValueProcessor] buildTableDataList: セクションが存在しない場合は空リストが返ること。
      *
      * <p>
      * Given: setup_tables キーが存在しない YAML<br>
@@ -191,7 +194,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_sectionNotExists() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/emptyYaml");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/emptyYaml");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "", false, DIR);
@@ -205,7 +208,7 @@ public class YamlTableDataBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: 指定 ID のデータが取得できること。
+     * [YamlTableValueProcessor] buildListMapRows: 指定 ID のデータが取得できること。
      *
      * <p>
      * Given: list_maps に id=testListMap が 2 行<br>
@@ -216,7 +219,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_normalCase() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "testListMap", DIR);
@@ -230,7 +233,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: マーカーカラム（[COL] 形式）は除外されること。
+     * [YamlTableValueProcessor] buildListMapRows: マーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>
      * Given: list_maps に "[NO]" キーを含む行<br>
@@ -241,7 +244,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_markerColumnsExcluded() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "markerColTest", DIR);
@@ -253,7 +256,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: 存在しない ID を指定した場合は空リストが返ること。
+     * [YamlTableValueProcessor] buildListMapRows: 存在しない ID を指定した場合は空リストが返ること。
      *
      * <p>
      * Given: list_maps に存在しない id<br>
@@ -264,7 +267,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_idNotFound() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "noSuchId", DIR);
@@ -274,7 +277,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ null は Java null として取得されること。
+     * [YamlTableValueProcessor] buildListMapRows: YAML ネイティブ null は Java null として取得されること。
      *
      * <p>
      * Given: list_maps に NULL_COL: null（YAML ネイティブ null）<br>
@@ -285,7 +288,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_nativeNullIsJavaNull() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "nativeTypeTest", DIR);
@@ -296,7 +299,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: 同一グループID に同一テーブル名のエントリが複数ある場合、
+     * [YamlTableValueProcessor] buildTableDataList: 同一グループID に同一テーブル名のエントリが複数ある場合、
      * 全件取得できること（QA観点2-軽微）。
      *
      * <p>
@@ -308,7 +311,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_duplicateTableNamesInSameGroup() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[dupTable]", false, DIR);
@@ -320,7 +323,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: table キーが存在しないエントリで IllegalStateException がスローされること（E-1）。
+     * [YamlTableValueProcessor] buildTableDataList: table キーが存在しないエントリで IllegalStateException がスローされること（E-1）。
      *
      * <p>
      * Given: setup_tables に table キーがない missingTable グループのエントリ<br>
@@ -331,7 +334,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_missingTableThrowsException() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When / Then
         try {
@@ -345,7 +348,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: 同一ファイル内で同一 ID のエントリが 2 件ある場合、先着一致で最初の 1 件のみ返ること。
+     * [YamlTableValueProcessor] buildListMapRows: 同一ファイル内で同一 ID のエントリが 2 件ある場合、先着一致で最初の 1 件のみ返ること。
      *
      * <p>
      * 解説書 5.5: 同一ファイル内で同一 ID の重複エントリは先着一致で、2件目以降は無視されます<br>
@@ -357,7 +360,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_duplicateIdReturnsFirst() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "dupIdFirst", DIR);
@@ -368,7 +371,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: rows 内の空エントリ（{}）は読み飛ばされること。
+     * [YamlTableValueProcessor] buildTableDataList: rows 内の空エントリ（{}）は読み飛ばされること。
      *
      * <p>
      * 解説書 10.5: rows 内の要素が空マッピング（{}）の場合にスキップされます<br>
@@ -380,7 +383,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_emptyRowEntrySkipped() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[emptyRowMixed]", false, DIR);
@@ -394,7 +397,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: 先頭行が空エントリ（{}）の場合はカラム 0 件の TableData が返ること（JE-6）。
+     * [YamlTableValueProcessor] buildTableDataList: 先頭行が空エントリ（{}）の場合はカラム 0 件の TableData が返ること（JE-6）。
      *
      * <p>
      * 解説書 10.5: 先頭行が {} の場合、カラム定義が 0 件の TableData が生成され、行データは 0 件となること<br>
@@ -406,7 +409,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_allEmptyRowsReturnsTableDataWithZeroColumns() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[allEmptyRows]", false, DIR);
@@ -418,7 +421,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: setup_tables のマーカーカラム（[COL] 形式）は除外されること。
+     * [YamlTableValueProcessor] buildTableDataList: setup_tables のマーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>
      * 解説書 10.2: YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
@@ -430,7 +433,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_markerColumnsExcluded() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "setup_tables", "[markerColInTable]", false, DIR);
@@ -445,7 +448,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildTableDataList: expected_tables のマーカーカラム（[COL] 形式）は除外されること。
+     * [YamlTableValueProcessor] buildTableDataList: expected_tables のマーカーカラム（[COL] 形式）は除外されること。
      *
      * <p>
      * 解説書 10.2: YAML では setup_tables / expected_tables / list_maps すべてでマーカーカラムが除外されます<br>
@@ -457,7 +460,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildTableDataList_markerColumnsExcludedInExpectedTables() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<TableData> result = buildTableDataList(yaml, "expected_tables", "[markerColInTable]", false, DIR);
@@ -471,7 +474,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: クォートあり "null" は Java null として取得されること。
+     * [YamlTableValueProcessor] buildListMapRows: クォートあり "null" は Java null として取得されること。
      *
      * <p>
      * 解説書 8.1: YAML の "null"（クォートあり）も Java null になります（NullInterpreter が変換）<br>
@@ -483,7 +486,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_quotedNullIsJavaNull() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "interpreterTest", DIR);
@@ -494,7 +497,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: " " はクォート除去後にスペース1文字になること。
+     * [YamlTableValueProcessor] buildListMapRows: " " はクォート除去後にスペース1文字になること。
      *
      * <p>
      * 解説書 8.1: " "（スペースをダブルクォートで囲む）→ QuotationTrimmer が外側クォートを除去してスペース1文字<br>
@@ -506,7 +509,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_spaceBetweenQuotesIsSpace() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "interpreterTest", DIR);
@@ -517,7 +520,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "\\r" は CR（キャリッジリターン）文字に変換されること。
+     * [YamlTableValueProcessor] buildListMapRows: "\\r" は CR（キャリッジリターン）文字に変換されること。
      *
      * <p>
      * 解説書 8.1/8.3: "\\r" → LineSeparatorInterpreter が CR（0x0D）に変換（デフォルト設定）<br>
@@ -529,7 +532,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_escapedCrIsCarriageReturn() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "interpreterTest", DIR);
@@ -540,7 +543,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${systemTime}" 完全一致の場合はシステム時刻に変換されること（8.4）。
+     * [YamlTableValueProcessor] buildListMapRows: "${systemTime}" 完全一致の場合はシステム時刻に変換されること（8.4）。
      *
      * <p>
      * 解説書 8.4: DateTimeInterpreter は完全一致のみ変換する。部分文字列は変換されない<br>
@@ -552,7 +555,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_dateTimeInterpreterExactMatchOnly() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "dateTimeTest", DIR);
@@ -568,11 +571,11 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${binaryFile:path}" はファイル内容の HexString に変換されること（8.6）。
+     * [YamlTableValueProcessor] buildListMapRows: "${binaryFile:path}" はファイル内容の HexString に変換されること（8.6）。
      *
      * <p>
      * 解説書 8.6: BinaryFileInterpreter のパスは YAML ファイルのディレクトリからの相対パス<br>
-     * Given: list_maps に BIN_COL="${binaryFile:YamlTableDataBuilderTest/test.bin}"<br>
+     * Given: list_maps に BIN_COL="${binaryFile:YamlTableValueProcessorTest/test.bin}"<br>
      * When:  buildListMapRows(yaml, "binaryFileTest", path) を呼ぶ<br>
      * Then:  BIN_COL が test.bin のバイト列 HexString（"414243"）になること
      * </p>
@@ -580,7 +583,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_binaryFileInterpreterResolvesRelativePath() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "binaryFileTest", DIR);
@@ -592,7 +595,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${半角英字,N}" 形式で指定長の文字列が生成されること（8.5）。
+     * [YamlTableValueProcessor] buildListMapRows: "${半角英字,N}" 形式で指定長の文字列が生成されること（8.5）。
      *
      * <p>
      * 解説書 8.5: BasicJapaneseCharacterInterpreter が ${文字種,文字数} を生成する<br>
@@ -604,7 +607,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_charTypeGeneratorProducesSpecifiedLength() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "charGenTest", DIR);
@@ -620,7 +623,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "\""（YAML エスケープ）はダブルクォート1文字になること（8.1/8.2 G-1）。
+     * [YamlTableValueProcessor] buildListMapRows: "\""（YAML エスケープ）はダブルクォート1文字になること（8.1/8.2 G-1）。
      *
      * <p>
      * 解説書 8.1/examples-special 8.2: `"\""` → YAML パース後は `"` 1文字。
@@ -633,7 +636,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_escapedDoubleQuoteIsDoubleQuoteChar() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "quotationTest", DIR);
@@ -645,7 +648,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: '"'（YAML シングルクォート記法）でのダブルクォート1文字になること（8.2 QA-3）。
+     * [YamlTableValueProcessor] buildListMapRows: '"'（YAML シングルクォート記法）でのダブルクォート1文字になること（8.2 QA-3）。
      *
      * <p>
      * 解説書 8.2: シングルクォートで囲んだ '"' も YAML パース後は " 1文字。
@@ -658,7 +661,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_singleQuoteNotationForDoubleQuote() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "singleQuoteNotationTest", DIR);
@@ -670,7 +673,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること（8.1/8.4 G-2）。
+     * [YamlTableValueProcessor] buildListMapRows: "${updateTime}" / "${setUpTime}" はシステム時刻に変換されること（8.1/8.4 G-2）。
      *
      * <p>
      * 解説書 8.1/8.4: DateTimeInterpreter は "${updateTime}" と "${setUpTime}" も完全一致で変換する<br>
@@ -693,7 +696,7 @@ public class YamlTableDataBuilderTest {
                 dateTimeInterpreter
         );
         YamlValueProcessor vpWithSetUp = new YamlValueProcessor(dbInfo, new BasicDefaultValues(), interpreters);
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = vpWithSetUp.toListMapRows(tableMapper.mapListMaps(yaml), "quotationTest", DIR);
@@ -707,7 +710,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: "[" で始まるが "]" で終わらないキーは除外されないこと。
+     * [YamlTableValueProcessor] buildListMapRows: "[" で始まるが "]" で終わらないキーは除外されないこと。
      *
      * <p>
      * 解説書 10.2: マーカーカラムは "[COL]" 形式（両端が角括弧）のみ除外される。
@@ -720,7 +723,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_partialBracketKeyIsNotExcluded() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "partialBracketColTest", DIR);
@@ -733,7 +736,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: rows に Map でない要素（スカラー）が含まれる場合はスキップされること。
+     * [YamlTableValueProcessor] buildListMapRows: rows に Map でない要素（スカラー）が含まれる場合はスキップされること。
      *
      * <p>
      * 解説書 10.x: list_maps の rows に Map でない要素が混在しても例外なくスキップされること<br>
@@ -745,7 +748,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_nonMapRowSkipped() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "nonMapRowTest", DIR);
@@ -757,7 +760,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: setSetUpDateTime 未設定時に "${setUpTime}" が変換されないこと（8.4 QA-4）。
+     * [YamlTableValueProcessor] buildListMapRows: setSetUpDateTime 未設定時に "${setUpTime}" が変換されないこと（8.4 QA-4）。
      *
      * <p>
      * 解説書 8.4: setSetUpDateTime を呼ばずに "${setUpTime}" を使った場合、変換されずにそのまま残ること<br>
@@ -769,7 +772,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_setUpTimeNotConvertedWithoutSetSetUpDateTime() {
         // Given: @Before の sut は setSetUpDateTime 未設定
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "quotationTest", DIR);
@@ -781,7 +784,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: testShots 予約 ID で list_maps が正しく取得できること（4章 G-6）。
+     * [YamlTableValueProcessor] buildListMapRows: testShots 予約 ID で list_maps が正しく取得できること（4章 G-6）。
      *
      * <p>
      * 解説書 4.1: testShots は予約 ID であり、通常の list_maps エントリと同様に取得できること<br>
@@ -793,7 +796,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_testShotsReservedId() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/tableData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/tableData");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "testShots", DIR);
@@ -811,7 +814,7 @@ public class YamlTableDataBuilderTest {
     }
 
     /**
-     * [YamlTableDataBuilder] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
+     * [YamlTableValueProcessor] buildListMapRows: YAML ネイティブ boolean / integer / float は文字列化されること。
      *
      * <p>
      * Given: BOOL_TRUE=true, INT_COL=42, FLOAT_COL=3.14（クォートなし）<br>
@@ -822,7 +825,7 @@ public class YamlTableDataBuilderTest {
     @Test
     public void testBuildListMapRows_nativeTypesStringified() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableValueProcessorTest/nativeTypes");
 
         // When
         List<Map<String, String>> result = buildListMapRows(yaml, "nativeTypeTest", DIR);

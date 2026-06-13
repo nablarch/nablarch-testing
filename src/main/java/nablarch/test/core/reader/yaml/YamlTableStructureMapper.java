@@ -1,5 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.util.annotation.Published;
 import nablarch.test.core.reader.yaml.model.RawListMap;
 import nablarch.test.core.reader.yaml.model.RawTableData;
 
@@ -35,6 +36,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class YamlTableStructureMapper {
 
     /**

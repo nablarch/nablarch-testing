@@ -27,14 +27,17 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * {@link YamlMessageBuilder} のテストクラス。
+ * {@link YamlValueProcessor} のメッセージ系メソッド（{@code toMessagePool}／{@code toSendSyncList}）のテストクラス。
  *
  * <p>
- * MessagePool・MockMessages の構築ロジックを検証する。
+ * 構造マッピング層 {@link YamlMessageStructureMapper} が返した生の構造レコードを {@link YamlValueProcessor}
+ * が値加工（FW_HEADER スキップ・メッセージ長 {@code -} 注入・{@code fw_header} のマップ検証）して
+ * {@link MessagePool}・{@link nablarch.test.core.file.MockMessages} を組み立てる一連のロジックを検証する。
+ * 構造層が記法のまま保持することの直接検証は {@link YamlMessageStructureMapperTest} が担う。
  * </p>
  */
 @RunWith(DatabaseTestRunner.class)
-public class YamlMessageBuilderTest {
+public class YamlMessageValueProcessorTest {
 
     @ClassRule
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test-yaml.xml");
@@ -91,7 +94,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: messages の id 指定でメッセージが取得でき、
+     * [YamlMessageValueProcessor] buildMessagePool: messages の id 指定でメッセージが取得でき、
      * FW ヘッダ（requestId・userId 等）が設定されていること。
      *
      * <p>
@@ -103,7 +106,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_withFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
@@ -124,7 +127,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: 存在しない ID を指定した場合は null が返ること。
+     * [YamlMessageValueProcessor] buildMessagePool: 存在しない ID を指定した場合は null が返ること。
      *
      * <p>
      * Given: messages に存在しない id<br>
@@ -135,7 +138,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_idNotFound() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "noSuchId", DIR);
@@ -149,7 +152,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: expected_request_body_messages から取得できること。
+     * [YamlMessageValueProcessor] buildMessagePool: expected_request_body_messages から取得できること。
      *
      * <p>
      * Given: expected_request_body_messages に id=req001<br>
@@ -160,7 +163,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_expectedRequestBodyMessages() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
@@ -171,7 +174,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: expected_request_header_messages から取得できること（7.2 G-5）。
+     * [YamlMessageValueProcessor] buildMessagePool: expected_request_header_messages から取得できること（7.2 G-5）。
      *
      * <p>
      * 解説書 7.2: expected_request_header_messages セクションから buildMessagePool で取得できること<br>
@@ -183,7 +186,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_expectedRequestHeaderMessages() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
@@ -194,7 +197,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること（7.3 G-4）。
+     * [YamlMessageValueProcessor] buildMessagePool: messages の id にパスセグメントを含む形式が正しく取得できること（7.3 G-4）。
      *
      * <p>
      * 解説書 7.1/7.3: sendSyncTestData/{requestId}/message という id 形式が正しく取得できること<br>
@@ -206,7 +209,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_idWithPathSegments() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "sendSyncTestData/REQ001/message", DIR);
@@ -223,7 +226,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: response_body_messages の id 指定で取得できること。
+     * [YamlMessageValueProcessor] buildMessagePool: response_body_messages の id 指定で取得できること。
      *
      * <p>
      * Given: response_body_messages に id=resp001<br>
@@ -234,7 +237,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_responseBodyMessages() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
@@ -249,7 +252,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: group_id 指定でメッセージリストが取得できること。
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: group_id 指定でメッセージリストが取得できること。
      *
      * <p>
      * Given: response_body_messages に group_id=grp1 のエントリ<br>
@@ -260,7 +263,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_normalCase() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -272,7 +275,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: 存在しない group_id を指定した場合は null が返ること。
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: 存在しない group_id を指定した場合は null が返ること。
      *
      * <p>
      * Given: 存在しない group_id "noSuchGroup"<br>
@@ -283,7 +286,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_groupIdNotFound() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -294,7 +297,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: requestId が MessagePool に設定されること（QA-3）。
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: requestId が MessagePool に設定されること（QA-3）。
      *
      * <p>
      * Given: response_body_messages に id=sync001, group_id=grp1 のエントリ<br>
@@ -305,7 +308,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_requestIdIsSet() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -321,19 +324,19 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder/YamlFileBuilder] buildMessagePool: BODY のみの messages を読んだとき
+     * [YamlMessageValueProcessor] toMessagePool: BODY のみの messages を読んだとき
      * FixedLengthFile に 1 フラグメントだけ含まれること。
      *
      * <p>
      * Given: messages に id=req001 が fw_header: マップ + BODY レコードで定義されている<br>
-     * When:  YamlFileBuilder.buildMessageFile を呼ぶ（records の BODY のみがフラグメントになる）<br>
+     * When:  toMessagePool を呼ぶ（records の BODY のみがフラグメントになる）<br>
      * Then:  FixedLengthFile の layout に BODY レコード 1 件のみ含まれること
      * </p>
      */
     @Test
     public void testBuildMessagePool_fwHeaderFragmentExcluded() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When: MessagePool を構築し、内部の FixedLengthFile（source）の構造を検証する
         MessagePool pool = buildMessagePool(yaml, "messages", "req001", DIR);
@@ -352,7 +355,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: directives が MockMessages に設定されること。
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: directives が MockMessages に設定されること。
      *
      * <p>
      * Given: response_body_messages の grp1 エントリに text-encoding: UTF-8 が指定されている<br>
@@ -363,7 +366,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_directivesAreSet() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -382,18 +385,18 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildMessageFile: 存在しない ID を指定した場合は null が返ること（QA観点2-軽微）。
+     * [YamlMessageValueProcessor] toMessagePool: 存在しない ID を指定した場合は null が返ること（QA観点2-軽微）。
      *
      * <p>
      * Given: messages に存在しない id<br>
-     * When:  YamlFileBuilder.buildMessageFile(yaml, "messages", "noSuchId", path) を呼ぶ<br>
+     * When:  toMessagePool(mapMessages(yaml, "messages"), "noSuchId", true, path) を呼ぶ<br>
      * Then:  null が返ること
      * </p>
      */
     @Test
     public void testBuildMessageFile_idNotFound() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When: 存在しない id では MessagePool が null になること
         MessagePool result = buildMessagePool(yaml, "messages", "noSuchId", DIR);
@@ -407,7 +410,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: fw_header: が空マップの場合、
+     * [YamlMessageValueProcessor] buildMessagePool: fw_header: が空マップの場合、
      * 例外をスローせず空の fwHeader で MessagePool が返ること（E-3 分岐D）。
      *
      * <p>
@@ -419,7 +422,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_emptyFwHeaderRows() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "emptyRows001", DIR);
@@ -438,7 +441,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: fw_header: マップがない場合、
+     * [YamlMessageValueProcessor] buildMessagePool: fw_header: マップがない場合、
      * 空 Map を FW ヘッダとして MessagePool が返ること（RS-20）。
      *
      * <p>
@@ -451,7 +454,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_noFwHeaderFragmentReturnsEmptyFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "bodyOnly001", DIR);
@@ -470,7 +473,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: fw_header: の値がマップでなくリスト形式の場合、
+     * [YamlMessageValueProcessor] buildMessagePool: fw_header: の値がマップでなくリスト形式の場合、
      * IllegalStateException がスローされ id がメッセージに含まれること（E-3）。
      *
      * <p>
@@ -482,7 +485,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_malformedFwHeaderRowsThrowsException() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When / Then
         try {
@@ -522,7 +525,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: group_id があるが id がないエントリの場合、
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: group_id があるが id がないエントリの場合、
      * MessagePool の requestId が null のまま返ること。
      *
      * <p>
@@ -534,7 +537,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_noIdEntryReturnsPoolWithNullRequestId() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -551,7 +554,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: fw_header: マップに一部のキーのみ含まれる場合、
+     * [YamlMessageValueProcessor] buildMessagePool: fw_header: マップに一部のキーのみ含まれる場合、
      * 記載されたキーのみ fwHeader に設定されること。
      *
      * <p>
@@ -563,7 +566,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_shortFwHeaderRowOnlyCoversAvailableFields() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "partialHeader001", DIR);
@@ -584,7 +587,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildMessagePool: fw_header: マップにプロジェクト独自キーと既定キーが混在する場合、
+     * [YamlMessageValueProcessor] buildMessagePool: fw_header: マップにプロジェクト独自キーと既定キーが混在する場合、
      * fw_header に記述した全キーが保持されること（fwHeaderFields フィルタ廃止後の確認）。
      *
      * <p>
@@ -596,7 +599,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_customFwHeaderFields() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/customFwHeaderData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/customFwHeaderData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
@@ -628,7 +631,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_fwHeaderMapAllKeysRetainedIncludingCustom() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
@@ -658,7 +661,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_fwHeaderMapReadableWithoutFwHeaderRecord() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "req001", DIR);
@@ -685,7 +688,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_expectedRequestBodyMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "expected_request_body_messages", "req001", DIR);
@@ -711,7 +714,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_responseBodyMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "response_body_messages", "resp001", DIR);
@@ -737,7 +740,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_expectedRequestHeaderMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "expected_request_header_messages", "req001", DIR);
@@ -763,7 +766,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_responseHeaderMessagesReturnsEmptyFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "response_header_messages", "resp001", DIR);
@@ -789,7 +792,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_fwHeaderMapWithUnquotedNumericAndBooleanValues() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "numericValues001", DIR);
@@ -810,7 +813,7 @@ public class YamlMessageBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: length が指定されていないフィールドを持つエントリを
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: length が指定されていないフィールドを持つエントリを
      * 読み込んでも NullPointerException が発生しないこと。
      *
      * <p>
@@ -822,7 +825,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_fieldWithoutLengthDoesNotThrowNpe() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When: length なしフィールドの MockMessages を buildSendSyncMessageList で構築する
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -834,7 +837,7 @@ public class YamlMessageBuilderTest {
     }
 
     /**
-     * [YamlMessageBuilder] buildSendSyncMessageList: length が指定されているフィールドと
+     * [YamlMessageValueProcessor] buildSendSyncMessageList: length が指定されているフィールドと
      * 指定されていないフィールドが混在する場合でも NullPointerException が発生しないこと。
      *
      * <p>
@@ -847,7 +850,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildSendSyncMessageList_partialLengthFieldDoesNotThrowException() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/messageData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/messageData");
 
         // When: 一部 length あり・一部なしの MockMessages を buildSendSyncMessageList で構築する
         List<RequestTestingMessagePool> result = buildSendSyncMessageList(
@@ -870,7 +873,7 @@ public class YamlMessageBuilderTest {
     @Test
     public void testBuildMessagePool_messagesWithoutFwHeaderMapReturnsEmptyFwHeader() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageBuilderTest/fwHeaderMapData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlMessageValueProcessorTest/fwHeaderMapData");
 
         // When
         MessagePool result = buildMessagePool(yaml, "messages", "bodyOnly001", DIR);

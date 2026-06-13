@@ -1,5 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.util.annotation.Published;
 import nablarch.test.core.reader.yaml.model.RawDataFile;
 import nablarch.test.core.reader.yaml.model.RawFieldDef;
 import nablarch.test.core.reader.yaml.model.RawRecordLayout;
@@ -37,6 +38,7 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class YamlFileStructureMapper {
 
     /**

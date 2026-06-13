@@ -14,8 +14,8 @@ import java.util.Map;
  * YAML セクションキー定数と共通ヘルパーメソッド。
  *
  * <p>
- * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
- * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内の構造マッピング層（{@code Yaml*StructureMapper}）・
+ * 値加工層（{@link YamlValueProcessor}）および {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  *
  * @author kiyotis
@@ -170,23 +170,6 @@ public final class YamlSection {
             result.addAll(interpreters);
         }
         return result;
-    }
-
-    /**
-     * YAML エントリの directives を {@link nablarch.test.core.file.DataFile} に適用する。
-     *
-     * @param file ディレクティブを設定するファイル
-     * @param map  YAML エントリ Map
-     */
-    public static void applyDirectives(nablarch.test.core.file.DataFile file, Map<String, Object> map) {
-        Object directivesObj = map.get(FIELD_DIRECTIVES);
-        if (directivesObj == null) {
-            return;
-        }
-        Map<String, Object> directives = castMap(directivesObj);
-        for (Map.Entry<String, Object> e : directives.entrySet()) {
-            file.setDirective(e.getKey(), toStr(e.getValue()));
-        }
     }
 
     /**

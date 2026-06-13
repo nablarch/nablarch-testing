@@ -1,5 +1,7 @@
 package nablarch.test.core.reader.yaml.model;
 
+import nablarch.core.util.annotation.Published;
+
 import java.util.List;
 
 /**
@@ -7,7 +9,7 @@ import java.util.List;
  *
  * <p>
  * {@code setup_tables}／{@code expected_tables}／{@code expected_complete_tables} の 1 エントリ分を、
- * 解釈・補完・大文字化を一切施さずに保持する不変オブジェクト。
+ * 解釈・補完・大文字化を一切施さずに保持する不変オブジェクト（フィールドは final。ただし getter が返すコレクションは防御的コピーせず公開するため、呼び出し側は読み取り専用として扱うこと）。
  * </p>
  *
  * <p>
@@ -17,6 +19,7 @@ import java.util.List;
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class RawTableData {
 
     private final String groupId;

@@ -26,14 +26,16 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * {@link YamlFileBuilder} のテストクラス。
+ * {@link YamlValueProcessor} のファイル系メソッド（{@code toDataFileList}）のテストクラス。
  *
  * <p>
- * DataFile の構築ロジックを検証する。
+ * 構造マッピング層 {@link YamlFileStructureMapper} が返した生の構造レコードを {@link YamlValueProcessor}
+ * が値加工（{@code ${...}} の解釈・グループ絞り込み・必須チェック）して {@link DataFile} を組み立てる
+ * 一連のロジックを検証する。構造層が記法のまま保持することの直接検証は {@link YamlFileStructureMapperTest} が担う。
  * </p>
  */
 @RunWith(DatabaseTestRunner.class)
-public class YamlFileBuilderTest {
+public class YamlFileValueProcessorTest {
 
     @ClassRule
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test-yaml.xml");
@@ -67,7 +69,7 @@ public class YamlFileBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: グループ ID なしで固定長・可変長ファイルが取得できること。
+     * [YamlFileValueProcessor] buildFileList: グループ ID なしで固定長・可変長ファイルが取得できること。
      *
      * <p>
      * Given: setup_files に fixed と variable の 2 エントリ<br>
@@ -78,7 +80,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_fixedAndVariable() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
@@ -90,7 +92,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: 取得した DataFile の path が正しく設定されていること。
+     * [YamlFileValueProcessor] buildFileList: 取得した DataFile の path が正しく設定されていること。
      *
      * <p>
      * Given: setup_files に path=dummy/setup_fixed.dat のエントリ<br>
@@ -101,7 +103,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_pathIsSet() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
@@ -112,7 +114,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: グループ ID 指定で対象グループのみ取得されること。
+     * [YamlFileValueProcessor] buildFileList: グループ ID 指定で対象グループのみ取得されること。
      *
      * <p>
      * Given: setup_files に grp1 グループのエントリ<br>
@@ -123,7 +125,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_withGroupId() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "[grp1]", DIR);
@@ -134,7 +136,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: expected_files の末尾セクションデータが欠落しないこと（RS-07）。
+     * [YamlFileValueProcessor] buildFileList: expected_files の末尾セクションデータが欠落しないこと（RS-07）。
      *
      * <p>
      * Given: setup_files の後に expected_files が YAML 末尾に記述されている<br>
@@ -145,7 +147,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_lastSectionNotLost() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "expected_files", "", DIR);
@@ -157,7 +159,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: セクションが存在しない場合は空リストが返ること。
+     * [YamlFileValueProcessor] buildFileList: セクションが存在しない場合は空リストが返ること。
      *
      * <p>
      * Given: setup_files キーが存在しない YAML<br>
@@ -168,7 +170,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_sectionNotExists() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/emptyYaml");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/emptyYaml");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
@@ -182,7 +184,7 @@ public class YamlFileBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: 複数のグループ（グループIDなし・grp1）が存在する場合、
+     * [YamlFileValueProcessor] buildFileList: 複数のグループ（グループIDなし・grp1）が存在する場合、
      * グループIDなしの件数が正しく取得されること。
      *
      * <p>
@@ -194,7 +196,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_onlyNoGroupIdEntries() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
@@ -208,7 +210,7 @@ public class YamlFileBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: directives が DataFile に正しく設定されること（QA-2）。
+     * [YamlFileValueProcessor] buildFileList: directives が DataFile に正しく設定されること（QA-2）。
      *
      * <p>
      * Given: setup_files の fixed エントリに text-encoding: Windows-31J が指定されている<br>
@@ -219,7 +221,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_directivesAreSet() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
@@ -233,7 +235,7 @@ public class YamlFileBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: records に record_type キーが存在しない場合 "default" にフォールバックすること（QA観点2-軽微）。
+     * [YamlFileValueProcessor] buildFileList: records に record_type キーが存在しない場合 "default" にフォールバックすること（QA観点2-軽微）。
      *
      * <p>
      * Given: setup_files の noRecordType グループのエントリで records に record_type キーなし<br>
@@ -244,7 +246,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_recordTypeNullFallbackToDefault() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "[noRecordType]", DIR);
@@ -261,7 +263,7 @@ public class YamlFileBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: path キーが存在しないエントリで IllegalStateException がスローされること（E-2）。
+     * [YamlFileValueProcessor] buildFileList: path キーが存在しないエントリで IllegalStateException がスローされること（E-2）。
      *
      * <p>
      * Given: setup_files に path キーがない missingPath グループのエントリ<br>
@@ -272,7 +274,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_missingPathThrowsException() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When / Then
         try {
@@ -290,7 +292,7 @@ public class YamlFileBuilderTest {
     // ========================================================================
 
     /**
-     * [YamlFileBuilder] buildFileList: records に複数のレコードレイアウトを記述した場合、全レコードが構築されること。
+     * [YamlFileValueProcessor] buildFileList: records に複数のレコードレイアウトを記述した場合、全レコードが構築されること。
      *
      * <p>
      * 解説書 6.5: 1ファイルセクション内に複数のレコードレイアウトを連続して記述できます<br>
@@ -302,7 +304,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_multipleRecordLayouts() throws Exception {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "[multiRecord]", DIR);
@@ -325,7 +327,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: records が空配列のエントリは空ファイルとして扱われること。
+     * [YamlFileValueProcessor] buildFileList: records が空配列のエントリは空ファイルとして扱われること。
      *
      * <p>
      * 解説書 6.6: 0バイトの空ファイルを表現するには、ディレクティブのみを記述してレコード定義を省略します（records: []）<br>
@@ -337,7 +339,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_emptyRecords() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "[emptyFile]", DIR);
@@ -352,7 +354,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: 可変長ファイルで length が指定されていない場合、setLengths が呼ばれないこと（QA観点2-軽微）。
+     * [YamlFileValueProcessor] buildFileList: 可変長ファイルで length が指定されていない場合、setLengths が呼ばれないこと（QA観点2-軽微）。
      *
      * <p>
      * Given: setup_files の variable エントリで fields に length なし<br>
@@ -363,7 +365,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_variableFileWithNoLength() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "setup_files", "", DIR);
@@ -376,7 +378,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: field-separator に 2 文字以上を指定すると IllegalArgumentException がスローされること（9.3 QA-6）。
+     * [YamlFileValueProcessor] buildFileList: field-separator に 2 文字以上を指定すると IllegalArgumentException がスローされること（9.3 QA-6）。
      *
      * <p>
      * 解説書 9.3: field-separator は 1 文字のみ有効。2 文字以上の場合は IllegalArgumentException がスローされる<br>
@@ -388,7 +390,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_twoCharFieldSeparatorThrowsException() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When / Then: buildFileList 内の directive 設定時に IllegalArgumentException がスローされること
         try {
@@ -400,7 +402,7 @@ public class YamlFileBuilderTest {
     }
 
     /**
-     * [YamlFileBuilder] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること（9.3 G-3）。
+     * [YamlFileValueProcessor] buildFileList: 可変長ファイルの field-separator に "\\t" を指定するとタブ文字になること（9.3 G-3）。
      *
      * <p>
      * 解説書 9.3: field-separator の "\\t" 指定はタブ文字（0x09）として設定される<br>
@@ -412,7 +414,7 @@ public class YamlFileBuilderTest {
     @Test
     public void testBuildFileList_tabFieldSeparatorBecomesTabChar() {
         // Given
-        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileBuilderTest/fileData");
+        Map<String, Object> yaml = YamlLoader.load(DIR, "YamlFileValueProcessorTest/fileData");
 
         // When
         List<DataFile> result = buildFileList(yaml, "expected_files", "[tabSeparator]", DIR);

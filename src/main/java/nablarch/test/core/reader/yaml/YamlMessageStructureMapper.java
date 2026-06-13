@@ -1,5 +1,6 @@
 package nablarch.test.core.reader.yaml;
 
+import nablarch.core.util.annotation.Published;
 import nablarch.test.core.reader.yaml.model.RawMessage;
 import nablarch.test.core.reader.yaml.model.RawRecordLayout;
 
@@ -22,12 +23,16 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  * <p>
  * 本クラスは <b>構造のみ</b>を扱う。本文レコード・データ行の写し取りは
  * {@link YamlFileStructureMapper} の処理を再利用する（重複ゼロ）。FW 制御ヘッダ（{@code fw_header:}）は
- * 本文とは別に未加工で保持する。「{@code fw_header} がマップであること」は構造上の制約なので本層で検証するが、
- * 「どの経路で {@code fw_header} を使うか（{@code messages} のみ）」は値加工層（{@link YamlValueProcessor}）の責務とする。
+ * 本文とは別に <b>生の {@link Object} のまま未加工で保持</b>する（マップとは限らない）。
+ * 「{@code fw_header} がマップであること」の検証・文字列化、および「どの経路で {@code fw_header} を使うか
+ * （{@code messages} のみ）」の判断は、いずれも値加工層（{@link YamlValueProcessor}）が
+ * <b>実際に読み出すメッセージに対してのみ遅延実行</b>する（同一ファイル内の誤記エントリが他エントリの
+ * 読み出しを巻き添えにしない旧挙動の維持）。本層は検証しない。
  * </p>
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class YamlMessageStructureMapper {
 
     /**

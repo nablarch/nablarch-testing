@@ -53,12 +53,13 @@ public class YamlTableStructureMapperTest {
         assertThat("group_id 省略は null", first.getGroupId(), is(nullValue()));
         assertThat("テーブル名は大文字化されない", first.getTableName(), is("test_table"));
         assertThat("カラムはマーカー含む・YAML 順・大文字小文字保持",
-                first.getColumnNames(), is(Arrays.asList("[NO]", "Pk_Col1", "Mixed_Case", "NullCol")));
+                first.getColumnNames(), is(Arrays.asList("[NO]", "Pk_Col1", "Mixed_Case", "NullCol", "EmptyCol")));
         List<String> row0 = first.getRows().get(0);
         assertThat("マーカー値も保持", row0.get(0), is("1"));
         assertThat("${...} は未加工", row0.get(1), is("${updateTime}"));
         assertThat("通常値", row0.get(2), is("plain"));
         assertThat("null は null のまま", row0.get(3), is(nullValue()));
+        assertThat("空文字は \"\" のまま（null でもトリムでもない）", row0.get(4), is(""));
     }
 
     /**

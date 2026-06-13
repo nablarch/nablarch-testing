@@ -21,7 +21,7 @@ list_maps:
 
   - id: binaryFileTest
     rows:
-      - BIN_COL: "${binaryFile:YamlTableDataBuilderTest/test.bin}"
+      - BIN_COL: "${binaryFile:YamlTableValueProcessorTest/test.bin}"
 
   - id: charGenTest
     rows:

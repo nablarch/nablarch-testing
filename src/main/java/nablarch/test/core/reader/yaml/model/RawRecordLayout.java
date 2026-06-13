@@ -1,5 +1,7 @@
 package nablarch.test.core.reader.yaml.model;
 
+import nablarch.core.util.annotation.Published;
+
 import java.util.List;
 
 /**
@@ -7,12 +9,13 @@ import java.util.List;
  *
  * <p>
  * ファイルデータ・メッセージの 1 レコード分のレイアウト（フィールド定義群）とデータ行を、
- * 解釈を施さずに保持する不変オブジェクト。{@code record_type} は省略時 {@code null}、
+ * 解釈を施さずに保持する不変オブジェクト（フィールドは final。ただし getter が返すコレクションは防御的コピーせず公開するため、呼び出し側は読み取り専用として扱うこと）。{@code record_type} は省略時 {@code null}、
  * FW 制御ヘッダ（{@code FW_HEADER}）もスキップせずそのまま保持する。
  * </p>
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class RawRecordLayout {
 
     private final String recordType;

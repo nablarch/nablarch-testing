@@ -118,17 +118,17 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] 構造マッピング層 `Yaml{Table,File,Message}StructureMapper`（Map→`Raw*`）を新設（変換ツールも呼ぶ public API）
 - [x] 値加工＋組み立て層 `YamlValueProcessor`（`Raw*`→本体器。interpret・BinaryFileInterpreter・`-`長注入・fillDefaultValues・マーカー除外・グループ絞り込み）を新設
 - [x] `YamlTestDataParser` を「structureMapper → valueProcessor」明示 2 呼び出しへ再配線。「空 interpreters 素通し」暗黙切替を廃止。旧 builder 3 本を削除
-- [x] 既存 Yaml 系本体テスト全 GREEN（振る舞い不変）。builder テスト 73 件を valueProcessor+mapper 経由へ移送＋構造層テスト新設。**reader 系 159 件全 GREEN**（Table30/File14/Message29/Parser43/Section10/Loader11/Schema1/Mapper5/Equivalence16）
+- [x] 既存 Yaml 系本体テスト全 GREEN（振る舞い不変）。builder テスト 73 件を valueProcessor+mapper 経由へ移送＋構造層テスト新設。レビュー対応で File/Message 構造層直接テストを追加し **reader-YAML 171 件全 GREEN**（Parser43/Equivalence16/TableStruct5/FileStruct6/MessageStruct6/FileVP14/MessageVP29/TableVP30/Loader11/Section10/Schema1）
 - [x] 要確認 2 件: list_maps は valueProcessor 出力を TreeMap 維持（本体不変）・RawListMap は YAML 順保持／fw_header は非 interpret（objectToString のみ）を維持。いずれも GREEN で確認
-- [ ] 全モジュールのフルテスト実行（reader 以外への波及がないこと）— **未実施**
-- [ ] セルフチェック（`docs/pr75/checks/P1-2.md`）— **未実施**
+- [x] 全モジュールのフルテスト実行（reader 以外への波及がないこと）— ベースライン(`d3cd139`)比較で失敗集合完全一致（最終 1490 件・43F/44E・既存事象のみ）＝波及ゼロを実証
+- [x] セルフチェック（`docs/pr75/checks/P1-2.md`）— 4 観点レビュー（イテレーション 2）全 PASS まで反映
 
 **Completion criteria**:
 - 構造マッピング層が `${...}`・`null`・`""`・マーカー・長さ省略・大文字小文字を記法のまま保持した `Raw*` を返すことをテストで実証
 - `YamlTestDataParser` が両層経由で従来と同一結果（既存テスト全 GREEN）
 - 変換ツールから呼べる public 構造マッピング API（`Yaml*StructureMapper`＋`Raw*`）が存在する
 
-**Phase 1 完了ゲート**: 4 観点サブエージェントレビュー → ユーザーレビュー OK
+**Phase 1 完了ゲート**: ✅ **通過**（4 観点サブエージェントレビュー＝アーキ/SWE/QA/Java をイテレーション 2 まで実施し全 PASS・`docs/pr75/checks/P1-2.md` 記録。ユーザーレビューは Operating mode により不要）。残 nice-to-have: `isMarker` null 列分岐の明示カバレッジ（値加工層テスト・#7 以降で必要に応じ）。
 
 ## Phase 2 — 変換ツールの全削除（②）
 
@@ -392,13 +392,15 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
-- **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Status**: in-progress
+- **Date**: 2026-06-13
+- **Last completed**: **#2 完了＋Phase 1 完了ゲート通過**。本体 YAML 読み込みの 2 層分離（構造マッピング層＋値加工層・option C）を実装し、4 観点レビュー（アーキ/SWE/QA/Java）をイテレーション 2 まで回して全 PASS。レビュー対応＝(a) File/Message 構造層の直接単体テスト新設（`Yaml{File,Message}StructureMapperTest`）、(b) 移送済 builder テスト 3 本を `Yaml{File,Message,Table}ValueProcessorTest` へリネーム＋ stale `{@link}`/タグ修正、(c) `YamlMessageStructureMapper` クラス Javadoc の矛盾是正、(d) `YamlSection.applyDirectives` デッドコード削除、(e) `Yaml*StructureMapper`＋`Raw*` に `@Published(tag="architect")` 付与、(f) Javadoc 微修正。**reader-YAML 171 件全 GREEN／全モジュール 1490 件で波及ゼロ（ベースライン比較で失敗集合完全一致）**。Phase 1（#1+#2）完了。
+- **Next**: **#3（Phase 2）変換ツール一括削除＋テスト基盤一時無効化**。`src/main|test/java/nablarch/test/tool/converter/` 配下を全削除、`YamlModeTestBase`＋18 `*YamlTest` を一時無効化（`@Ignore`）、無効化一覧と復帰方針を `docs/pr75/checks/P2-3.md` に記録、コンパイル成功＋Excel 経路既存テスト GREEN を確認。task-workflow 準拠（Phase 2 ゲートはアーキ/SWE レビュー）。
+- **Notes**:
+  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**）。オフライン `mvn -o test` 可だが `package`（jacoco 用）は clean-plugin/git-commit-id-plugin 等が未キャッシュでオフライン不可＝**online `mvn package -Dmaven.javadoc.skip=true`** で jacoco.exec 生成。`clean` ゴールはオフライン不可なので `rm -rf target` で代替。Javadoc プラグインは BUILD FAILURE になるがテストは GREEN。
+  - **失敗集合ベースライン（既存事象・#2 非起因）**: 全モジュール 16 失敗クラス（43F/44E）＝Mockito 環境起因 3 クラス（`MockHttpRequestTest`/`MockServletExecutionContextTest`/`ConverterFileFilterTest`）＋ `*YamlTest` 統合 13 クラス（旧変換ツール経由・6.3 で解消対象）。`d3cd139`↔最終で完全一致。**等価性テストの IllegalArgument/IllegalState ラップ差は T7 由来で #2 非起因**（PR75 マージ前に別途解消が必要）。
+  - **テスト集計の罠**: surefire-reports 走査で `failures="[1-9]"` は 1 桁しか拾わない。**`failures="[1-9][0-9]*"` を使うこと**（10 件以上の失敗を取りこぼす）。
+  - **#7 への申し送り**: 変換ツール `YamlFormatReader` の独自 YAML ウォークを削除し `Yaml*StructureMapper`（`Raw*` を返す公開 API・`@Published` 済）へ再接続する。`@Published` 付与済なので別 pkg から呼べる。`isMarker` null 列分岐の明示テストは値加工層側でこの頃に追加検討。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 

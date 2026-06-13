@@ -1,5 +1,7 @@
 package nablarch.test.core.reader.yaml.model;
 
+import nablarch.core.util.annotation.Published;
+
 /**
  * 構造マッピング層が返すフィールド定義（値未加工）。
  *
@@ -10,6 +12,7 @@ package nablarch.test.core.reader.yaml.model;
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class RawFieldDef {
 
     private final String name;

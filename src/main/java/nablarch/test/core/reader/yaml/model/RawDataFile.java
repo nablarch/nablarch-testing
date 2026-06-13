@@ -1,5 +1,7 @@
 package nablarch.test.core.reader.yaml.model;
 
+import nablarch.core.util.annotation.Published;
+
 import java.util.List;
 import java.util.Map;
 
@@ -7,12 +9,13 @@ import java.util.Map;
  * 構造マッピング層が返すファイルデータ（値未加工）。
  *
  * <p>
- * {@code setup_files}／{@code expected_files} の 1 エントリ分を、解釈を施さずに保持する不変オブジェクト。
+ * {@code setup_files}／{@code expected_files} の 1 エントリ分を、解釈を施さずに保持する不変オブジェクト（フィールドは final。ただし getter が返すコレクションは防御的コピーせず公開するため、呼び出し側は読み取り専用として扱うこと）。
  * ディレクティブ・レコードレイアウト・データ行をすべて YAML 記述のまま保持する。
  * </p>
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class RawDataFile {
 
     private final String groupId;

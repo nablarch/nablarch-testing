@@ -15,8 +15,8 @@ import java.util.Map;
  * YAML ファイルのロードとキャッシュ管理。
  *
  * <p>
- * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダークラスおよび
- * {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内の構造マッピング層（{@code Yaml*StructureMapper}）・
+ * 値加工層（{@link YamlValueProcessor}）および {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
  * </p>
  *
  * <p>

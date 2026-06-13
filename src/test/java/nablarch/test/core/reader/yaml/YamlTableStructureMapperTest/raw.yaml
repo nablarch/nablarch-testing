@@ -5,6 +5,7 @@ setup_tables:
         Pk_Col1: "${updateTime}"
         Mixed_Case: "plain"
         NullCol: null
+        EmptyCol: ""
 
   - group_id: g1
     table: test_table

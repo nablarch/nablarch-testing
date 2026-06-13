@@ -1,5 +1,7 @@
 package nablarch.test.core.reader.yaml.model;
 
+import nablarch.core.util.annotation.Published;
+
 import java.util.List;
 import java.util.Map;
 
@@ -8,7 +10,7 @@ import java.util.Map;
  *
  * <p>
  * {@code messages}／{@code expected_request_*_messages}／{@code response_*_messages} の 1 エントリ分を、
- * 解釈を施さずに保持する不変オブジェクト。メッセージ本文は固定長レコード（{@link RawRecordLayout}）で、
+ * 解釈を施さずに保持する不変オブジェクト（フィールドは final。ただし getter が返すコレクションは防御的コピーせず公開するため、呼び出し側は読み取り専用として扱うこと）。メッセージ本文は固定長レコード（{@link RawRecordLayout}）で、
  * FW 制御ヘッダ（{@code fw_header:} マップ）は本文とは別に未加工で保持する。
  * </p>
  *
@@ -22,6 +24,7 @@ import java.util.Map;
  *
  * @author kiyotis
  */
+@Published(tag = "architect")
 public final class RawMessage {
 
     private final String groupId;

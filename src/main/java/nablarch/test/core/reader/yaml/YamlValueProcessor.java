@@ -228,7 +228,7 @@ public final class YamlValueProcessor {
      * @param id          メッセージ ID
      * @param useFwHeader {@code fw_header:} を使用するか（{@code messages} 経路のみ true。その他は空 Map）
      * @param basePath    インタープリタ用ベースパス
-     * @return {@link RequestTestingMessagePool}、または存在しない場合 null
+     * @return {@link MessagePool}（実体は {@link RequestTestingMessagePool}）、または存在しない場合 null
      */
     public MessagePool toMessagePool(List<RawMessage> raws, String id, boolean useFwHeader, String basePath) {
         List<TestDataInterpreter> interps = addBinaryFileInterpreter(basePath, interpreters);
