@@ -18,8 +18,8 @@
 | ライブラリ | ライセンス | JARサイズ | CVE安全性 | 速度 | 採否と理由 |
 |---|---|---|---|---|---|
 | SnakeYAML 1.x | Apache 2.0 | 340 KB | 危険（CVE-2022-1471 等複数） | 基準 | 却下。新規採用禁止 |
-| SnakeYAML 2.x（当初採用 2.6） | Apache 2.0 | 340 KB | 2.0 で全CVEに対処済み。危険APIは残るが使用しない限り安全 | 基準 | 却下。Norway Problem で `no:` が `false` に化ける（下記） |
-| SnakeYAML Engine 3.x | Apache 2.0 | 95 KB | 危険な機能が設計上存在しない（CVEゼロ）。YAML 1.2 Core Schema でデフォルト動作 | 約10〜20%速い | **採用（3.0.1）** |
+| SnakeYAML 2.x（当初採用 2.6、最新 2.10） | Apache 2.0 | 340 KB | 2.0 で全CVEに対処済み。危険APIは残るが使用しない限り安全 | 基準 | 却下。Norway Problem で `no:` が `false` に化ける（下記） |
+| SnakeYAML Engine 3.x（最新 3.0.1、2025 リリース） | Apache 2.0 | 95 KB | 危険な機能が設計上存在しない（CVEゼロ）。YAML 1.2 Core Schema でデフォルト動作 | 約10〜20%速い | **採用（3.0.1）** |
 | Jackson YAML | Apache 2.0 | 重い | SnakeYAML依存 | — | 却下。Jackson本体も必要で過剰 |
 
 ### SnakeYAML 2.x を却下した理由（当初採用からの切替）
@@ -37,4 +37,4 @@
 - **コスト（変更作業）**:
   - `pom.xml` の依存を `org.yaml:snakeyaml:2.6` → `org.snakeyaml:snakeyaml-engine:3.0.1` に変更する（スコープは ADR-002 参照）。
   - `YamlLoader.java` の API を `Yaml(SafeConstructor)` から `Load(LoadSettings)` に移行する。
-- **限界**: 影響範囲は `YamlLoader.java` の1ファイルに閉じる。これ以外のコードへの波及は確認されていない。
+- **限界**: 使用 API は `YamlLoader.java` の1ファイルに完全隔離されている。

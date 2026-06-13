@@ -40,4 +40,4 @@ ADR-001 で選定した `snakeyaml-engine` を `pom.xml` に追加するスコ�
 
 **悪い点**
 
-- `nablarch-testing` に依存する全 PJ に `snakeyaml-engine` が推移的に入る（POI と同様）。YAML を使わない PJ にも入るが、これは許容する。
+- `nablarch-testing` に依存する全 PJ に `snakeyaml-engine` が推移的に入る（POI と同様）。YAML を使わない PJ にも入る。

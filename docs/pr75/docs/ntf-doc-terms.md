@@ -1,6 +1,6 @@
 # NTF 解説書（v6）用語リファレンス
 
-NTF（自動テストフレームワーク）解説書から抽出した用語の引き表。テストデータ変換ツールの設計・実装や `ntf-testdata-doc.md` の見直しで、解説書の正式な用語名・表記・仕様を引くために使う。
+NTF（自動テストフレームワーク）解説書から抽出した用語の引き表。`ntf-testdata-doc.md` の見直しで、解説書の正式な用語名・表記・仕様を引くために使う。
 
 取得元の解説書 URL ベース:
 `https://nablarch.github.io/docs/LATEST/doc/development_tools/testing_framework/guide/development_guide/`

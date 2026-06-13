@@ -37,6 +37,8 @@ flowchart LR
 
 `nablarch-core-dataformat` 側の仕様（ディレクティブ・フィールド型）は、設計済みスキーマ（`ntf-testdata-yaml-schema.json`）・設計文書（`ntf-testdata-yaml-design.md`）・構造解析文書（`ntf-testdata-structure.md`）に取り込み済みの内容を参照して補完する。
 
+補足: Excel 読み込み（`PoiXlsReader`）は POI のみ依存で外部 Nablarch ライブラリは不要。DB テストデータは `nablarch-common-dao` に依存するが仕様の核心は本リポジトリ内にある。P4-1 以降は本リポジトリ（`nablarch-testing`）の `src/main/java` を主たる調査対象とする。
+
 ### 外部依存
 
 | artifactId | scope | テストデータ仕様への関わり |
@@ -47,7 +49,7 @@ flowchart LR
 | `nablarch-common-dao` | compile | DB テストデータ（`TableData` 等が依存）|
 | `org.apache.poi:poi-ooxml:3.8` | compile | Excel 読み込み（`PoiXlsReader` が直接使用）。本リポジトリ内で完結 |
 
-`nablarch-core-dataformat` のクラスを直接 import して使うのは次の 19 クラス。
+`nablarch-core-dataformat` のクラスを直接 import して使うのは次のクラス（パッケージ別）。
 
 | パッケージ | クラス |
 |---|---|

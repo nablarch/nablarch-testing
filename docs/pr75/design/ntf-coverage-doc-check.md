@@ -10,7 +10,7 @@
 
 ## 1. 結論と推奨対応
 
-解説書の仕様はコード調査の設計と概ね整合する。未反映は 17 項目（Doc-1〜Doc-17）で、内訳は **設計変更 1 件・design.md／schema.json への追記 13 件・examples.yaml への追記** に集約される。設計変更を要するのは 1 件のみで、残りは記述追加でカバーできる。
+解説書の仕様はコード調査の設計と概ね整合する。未反映は 17 項目（Doc-1〜Doc-17）で、対応は **設計変更・design.md／schema.json への追記・examples.yaml への追記** に分かれる。設計変更を要するのは 1 件のみ（Doc-10）で、残りは記述追加でカバーできる。
 
 着手順は次のとおり。設計変更を先に確定し、実務でアサート失敗・読み込み中断を招く罠（Doc-3／Doc-4）を優先する。
 
@@ -27,7 +27,7 @@ flowchart TB
 | 設計変更 | Doc-10 | schema.json `file_data.records` の `minItems` を 1→0 / design.md に空ファイル表現を追記 | 空ファイル（0バイト）はディレクティブ行のみでレコード定義を省略。現行 `minItems:1` では表現不可 |
 | 高 | Doc-3 | design.md §7（日付型カラムの記述形式）/ examples.yaml | `java.sql.Timestamp` 期待値は末尾 `.0` 必須（例 `2010-01-01 12:34:56.0`）。欠けるとアサート失敗 |
 | 高 | Doc-4 | design.md（注意事項として追加） | `EXPECTED_TABLE` と `EXPECTED_COMPLETE_TABLE` を同一シート内で混在させると後半が読み込まれない。データタイプごとにまとめる |
-| 中 | Doc-8 | design.md §7（特殊値の表現）/ examples.yaml | ダブルクォートでスペース値を明示（`"⊔"`→半角スペース）。`"""` でダブルクォート1文字を格納（QuotationTrimmer） |
+| 中 | Doc-8 | design.md §7（特殊値の表現）/ examples.yaml | ダブルクォートでスペース値を明示（`"⊔"`→半角スペース1文字、`"△△"`→全角スペース2文字）。`"""` でダブルクォート1文字を格納（QuotationTrimmer） |
 | 中 | Doc-12 | design.md（ファイル系のデータ型説明）/ examples.yaml | 符号付/符号無数値型 `X9`/`SX9` は、パディング文字・符号を含めた固定長フォーマットの実値をそのまま記載 |
 | 中 | Doc-13 | design.md §11（messaging の注意事項） | マルチレコード送信時はヘッダと本文の行数を一致させ、送信回数分ヘッダを繰り返す |
 | 中 | Doc-7 | examples.yaml の特殊値一覧 / design.md AI向けプロンプト | `\\n`→LF(0x0A) の変換（`LineSeparatorInterpreter`）。`\\r`→CR は記載済みだが `\\n` が欠落 |
@@ -93,7 +93,7 @@ flowchart TB
 | `assertTableEquals` はレコード順序に依存しない（主キーで突合） | 02_DbAccessTest.rst | 対象外（アサート API 仕様） |
 | `assertSqlResultSetEquals` はレコード順序が異なる場合アサート失敗 | 02_DbAccessTest.rst | 対象外（アサート API 仕様） |
 | `java.sql.Timestamp` 型カラムの期待値表示形式: `2010-01-01 12:34:56.0`（末尾 `.0` が必要） | 02_DbAccessTest.rst | 未反映（Doc-3） |
-| グループIDを使用する場合、同一データタイプごとにまとめて記述すること（混在禁止） | 01_Abstract.rst, 03_Tips.rst | 未反映（Doc-4） |
+| グループIDを使用する場合、同一データタイプごとにまとめて記述すること（混在禁止） | 01_Abstract.rst（`auto-test-framework_multi-datatype` セクション）, 03_Tips.rst | 未反映（Doc-4） |
 | グループIDに `default` を指定するとグループIDなし扱いと同等になる（バッチ固有） | 05_UnitTestGuide/02_RequestUnitTest/batch.rst | 未反映（Doc-5） |
 | 日付フォーマット `yyyyMMddHHmmssSSS` および `yyyy-MM-dd HH:mm:ss.SSS` が有効 | 01_Abstract.rst | 反映済み（design.md §7、examples.yaml） |
 | 日付フォーマットは時刻・ミリ秒省略可（`yyyyMMddHHmmss`, `yyyyMMdd`, `yyyy-MM-dd HH:mm:ss`, `yyyy-MM-dd`） | 01_Abstract.rst | 一部未反映（design.md に12桁形式 `yyyyMMddHHmmss` の明示なし。Doc-6） |
@@ -142,8 +142,8 @@ flowchart TB
 | `null`（大文字/小文字不問）で DB NULL を表現 | 01_Abstract.rst | 反映済み（examples.yaml, design.md §7） |
 | `"null"` でダブルクォート除去後に文字列 `null` を格納 | 01_Abstract.rst | 反映済み（examples.yaml） |
 | `""` で空文字列を表現 | 01_Abstract.rst | 反映済み（examples.yaml） |
-| `"⊔"` や `"△"` のようにダブルクォートでスペースを明示する記法 | 01_Abstract.rst | 未反映（QuotationTrimmer 活用例なし。Doc-8） |
-| `"""` でダブルクォート1文字を表現 | 01_Abstract.rst | 未反映（Doc-8） |
+| ダブルクォートでスペース値を明示する記法（`"⊔"`→半角スペース1文字、`"△△"`→全角スペース2文字） | 01_Abstract.rst（特殊記法テーブル） | 未反映（QuotationTrimmer 活用例なし。Doc-8） |
+| `"""` でダブルクォート1文字を表現 | 01_Abstract.rst（特殊記法テーブル） | 未反映（Doc-8） |
 | `${systemTime}`, `${updateTime}`, `${setUpTime}` で日時特殊値 | 01_Abstract.rst | 反映済み（examples.yaml） |
 | `${文字種,文字数}` で文字種生成（14種。解説書には中国語・サロゲートペア・改行・外字の4種は記載なし） | 01_Abstract.rst | 一部未反映（解説書は11種記載、design.md は14種で正確。差異の注記なし。Doc-17） |
 | `${binaryFile:パス}` でバイナリファイルを BLOB に格納（パスは Excel ファイルからの相対パス） | 01_Abstract.rst | 反映済み（examples.yaml, design.md §21） |

@@ -169,7 +169,8 @@ setup_files:
 | フィールド型 | 日本語設計書記法（`"半角"`, `"全角漢字"` 等）を RawRows の型行にそのまま使用。`BasicDataTypeMapping` のデフォルトマッピングが変換 | フレームワーク型記号（`X`, `N`, `Z` 等）を `fields[].type` に使用。`setTypes()` に渡す前に identity mapping に変換（design.md §5） |
 | DB NULL | `"null"`（文字列）を多用。`NullInterpreter` が DB NULL に変換。`~` は空テーブルセンチネル専用 | `null`（YAML ネイティブ）を正式採用。`"null"` は `NullInterpreter` 経由の後方互換 |
 | 空文字 | `""` | `""` |
-| 空テーブル（全件 DELETE） | 全カラムを `~` にした 1 行のセンチネル行を記述。パーサは「全値 null の先頭行はセンチネル」として除外 | `rows: []`（空配列）。design.md §schema.json description に「空配列は全件削除」と記載 |
+| 空テーブル（全件 DELETE） | 全カラムを `~`（YAML null → Java `null`）にした 1 行のセンチネル行を記述。パーサは「全値 null の先頭行はセンチネル」として除外 | `rows: []`（空配列）。design.md §schema.json description に「空配列は全件削除」と記載 |
+| 設計の根拠 | Excel 慣習の踏襲 | YAML ネイティブ null を使うことで意味が明確 |
 
 **測定に対する判断**：
 - 型記法は、実装例は日本語表記で設計書との照合が容易、現行スキーマはマッピングを意識せず書けるが設計書との対照が必要。
