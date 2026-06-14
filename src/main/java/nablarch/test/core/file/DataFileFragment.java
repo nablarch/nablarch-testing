@@ -24,8 +24,6 @@ import nablarch.core.repository.SystemRepository;
 import nablarch.core.util.Builder;
 import nablarch.test.NablarchTestUtils;
 import nablarch.test.core.util.MapCollector;
-import java.util.Collections;
-import nablarch.core.util.annotation.Published;
 
 /**
  * ファイルの断片を表すクラス。<br/>
@@ -33,7 +31,6 @@ import nablarch.core.util.annotation.Published;
  *
  * @author T.Kawasaki
  */
-@Published(tag = "architect")
 public abstract class DataFileFragment {
 
     /** この断片を包含するファイル */
@@ -556,50 +553,6 @@ public abstract class DataFileFragment {
      */
     protected abstract boolean isSizeValid();
 
-    /**
-     * レコード種別を取得する。
-     * @return レコード種別
-     */
-    @Published(tag = "architect")
-    public String getRecordType() {
-        return recordType;
-    }
-
-    /**
-     * フィールド名称の一覧を取得する。
-     * @return フィールド名称の一覧（読み取り専用）
-     */
-    @Published(tag = "architect")
-    public List<String> getNames() {
-        return names == null ? null : Collections.unmodifiableList(names);
-    }
-
-    /**
-     * データ型の一覧を取得する。
-     * @return データ型の一覧（読み取り専用）
-     */
-    @Published(tag = "architect")
-    public List<String> getTypes() {
-        return types == null ? null : Collections.unmodifiableList(types);
-    }
-
-    /**
-     * フィールド長の一覧を取得する。
-     * @return フィールド長の一覧（読み取り専用）
-     */
-    @Published(tag = "architect")
-    public List<String> getLengths() {
-        return lengths == null ? null : Collections.unmodifiableList(lengths);
-    }
-
-    /**
-     * データ行の一覧を取得する。
-     * @return データ行の一覧（読み取り専用）
-     */
-    @Published(tag = "architect")
-    public List<Map<String, String>> getValues() {
-        return Collections.unmodifiableList(values);
-    }
 
     /** {@inheritDoc} */
     @Override

@@ -100,8 +100,7 @@ public class MessagePool {
      *
      * @return フレームワーク制御ヘッダ
      */
-    @Published(tag = "architect")
-    public Map<String, String> getFwHeader() {
+    Map<String, String> getFwHeader() {
         return fwHeader;
     }
 

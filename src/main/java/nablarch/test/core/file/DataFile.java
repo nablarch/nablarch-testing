@@ -316,24 +316,6 @@ public abstract class DataFile {
     }
 
     /**
-     * 全フラグメント（レコードレイアウト単位）を取得する。
-     * @return フラグメントの一覧（読み取り専用）
-     */
-    @Published(tag = "architect")
-    public List<DataFileFragment> getAllFragments() {
-        return java.util.Collections.unmodifiableList(all);
-    }
-
-    /**
-     * ディレクティブを取得する。
-     * @return ディレクティブ（読み取り専用）
-     */
-    @Published(tag = "architect")
-    public Map<String, Object> getDirectives() {
-        return java.util.Collections.unmodifiableMap(directives);
-    }
-
-    /**
      * ディレクティブの値を、文字列から各ディレクティブが許容する型に変換する。
      *
      * @param directive   ディレクティブ

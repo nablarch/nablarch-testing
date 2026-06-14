@@ -14,12 +14,13 @@ import java.util.Map;
 
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
+import nablarch.test.core.file.TestCoreFileAdapter;
 import nablarch.test.core.file.VariableLengthFile;
 
 import org.junit.Test;
 
 /**
- * {@link TestDataParserAdapter}のテストクラス。
+ * {@link TestCoreReaderAdapter}のテストクラス。
  * <p>
  * 本アダプタは本体 Parser を空 interpreters で配線し {@code parse → getResult} で
  * 生の本体器を取り出す。各テストは「本体器を返すこと」と「IN 値が記法のまま（未加工）であること」を検証する。
@@ -31,7 +32,7 @@ import org.junit.Test;
  *
  * @author kiyobot
  */
-public class TestDataParserAdapterTest {
+public class TestCoreReaderAdapterTest {
 
     /**
      * テスト用の{@link TestDataReader}実装。
@@ -116,7 +117,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("${userName}", "", "memo"));       // ${...}・空文字
         lines.add(row("literal", null, "memo2"));        // null セル
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<TableData> tables = adapter.readTables(DIR, resource, "", DataType.SETUP_TABLE_DATA);
@@ -149,7 +150,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("ROLE_NAME"));
         lines.add(row("admin"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<TableData> tables = adapter.readTables(DIR, resource, "", DataType.SETUP_TABLE_DATA);
@@ -179,7 +180,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("USER_NAME"));    // 1 カラムのみ宣言（DB には他カラムがある想定）
         lines.add(row("${u}"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         // 補完が走れば StubDbInfo#getColumns が番人として例外を投げる＝ここで落ちる
@@ -211,7 +212,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("COL"));
         lines.add(row("comp"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<TableData> completed = adapter.readTables(DIR, resource, "", DataType.EXPECTED_COMPLETED);
@@ -234,7 +235,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("KEY"));
         lines.add(row("v"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<TableData> tables = adapter.readTables(DIR, resource, "", DataType.SETUP_TABLE_DATA);
@@ -249,7 +250,7 @@ public class TestDataParserAdapterTest {
      */
     @Test
     public void readTablesRejectsNonTableType() {
-        TestDataParserAdapter adapter = new TestDataParserAdapter(new FakeTestDataReader());
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(new FakeTestDataReader());
         try {
             adapter.readTables(DIR, "x", "", DataType.SETUP_FIXED);
             fail("IllegalArgumentException が送出されるべき");
@@ -271,7 +272,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("USER_NAME"));
         lines.add(row("${u}"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<TableData> tables = adapter.readTables(DIR, resource, "", DataType.EXPECTED_TABLE_DATA);
@@ -295,7 +296,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("ID", "NAME", "[MARK]"));
         lines.add(row("${id}", "", "x"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<Map<String, String>> rows = adapter.readListMap(DIR, resource, "result");
@@ -324,7 +325,7 @@ public class TestDataParserAdapterTest {
         lines.add(row("", "10", "5"));                   // 長さ
         lines.add(row("", "${value}", "abc"));           // データ行
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<? extends DataFile> files = adapter.readFiles(DIR, resource, "", DataType.SETUP_FIXED);
@@ -332,8 +333,8 @@ public class TestDataParserAdapterTest {
         assertThat(files.size(), is(1));
         DataFile file = files.get(0);
         assertThat(file.getPath(), is("test.dat"));
-        // IN 値は記法のまま（未加工）。getValues はフィールド名→値のマップ。
-        Map<String, String> values = file.getAllFragments().get(0).getValues().get(0);
+        // IN 値は記法のまま（未加工）。値は file 相乗りアダプタ経由で読む。
+        Map<String, String> values = TestCoreFileAdapter.read(file).getFragments().get(0).getValues().get(0);
         assertThat(values.get("field1"), is("${value}"));
         assertThat(values.get("field2"), is("abc"));
     }
@@ -352,14 +353,15 @@ public class TestDataParserAdapterTest {
         lines.add(row("", "半角英字"));      // 可変長は型のみ（長さなし）
         lines.add(row("", "${v}"));         // データ行
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<? extends DataFile> files = adapter.readFiles(DIR, resource, "", DataType.EXPECTED_VARIABLE);
 
         assertThat(files.size(), is(1));
         assertThat(files.get(0) instanceof VariableLengthFile, is(true));
-        assertThat(files.get(0).getAllFragments().get(0).getValues().get(0).get("field1"), is("${v}"));
+        assertThat(TestCoreFileAdapter.read(files.get(0)).getFragments().get(0).getValues().get(0).get("field1"),
+                is("${v}"));
     }
 
     /**
@@ -377,13 +379,14 @@ public class TestDataParserAdapterTest {
         lines.add(row("", "5"));
         lines.add(row("", "${e}"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<? extends DataFile> files = adapter.readFiles(DIR, resource, "", DataType.EXPECTED_FIXED);
 
         assertThat(files.size(), is(1));
-        assertThat(files.get(0).getAllFragments().get(0).getValues().get(0).get("field1"), is("${e}"));
+        assertThat(TestCoreFileAdapter.read(files.get(0)).getFragments().get(0).getValues().get(0).get("field1"),
+                is("${e}"));
     }
 
     /**
@@ -400,14 +403,15 @@ public class TestDataParserAdapterTest {
         lines.add(row("", "半角英字"));
         lines.add(row("", "${s}"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
         List<? extends DataFile> files = adapter.readFiles(DIR, resource, "", DataType.SETUP_VARIABLE);
 
         assertThat(files.size(), is(1));
         assertThat(files.get(0) instanceof VariableLengthFile, is(true));
-        assertThat(files.get(0).getAllFragments().get(0).getValues().get(0).get("field1"), is("${s}"));
+        assertThat(TestCoreFileAdapter.read(files.get(0)).getFragments().get(0).getValues().get(0).get("field1"),
+                is("${s}"));
     }
 
     /**
@@ -417,7 +421,7 @@ public class TestDataParserAdapterTest {
      */
     @Test
     public void readFilesRejectsNonFileType() {
-        TestDataParserAdapter adapter = new TestDataParserAdapter(new FakeTestDataReader());
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(new FakeTestDataReader());
         try {
             adapter.readFiles(DIR, "x", "", DataType.LIST_MAP);
             fail("IllegalArgumentException が送出されるべき");
@@ -431,7 +435,7 @@ public class TestDataParserAdapterTest {
     /**
      * Given: FW 制御ヘッダ（{@code ${...}}を含む）を持つ MESSAGE ブロック。
      * When : {@code readMessage} を呼ぶ。
-     * Then : {@link TestDataParserAdapter.MessageData}が返り、FW ヘッダ値が記法のまま（未加工）。
+     * Then : {@link TestCoreReaderAdapter.MessageData}が返り、FW ヘッダ値が記法のまま（未加工）。
      */
     @Test
     public void readMessageReturnsRawMessagePool() {
@@ -441,10 +445,10 @@ public class TestDataParserAdapterTest {
         lines.add(row("requestId", "${rid}"));
         lines.add(row("userId", "U001"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        TestDataParserAdapter.MessageData message = adapter.readMessage(DIR, resource, "msg1");
+        TestCoreReaderAdapter.MessageData message = adapter.readMessage(DIR, resource, "msg1");
 
         assertNotNull(message);
         assertThat(message.getFwHeader().get("requestId"), is("${rid}"));
@@ -466,10 +470,10 @@ public class TestDataParserAdapterTest {
         lines.add(row("K"));
         lines.add(row("v"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        TestDataParserAdapter.MessageData message = adapter.readMessage(DIR, resource, "missing");
+        TestCoreReaderAdapter.MessageData message = adapter.readMessage(DIR, resource, "missing");
 
         assertThat(message, is(nullValue()));
     }
@@ -499,10 +503,10 @@ public class TestDataParserAdapterTest {
         lines.add(row("MESSAGE=msg1"));
         lines.add(row("requestId", "R001"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+        List<TestCoreReaderAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
 
         assertThat(headers.size(), is(4));
         assertThat(headers.get(0).getType(), is(DataType.SETUP_TABLE_DATA));
@@ -529,10 +533,10 @@ public class TestDataParserAdapterTest {
         lines.add(row("USER_NAME"));
         lines.add(row("alice"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+        List<TestCoreReaderAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
 
         assertThat(headers.size(), is(1));
         assertThat(headers.get(0).getType(), is(DataType.SETUP_TABLE_DATA));
@@ -556,10 +560,10 @@ public class TestDataParserAdapterTest {
         lines.add(row("ROLE_NAME"));
         lines.add(row("admin"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+        List<TestCoreReaderAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
 
         assertThat(headers.size(), is(2));
         assertThat(headers.get(0).getIdentifier(), is("USERS"));
@@ -577,10 +581,10 @@ public class TestDataParserAdapterTest {
         List<List<String>> lines = new ArrayList<List<String>>();
         lines.add(row("just", "some", "data"));
 
-        TestDataParserAdapter adapter = new TestDataParserAdapter(
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+        List<TestCoreReaderAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
 
         assertThat(headers.isEmpty(), is(true));
     }

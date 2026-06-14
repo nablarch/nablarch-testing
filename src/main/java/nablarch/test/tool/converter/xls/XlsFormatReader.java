@@ -11,13 +11,15 @@ import java.util.Set;
 
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
-import nablarch.test.core.file.DataFileFragment;
 import nablarch.test.core.file.FixedLengthFile;
+import nablarch.test.core.file.TestCoreFileAdapter;
+import nablarch.test.core.file.TestCoreFileAdapter.FileView;
+import nablarch.test.core.file.TestCoreFileAdapter.FragmentView;
 import nablarch.test.core.reader.DataType;
 import nablarch.test.core.reader.PoiXlsReader;
-import nablarch.test.core.reader.TestDataParserAdapter;
-import nablarch.test.core.reader.TestDataParserAdapter.BlockHeader;
-import nablarch.test.core.reader.TestDataParserAdapter.MessageData;
+import nablarch.test.core.reader.TestCoreReaderAdapter;
+import nablarch.test.core.reader.TestCoreReaderAdapter.BlockHeader;
+import nablarch.test.core.reader.TestCoreReaderAdapter.MessageData;
 import nablarch.test.tool.converter.TestDataFormatReader;
 import nablarch.test.tool.converter.model.FieldDef;
 import nablarch.test.tool.converter.model.FileDataBlock;
@@ -33,17 +35,21 @@ import nablarch.test.tool.converter.model.TestDataSection;
  * Excel（1 シート）を読み込み、中間モデル（{@link TestDataContainer}）へ写す IN リーダ。
  *
  * <p>
- * 独自の POI パース・構造解析は持たない。本体の読み込みは {@link TestDataParserAdapter}
- * （本体パッケージ相乗りのアダプタ）へ委譲し、本クラスは「どのブロックが存在するか」を
- * {@link TestDataParserAdapter#readHeaders(String, String)} で得て、各ブロックをデータタイプ別の
+ * 独自の POI パース・構造解析は持たない。本体の読み込みは {@link TestCoreReaderAdapter}
+ * （本体 {@code reader} パッケージ相乗りのアダプタ）へ委譲し、本クラスは「どのブロックが存在するか」を
+ * {@link TestCoreReaderAdapter#readHeaders(String, String)} で得て、各ブロックをデータタイプ別の
  * {@code read*} で取り出し、本体の器を中間モデルへ写すオーケストレーションに徹する。
  * 行のデータタイプ判定・マーカー解釈はすべてアダプタ（本体）側が担う。
  * </p>
  *
  * <p>
- * IN 値は記法のまま（未加工）で運ばれる（アダプタが空 interpreters で配線するため）。一方、
- * カラム名・テーブル名の大文字化やファイル型の本体シンボル化、ディレクティブの型変換などは
- * 本体器が固有に行う挙動であり、Excel 経路（設計書 判断 A）はこれを受容する。
+ * 器の中身は {@link TestCoreFileAdapter}（本体 {@code file} パッケージ相乗り）が読む。IN 値は
+ * 記法のまま（未加工）で運ばれる（アダプタが空 interpreters で配線するため）。一方、本体の構造解析は
+ * テスト実行に必要な正規化を器に施す（長さ省略 {@code -} の実バイト長化・型記法のフレームワーク表記化・
+ * レコード種別の private 化）。作成者が記述した原文が要るため、これら正規化される箇所だけ
+ * {@link TestCoreReaderAdapter#readBlockBodyLines(String, String, String, String, DataType) 生行}から
+ * 原文を復元する（設計書 §共通「器が正規化する値の原文復元」）。生行は器（{@link FragmentView}）を
+ * 権威に断片数・フィールド数・値行数を決め、本体パーサと同形に走査して原文を充填する。
  * </p>
  *
  * <p>
@@ -58,13 +64,13 @@ import nablarch.test.tool.converter.model.TestDataSection;
 public class XlsFormatReader implements TestDataFormatReader {
 
     /** 本体再利用のためのアダプタ */
-    private final TestDataParserAdapter adapter;
+    private final TestCoreReaderAdapter adapter;
 
     /**
      * 本番用コンストラクタ。実 Excel を読む {@link PoiXlsReader} を注入したアダプタを構成する。
      */
     public XlsFormatReader() {
-        this(new TestDataParserAdapter(new PoiXlsReader()));
+        this(new TestCoreReaderAdapter(new PoiXlsReader()));
     }
 
     /**
@@ -72,7 +78,7 @@ public class XlsFormatReader implements TestDataFormatReader {
      *
      * @param adapter 本体再利用のためのアダプタ
      */
-    XlsFormatReader(TestDataParserAdapter adapter) {
+    XlsFormatReader(TestCoreReaderAdapter adapter) {
         this.adapter = adapter;
     }
 
@@ -188,8 +194,12 @@ public class XlsFormatReader implements TestDataFormatReader {
         FileDataBlock.FileType fileType = isFixed(type) ? FileDataBlock.FileType.FIXED : FileDataBlock.FileType.VARIABLE;
         List<TestDataBlock> result = new ArrayList<TestDataBlock>();
         for (DataFile file : files) {
-            result.add(new FileDataBlock(type, groupId, file.getPath(), fileType,
-                    toStringDirectives(file.getDirectives()), toRecordLayouts(file.getAllFragments())));
+            FileView view = TestCoreFileAdapter.read(file);
+            List<List<String>> bodyLines =
+                    adapter.readBlockBodyLines(basePath, resourceName, groupId, view.getPath(), type);
+            result.add(new FileDataBlock(type, groupId, view.getPath(), fileType,
+                    toStringDirectives(view.getDirectives()),
+                    toRecordLayouts(view, bodyLines, isFixed(type))));
         }
         return result;
     }
@@ -208,39 +218,73 @@ public class XlsFormatReader implements TestDataFormatReader {
             return null;
         }
         FixedLengthFile body = message.getBody();
+        FileView view = TestCoreFileAdapter.read(body);
+        // MESSAGE 本文は固定長。生行には FW ヘッダ行が先頭に含まれるが、原文復元は名前行を
+        // 起点に走査するため FW ヘッダ行は読み飛ばされる。
+        List<List<String>> bodyLines =
+                adapter.readBlockBodyLines(basePath, resourceName, header.getGroupId(), header.getIdentifier(),
+                        DataType.MESSAGE);
         Map<String, String> fwHeaderFields = new LinkedHashMap<String, String>(message.getFwHeader());
         return new MessageDataBlock(DataType.MESSAGE, header.getGroupId(), header.getIdentifier(),
-                toStringDirectives(body.getDirectives()), fwHeaderFields, toRecordLayouts(body.getAllFragments()));
+                toStringDirectives(view.getDirectives()), fwHeaderFields,
+                toRecordLayouts(view, bodyLines, true));
     }
 
     /**
-     * 本体フラグメント群をレコードレイアウト群へ写す。
+     * 器のビュー（断片構造）と生行から、原文を復元したレコードレイアウト群を組み立てる。
+     * <p>
+     * 器（{@link FragmentView}）を権威に断片数・フィールド名・値行数を決め、生行を本体パーサと同形に
+     * 走査して原文（レコード種別＝名前行の先頭セル／型記法＝型行／長さ＝長さ行／値＝値行）を取る。
+     * 生行のうちマーカー行は既に除かれており、各行の先頭セルを落とした残り（{@link #tail(List)}）が
+     * 器のフィールドと同順・同数で並ぶ。最初の断片の名前行はフィールド名一致で特定し、それより前の
+     * ディレクティブ行・FW ヘッダ行を読み飛ばす。
+     * </p>
      *
-     * @param fragments フラグメント群
+     * @param view      器のビュー
+     * @param bodyLines 生のボディ行（マーカー行除去済み）
+     * @param fixed     固定長（長さ行を持つ）なら真、可変長なら偽
      * @return レコードレイアウト群
      */
-    private List<RecordLayout> toRecordLayouts(List<DataFileFragment> fragments) {
+    private List<RecordLayout> toRecordLayouts(FileView view, List<List<String>> bodyLines, boolean fixed) {
         List<RecordLayout> records = new ArrayList<RecordLayout>();
-        for (DataFileFragment fragment : fragments) {
+        int idx = 0;
+        boolean first = true;
+        for (FragmentView fragment : view.getFragments()) {
             List<String> names = fragment.getNames();
-            // 可変長ファイルは長さ行を持たず getLengths()/getTypes() が null になりうる。
-            List<String> types = orEmpty(fragment.getTypes());
-            List<String> lengths = orEmpty(fragment.getLengths());
+            // 名前行を特定する。最初の断片はフィールド名一致まで読み飛ばし（ディレクティブ/FW ヘッダ行を除外）、
+            // 以降は直前の値行の直後がそのまま次の名前行。
+            if (first) {
+                while (idx < bodyLines.size() && !tail(bodyLines.get(idx)).equals(names)) {
+                    idx++;
+                }
+                first = false;
+            }
+            String recordType = idx < bodyLines.size() ? bodyLines.get(idx).get(0) : null;
+            idx++;
+            List<String> originalTypes = idx < bodyLines.size() ? tail(bodyLines.get(idx)) : Collections.<String>emptyList();
+            idx++;
+            List<String> originalLengths = null;
+            if (fixed) {
+                originalLengths = idx < bodyLines.size() ? tail(bodyLines.get(idx)) : Collections.<String>emptyList();
+                idx++;
+            }
             List<FieldDef> fields = new ArrayList<FieldDef>(names.size());
             for (int i = 0; i < names.size(); i++) {
-                fields.add(new FieldDef(names.get(i),
-                        i < types.size() ? types.get(i) : null,
-                        i < lengths.size() ? lengths.get(i) : null));
+                String type = i < originalTypes.size() ? originalTypes.get(i) : null;
+                String length = originalLengths != null && i < originalLengths.size() ? originalLengths.get(i) : null;
+                fields.add(new FieldDef(names.get(i), type, length));
             }
-            List<List<String>> rows = new ArrayList<List<String>>();
-            for (Map<String, String> valueMap : fragment.getValues()) {
+            List<List<String>> rows = new ArrayList<List<String>>(fragment.getValues().size());
+            for (int v = 0; v < fragment.getValues().size(); v++) {
+                List<String> valueCells = idx < bodyLines.size() ? tail(bodyLines.get(idx)) : Collections.<String>emptyList();
+                idx++;
                 List<String> row = new ArrayList<String>(names.size());
-                for (String name : names) {
-                    row.add(valueMap.get(name));
+                for (int i = 0; i < names.size(); i++) {
+                    row.add(i < valueCells.size() ? valueCells.get(i) : "");
                 }
                 rows.add(row);
             }
-            records.add(new RecordLayout(fragment.getRecordType(), fields, rows));
+            records.add(new RecordLayout(recordType, fields, rows));
         }
         return records;
     }
@@ -265,13 +309,13 @@ public class XlsFormatReader implements TestDataFormatReader {
     }
 
     /**
-     * {@code null} のリストを空リストへ正規化する。
+     * 先頭要素を除いたリストを返す。空リストはそのまま返す。
      *
-     * @param list 対象（{@code null} 可）
-     * @return {@code null} なら空リスト、さもなくばそのまま
+     * @param list 対象
+     * @return 先頭要素を除いたリスト
      */
-    private static List<String> orEmpty(List<String> list) {
-        return list == null ? Collections.<String>emptyList() : list;
+    private static List<String> tail(List<String> list) {
+        return list.isEmpty() ? list : list.subList(1, list.size());
     }
 
     /**
@@ -282,7 +326,7 @@ public class XlsFormatReader implements TestDataFormatReader {
      * @return キー
      */
     private static String batchKey(DataType type, String groupId) {
-        return type.name() + ' ' + groupId;
+        return type.name() + ' ' + groupId;
     }
 
     /**
@@ -293,7 +337,7 @@ public class XlsFormatReader implements TestDataFormatReader {
      * @return キー
      */
     private static String singleKey(DataType type, String identifier) {
-        return type.name() + ' ' + identifier;
+        return type.name() + ' ' + identifier;
     }
 
     /**

@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import nablarch.test.core.reader.TestDataParserAdapter;
+import nablarch.test.core.reader.TestCoreReaderAdapter;
 import nablarch.test.core.reader.TestDataReader;
 import nablarch.test.tool.converter.model.FieldDef;
 import nablarch.test.tool.converter.model.FileDataBlock;
@@ -30,8 +30,8 @@ import org.junit.Test;
  * {@link XlsFormatReader}のテストクラス。
  * <p>
  * 実 Excel を使わず、{@link FakeTestDataReader}に canned な行データを与えて
- * {@link TestDataParserAdapter}を駆動し、本体器が中間モデルへ無損失（IN 値が記法のまま）に
- * 写されることを検証する。{@link TestDataParserAdapter}内部の静的キャッシュ衝突を避けるため、
+ * {@link TestCoreReaderAdapter}を駆動し、本体器が中間モデルへ無損失（IN 値が記法のまま）に
+ * 写されることを検証する。{@link TestCoreReaderAdapter}内部の静的キャッシュ衝突を避けるため、
  * テストメソッドごとにリソース名を一意にする。
  * </p>
  *
@@ -114,7 +114,7 @@ public class XlsFormatReaderTest {
      */
     private static XlsFormatReader readerOf(String resource, List<List<String>> lines) {
         FakeTestDataReader fake = new FakeTestDataReader().put(resource, lines);
-        return new XlsFormatReader(new TestDataParserAdapter(fake));
+        return new XlsFormatReader(new TestCoreReaderAdapter(fake));
     }
 
     // ------------------------------------------------------------------ table
@@ -244,14 +244,47 @@ public class XlsFormatReaderTest {
         assertThat(record.getFields().size(), is(2));
         FieldDef f1 = record.getFields().get(0);
         assertThat(f1.getName(), is("field1"));
-        // 本体器は型記法（半角英字）を FW シンボル（X/N/Z）へ変換する＝器固有挙動（判断 A 受容・D-F）
-        assertThat(f1.getType(), is("X"));
+        // 型は原文（設計記法）が生行から復元される。器が FW シンボル（X/N/Z）へ正規化した値ではない。
+        assertThat(f1.getType(), is("半角英字"));
         assertThat(f1.getLength(), is("10"));
         FieldDef f2 = record.getFields().get(1);
         assertThat(f2.getName(), is("field2"));
         assertThat(f2.getLength(), is("5"));
         // IN 値は記法のまま
         assertThat(record.getRows().get(0), is(Arrays.asList("${value}", "abc")));
+    }
+
+    /**
+     * Given: 長さ省略（{@code -}）フィールドと明示レコード種別を含む SETUP_FIXED ブロック。
+     * When : {@code read}。
+     * Then : レコード種別・型記法・長さ（{@code -} 含む）が生行の原文どおり復元される
+     *        （器が正規化した値＝実バイト長・FW シンボルは現れない）。
+     */
+    @Test
+    public void readRestoresOriginalRecordTypeTypeAndOmittedLengthFromRawLines() {
+        String resource = "book/readRestoresOriginalRecordTypeTypeAndOmittedLength";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("SETUP_FIXED=om.dat"));
+        lines.add(row("text-encoding", "UTF-8"));        // ディレクティブ行（名前行より前）
+        lines.add(row("rt", "f1", "f2"));                // 名前行（列0=レコード種別）
+        lines.add(row("", "半角英字", "半角英字"));        // 型（設計記法）
+        lines.add(row("", "-", "5"));                    // 長さ（f1 は省略）
+        lines.add(row("", "abcd", "xy"));                // データ行
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        FileDataBlock file = (FileDataBlock) container.getSections().get(0).getBlocks().get(0);
+        RecordLayout record = file.getRecords().get(0);
+        // レコード種別は生行の名前行 列0 から（器では private で読めない）
+        assertThat(record.getRecordType(), is("rt"));
+        FieldDef f1 = record.getFields().get(0);
+        // 型は原文記法（器の FW シンボル X ではない）
+        assertThat(f1.getType(), is("半角英字"));
+        // 長さ省略 "-" は原文どおり（器が上書きする実バイト長 "4" ではない）
+        assertThat(f1.getLength(), is("-"));
+        assertThat(record.getFields().get(1).getLength(), is("5"));
+        // 値は記法のまま
+        assertThat(record.getRows().get(0), is(Arrays.asList("abcd", "xy")));
     }
 
     /**

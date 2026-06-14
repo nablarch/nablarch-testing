@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import nablarch.test.NablarchTestUtils;
 import nablarch.test.core.db.BasicDefaultValues;
 import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
@@ -32,7 +33,7 @@ import nablarch.test.core.util.interpreter.TestDataInterpreter;
  *
  * @author kiyobot
  */
-public class TestDataParserAdapter {
+public class TestCoreReaderAdapter {
 
     /** 空の interpreters（値加工を一切行わせないための配線） */
     private static final List<TestDataInterpreter> EMPTY_INTERPRETERS = Collections.emptyList();
@@ -51,7 +52,7 @@ public class TestDataParserAdapter {
      *
      * @param reader テストデータリーダ
      */
-    public TestDataParserAdapter(TestDataReader reader) {
+    public TestCoreReaderAdapter(TestDataReader reader) {
         this.reader = reader;
     }
 
@@ -173,6 +174,33 @@ public class TestDataParserAdapter {
      */
     public List<BlockHeader> readHeaders(String path, String resource) {
         HeaderCollector collector = new HeaderCollector(reader);
+        collector.parse(path, resource, "");
+        return collector.getResult();
+    }
+
+    /**
+     * 指定したブロック（データタイプ・グループ ID・識別子で特定）の<b>生のボディ行</b>を、
+     * マーカー行を除いて記述順に取り出す。
+     * <p>
+     * 本体の器（{@link DataFile}）は構造解析の過程で一部の値を正規化する（長さ省略 {@code -} の
+     * 実バイト長化・型記法のフレームワーク表記化・レコード種別の private 化）。変換ツールは作成者が
+     * 記述した<b>原文</b>を要するため、正規化前の生行が必要になる。本メソッドは本体
+     * {@link TestDataParsingTemplate}（行の読み込み・コメント/空行除去・マーカー判定）を再利用して
+     * 対象ブロックの生行のみを返し、行種別（名前行／型行／長さ行／値行）の解釈は呼び出し側へ委ねる
+     * （行分類のロジックを二重実装しない）。各行は本体読み込みと同じく
+     * {@link NablarchTestUtils#trimTailCopy(List)} で行末の空セルを除去済みである。
+     * </p>
+     *
+     * @param path       取得元パス
+     * @param resource   取得元リソース名
+     * @param groupId    グループ ID（{@code [g1]} 等。無指定は空文字）
+     * @param identifier 識別子（ファイルパス／メッセージ ID 等）
+     * @param type       データタイプ
+     * @return 生のボディ行（記述順。マーカー行は含まない。対象ブロックが無ければ空）
+     */
+    public List<List<String>> readBlockBodyLines(String path, String resource, String groupId,
+                                                 String identifier, DataType type) {
+        BodyLineCollector collector = new BodyLineCollector(reader, type, groupId, identifier);
         collector.parse(path, resource, "");
         return collector.getResult();
     }
@@ -328,6 +356,100 @@ public class TestDataParserAdapter {
         @Override
         List<BlockHeader> getResult() {
             return headers;
+        }
+    }
+
+    /**
+     * 指定した 1 ブロック（データタイプ・グループ ID・識別子）の生のボディ行を収集する、
+     * 解析を伴わない{@link TestDataParsingTemplate}。
+     * <p>
+     * 本体のテンプレートが提供する{@code getDataType}／{@code getTypeValue}でマーカー行を判定し、
+     * 対象ブロックのマーカー行を検出している間だけ後続の非マーカー行を収集する。ブロック本体
+     * （名前・型・長さ・値）の構造解釈はしない。各行は本体読み込みと同じく
+     * {@link NablarchTestUtils#trimTailCopy(List)}で行末の空セルを除去して返す。
+     * </p>
+     */
+    private static final class BodyLineCollector extends TestDataParsingTemplate<List<List<String>>> {
+
+        /** 対象データタイプ */
+        private final DataType targetType;
+
+        /** 対象グループ ID（{@code [g1]} 等。無指定は空文字） */
+        private final String targetGroupId;
+
+        /** 対象識別子 */
+        private final String targetIdentifier;
+
+        /** 収集した生のボディ行（記述順） */
+        private final List<List<String>> bodyLines = new ArrayList<List<String>>();
+
+        /** 対象ブロックを検出して収集中か */
+        private boolean collecting = false;
+
+        /**
+         * コンストラクタ。
+         *
+         * @param reader           テストデータリーダ
+         * @param targetType       対象データタイプ
+         * @param targetGroupId    対象グループ ID（無指定は空文字）
+         * @param targetIdentifier 対象識別子
+         */
+        BodyLineCollector(TestDataReader reader, DataType targetType, String targetGroupId,
+                          String targetIdentifier) {
+            super(reader, EMPTY_INTERPRETERS, DataType.DEFAULT);
+            this.targetType = targetType;
+            this.targetGroupId = targetGroupId;
+            this.targetIdentifier = targetIdentifier;
+        }
+
+        @Override
+        void parse(String id) {
+            List<String> line;
+            while ((line = readLine()) != null) {
+                String first = line.get(0);
+                DataType type = getDataType(first);
+                if (type != DataType.DEFAULT) {
+                    String afterName = first.substring(type.getName().length());
+                    int eq = afterName.indexOf('=');
+                    if (eq >= 0) {
+                        // マーカー行＝新しいブロックの開始。対象ブロックかで収集を切り替える。
+                        String groupId = afterName.substring(0, eq);
+                        String identifier = getTypeValue(line);
+                        collecting = type == targetType
+                                && groupId.equals(targetGroupId)
+                                && identifier.equals(targetIdentifier);
+                        continue; // マーカー行自体はボディに含めない
+                    }
+                }
+                if (collecting) {
+                    bodyLines.add(NablarchTestUtils.trimTailCopy(line));
+                }
+            }
+        }
+
+        @Override
+        void onReadLine(List<String> line) {
+            // parse を上書きしているため未使用
+        }
+
+        @Override
+        void onTargetTypeFound(List<String> line) {
+            // 特定タイプを対象にしない
+        }
+
+        @Override
+        boolean isTargetType(List<String> line, String id) {
+            return false;
+        }
+
+        @Override
+        boolean shouldStopOnNextOne() {
+            return false;
+        }
+
+        @Override
+        List<List<String>> getResult() {
+            return bodyLines;
         }
     }
 
