@@ -420,13 +420,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-15
+- **Last completed**: #7 Step 4（設計書 §共通 を Excel=生行/YAML=YamlLoader Map へ一般化是正・D-H 反映で stale 化した §判断 B 本文/IN 概要/クラス図/特殊記法節も実態へ是正）まで完了・コミット `0151e27`。Step 3（`YamlFormatReader` 新設＋`YamlFormatReaderTest` 15 件 GREEN）はコミット `024253b`。steering チェックボックス 220/221/222 済。**Step 5 着手中**＝3 観点レビュー（QA/Java/SWE）を実施し**全 PASS（must-fix なし）**まで完了。
+- **Next**: **#7 Step 5 を完了させて `complete task #7`**。残:(1) QA 提案の軽微テスト 2 本追加〔send-sync で `group_id` 無しエントリは drop されること（`rawGroupsInOrder` が null group_id を除外）／FILE か MESSAGE で `record_type` 省略時に `RecordLayout.getRecordType()==null` が保たれること〕。(2) カバレッジ穴の精査：`YamlFormatReader` 現状 **instr 98%/branch 94%**、未到達 LINES は本番ctor `YamlFormatReader()`(L65-67＝`new YamlTestCoreAdapter()` 配線のみ・番人/自明) のみ、未到達 branch 6/108 は未特定→精査して意味ある分岐は閉じ防御的分岐は番人として記録。`toStringDirectives` の null 値分岐は **実ビルダ経由では到達不能**（本体 `setDirective` が null 値で `stringValue.trim()` NPE＝YAML の器ディレクティブに null 値は入らない）＝Excel 対称の防御コード（番人扱い・テスト不要）。(3) 全モジュール回帰 `mvn -o test`（ベースライン失敗集合＝16 クラス 43F/44E と一致確認・surefire grep は `failures="[1-9][0-9]*"`）。(4) `docs/pr75/checks/P3-7.md` を Check file format で記述（レビュー 3 観点の verdict＝全 PASS を転記）。(5) チェックボックス 223 を [x]→`docs: complete task #7 — ...` でコミット。
+- **Notes**: 設計の正＝[[D-H]]。本 Step は**本体ゼロ差分**（新規は `tool/converter/yaml/YamlFormatReader` 1 本＋テストのみ／`docs` 是正）。**カバレッジ取得手順（重要・ハマった）**: online `mvn package -Dmaven.javadoc.skip=true -Dtest=YamlFormatReaderTest` で `jacoco.exec` 生成（BUILD SUCCESS・restore-instrumented-classes 走るが**1 クラスが instrument 残り**→`jacoco:report` が "Cannot process instrumented class" で失敗）→ **`mvn -o compile` でクリーン bytecode を target/classes へ復元** → `mvn jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`（レポート `target/site/jacoco/nablarch.test.tool.converter.yaml/YamlFormatReader.html`）。`M pom.xml` の `6u3` はコミットしない（正常）。ブランチ `add-yaml`。レビュー subagent（継続可・SendMessage）: QA `afcac28c8d2f0f239`／Java `a95e6acb449239eae`／SWE `acef9411ae28c9f52`。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談・本 Step は不要）。
 
 ## #7 Step 3 設計確定（本セッションで全ファイル精読のうえ確定。resume はこのまま実装してよい）
 
