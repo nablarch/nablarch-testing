@@ -81,7 +81,14 @@ flowchart LR
 
 > 1 章で「実行する」と定めた整形（行末空セル除去など）は外さない。外すのは③特殊記法変換のみ。
 
-**残る課題と対応**：取り出し口 `getResult` と一部 Parser のコンストラクタがパッケージプライベートで、変換ツールの正しいパッケージから直接呼べない。同一パッケージに置いたアダプタがこの壁を越える（相乗りはこのアダプタ 1 枚に閉じる)。MESSAGE 本文はアダプタが本体 `MessageParser.getDelegate()` から `FixedLengthFile` を再利用して取る。
+**残る課題と対応**：本体の非公開メンバ（Parser の `getResult`・一部コンストラクタ、`DataFileFragment` の `names`/`types`/`lengths`/`values`・長さ省略判定）は、変換ツールの正しいパッケージから直接呼べない。これを越えるため、本体の非公開メンバを同一パッケージから読み plain で返す薄い**抽出アダプタ**を、器のパッケージごとに 1 枚ずつ置く。
+
+| アダプタ | 相乗り先 | 役割 |
+|---|---|---|
+| `TestCoreReaderAdapter` | `nablarch.test.core.reader` | Parser を空 `interpreters` で `parse → getResult` し、生の器を取り出す。MESSAGE 本文は `MessageParser.getDelegate()` から `FixedLengthFile` を取る |
+| `TestCoreFileAdapter` | `nablarch.test.core.file` | `DataFileFragment` の `names`/`types`/`lengths`/`values` と長さ省略判定を読んで plain で返す |
+
+いずれも構造を組み立てず、読み取った値を plain で返すだけ。相乗りはこの 2 枚に閉じる。これにより本体の getter 追加・可視性拡大は不要で、本体は無変更。
 
 ### 判断 B：YAML 経路 — 構造マッピング層を再利用
 
@@ -113,13 +120,13 @@ YAML の値は、数値・null・空白を文字列として保つため、書�
 
 ### 共通：器の中身を読む手段
 
-取り出した器の中身は、本体に整備済みの public getter で読める。いずれも**本体無変更**。
+取り出した器の中身は、`TableData`・`MessagePool` は本体の public getter で読める。`DataFile`／`DataFileFragment` は package-private/protected な内部を、`file` パッケージに相乗りした `TestCoreFileAdapter` が読む。いずれも**本体無変更**（getter 追加・可視性拡大は不要）。
 
 | 器 | 中身を読む手段 |
 |---|---|
-| `TableData` | `getTableName`／`getColumnNames`／`getValue` |
-| `DataFile`／`DataFileFragment` | `getAllFragments`／`getNames`／`getTypes`／`getLengths`／`getValues`／`getDirectives` |
-| `MessagePool` | FW 制御ヘッダは `getFwHeader`。本文は `FixedLengthFile` として取る |
+| `TableData` | `getTableName`／`getColumnNames`／`getValue`（public） |
+| `DataFile`／`DataFileFragment` | `TestCoreFileAdapter`（`file` 相乗り）が `names`／`types`／`lengths`／`values`・長さ省略判定を読む |
+| `MessagePool` | FW 制御ヘッダは `getFwHeader`（public）。本文は `FixedLengthFile` として取る |
 | LIST_MAP | 戻り値が `List<Map<String,String>>` の素の型 |
 
 テーブル系は構造解析（`TableData.addRow`）の途中で `dbInfo.getColumnType` を要求する。値は文字列のままで型に依存しないが `dbInfo` が null だと読めないため、カラム型を返すだけの**スタブ `DbInfo`** を構成で差し込む。
@@ -217,9 +224,13 @@ class TestDataFormatReader {
 }
 class XlsFormatReader
 class YamlFormatReader
-class TestDataParserAdapter {
-  <<Excel用・本体パッケージに相乗り>>
+class TestCoreReaderAdapter {
+  <<reader相乗り>>
   +readFiles/readTables/readListMap/readMessage()
+}
+class TestCoreFileAdapter {
+  <<file相乗り>>
+  +names/types/lengths/values/長さ省略判定
 }
 class ExcelParsers {
   <<本体>> DataFileParser ほか
@@ -233,10 +244,12 @@ class StructuredObjects {
 }
 XlsFormatReader ..|> TestDataFormatReader
 YamlFormatReader ..|> TestDataFormatReader
-XlsFormatReader --> TestDataParserAdapter : 呼ぶ
-TestDataParserAdapter --> ExcelParsers : 空interpretersを配線しparse→getResult
+XlsFormatReader --> TestCoreReaderAdapter : 呼ぶ
+XlsFormatReader --> TestCoreFileAdapter : file系の内部値を読む
+TestCoreReaderAdapter --> ExcelParsers : 空interpretersを配線しparse→getResult
+TestCoreFileAdapter --> StructuredObjects : DataFileFragment内部を読む
 ExcelParsers ..> StructuredObjects : 構築
-TestDataParserAdapter ..> StructuredObjects : 取り出して返す
+TestCoreReaderAdapter ..> StructuredObjects : 取り出して返す
 YamlFormatReader --> YamlReader : 構造マッピング層を呼ぶ（加工なし）
 YamlReader ..> StructuredObjects : 構築
 XlsFormatReader ..> TestDataContainer : 組み立て
@@ -245,7 +258,7 @@ YamlFormatReader ..> TestDataContainer : 組み立て
 
 受け取るのはいずれも**本体の器**で、それを変換ツールが中間モデルへ写す。中間モデルは変換ツール内部の表現で、本体には現れない（依存は変換ツール → 本体の一方向）。
 
-経路ごとの要点は 2 章の判断 A・B のとおり。Excel は可視性の壁を越えるため `nablarch.test.core.reader` に薄いアダプタ `TestDataParserAdapter` を 1 枚だけ相乗りさせ、相乗りの影響をそこに局所化する。YAML は本体の YAML 読み込みの構造マッピング層を `YamlFormatReader` が直接呼ぶ。
+経路ごとの要点は 2 章の判断 A・B のとおり。Excel は可視性の壁を越えるため、`nablarch.test.core.reader` に `TestCoreReaderAdapter`（Parser を parse→getResult し構造を取り出す）、`nablarch.test.core.file` に `TestCoreFileAdapter`（`DataFileFragment` の内部値を読む）を相乗りさせ、相乗りの影響をこの 2 枚に局所化する。YAML は本体の YAML 読み込みの構造マッピング層を `YamlFormatReader` が直接呼ぶ。
 
 ### OUT（中間モデル → 形式）
 

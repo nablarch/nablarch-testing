@@ -318,7 +318,18 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **Conclusion**: 本ファイルを継続更新。旧プラン部は削除して新プランへ置換
 - **Rationale**: checks/・決定事項・PR 参照が docs/pr75 に集約され単一の真実として扱える
 
-## D-F: #2 本体 YAML 2 層分離 — 共有するのは「本体器」でなく「構造ウォーク」（option C・あるべき姿）
+## D-G: 判断 A を「器のパッケージごとに同一パッケージ相乗りアダプタ 2 枚」へ確定（本体無変更・ユーザー決定 (a)・2026-06-14）
+- **Conclusion**: 本体（`DataFile`/`DataFileFragment`/`MessagePool`）は**無変更**へ収束。Excel 経路の可視性の壁は**器のパッケージごとに薄い抽出アダプタ 1 枚ずつ**で越える。
+  - `TestCoreReaderAdapter`（`nablarch.test.core.reader` 相乗り）＝旧 `TestDataParserAdapter` を改名。Parser を空 `interpreters` で `parse → getResult` し生の器を取り出す。MESSAGE 本文は `MessageParser.getDelegate()` の `FixedLengthFile`、FW ヘッダは同一パッケージの `MessageParser.getFwHeader()`。
+  - `TestCoreFileAdapter`（`nablarch.test.core.file` 相乗り・**新設**）＝`DataFileFragment` の `names`/`types`/`lengths`/`values`・長さ省略判定を同一パッケージから読んで plain で返す。
+- **本体撤回（確定）**: ① `DataFile.java` の `getAllFragments`/`getDirectives`（+18）と `DataFileFragment.java` の `getRecordType`/`getNames`/`getTypes`/`getLengths`/`getValues`＋`@Published`（+47）を**撤回**（`TestCoreFileAdapter` が同一パッケージで読むため不要）。② `MessagePool.getFwHeader` の public 化（+3/-1）を **package-private へ撤回**（本番呼び出し元なし・アダプタは `MessageParser.getFwHeader` を使用・テストは同一パッケージ＝裏取り済）。
+- **QuotationTrimmer は据え置き（確定）**: 設計書 §制約 L56「明確なバグ修正は許容」＋§特殊記法（Excel はクォート対書きでクラッシュ不発生／YAML は QuotationTrimmer 不適用）により**現状のまま**。バグでなく実害ゼロ。
+- **(b) 却下理由（ユーザー）**: 行種別判定・レコード区切りが `DataFileParser` の状態機械に埋め込まれ切り出せず、(b)（生行のみで構造解析）は構造解析の二重実装になる。よって (a)。
+- **正となる文書**: 設計書 `testdata-converter-design.md` 2 章 判断 A のアダプタ表・§共通「器の中身を読む手段」・3 章 IN 図（ユーザーが反映済）。
+- **D-F（option C/Raw\*）への影響**: D-F は **YAML 経路の精緻化**として有効。判断 A の Excel 経路には Raw\* を使わない（本 D-G）。YAML 側 Raw\* が新設計書 §判断 B（構造マッピング層→本体器）とどう整合するかは **#7 で要アセスメント**（下記 Recovery Plan R4）。
+- **未解決の実装メモ（#5/#6 で解消）**: `DataFileFragment.isOndemandCalcFieldSize`／`isOndemandCalcFieldSizeList` は **private**＝同一パッケージでも不可視。長さ省略判定は (i) `TestCoreFileAdapter` が読むため package-private 化（軽微・L56 リファクタだが「可視性拡大は不要」と衝突）か、(ii) `XlsFormatReader` が生行の長さ行セル `==-` で判定（本体完全無変更）か、実装時に確定。設計書 §共通の文言は「長さ省略判定を読む」＝(i) 寄り。released 本体に触れる場合は Operating mode に従いユーザー相談。
+
+## D-F: #2 本体 YAML 2 層分離 — 共有するのは「本体器」でなく「構造ウォーク」（option C・あるべき姿）【YAML 経路に限り有効・Excel は D-G が上書き】
 - **Conclusion**: 新規追加の未リリースコードゆえ「安全（既存挙動維持）」は論点でなく**負債ゼロ**を優先（memory `new-code-prefer-ideal-design`）。当初案（構造マッピング層が本体器を返す＝判断 B 文言どおり）はエキスパート照合の結果、YAML 経路では非可逆で誤りと判明したため **option C** を採用。実装方針：
   1. **構造マッピング層**＝`Yaml*StructureMapper`（`YamlTableStructureMapper`/`YamlFileStructureMapper`/`YamlMessageStructureMapper`）。YAML Map → **生の構造レコード `Raw*`**（`nablarch.test.core.reader.yaml.model`：`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`）。値未加工・マーカー保持・YAML 順保持・長さ省略は `null`・FW_HEADER もデータ保持・**大文字化しない**。本体テストと変換ツールが共有する公開 API。
   2. **値加工＋組み立て層**＝`YamlValueProcessor`（仮）。`Raw*` を受け取り `interpret`＋`BinaryFileInterpreter`(basePath)＋メッセージ長 `-` 注入＋`fillDefaultValues` を施して**本体器を組み立てる**。本体テスト専用。構造層は interpret を一切知らない。
@@ -398,11 +409,28 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: paused
+- **Status**: in_progress
 - **Date**: 2026-06-14
-- **Last completed**: #5（commit `cb881bc`）。#6 は wip（`4eedba3`・XlsFormatReader 実装＋単体テスト GREEN・未完）。本セッションは **#6 を進めず、ユーザーの設計書改訂（`f20ee92`→`d89c434`）に伴うリカバリ方針検討で中断**。コードは未着手。
-- **Next**: **新設計書 `d89c434` 基準でリカバリプランを作りユーザーへ提示 → 承認後に steering(Tasks/Decisions) 更新 → #2(Raw\*) の作り直し要否アセスメント → 改修 → #6 残作業**。設計書の改訂判断は完了（下記「ズレ②…解決済」）。残るは**コードを新設計書へ追従させる作業**。
-- **Notes**:
+- **Last completed**: #5（commit `cb881bc`）。#6 は wip（`4eedba3`）。設計書をユーザーが再改訂（`f20ee92`→`d89c434`→**本セッションで判断 A を (a) 2 アダプタ方式へ・未コミット `M`**）。判断は全て確定（D-G）。
+- **Next**: 下記 **Recovery Plan** を R1 から TDD で順次実施。R1＝本体撤回＋アダプタ 2 枚化。
+- **確定事項（D-G）**: ① 本体無変更へ収束＝getter 撤回(DataFile/DataFileFragment)・getFwHeader 撤回。② Excel は `TestCoreReaderAdapter`＋`TestCoreFileAdapter` の 2 枚。③ QuotationTrimmer 据え置き。
+
+## Recovery Plan（新設計書 = 正・D-G 反映・TDD・各 R は 1 commit→push→裏取り報告）
+
+- **R0（本コミット）**: 設計書（判断 A=(a) 2 アダプタ）＋ steering を確定コミット。
+- **R1 — 本体無変更化＋アダプタ 2 枚化（判断 A 確定）**:
+  - `TestCoreFileAdapter`（`nablarch.test.core.file` 相乗り・新設）を TDD で新設：`DataFileFragment` の `names`/`types`/`lengths`/`values`・長さ省略判定を plain で返す。`isOndemandCalc*` private 問題は D-G の (i)/(ii) を実装時に確定。
+  - `TestDataParserAdapter` → `TestCoreReaderAdapter` 改名。file 系は raw 器を返し、内部値は `TestCoreFileAdapter` 経由に。
+  - 本体撤回：`DataFile`(+18)・`DataFileFragment`(+47) getter／`MessagePool.getFwHeader` public。
+  - テスト追従：`TestDataParserAdapterTest`（336/362/386/410 が `file.getAllFragments().getValues()` を使用）を `TestCoreFileAdapter` 経由へ移送。`YamlTestDataParserTest:565` の stale コメントは撤回後に正となる。
+  - 検証：`git diff main..HEAD -- core/file core/messaging core/reader/*Parser*` が**本体ゼロ差分**（新規アダプタ・YAML 層・新規ファイルのみ）。reader 既存テスト全 GREEN。
+- **R2 — #6 XlsFormatReader を 2 アダプタ＋原文復元へ**: `TestCoreReaderAdapter`＋`TestCoreFileAdapter` で器・内部値を取得し、§共通「原文復元」3 点（長さ省略＝生行、型表記＝生行型行、LIST_MAP 列順＝HeaderLine／大文字化は復元不要）を Reader 側で組込。マーカー列除外で生行↔器 index 1:1。
+- **R3 — #6 電文 4 種編入**: `EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`（6.3 コーパスの messaging 系 6 クラスが使用＝必須）。`TestCoreReaderAdapter` に send-sync 2 経路（`getMessageWithoutCache`/`getSendSyncMessage`）を追加し `MessageDataBlock` の 4 種へ。FW ヘッダは 4 種とも空。
+- **R4 — #7 YAML 経路アセスメント**: 新設計書 §判断 B（構造マッピング層→**本体器**）と現状コード（`Raw*`→`Yaml*StructureMapper`→`YamlValueProcessor`）の乖離を評価。YAML は生行が無いため原文復元手段が Excel と異なる＝D-F(option C/Raw\*) を内部実装として温存できるか、設計書文言へ寄せて作り直すかを Plan エージェントで判定 → ユーザー相談。
+- **R5 — util 共通化**: マーカー列判定（`HeaderLine` private）・コメント/空行判定（`TestDataParsingTemplate`）を public util へ（観測挙動不変リファクタ）。本体と変換ツールで共有。
+- **R6 — #6 仕上げ**: 回帰 `mvn -o test`・カバレッジ jacoco・3 観点レビュー（QA/Java/SWE）・`P3-6.md`・`complete task #6`。
+
+- **旧 Notes（経緯・参考）**:
   - **本セッションの経緯（重要）**: #6 残作業（要求/応答電文4種の扱い確定）を調査中、ユーザーが「本体既存コードに変更が入っている／設計書では本体無変更では？」と指摘。さらにユーザーが**設計書をローカル改訂**（commit `f20ee92`）。これにより設計書とコードにズレが生じ、リカバリ方針の検討に切り替えた。**まだコードは一切変更していない**。
   - **設計書 `f20ee92` の改訂内容（main からの差分はこの 1 セクションのみ）**: §共通（器の中身を読む手段）を「**本体無変更**／getter は整備済み」と書き換え、`getRecordType` を getter 一覧から除外、`getFwHeader` の public 化記述を削除。さらに **判断 B の補足（option C＝Raw\*・構造ウォーク共有）の節をまるごと削除**し、判断 B を「構造マッピング層が**本体器**を返す」（＝元の文言・Raw\* 不採用）へ戻した。
   - **現状コードと新設計書の一致度**: 約 8 割一致。中間モデル(#4)・Excel アダプタ(#5)・XlsFormatReader(#6 wip) は新設計書と**一致**。ズレは 2 点のみ（下記）。
