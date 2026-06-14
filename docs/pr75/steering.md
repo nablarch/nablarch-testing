@@ -398,13 +398,21 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-14
+- **Last completed**: **#5 完了**（commit `cb881bc`・push 済）。`TestDataParserAdapter`（本体 `nablarch.test.core.reader` 相乗り 1 枚）新設。`readTables`/`readListMap`/`readFiles`/`readMessage` の 4 メソッドが空 interpreters 配線＋`parse→getResult` で生の本体器（TableData/List<Map>/DataFile/MessagePool）を後処理なしで返す。`StubDbInfo` は `getColumnType`→VARCHAR のみ実値・他 9 は番人（`UnsupportedOperationException`）。adapter C0/C1 100%・テスト 15 件 GREEN・reader 回帰なし（33 件 GREEN）。3 観点レビュー（QA イテレ2／Java／SWE）全 PASS（`docs/pr75/checks/P3-5.md`）。QA イテレ1 FAIL（旧 `fillDefaultValues` テストが偽 GREEN）は番人発火＋カラム数非拡張で識別する形に作り替えて解消。
+- **Next**: **#6（Phase 3）XlsFormatReader 再構築（Excel IN）に着手**。アダプタ(#5)経由で本体器を受け取り中間モデル(#4)へ写す。独自 POI パース（`parseBlocks`/`isDataRow`/`trimQuotation`/POI 直叩き構造判定）は持たない。TDD で RED→GREEN→4 観点レビュー。コード未着手。
+- **Notes**:
+  - **#6 ゴール（設計書 §186-225・クラス図）**: `XlsFormatReader implements TestDataFormatReader`（`+read(path) TestDataContainer`）。Excel リソース（"ブック名/シート名"）1 件を読み、`TestDataParserAdapter` を**実 `PoiXlsReader` を注入して**生成し、各 DataType を呼んで生器を取得→中間モデル `TestDataContainer` へ組み立てる。依存方向は変換ツール→本体の一方向（中間モデルは本体に現れない）。
+  - **#6 入力（#5 アダプタ API・確定済）**: `readTables(path,resource,id,DataType)`→`List<TableData>`（DataType∈SETUP_TABLE_DATA/EXPECTED_TABLE_DATA/EXPECTED_COMPLETED）／`readListMap(path,resource,id)`→`List<Map<String,String>>`／`readFiles(path,resource,id,DataType)`→`List<? extends DataFile>`（DataType∈SETUP_FIXED/EXPECTED_FIXED/SETUP_VARIABLE/EXPECTED_VARIABLE）／`readMessage(path,resource,id)`→`MessagePool`。値は記法のまま（未加工）。**カラム名・テーブル名は大文字化済**、ファイルの型は本体シンボル（X/N/Z）へ変換済＝器固有挙動（判断 A 受容・D-F）。
+  - **#6 出力（#4 中間モデル・確定済）**: `nablarch.test.tool.converter.model`：`TestDataContainer`／`TestDataSection`／`TestDataBlock`(sealed; permits `ColumnRowDataBlock`/`FileDataBlock`/`MessageDataBlock`)／`ColumnRowDataBlock`(sealed; permits `TableDataBlock`/`ListMapBlock`)／`TableDataBlock`／`ListMapBlock`／`FileDataBlock`／`MessageDataBlock`／`RecordLayout`／`FieldDef`。**まず各モデルのコンストラクタ/フィールド/ファクトリ署名を Read で確認**してから写し方を決める（#4 で 27 件テスト済）。本体 `DataType` 再利用。
+  - **#6 マッピング指針（要コード確認）**: TableData→`TableDataBlock`（tableName・列名・行データ。`getColumnNames`/`getValue(row,col)` で取り出し）。List<Map>→`ListMapBlock`。DataFile（Fixed/Variable）→`FileDataBlock`（`getAllFragments()`→各 fragment の `getRecordType`/`getNames`/`getTypes`/`getLengths`/`getValues()`(List<Map<String,String>>) を `RecordLayout`/`FieldDef` と行データへ）。MessagePool→`MessageDataBlock`（`getFwHeader()`＋本文。本文 FixedLengthFile は `MessagePool` の protected `getSource()` ＝アクセス手段を #6 着手時に確認。設計書は「MESSAGE 本文はアダプタが `MessageParser.getDelegate()` から FixedLengthFile を再利用」と記す＝**#5 の readMessage を MessagePool でなく本文 FixedLengthFile も取れる形へ拡張するか、#6 で別途読むか着手時に判断**）。
+  - **#6 最初の調査（着手時に必ず）**: ① **グループ ID とセクションの列挙方法**。Excel 1 シートに複数 DataType／複数 group（例 `SETUP_TABLE[g1]=`）が混在しうる。アダプタは (path,resource,id,DataType) 単位で取得するため、**シート内に存在する DataType×group を列挙する手段**が要る。旧削除版 `XlsFormatReader` がどう列挙したか（git で `8668af3^` の `src/main/java/nablarch/test/tool/converter/` を参照可）、または `TestDataContainer`/`TestDataSection` がどんな単位を想定するか(#4 設計)を確認して列挙戦略を決める。② `TestDataFormatReader` インタフェースの所在（既存か新規か）。③ expected_request_*/response_* 系メッセージ（`SendSyncMessageParser`/`GroupMessageParser`・5 種別中の一部）を #6 で中間モデル化する必要があるか＝`MessageDataBlock` は 5 種別対応済なので、全種別無損失の完了条件を満たすには #5 アダプタに当該読み出しメソッド追加が要る可能性（#5 で意図的に #6 送りにした）。
+  - **#6 テスト戦略**: #5 と同様、実 `.xls` 不要なら fake `TestDataReader`（#5 の `FakeTestDataReader` 相当を converter test 側にも用意）でアダプタを駆動でき、XlsFormatReader はアダプタをモック/フェイク注入して中間モデル組み立てを単体検証する設計が望ましい（POI 非依存）。ただし「実アダプタ＋fake reader」の結合でも可。静的キャッシュ衝突回避のため resource 名を一意化（#5 教訓）。全データ種別網羅・IN 値記法保持・独自 POI パース不在をレビューで確認。C0/C1 100%（番人除く）。
+  - **#6 完了条件（steering §#6）**: 全種別を無損失で中間モデル化／IN 値が記法のまま／独自構造解析（parseBlocks/isDataRow/trimQuotation/POI 直叩き）を含まない（レビュー確認）／単体テスト GREEN・C0/C1 100%（番人除く）。
+  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**・[[new-code-prefer-ideal-design]]）。`pom.xml:216-224` の `exec-maven-plugin` mainClass が削除済変換ツールを指す残存参照＝#10 で是正。JaCoCo/オフライン手順は「運用ノート」節参照（`mvn package -Dmaven.javadoc.skip=true` で jacoco.exec 生成→`mvn jacoco:report`）。
+  - **#7 申し送り（再掲）**: 変換ツール `YamlFormatReader` の独自 YAML ウォークを削除し `Yaml*StructureMapper`（`Raw*` を返す公開 API）へ再接続。`RawMessage.fwHeader` は生 `Object` 保持なので #7 で Map<String,String> へ検証・変換して `MessageDataBlock.fwHeaderFields` に詰める。
+  - **運用上の留意（本セッションの教訓）**: Operating mode は「確認せず 6.3 まで自律」。タスク境界で勝手に止めない（#5 完了後に停止してユーザー指摘あり）。1 タスク完了したら間を置かず次タスクへ着手する。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
