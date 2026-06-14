@@ -398,13 +398,30 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-14
+- **Last completed**: #5（commit `cb881bc`）。#6 は wip（`4eedba3`・XlsFormatReader 実装＋単体テスト GREEN・未完）。本セッションでは **#6 を進めず、設計書改訂に伴うリカバリ方針の検討で中断**。
+- **Next**: **ユーザーの 2 判断待ち（下記 PENDING DECISIONS）→ 確定後にリカバリプランへ steering を更新 → 設計書を確定 push → #6 残作業へ**。コードは触っていない（#6 wip のまま）。
+- **Notes**:
+  - **本セッションの経緯（重要）**: #6 残作業（要求/応答電文4種の扱い確定）を調査中、ユーザーが「本体既存コードに変更が入っている／設計書では本体無変更では？」と指摘。さらにユーザーが**設計書をローカル改訂**（commit `f20ee92`）。これにより設計書とコードにズレが生じ、リカバリ方針の検討に切り替えた。**まだコードは一切変更していない**。
+  - **設計書 `f20ee92` の改訂内容（main からの差分はこの 1 セクションのみ）**: §共通（器の中身を読む手段）を「**本体無変更**／getter は整備済み」と書き換え、`getRecordType` を getter 一覧から除外、`getFwHeader` の public 化記述を削除。さらに **判断 B の補足（option C＝Raw\*・構造ウォーク共有）の節をまるごと削除**し、判断 B を「構造マッピング層が**本体器**を返す」（＝元の文言・Raw\* 不採用）へ戻した。
+  - **現状コードと新設計書の一致度**: 約 8 割一致。中間モデル(#4)・Excel アダプタ(#5)・XlsFormatReader(#6 wip) は新設計書と**一致**。ズレは 2 点のみ（下記）。
+  - **ズレ①（本体既存コード変更・released 4 ファイル。`git diff main..HEAD` で確認済）**:
+    - `DataFile.java`(+18): public getter `getAllFragments`/`getDirectives` 追加（純粋追加・後方互換）。
+    - `DataFileFragment.java`(+47): public getter `getRecordType`/`getNames`/`getTypes`/`getLengths`/`getValues` 追加＋クラスに `@Published(tag=architect)`（純粋追加・後方互換）。
+    - `MessagePool.java`(+3/-1): `getFwHeader()` を **package-private→public** 化（可視性拡大）。**呼び出し元を全数調査した結果、この public 化を要する本番呼び出し元は無い**（アダプタは `MessageParser.getFwHeader` を呼ぶ／テストは同一パッケージ）。`YamlTestDataParserTest:565` に「package-private のため」という今や嘘のコメントが残存。→ **過剰公開＝package-private へ戻す是正候補**。
+    - `QuotationTrimmer.java`(+5): `if (str.length() < 2) return str;` ガード追加＝**唯一のロジック（挙動）変更**。引用符1文字で `substring(1,0)` 例外になるバグの修正。git 履歴に逡巡あり（`1f09271` で一度 main 同一へ revert→`c33e121` で再投入）。設計書 L56「Excel 読み込みの観測可能な挙動維持は必達」に抵触しうる。
+    - 評価: getter 追加 2 ファイルは設計書 L56「挙動を変えないリファクタリングは可」に収まり**残してよい**（doc L110 も読み手段として列挙）。`getFwHeader` public は**戻す**。`QuotationTrimmer` は**ユーザー判断**。
+  - **ズレ②（YAML 判断 B・本質的衝突）**: 新設計書は判断 B を「**本体器**を返す」へ戻し option C(Raw\*) を削除。だが現状 #2 コードは **option C（`Raw*` 群＝`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`・`Yaml*StructureMapper`・`YamlValueProcessor`）で実装済み**。option C は「本体器では YAML 往復が壊れる」という**実コード確認済の事実**（`TableData` がカラム名/テーブル名を大文字化＝`emp_name`→`EMP_NAME`／メッセージ長省略 `-` を実バイト長で上書き／マーカー `[COL]` 脱落／list_maps の TreeMap 並び替え）への対処（D-F 参照）。→ **新設計書どおり本体器に戻すと品質担保 Level2（YAML 往復可逆性）が原理的に未達**。これがリカバリ方針の分岐点。
+  - **PENDING DECISIONS（ユーザー回答待ち・これが Next の前提）**:
+    1. **Q（判断 B をどちらに寄せるか）**: **(A) 設計書を是正し option C(Raw\*) を設計書へ戻す**（＝コードに合わせる・私の推奨。コード改修ほぼ不要・可逆性 L2 を満たす）／**(B) コードを設計書に合わせ Raw\* を撤去し本体器へ**（＝YAML 往復が壊れるので L2 を諦めるか別回避策が要る・作り直し大）。
+    2. **QuotationTrimmer の挙動変更**: 残す（理由＝どのテストデータで例外が出たかを根拠記録）／main 同一へ戻す。
+    - 付随で `MessagePool.getFwHeader()` は public→package-private へ是正予定（ほぼ確定事項・①の通り）。
+  - **削除して作り直すか**: **不要と判断**（ユーザーへ報告済）。Excel 側 #4/#5/#6 は新設計書と一致し健全。ズレは「設計書の判断 B 記述」と「本体の軽微変更」だけで局所是正で収束する。全削除は健全な 8 割を捨てるので非推奨。
+  - **resume 時の段取り**: ①上記 PENDING の 2 判断を確認 → ②(A 採用なら)設計書の判断 B 節に option C(Raw\*) を書き戻し＋§共通を実態（getter 追加は許容・getFwHeader は是正）に整える → ③設計書を commit＆push → ④steering の Tasks を「新設計書基準のリカバリプラン」へ更新（#7 以降の YAML 経路記述を判断結果に合わせる）→ ⑤`MessagePool.getFwHeader` の是正＋Quotated 判断の反映 → ⑥#6 残作業へ復帰。
+  - **#6 残作業（設計整合の後）— 旧 State から継承**: (1) **要求/応答電文4種（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）は #6 で対応必須と判明**。本セッションの調査で **6.3 コーパスの 18 `*YamlTest` のうち 6 クラス（messaging 系：`RequestTestingSendSyncSupportYamlTest`/`RequestTestingSendSyncBatchYamlTest`/`RequestTestingMessagingClientYamlTest`/`RequestTestingMessagingContextYamlTest`/`MessagingRequestTestSupportYamlTest`/`MessagingReceiveTestSupportYamlTest`）がこの4種を使う**ことを確認（DataType 定数・各テストの直接参照で実証）。よって「先送り(b)」は不可、#6 内 or #14 前に必ず実装。実装方法は調査済: 本番は `BasicTestDataParser.getMessageWithoutCache`(SendSyncMessageParser・単体 MessagePool) と `getSendSyncMessage`(GroupMessageParser・caseNo グループ・`List<RequestTestingMessagePool>`) の 2 経路。本文は `SendSyncMessageParser.createFixedLengthFileParser`→`MockMessages`(FixedLengthFile)。**FW ヘッダは4種とも常に空**（`SendSyncMessageParser.getFwHeader` は例外／`GroupMessageParser` は emptyHeader）。`MessageDataBlock` は5種別対応済ゆえモデル追加不要。アダプタに `readSendSyncMessages`(または2経路分)を新設し `MessageDataBlock` の4種へ写す方針。**ただし判断②(YAML 経路)の結論次第で Excel/YAML の中間モデル整合が変わるため、設計整合を先に確定すること**。(2)回帰 `mvn -o test`、(3)カバレッジ jacoco（運用ノート参照）、(4)3観点レビュー（QA/Java/SWE）、(5)`P3-6.md` 確定＋`complete task #6` コミット。
+  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は**コミットしない**（[[new-code-prefer-ideal-design]]）＝`git status` に常に `M pom.xml` が残るのは正常。
+  - **教訓（memory 候補）**: サブエージェント（アーキテクト）の結論は実コードで裏取りする（電文4種の「readFiles 経由」提案は誤りだった）。設計書は固定の聖典でなく「あるべき姿に追随させる唯一の正」＝コードと食い違ったら設計書側を是正する運用（D-F が実例。今回のユーザー改訂で再確認）。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
