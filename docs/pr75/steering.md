@@ -420,11 +420,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-15
-- **Last completed**: #7 Step 2（変換ツール側 YAML アダプタ `YamlTestCoreAdapter` 新設）まで完了・GREEN（コミット `a01f021`）。本セッションでは **#7 Step 3 の設計を完全確定**（下記「#7 Step 3 設計確定」）。**コードは未着手**＝作業ツリーは `M pom.xml`（ローカル `6u3`・コミットしない）のみ。reconcile コミット `86d988c` 済（State を placeholder へ→本 State で再記入）。全参照ファイル精読済（`xls/XlsFormatReader`・`YamlTestCoreAdapter`・3 ビルダ・`YamlSection`・`TestCoreFileAdapter`(FileView/FragmentView)・model 群・`XlsFormatReaderTest`・`YamlTestCoreAdapterTest`）。
-- **Next**: **#7 Step 3 — `tool/converter/yaml/YamlFormatReader` を TDD で新設**（下記「#7 Step 3 設計確定」のとおり実装）。RED→GREEN：テスト→実装→`mvn -o test` で reader-YAML/Excel/converter 回帰 GREEN。続けて Step 4（設計書 §共通 を「Excel=生行 / YAML=YamlLoader Map」へ一般化是正）・Step 5（`P3-7.md`＋3観点レビュー QA/Java/SWE＋jacoco 番人除く C0/C1 100%＋全モジュール回帰 → `complete task #7`）。
-- **Notes**: 設計の正＝[[D-H]]（本体器＋YamlLoader Map で原文復元・Raw* 破棄）。env: offline `mvn -o test` 可、jacoco は online `mvn package -Dmaven.javadoc.skip=true`（運用ノート）。`M pom.xml` の `6u3` はコミットしない（正常）。ブランチ `add-yaml`。**released 本体に触れる必要が出たら着手前にユーザー相談**（Operating mode）。本 Step は本体無変更で完結する見込み（reader/adapter/model は既存・新規は `YamlFormatReader` 1 本＋そのテストのみ）。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
 
 ## #7 Step 3 設計確定（本セッションで全ファイル精読のうえ確定。resume はこのまま実装してよい）
 
