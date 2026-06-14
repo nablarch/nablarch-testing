@@ -1,5 +1,6 @@
 package nablarch.test.core.reader;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -241,6 +242,23 @@ public class TestCoreReaderAdapter {
     }
 
     /**
+     * マーカー行の先頭セルからグループ ID（{@code [g1]} 等。無指定は空文字）を切り出す。
+     * <p>
+     * 先頭セルがデータタイプ名で始まっていても {@code =} を含まない場合（不完全マーカー・
+     * 偶然データタイプ名で始まるデータ行等）はマーカー行でないとみなし {@code null} を返す。
+     * </p>
+     *
+     * @param type      先頭セルから判定済みのデータタイプ（{@link DataType#DEFAULT} 以外）
+     * @param firstCell マーカー行の先頭セル
+     * @return グループ ID。マーカー行でなければ {@code null}
+     */
+    private static String markerGroupId(DataType type, String firstCell) {
+        String afterName = firstCell.substring(type.getName().length());
+        int eq = afterName.indexOf('=');
+        return eq < 0 ? null : afterName.substring(0, eq);
+    }
+
+    /**
      * 1 データブロックのヘッダ（マーカー行から取り出した属性）。
      * <p>
      * {@code SETUP_TABLE[g1]=USERS} のようなマーカー行を、データタイプ
@@ -400,13 +418,11 @@ public class TestCoreReaderAdapter {
                 if (type == DataType.DEFAULT) {
                     continue;
                 }
-                String afterName = first.substring(type.getName().length());
-                int eq = afterName.indexOf('=');
-                if (eq < 0) {
+                String groupId = markerGroupId(type, first);
+                if (groupId == null) {
                     // データタイプ名で始まるがマーカー行でない（'='なし）＝対象外
                     continue;
                 }
-                String groupId = afterName.substring(0, eq);
                 String identifier = getTypeValue(line);
                 headers.add(new BlockHeader(type, groupId, identifier));
             }
@@ -488,11 +504,9 @@ public class TestCoreReaderAdapter {
                 String first = line.get(0);
                 DataType type = getDataType(first);
                 if (type != DataType.DEFAULT) {
-                    String afterName = first.substring(type.getName().length());
-                    int eq = afterName.indexOf('=');
-                    if (eq >= 0) {
+                    String groupId = markerGroupId(type, first);
+                    if (groupId != null) {
                         // マーカー行＝新しいブロックの開始。対象ブロックかで収集を切り替える。
-                        String groupId = afterName.substring(0, eq);
                         String identifier = getTypeValue(line);
                         collecting = type == targetType
                                 && groupId.equals(targetGroupId)
@@ -556,7 +570,7 @@ public class TestCoreReaderAdapter {
 
         @Override
         public int getColumnType(String tabName, String columnName) {
-            return java.sql.Types.VARCHAR;
+            return Types.VARCHAR;
         }
 
         @Override

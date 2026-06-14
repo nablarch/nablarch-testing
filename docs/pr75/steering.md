@@ -198,14 +198,14 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 **Steps**:
 
-- [ ] アダプタ呼び出し→中間モデル組み立てを実装
-- [ ] 全データ種別の単体テスト（TDD）
-- [ ] セルフチェック
+- [x] アダプタ呼び出し→中間モデル組み立てを実装（R1+R2 `6c5ef7a` で全種別＋原文復元・本体無変更／R3 `ed313b7` で送信系電文4種編入）
+- [x] 全データ種別の単体テスト（TDD）— XlsFormatReaderTest 18・TestCoreReaderAdapterTest 22・TestCoreFileAdapterTest 7＝47 件 GREEN
+- [x] セルフチェック（`docs/pr75/checks/P3-6.md`）— 3 観点レビュー（QA/Java/SWE）全 PASS まで反映。jacoco 番人除く C0/C1 100%・全モジュール回帰 1111 件 新規失敗ゼロ
 
 **Completion criteria**:
-- 全種別を無損失で中間モデル化／IN 値が記法のまま
-- 独自の構造解析（`parseBlocks`/`isDataRow`/`trimQuotation`/POI 直叩きの構造判定）を含まない（レビュー確認）
-- 単体テスト GREEN・C0/C1 100%（番人除く）
+- 全種別を無損失で中間モデル化／IN 値が記法のまま ✅（送信系4種含む全5群。先送りなし）
+- 独自の構造解析（`parseBlocks`/`isDataRow`/`trimQuotation`/POI 直叩きの構造判定）を含まない（レビュー確認）✅（本体 `getDataType`/`getTypeValue`/`TestDataParsingTemplate` 再利用）
+- 単体テスト GREEN・C0/C1 100%（番人除く）✅
 
 ### #7: YamlFormatReader 再構築（YAML IN・判断 B）
 
@@ -411,9 +411,9 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-14
-- **Last completed**: **R3 — 電文 4 種編入**（`ed313b7`・push 済）。`★未解決の設計判断（NO/caseNo 非対称）★` を実コードで裏取りし**良性と確定**（下記「R3 裏取り結論」）。`TestCoreReaderAdapter.readSendSyncMessages`（送信系 4 種をグループ単位で本文 `FixedLengthFile` 群として取り出す。本体 `GroupMessageParser` と同型の private `SendSyncBodyCollector`＝`GroupDataParsingTemplate`＋`SendSyncMessageParser` 委譲で、pool に包まず生器を返す）を新設。`XlsFormatReader` に `isSendSyncType` 分岐＋`readSendSyncBlocks`（MESSAGE と同型に `toRecordLayouts` を再利用・**空 fwHeaderFields**・`no`/NO は器＋生行 tail が落とす）。テスト追加：TestCoreReaderAdapterTest +3（22）／XlsFormatReaderTest +3（14）。**body 差分ゼロ維持**（DataFile/DataFileFragment/MessagePool）。touched パッケージ回帰 **419 件 0F/0E・8 Skip（@Ignore 群）**。
-- **Next**: **R6 — #6 仕上げ（未着手。本セッションで jacoco を起動したが中断・成果物なし）**。(1) jacoco C0/C1（運用ノートの online `mvn package -Dmaven.javadoc.skip=true -Dtest='XlsFormatReaderTest,TestCoreReaderAdapterTest,TestCoreFileAdapterTest'` → `mvn jacoco:report` → `target/site/jacoco`）で adapter/XlsFormatReader 送信系新規分のカバレッジ確認（番人除く 100%）。(2) 3 観点レビュー（QA/Java/SWE）をサブエージェントで→`docs/pr75/checks/P3-6.md`。(3) `complete task #6` コミット。**#14 へ申し送り（要検証）**：errorMode 行（`errorMode:timeout`/`msgException`）は YAML `buildFragments` が `addValue` で素通しだが runtime は値の `containsValue` で検知＝動くはず。本 R3 のユニット fixture は errorMode 未網羅。実 6.3 コーパス（RESPONSE 系の timeout ケース）で要確認。
-- **確定事項**: ① 本体無変更へ収束（R1+R2）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**。④ **R3 完了**＝送信系 4 種を MESSAGE と同型で `MessageDataBlock`(空 fwHeaderFields) へ。⑤ R4(#7 YAML)・R5(util 共通化)・Phase4-6 は未着手。
+- **Last completed**: **#6 完了（`complete task #6`）**。R6 仕上げ＝(1) jacoco で番人除く C0/C1 100% 確認（XlsFormatReader fc104/nc3＝防御 L221＋fail-fast 番人 L302/L348 のみ・TestCoreReaderAdapter/TestCoreFileAdapter 外側 100%・SendSyncBodyCollector 全行被覆）。(2) 3 観点レビュー（QA/Java/SWE）をサブエージェントで実施→本質的指摘を全反映：**toRecordLayouts を fail-fast 化**（器↔生行 不整合は `IllegalStateException`・沈黙縮退を排除）／**複数レコードレイアウト復元テスト**＋**errorMode 行原文保持テスト**追加／directive null を table 経路と対称化／マーカー分解を `markerGroupId` へ DRY／`java.sql.Types` import／既定コンストラクタ・不完全マーカーのテスト追加。(3) 対象 47 件 GREEN・全モジュール offline 回帰 **1111 件 0F/4E（既知 Mockito 2 クラス＝PR75 非起因）/25 Skip（@Ignore *YamlTest）＝新規失敗ゼロ**。`docs/pr75/checks/P3-6.md` 確定。**本体器ゼロ差分維持**。
+- **Next**: **R4 — #7 YAML 経路アセスメント＆再構築**。新設計書 §判断 B（構造マッピング層→本体器・原文復元は呼び出し側）と現状コード（`Raw*`→`Yaml*StructureMapper`→`YamlValueProcessor`）の乖離を Plan エージェントで評価（D-F option C を内部実装として温存できるか、設計書文言へ寄せて作り直すか）。YAML は生行が無いため原文復元手段が Excel と異なる点が論点。`tool/converter/yaml/YamlFormatReader` の独自 SnakeYAML ウォークを削除し `Yaml*StructureMapper`（Raw*→中間モデル）へ再接続＝6.3 不整合の根治。
+- **確定事項**: ① 本体無変更へ収束（R1+R2）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（器↔生行 不整合は fail-fast）。④ **#6 完了**＝TABLE/LIST_MAP/FILE/MESSAGE＋送信系電文4種を中間モデルへ無損失・番人除く C0/C1 100%。⑤ R4(#7 YAML)・R5(util 共通化)・Phase4-6(#8-#14) は未着手。
 
 ## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
 

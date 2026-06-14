@@ -3,6 +3,7 @@ package nablarch.test.tool.converter.xls;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -288,6 +289,52 @@ public class XlsFormatReaderTest {
     }
 
     /**
+     * Given: 複数レコードレイアウト（header + data の 2 断片）を持つ SETUP_FIXED ブロック。
+     * When : {@code read}。
+     * Then : 各断片の レコード種別・型記法・長さ・値 が独立に原文復元される
+     *        （2 断片目以降の名前行同期と原文充填が正しく働く）。
+     */
+    @Test
+    public void readRestoresMultipleRecordLayoutsInFixedFile() {
+        String resource = "book/readRestoresMultipleRecordLayoutsInFixedFile";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("SETUP_FIXED=multi.dat"));
+        lines.add(row("text-encoding", "UTF-8"));  // 長さ省略 "-" の動的バイト長計算に必要
+        lines.add(row("header", "h1", "h2"));     // 断片1 名前行
+        lines.add(row("", "半角英字", "半角英字"));
+        lines.add(row("", "5", "3"));
+        lines.add(row("", "AAAAA", "BBB"));       // 断片1 値行（1 行）
+        lines.add(row("data", "d1", "d2"));       // 断片2 名前行（列0 非空＝新レコード）
+        lines.add(row("", "半角英字", "半角"));
+        lines.add(row("", "-", "2"));             // 断片2 は長さ省略 "-" を含む
+        lines.add(row("", "1", "xy"));            // 断片2 値行（2 行）
+        lines.add(row("", "2", "zw"));
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        FileDataBlock file = (FileDataBlock) container.getSections().get(0).getBlocks().get(0);
+        assertThat(file.getRecords().size(), is(2));
+
+        RecordLayout header = file.getRecords().get(0);
+        assertThat(header.getRecordType(), is("header"));
+        assertThat(header.getFields().get(0).getName(), is("h1"));
+        assertThat(header.getFields().get(0).getType(), is("半角英字"));
+        assertThat(header.getFields().get(0).getLength(), is("5"));
+        assertThat(header.getRows().size(), is(1));
+        assertThat(header.getRows().get(0), is(Arrays.asList("AAAAA", "BBB")));
+
+        RecordLayout data = file.getRecords().get(1);
+        assertThat(data.getRecordType(), is("data"));
+        assertThat(data.getFields().get(0).getName(), is("d1"));
+        // 2 断片目の型・長さも独立に原文復元される
+        assertThat(data.getFields().get(1).getType(), is("半角"));
+        assertThat(data.getFields().get(0).getLength(), is("-"));
+        assertThat(data.getRows().size(), is(2));
+        assertThat(data.getRows().get(0), is(Arrays.asList("1", "xy")));
+        assertThat(data.getRows().get(1), is(Arrays.asList("2", "zw")));
+    }
+
+    /**
      * Given: SETUP_VARIABLE の可変長ファイル（長さなし）。
      * When : {@code read}。
      * Then : FileDataBlock（VARIABLE）に写され、長さは省略（{@code null}）。
@@ -465,6 +512,68 @@ public class XlsFormatReaderTest {
         }
         assertThat(identifiers, hasItem("RM21AA0104_01"));
         assertThat(identifiers, hasItem("RM21AA0104_02"));
+    }
+
+    // ------------------------------------------------------------------ wiring / robustness
+
+    /**
+     * Given: 引数なしコンストラクタ（本番配線＝実 Excel を読む {@link nablarch.test.core.reader.PoiXlsReader}
+     *        を注入したアダプタを構成）。
+     * When : インスタンス化。
+     * Then : 例外なく生成される（本番配線の健全性）。
+     */
+    @Test
+    public void defaultConstructorWiresProductionAdapter() {
+        assertNotNull(new XlsFormatReader());
+    }
+
+    /**
+     * Given: 先頭セルがデータタイプ名で始まるが {@code =} を持たない行（不完全マーカー／
+     *        偶然データタイプ名で始まるデータ行）。
+     * When : {@code read}。
+     * Then : マーカーとして扱われず無視され、ブロックは生成されない。
+     */
+    @Test
+    public void readIgnoresDataTypePrefixedLineWithoutMarker() {
+        String resource = "book/readIgnoresDataTypePrefixedLineWithoutMarker";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("MESSAGE"));   // データタイプ名で始まるが '=' なし＝マーカーでない
+        lines.add(row("x"));
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        assertTrue(container.getSections().get(0).getBlocks().isEmpty());
+    }
+
+    /**
+     * Given: errorMode 行（{@code errorMode:timeout}）を含む RESPONSE_BODY_MESSAGES ブロック。
+     *        本体パーサは errorMode 行を NO 列除去後の本文値として扱う。
+     * When : {@code read}。
+     * Then : errorMode 文字列が本文値として原文のまま保持され、NO（caseNo）は脱落する。
+     *        レコード種別は名前行先頭の {@code "no"}（FW_HEADER 扱いされず良性）。
+     *        ＜#6 自身の契約＝原文保持を固定する。runtime 同値の検証は #14 で別途行う＞
+     */
+    @Test
+    public void readPreservesErrorModeRowInSendSyncMessage() {
+        String resource = "book/readPreservesErrorModeRowInSendSyncMessage";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("RESPONSE_BODY_MESSAGES[res_case1]=RM21AA0104_01"));
+        lines.add(row("no", "failureCode"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "errorMode:timeout"));
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        MessageDataBlock message = (MessageDataBlock) container.getSections().get(0).getBlocks().get(0);
+        RecordLayout record = message.getRecords().get(0);
+        // レコード種別は名前行先頭の "no"（送信系。steering R3 裏取り結論で良性と確定）
+        assertThat(record.getRecordType(), is("no"));
+        // no 列は脱落し、本文フィールドは failureCode のみ
+        assertThat(record.getFields().size(), is(1));
+        assertThat(record.getFields().get(0).getName(), is("failureCode"));
+        // errorMode 文字列は本文値として原文のまま保持される
+        assertThat(record.getRows().get(0), is(Arrays.asList("errorMode:timeout")));
     }
 
     // ------------------------------------------------------------------ container / section

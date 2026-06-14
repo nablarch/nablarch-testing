@@ -295,13 +295,20 @@ public class XlsFormatReader implements TestDataFormatReader {
                 }
                 first = false;
             }
-            String recordType = idx < bodyLines.size() ? bodyLines.get(idx).get(0) : null;
+            // 器（断片構造）を権威とし、生行がそれと一致することを各断片の名前行で検証する。
+            // 一致しなければ器↔生行の対応が破綻している＝前提崩れ。誤った原文を静かに充填せず
+            // 即座に失敗させる（StubDbInfo の番人コードと同じ思想。設計書 §共通）。
+            if (idx >= bodyLines.size() || !tail(bodyLines.get(idx)).equals(names)) {
+                throw new IllegalStateException(
+                        "器の断片構造と生行が不整合です。名前行 names=" + names + " が生行に見つかりません。");
+            }
+            String recordType = bodyLines.get(idx).get(0);
             idx++;
-            List<String> originalTypes = idx < bodyLines.size() ? tail(bodyLines.get(idx)) : Collections.<String>emptyList();
+            List<String> originalTypes = tail(requireLine(bodyLines, idx, names, "型行"));
             idx++;
             List<String> originalLengths = null;
             if (fixed) {
-                originalLengths = idx < bodyLines.size() ? tail(bodyLines.get(idx)) : Collections.<String>emptyList();
+                originalLengths = tail(requireLine(bodyLines, idx, names, "長さ行"));
                 idx++;
             }
             List<FieldDef> fields = new ArrayList<FieldDef>(names.size());
@@ -312,7 +319,7 @@ public class XlsFormatReader implements TestDataFormatReader {
             }
             List<List<String>> rows = new ArrayList<List<String>>(fragment.getValues().size());
             for (int v = 0; v < fragment.getValues().size(); v++) {
-                List<String> valueCells = idx < bodyLines.size() ? tail(bodyLines.get(idx)) : Collections.<String>emptyList();
+                List<String> valueCells = tail(requireLine(bodyLines, idx, names, "値行"));
                 idx++;
                 List<String> row = new ArrayList<String>(names.size());
                 for (int i = 0; i < names.size(); i++) {
@@ -326,11 +333,31 @@ public class XlsFormatReader implements TestDataFormatReader {
     }
 
     /**
+     * 器が期待する位置の生行を取り出す。生行が器の断片構造より短い（対応が破綻している）場合は
+     * 前提崩れとして即座に失敗させる。
+     *
+     * @param bodyLines 生のボディ行
+     * @param idx       取り出す位置
+     * @param names     診断用：対象断片のフィールド名
+     * @param rowKind   診断用：行種別（型行／長さ行／値行）
+     * @return 当該位置の生行
+     * @throws IllegalStateException 当該位置に生行が存在しない場合
+     */
+    private static List<String> requireLine(List<List<String>> bodyLines, int idx, List<String> names, String rowKind) {
+        if (idx >= bodyLines.size()) {
+            throw new IllegalStateException(
+                    "器の断片構造と生行が不整合です。断片 names=" + names + " の" + rowKind + "が生行に存在しません。");
+        }
+        return bodyLines.get(idx);
+    }
+
+    /**
      * 本体ディレクティブ（{@code Map<String, Object>}）を文字列ディレクティブへ写す。
      * <p>
      * 本体器のディレクティブ値は型変換済み（{@code Charset}・enum・整数等）で、順序も
      * {@code HashMap} 由来で記述順を保たない。Excel 経路（判断 A）はこの器固有挙動を受容し、
-     * 値は {@link String#valueOf(Object)} で文字列化する。
+     * 値は {@link Object#toString()} で文字列化する。null 値は（テーブル/LIST_MAP 経路と対称に）
+     * null のまま保持し、文字列 {@code "null"} へ化けさせない。
      * </p>
      *
      * @param directives 本体ディレクティブ
@@ -339,7 +366,8 @@ public class XlsFormatReader implements TestDataFormatReader {
     private Map<String, String> toStringDirectives(Map<String, Object> directives) {
         Map<String, String> result = new LinkedHashMap<String, String>();
         for (Map.Entry<String, Object> entry : directives.entrySet()) {
-            result.put(entry.getKey(), String.valueOf(entry.getValue()));
+            Object value = entry.getValue();
+            result.put(entry.getKey(), value == null ? null : value.toString());
         }
         return result;
     }
