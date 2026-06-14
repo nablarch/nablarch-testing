@@ -329,7 +329,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **D-F（option C/Raw\*）への影響**: D-F は **YAML 経路の精緻化**として有効。判断 A の Excel 経路には Raw\* を使わない（本 D-G）。YAML 側 Raw\* が新設計書 §判断 B（構造マッピング層→本体器）とどう整合するかは **#7 で要アセスメント**（下記 Recovery Plan R4）。
 - **未解決の実装メモ（#5/#6 で解消）**: `DataFileFragment.isOndemandCalcFieldSize`／`isOndemandCalcFieldSizeList` は **private**＝同一パッケージでも不可視。長さ省略判定は (i) `TestCoreFileAdapter` が読むため package-private 化（軽微・L56 リファクタだが「可視性拡大は不要」と衝突）か、(ii) `XlsFormatReader` が生行の長さ行セル `==-` で判定（本体完全無変更）か、実装時に確定。設計書 §共通の文言は「長さ省略判定を読む」＝(i) 寄り。released 本体に触れる場合は Operating mode に従いユーザー相談。
 
-## D-F: #2 本体 YAML 2 層分離 — 共有するのは「本体器」でなく「構造ウォーク」（option C・あるべき姿）【YAML 経路に限り有効・Excel は D-G が上書き】
+## D-F: #2 本体 YAML 2 層分離 — 共有するのは「本体器」でなく「構造ウォーク」（option C・あるべき姿）【⚠ SUPERSEDED by D-H（2026-06-14）— Raw* は破棄。以下は経緯参考】
 - **Conclusion**: 新規追加の未リリースコードゆえ「安全（既存挙動維持）」は論点でなく**負債ゼロ**を優先（memory `new-code-prefer-ideal-design`）。当初案（構造マッピング層が本体器を返す＝判断 B 文言どおり）はエキスパート照合の結果、YAML 経路では非可逆で誤りと判明したため **option C** を採用。実装方針：
   1. **構造マッピング層**＝`Yaml*StructureMapper`（`YamlTableStructureMapper`/`YamlFileStructureMapper`/`YamlMessageStructureMapper`）。YAML Map → **生の構造レコード `Raw*`**（`nablarch.test.core.reader.yaml.model`：`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`）。値未加工・マーカー保持・YAML 順保持・長さ省略は `null`・FW_HEADER もデータ保持・**大文字化しない**。本体テストと変換ツールが共有する公開 API。
   2. **値加工＋組み立て層**＝`YamlValueProcessor`（仮）。`Raw*` を受け取り `interpret`＋`BinaryFileInterpreter`(basePath)＋メッセージ長 `-` 注入＋`fillDefaultValues` を施して**本体器を組み立てる**。本体テスト専用。構造層は interpret を一切知らない。
@@ -345,6 +345,14 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
   - ② `fw_header` の「マップ検証」は **値加工層が読み出すメッセージに対してのみ遅延実行**（`RawMessage.fwHeader` は生 `Object` 保持）。同一ファイル内の誤記エントリが他エントリ読み出しを巻き添えにしない旧挙動を維持。
   - ③ `toTableDataList`/`toDataFileList` は例外メッセージ用に `sectionKey` 引数を取る（テストがセクション名を要求）。
   - ④ list_maps 出力は TreeMap 維持（本体不変）、`RawListMap` は YAML 順保持（変換ツール用）。
+
+## D-H: YAML 経路は「本体器＋YamlLoader Map で原文復元」へ（Raw* 破棄・Excel と対称・ユーザー決定 2026-06-14）
+
+- **Conclusion**: #7 YAML IN は Excel(#6) と**対称**の方式で作る＝**本体器**で構造を得て、**`YamlLoader.load` が返す Map で原文を復元**し中間モデルへ写す。#2 で導入した `Raw*`(6本)・`Yaml{Table,File,Message}StructureMapper`・`YamlValueProcessor` は**破棄**。D-F（option C/Raw*）は棄却。設計書 §判断 B（構造マッピング層→**本体器**）は**正しく据え置き**。§共通「器が正規化する値の原文復元」は「**Excel=生行 / YAML=YamlLoader Map**」と両形式へ一般化是正する。
+- **決定的根拠（実コードで確認）**: 前回 Plan エージェントは「YAML には Excel の生行に相当する原文源が無い」を前提に Raw* 温存を推奨したが、これは**誤前提**。`YamlLoader.load`（`reader/yaml/YamlLoader.java`）は SnakeYAML Engine の `Load.loadFromInputStream` 結果（**順序保持 LinkedHashMap・原文値＝本体器の正規化前**）をそのまま返す。これが Excel の生行に相当する**原文源**。よって YAML も「器で構造（`TableData` 等が大文字化・列ソート等で正規化）＋ Map で原文（カラム名・YAML 列順・値・型表記・長さ省略 `-`）復元」が成立し、器を経由しない Raw* は不要。
+- **なぜ Raw* が不要か（ユーザー指摘）**: 器の正規化は Excel 同様に起きるが、原文は YamlLoader Map（`firstRow.keySet()` が記述順のカラム名原文・値も解決後の原文）から取れる。Raw* は「器を経由しない並行構造」で重複・余剰。
+- **次セッションの段取り**: ① 正しい前提で #7 を Plan 再設計（YAML 読み込みを本体器生成へ＝旧 `YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder` 相当を復活/再構成、`YamlTestDataParser` を再配線）。② `Raw*`/StructureMapper/ValueProcessor とテストを除去/作り直し。③ `tool/converter` の YAML IN リーダ（旧名 `YamlFormatReader`・#3 で削除済）を Excel と対称に新設（器＋YamlLoader Map→中間モデル）。④ 設計書 §共通を両形式一般化へ是正。⑤ TDD・jacoco・3 観点レビュー・`P3-7.md`・`complete task #7`。
+- **released 本体への影響**: 本方式は released 本体プロダクションコードの変更を要しない見込み（YAML 系は未リリース新規コード）。万一 released 本体に触れる必要が出たら**着手前にユーザー相談**（Operating mode）。
 
 ## 既存の有効な決定事項（YAML 仕様・本体①に適用、継続有効）
 
@@ -412,8 +420,8 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - **Status**: paused
 - **Date**: 2026-06-14
 - **Last completed**: **#6 完了（`complete task #6`）**。R6 仕上げ＝(1) jacoco で番人除く C0/C1 100% 確認（XlsFormatReader fc104/nc3＝防御 L221＋fail-fast 番人 L302/L348 のみ・TestCoreReaderAdapter/TestCoreFileAdapter 外側 100%・SendSyncBodyCollector 全行被覆）。(2) 3 観点レビュー（QA/Java/SWE）をサブエージェントで実施→本質的指摘を全反映：**toRecordLayouts を fail-fast 化**（器↔生行 不整合は `IllegalStateException`・沈黙縮退を排除）／**複数レコードレイアウト復元テスト**＋**errorMode 行原文保持テスト**追加／directive null を table 経路と対称化／マーカー分解を `markerGroupId` へ DRY／`java.sql.Types` import／既定コンストラクタ・不完全マーカーのテスト追加。(3) 対象 47 件 GREEN・全モジュール offline 回帰 **1111 件 0F/4E（既知 Mockito 2 クラス＝PR75 非起因）/25 Skip（@Ignore *YamlTest）＝新規失敗ゼロ**。`docs/pr75/checks/P3-6.md` 確定。**本体器ゼロ差分維持**。
-- **Next**: **R4 — #7 YAML 経路アセスメント＆再構築**。新設計書 §判断 B（構造マッピング層→本体器・原文復元は呼び出し側）と現状コード（`Raw*`→`Yaml*StructureMapper`→`YamlValueProcessor`）の乖離を Plan エージェントで評価（D-F option C を内部実装として温存できるか、設計書文言へ寄せて作り直すか）。YAML は生行が無いため原文復元手段が Excel と異なる点が論点。`tool/converter/yaml/YamlFormatReader` の独自 SnakeYAML ウォークを削除し `Yaml*StructureMapper`（Raw*→中間モデル）へ再接続＝6.3 不整合の根治。
-- **確定事項**: ① 本体無変更へ収束（R1+R2）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（器↔生行 不整合は fail-fast）。④ **#6 完了**＝TABLE/LIST_MAP/FILE/MESSAGE＋送信系電文4種を中間モデルへ無損失・番人除く C0/C1 100%。⑤ R4(#7 YAML)・R5(util 共通化)・Phase4-6(#8-#14) は未着手。
+- **Next**: **R4 — #7 YAML 経路を「本体器＋YamlLoader Map で原文復元」へ作り直す（ユーザー決定 2026-06-14・下記 D-H）**。⚠ **#2 の `Raw*` 方式は破棄が確定**。premise を改めて #7 を再プラン（前回 Plan エージェントは「YAML に生行が無い」という誤前提で Raw* 温存を推奨＝**棄却**。正しい前提＝`YamlLoader.load` が返す **順序保持 LinkedHashMap（原文値・YAML 記述順）が Excel 生行に相当する原文源**＝実コードで確認済）。**具体段取り**: (1) Plan エージェントで正しい前提（Map=原文源）に基づき #7 を再設計（YAML 読み込みは**本体器**＝旧 `YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder` 相当が `TableData`/`DataFile`/`MessagePool` を返す方式へ。`tool/converter` 側 `YamlFormatReader` は Excel と対称に「器で構造・YamlLoader Map で原文（カラム名・列順・値・型表記・長さ省略）復元」→ 中間モデル）。(2) #2 で新設した `Raw*`(6本)・`Yaml{Table,File,Message}StructureMapper`・`YamlValueProcessor`・関連テストを**除去/作り直し**（`YamlTestDataParser` を本体器生成へ再配線）。(3) 設計書 §判断 B 据え置き・§共通 原文復元を「Excel=生行 / YAML=YamlLoader Map」と両形式へ一般化是正。(4) TDD で `tool/converter` の YAML IN リーダを全種別実装。**ブランチは add-yaml で継続**（全 #1-#6 はここ・origin/add-yaml にプッシュ済。ユーザーが見た `convert-testdata-excel-to-text`@`3d693bb` は 43 コミット前の古いベース＝Raw* が無いだけ。**ブランチ論は再燃させない**）。
+- **確定事項**: ① 本体無変更へ収束（R1+R2）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（器↔生行 不整合は fail-fast）。④ **#6 完了**＝TABLE/LIST_MAP/FILE/MESSAGE＋送信系電文4種を中間モデルへ無損失・番人除く C0/C1 100%。⑤ **#7(R4) は本体器＋YamlLoader Map 方式へ（D-H・Raw* 破棄）**。R5(util 共通化)・Phase4-6(#8-#14) は未着手。
 
 ## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
 
