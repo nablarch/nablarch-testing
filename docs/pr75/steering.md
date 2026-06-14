@@ -396,7 +396,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **Java**: Eclipse Temurin 17（`update-alternatives` で切り替え済み）
 - **Maven settings**: `~/.m2/settings.xml` に社内 Nexus リポジトリ設定済み
 - **注意**: `mvn clean package` は Javadoc プラグインが `JAVA_HOME` 未設定で `BUILD FAILURE` になるが、テスト自体は全グリーン。`Tests run:` 行と `Failures: 0, Errors: 0` で確認すること
-- **pom.xml ローカル変更**: parent `6-NEXT-SNAPSHOT`→`6u3` の未コミット変更あり（ローカル依存解決用）。目標対象外・コミットしない
+- **pom.xml ローカル変更**: parent `6-NEXT-SNAPSHOT`→`6u3` の未コミット変更あり（ローカル依存解決用）。目標対象外・コミットしない。**resume / dirty-tree チェックではこの `M pom.xml` を理由にユーザーへ確認しない＝既知の正常状態としてそのまま続行する**（ユーザー指示 2026-06-15）
 
 ### カバレッジ取得方法
 
@@ -420,140 +420,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: paused
+- **Status**: (placeholder — reconciled)
 - **Date**: 2026-06-15
-- **Last completed**: **#7 完了（`complete task #7`）＝Phase 3 完了**。#7 Step5 で QA 提案 2 本＋カバレッジ穴 2 本＝計 +4 テスト追加（`YamlFormatReaderTest` 19 件 GREEN）・`YamlFormatReader` を instr/branch **99/99%**（残 2 は番人＝本番 ctor L66-67・null ディレクティブ値 L545）へ・全モジュール回帰 1128 件 0F/4E（P3-6 ベースライン一致＝新規失敗ゼロ）・**4 観点レビュー（アーキ/QA/Java/SWE）全 PASS**・`docs/pr75/checks/P3-7.md` 記録・本体ゼロ差分。
-- **Next**: **#8 YamlFormatWriter 再構築（YAML OUT・Phase 4 の先頭・TDD）**。設計書 OUT 章＋[[D-H]]。中間モデル（#4）→ YAML を記法どおり書き出す（全値クォート・${...}/null/"" 記法保持・YAML 列順・長さ省略・fw_header）。全種別（TABLE3/LIST_MAP/FILE FIXED+VARIABLE/MESSAGE/送信系4種）。L2 往復（#12）の片側ゆえ #7 IN リーダと記法対称になること。完了条件: 全種別 YAML 出力・単体 GREEN・C0/C1 100%（番人除く）。
-- **Notes**: 設計の正＝[[D-H]]。**カバレッジ取得手順（重要・ハマった）**: online `mvn package -Dmaven.javadoc.skip=true -Dtest=<TestClass>` で `jacoco.exec` 生成（restore-instrumented-classes が**1 クラス instrument 残り**→`jacoco:report` が "Cannot process instrumented class" で失敗）→ **`mvn -o compile` でクリーン bytecode を target/classes へ復元** → `mvn jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`。回帰のベースライン: offline `mvn -o test` は 0F/4E（Mockito 環境起因 `MockHttpRequestTest`・`MockServletExecutionContextTest` のみ・PR75 非起因）＝新規失敗の判定基準。`M pom.xml` の `6u3` はコミットしない（正常）。ブランチ `add-yaml`。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談）。
-
-## #7 Step 3 設計確定（本セッションで全ファイル精読のうえ確定。resume はこのまま実装してよい）
-
-**方針（D-H 準拠・Excel と対称）**: `YamlFormatReader implements TestDataFormatReader` を新設。`read(basePath, resourceName)`＝`adapter.loadRawMap` のトップレベル Map（`LinkedHashMap`＝YAML 記述順）を走査してブロック列挙し、各ブロックは **`adapter.read*` で本体器（構造の権威）** を得て、**同じ Map から原文** を充填して中間モデルへ写す。本体の YAML 構造解釈（グループ絞り・fixed/variable 判定・FW_HEADER スキップ・送信系グループ/NO 扱い・テーブル大文字化/マーカー除外）は器側で再利用し、変換ツールでは再実装しない（＝6.3 不整合の根治）。
-
-**コンストラクタ**: `public YamlFormatReader()` ＝ `this(new YamlTestCoreAdapter())`／`YamlFormatReader(YamlTestCoreAdapter adapter)`（package-private・テスト注入用。Excel と同型）。
-
-**ブロック列挙**: `loadRawMap` の各トップレベルキーを 1 回ずつ走査し、既知セクションキーのみ対応ハンドラへ。未知キーは無視。セクション内エントリは Map 順。section→DataType: `setup_tables`→SETUP_TABLE_DATA／`expected_tables`→EXPECTED_TABLE_DATA／`expected_complete_tables`→EXPECTED_COMPLETED／`list_maps`→LIST_MAP／`setup_files`→(SETUP_FIXED 代表で readFiles 呼出)／`expected_files`→(EXPECTED_FIXED 代表)／`messages`→MESSAGE／4 送信系→各 DataType（`YamlSection.dataTypeToSectionKey` の逆）。
-
-**型別の器↔原文の取り分け（確定）**:
-- **TABLE（3 種）**: 器のみ（Map 不要・Excel `readTableBlocks` と同一）。各 (type, formattedGroup) で `adapter.readTables(path,res,group,type)` を呼び、戻り `TableData` ごとに `TableDataBlock(type, group, td.getTableName()【大文字】, td.getColumnNames()【大文字・マーカー除外】, 器値)`。⚠ `buildTableDataList` は **全行空(`{}`)のエントリをスキップ**（builder L89-91）＝器リストはエントリより短くなりうる→**zip しない**ので問題なし。`formatGroup(entry)= group_id!=null? "["+gid+"]" : ""`。
-- **LIST_MAP**: `adapter.readListMap(path,res,id)`＝`List<Map>`（TreeMap・マーカー除外・raw 値）。**列順だけ Map から復元**＝`YamlSection.resolveColumns(entry.rows)`（YAML 順・マーカー込）から `YamlSection.isMarker` で非マーカーのみ＝`orderedColumns`。行＝各 mapRow を orderedColumns 順に `get`（null 保持）。`ListMapBlock(formatGroup(entry), id, orderedColumns, rows)`。`resolveColumns`/`isMarker` は `YamlSection` の public static を再利用（重複でない＝本体の規則）。
-- **FILE（setup/expected）**: `adapter.readFiles(path,res,formattedGroup,代表type)`＝`List<DataFile>`（Map 順・グループ絞り済・fixed+variable 混在）。`buildDataFileList` はエントリをスキップしない→器リストと「当該グループの Map エントリ列」が **1:1 同順**＝zip 可。各 (DataFile器, Map entry) で：fileType=`器 instanceof FixedLengthFile? FIXED:VARIABLE`／中間DataType=fileType×setup/expected（FIXED→SETUP/EXPECTED_FIXED、VARIABLE→SETUP/EXPECTED_VARIABLE）／directives=`toStringDirectives(FileView.getDirectives())`（Excel と同）／records=`toRecordLayouts(FileView, entry.records【スキップなし】)`。`FileDataBlock(中間DataType, formattedGroup, view.getPath(), fileType, directives, records)`。
-- **MESSAGE**: `adapter.readMessage(path,res,id)`→`MessageContent{fwHeader, body:FixedLengthFile}`（null なら skip）。`MessageDataBlock(MESSAGE, "", id, toStringDirectives(FileView(body).getDirectives()), new LinkedHashMap(content.getFwHeader())【原文・文字列化済・interpret なし】, toRecordLayouts(FileView(body), entry.records から FW_HEADER 除外))`。group なし＝""。
-- **送信系（4 種）**: グループは **生値で一致**（`buildSendSyncBodies` は `rawGroupId!=null && equals(groupId)`＝group_id 必須）。`adapter.readSendSyncMessages(path,res,rawGroup,type)`＝`List<FixedLengthFile>`（Map 順）。zip 対象＝当該セクションで `entry.group_id!=null && equals(rawGroup)` のエントリ列（同順）。各 body で：identifier=`body.getPath()`(=id)／**中間 groupId は `"["+rawGroup+"]"`（整形・Excel 中間と対称にするため。マッチは生値・格納は整形）**／fwHeader=**空 LinkedHashMap**／records=`toRecordLayouts(FileView(body), entry.records から FW_HEADER 除外)`／directives=`toStringDirectives(...)`。`MessageDataBlock(type, "["+rawGroup+"]", id, directives, emptyFw, records)`。
-
-**共有ヘルパー `toRecordLayouts(FileView view, List<Map> alignedRecords)`**（Excel の同名と別物・YAML 専用）:
-- `alignedRecords`＝呼出側が器フラグメントと整合させた Map records（FILE=全件／MESSAGE・送信系=`record_type=="FW_HEADER"` を除外）。
-- **fail-fast**: `view.getFragments().size() != alignedRecords.size()` なら `IllegalStateException`（Excel と同思想）。
-- 各 i: `fragment`＋`record`→ recordType=`toStr(record.get("record_type"))`【原文・null 可】／fields=`record.fields[]` から `FieldDef(name原文, type原文, length原文)`【length は Map 原文＝省略は null。器は replaceFieldSize で実バイト長へ正規化するので **Map を正とする**。type も Map 原文を使う】／rows=`fragment.getValues()`（List<Map<name,val>>）を `fragment.getNames()` 順に positional 化【器値＝raw・null 保持。送信系は addValue ゆえ "no" も通常フィールドとして含まれ忠実復元】。
-
-**送信系 "no" の扱い（確定・R3 裏取り結論を踏まえる）**: YAML reader は **原文に忠実**＝Map の records.fields にあるものをそのまま（"no" があれば 1 フィールドとして保持。`buildFragments(skipFwHeader=true)` は addValue で NO 隔離しないので器も "no" を含む）。Excel reader が "no" を落とす（NO 列を構造的にメタ隔離）のと**非対称**だが問題なし＝6.3 は Excel→YAML の一方向で、Excel 中間が "no" を落とす→生成 YAML に "no" 無し→この reader も "no" 無しを読む。L2 往復は各形式内で自己整合。よって reader は器/Map をそのまま素直に写すのが正。
-
-**コンテナ/セクション名**: YAML は 1 ファイル＝1 単位。`container 名 = resourceName`・単一 `TestDataSection(resourceName, blocks)`（#10 入口層で必要なら調整可）。
-
-**テスト方式（重要・in-memory）**: `YamlTestCoreAdapter` を匿名サブクラスで `loadRawMap` だけ override し in-memory `LinkedHashMap` を返す。**read*（readTables/readFiles/readListMap/readMessage/readSendSyncMessages）は内部で public `loadRawMap` を呼ぶ**ので、override 一点で器も原文も同一 in-memory Map から駆動＝実ビルダを通る統合テストになりファイル不要。`map(Object...kv)`=LinkedHashMap／`list(Object...)`=ArrayList ヘルパーを用意。GWT 形式。網羅: TABLE(setup/expected+group/complete)・LIST_MAP(列順保持・マーカー除外・null)・FILE(fixed 型/長さ/省略・variable 長さなし・複数レコード・directives)・MESSAGE(fw_header 原文・FW_HEADER レコード除外と本文の併存)・送信系(4 種・同一グループ複数 id・生値グループ→整形 groupId・"no" 保持)・原文未加工(${...}/null/"")・器↔Map 不整合 fail-fast・混在 1 セクション・未知キー無視・空ファイル。
-
-**確認済みの事実（実装の前提）**: ① model ctor: `TableDataBlock(DataType,groupId,id,cols,rows)`／`ListMapBlock(groupId,id,cols,rows)`／`FileDataBlock(DataType,groupId,id,FileType,Map<String,String>directives,List<RecordLayout>)`／`MessageDataBlock(DataType,groupId,id,directives,fwHeaderFields,records)`／`RecordLayout(String recordType【null 可】,List<FieldDef>,List<List<String>>)`／`FieldDef(name,type【null 可】,length【null 可】)`／`TestDataSection(name,blocks)`／`TestDataContainer(name,sections)`。② `FragmentView.getNames()`＝YAML 原文名（setNames が raw・大文字化なし）。`getTypes()`/`getLengths()` は器正規化済みのため **使わず Map 原文を使う**。`getValues()`＝raw 値マップ（使う）。③ `YamlSection`: `resolveColumns`/`isMarker`/`toStr`/`castMap`/`getList`/`objectToString`/`dataTypeToSectionKey` は public static で再利用可。`FIELD_*`/`KEY_*` 定数あり。④ `toStringDirectives`（null 値は null 保持・Excel と対称）は YamlFormatReader 内に private で持つ（Excel と重複するが別クラス・小さい）。
-
-## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
-
-**結論：NO/caseNo・recordType・FW ヘッダの Excel↔YAML 非対称は 6.3 の assert 同値を壊さない（良性）。** 根拠（`RequestTestingMessagingClient.assertSendingMessage` を精読）：
-- runtime が比較するのは **本文 DataRecord の フィールド名→値 マップ（または電文全体のバイト列）＋レコード件数**のみ。ヘッダの**値比較はコメントアウト**（`:380-384,405-409`）＝**件数のみ**意味を持つ（`:343` で header 件数==body 件数を要求）。
-- NO は **比較直前に `expectedBodyRecord.remove(FIRST_FIELD_NO)`** で除去（`:385-386`）＝失敗メッセージのラベル用途のみ。`FIRST_FIELD_NO = "DataFileFragment:firstFieldKey"`（"no" ではない）。
-- recordType は assert に一切入らない（レイアウトは DataRecord から `createLayoutFromDataRecord` で再構築・`:414`）。
-- **実 Excel 送信系ブロックの構造**（`RequestTestingSendSyncSupportTest.xls`/`RequestTestingMessagingContextTest.xls` をダンプして確認。データは `src/test/java/...` に同居）：マーカー `TYPE[group]=id`（例 `EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01`）→ `text-encoding` ディレクティブ → **名前行 col0=リテラル "no"** → 型行(col0空) → 長さ行(col0空) → 値行(col0=NO 値)。**実コーパスに `FW_HEADER` record_type は出現しない**＝`buildFragments(skipFwHeader=true)` の FW_HEADER スキップで header pool が空になる懸念は杞憂。
-- `SendSyncMessageParser` は `MessageParser` と違い `onReadingNames` を上書きしない→器 recordType=リテラル "no"・names=tail（col0除去）。値行は `addValueWithId`(col0→`FIRST_FIELD_NO`)。よって器 names は本文フィールドのみ・値は NO 隔離済＝MESSAGE と同じ「col0 を落とす」構造。`toRecordLayouts` は器 value を**件数にのみ**使い値は生行 tail から取るので、器の `FIRST_FIELD_NO` は出力に混ざらない。
-- ⇒ 変換ツールは **no/NO をメタ情報として落とし**、本文フィールド・値のみを `MessageDataBlock` へ。YAML 往復で record_type は `skipFwHeader=true` 下で "default" に固定され、"no"≠FW_HEADER ゆえスキップされない。Excel/YAML どちらの経路も比較対象マップが一致＝6.3 同値成立。
-
-## R3 調査メモ（電文4種・本セッションで実コード調査・実装はこの知見で・サブエージェント結論は裏取り済/未済を明記）
-
-**対象 4 DataType**（`DataType.java:47-56`）: `EXPECTED_REQUEST_HEADER_MESSAGES`(10)・`EXPECTED_REQUEST_BODY_MESSAGES`(11)・`RESPONSE_HEADER_MESSAGES`(12)・`RESPONSE_BODY_MESSAGES`(13)。`MESSAGE`(9) は R2 で対応済。
-
-**ランタイム解析経路（裏取り済＝実コード確認）**:
-- 主経路＝`BasicTestDataParser.getSendSyncMessage(path,res,id,dataType)`(`:113`) → `GroupMessageParser`(`:16`)。`getResult`(`:50-65`)＝`delegate(SendSyncMessageParser).getDelegate().getResult()` で `List<FixedLengthFile>`（**マーカー1個＝ファイル1個**）を得て、各を `RequestTestingMessagePool(file, emptyHeader)` で包み `setRequestId(file.getPath())`。**FW ヘッダは常に空**（`Collections.emptyMap()`・`GroupMessageParser:58`）。主消費者＝`RequestTestingSendSyncSupport` が `getSendSyncMessage(path,res,"["+messageId+"]",dataType)` で groupId=`[messageId]` 指定（サブエージェント報告・要再確認だが整合的）。
-- 副経路＝`getMessageWithoutCache(path,res,dataType,id)`(`:99`) → `SendSyncMessageParser.parse(...,false)` → 単体 `MessagePool`。`SendSyncSupport` が RESPONSE_* の逐次取得で使用（サブエージェント報告・未裏取り）。**変換ツールの IN は「ブロック構造を読む」だけなので、単体/グループの実行時差は MessageDataBlock では区別不要（ブロック=マーカー単位で読めば足りる）**見込み。
-
-**SendSyncMessageParser の構造（裏取り済）**(`SendSyncMessageParser.java`):
-- `extends MessageParser` だが `createFixedLengthFileParser` を**丸ごと差し替え**（MessageParser の delegate ではない）。よって：
-  - **名前行**：base `onReadingNames`＝`createNewFragment`→`setRecordType(col0)`/`setNames(tail)`。MESSAGE のような col0→"default" 置換は**しない**。
-  - **ディレクティブ行**：base `processDirectives` のみ＝**FW ヘッダ分離なし**（`getFwHeader()` は例外送出 `:42`）。
-  - **値行**(`:116-135`)：`col0=NO`(caseNo, `NO_COLUMN_NUMBER=0`)、`col1`が `errorMode:timeout`/`errorMode:msgException` なら(`ERROR_MODE_COLUMN_NUMBER=1`)その1列のみ `addValue`。それ以外は `addValueWithId(temp, temp.remove(0))`＝**col0(NO)を除去し `FIRST_FIELD_NO` に格納、残りを names へマップ**。
-  - 本文ファイル＝`MockMessages`（`FixedLengthFile` のサブクラス）。
-  - **注意/未確認**：override 後 `onReadingValues` は `isDataRow`/新フラグメント生成を**持たない**。MESSAGE 系で FW_HEADER+BODY の複数レコードレイアウトを単一ブロックで持てるのか要確認（YAML 側 `buildFragments` は複数 records をループするので、Excel 側も複数フラグメント前提のはず＝base の名前行検出は status 遷移で効く？ `onReadingValues` 内で新フラグメントに移れない点が引っかかる。**実 fixture かテストで挙動確認すること**）。
-
-**Excel ブロック構造（送信系・推定＋一部裏取り）**: 各フラグメント＝名前行(col0=recordType, tail=names)→型行→長さ行→値行（**値行 col0=NO で非空**、残り=値）。通常ファイルと違い**値行 col0 が非空(NO)**。R2 の生行ウォークは `tail()` で col0 を落とすので NO も落ちる＝値だけ残り**たまたま整合**するが、recordType は名前行 col0 から取れる。器(`fragment.values`)は names→値（NO は別管理）。
-
-**YAML 側の対称表現（裏取り済）**(`YamlValueProcessor.java`):
-- `toSendSyncList(raws,groupId,basePath)`(`:257`)＝`raw.getGroupId()==groupId` で絞り、`MockMessages(id)`・`buildFragments(skipFwHeader=true)`・`RequestTestingMessagePool(file,emptyMap)`・`setRequestId(id)`。
-- `buildFragments(skipFwHeader=true)`(`:288-339`)＝`FW_HEADER` record_type はスキップ、recordType は**常に "default"**(`DEFAULT_RECORD_TYPE`)、長さ未指定→`"-"`(動的)、**行は `fragment.addValue(rowValues)`（`addValueWithId` ではない！）**。
-- `RawMessage`＝`groupId/id/directives/fwHeader(Object)/records`。YAML 例（`docs/pr75/design` の messageData/yaml-examples）では **"no" は records.fields の先頭フィールド**として普通に並ぶ（メタでなく1フィールド）。
-
-**★【解決済 — 上記「R3 裏取り結論」で良性と確定】設計判断 — NO/caseNo 列の表現非対称**（以下は調査当時の論点。結論は冒頭「R3 裏取り結論」を正とする）:
-- Excel: `SendSyncMessageParser` は NO を `FIRST_FIELD_NO` に隔離・recordType=col0・FW_HEADER 行を本文レコードとして保持。
-- YAML: `buildFragments(skipFwHeader=true)` は recordType を "default" に固定・FW_HEADER レコードをスキップ・NO の特別扱いなし（"no" は普通の先頭フィールド・`addValue`）。
-- ⇒ Excel→runtime と Excel→YAML→runtime で生成される `MessagePool` の内部状態（recordType、FIRST_FIELD_NO の有無、FW_HEADER レコードの有無）が**一致しない恐れ**。**6.3（#14）はこの2経路の結果が assert で同値になることが必須**。
-- 解決に要る裏取り：① `RequestTestingMessagePool`/`MockMessages`/`SendSyncSupport`/`RequestTestingMessagingClient` が assert 時に**実際に何を比較するか**（`FIRST_FIELD_NO`/recordType を見るか、toDataRecords のバイト列だけか）。② 実 Excel fixture（6.3 コーパスの messaging 系）の送信系ブロックを1つ実際に読んで行構成を確認（`PoiXlsReader` 経由 or 既存テストデータの .xls を `mvn` 一時テストでダンプ）。③ YAML 例の "no" フィールドが Excel の NO 列とどう対応するのが正か。
-- 暫定方針（要検証）：変換ツールは **YAML の表現（"no" を先頭フィールド化・recordType は本文のまま or "default"・FW_HEADER の扱い）に合わせて MessageDataBlock を組む**。`MessageDataBlock` はモデル変更不要（State 確定）。NO は `RecordLayout` 先頭 `FieldDef("no",...)` ＋各 row 先頭値として持たせる線が有力。ただし上記①で「runtime が NO/recordType を比較しない」と確認できれば、より単純化できる。
-
-**R3 実装の概形（裏取り後）**: ① `TestCoreReaderAdapter` に送信系読み出し（`readSendSyncMessages` 等。`GroupMessageParser` または `SendSyncMessageParser` 経由で `List<FixedLengthFile>`＋識別子を返す。FW ヘッダ空）を新設。② `XlsFormatReader` の `read` で 4 type を分岐（現状 `:114` コメントで skip）→ 各マーカーを `MessageDataBlock`(該当 dataType, groupId, identifier=msgId, directives, **空 fwHeaderFields**, records) へ。原文復元は R2 同様 `readBlockBodyLines`＋`TestCoreFileAdapter` で（NO 列の扱いは上記判断に従う）。③ XlsFormatReaderTest に 4 type のテスト追加（NO 複数 row・errorMode 含む）。④ 回帰。R3 後に R6（jacoco・3観点レビュー・`complete task #6`）。
-
-## R1+R2 実装計画（本セッションで Plan エージェント＋実コードで確定・resume はこの手順で実装）
-
-**前提（実コード確認済）**
-- 可視性: `DataFile.all/directives` = **protected**（同一 `file` パッケージの `TestCoreFileAdapter` から読める）。`DataFileFragment.names/types/lengths/values` = **protected**（読める）。**`DataFileFragment.recordType`(L58) と `isOndemandCalcFieldSizeList`(L55)/`isOndemandCalcFieldSize(int)`(L125) は private**（同一パッケージでも読めない）。`ONDEMAND_CALC_FIELD_SIZE = "-"`(L76, private)。
-- `replaceFieldSize`(`DataFileFragment.java:140-155`) が `lengths` を実バイト長へ上書き → 器から原文 `-`・原文長は復元不可。よって **recordType・長さ省略識別・原文長・型表記・`-`値は生行から復元**（B 確定）。
-- **FILE/MESSAGE はマーカー列(`[...]`)を使わない**。recordType は名前行の**列0**(`DataFileParser.java:250` `setRecordType(fieldNamesLine.get(0))`)、names/types/lengths/values は全て `tail(line)`(列0除去, `DataFileParser.java:163/173/186/251`)。よって生行↔器の対応は**「列0を落とす(tail)」だけ**で 1:1（`[...]`除外は LIST_MAP/TABLE のみ＝R2 では不要、R5 へ）。
-- 行種別: 名前行=列0が recordType・tail が names → 型行(tail=原文型) → (FIXED のみ)長さ行(tail=原文長 `-`含む) → 値行(`isDataRow`=列0空, `DataFileParser.java:204-210`)。VARIABLE は長さ行なし(`VariableLengthFileParser`)。生行は `TestDataParsingTemplate` がコメント/空行除去済、`trimTailCopy` は未適用→Reader 側で `NablarchTestUtils.trimTailCopy` を適用（本体 `onReadLine` と同じ）。
-- **撤回の安全性**: `MessagePool.getFwHeader` 撤回は安全＝アダプタは `MessageParser.getFwHeader`(同一パッケージ)を使用(`TestDataParserAdapter.java:155`)・本番呼び出し元なし・`YamlTestDataParserTest:565` はリフレクション(撤回後コメントが正)・`MessageParserTest`/`SendSyncMessageParserTest` は別メソッド。
-- **getter 撤回で壊れる消費者**: `XlsFormatReader.java`(`:192-193,213,222-243` が getAllFragments/getDirectives/getNames/getTypes/getLengths/getValues/getRecordType を使用)＋`TestDataParserAdapterTest.java:336/362/386/410`(`file.getAllFragments().get(0).getValues()`)。**`YamlValueProcessor`/Yaml系テスト/model系テストは Raw* や中間モデル独自getter＝無影響**。
-
-**実装手順（1 コミット・TDD・順序厳守）**
-1. **`TestCoreFileAdapter`**(新設, `nablarch.test.core.file`) を TDD。`static FileView read(DataFile)`。`FileView{path, Map<String,Object> directives, List<FragmentView> fragments}`、`FragmentView{List<String> names/types/lengths, List<Map<String,String>> values}`（**recordType・長さ省略判定は持たない**＝private のため）。protected `all/directives/names/types/lengths/values` のみ読む。`TestCoreFileAdapterTest` で C0/C1 100%。
-2. **生行コレクタ** を（改名後の）`TestCoreReaderAdapter` に追加。`HeaderCollector`(`TestDataParserAdapter.java:273-332`)と同じく `TestDataParsingTemplate` を継承し、対象ブロック(groupId,identifier,DataType)の**生ボディ行 `List<List<String>>`** を返す `readBlockLines(...)`。本体の readLine/getDataType/getTypeValue を再利用＝行/マーカー判定の二重実装なし。
-3. **改名** `TestDataParserAdapter`→`TestCoreReaderAdapter`（＋`TestDataParserAdapterTest`→`TestCoreReaderAdapterTest`）。全参照追従（`XlsFormatReader.java:18-20,61-67,75`／`XlsFormatReaderTest.java:15,33,117`）。`readFiles/readTables/readListMap/readMessage/readHeaders` は raw 器返却のまま。
-4. **`XlsFormatReader` R2 原文復元**。getter 呼びを `TestCoreFileAdapter.read(file)` 経由へ置換。recordType=生行名前行 列0／原文型=型行 tail／長さ省略識別＋原文長=長さ行 tail のセル `=="-"`／`-`値=生行値セル（器値は改行除去・トリム済 `DataFileFragment.java:111-113`）。器(`FragmentView`)を権威に fragment 数/区切りを決め、生行を `DataFileParser` 状態機械と同形にウォークして原文を充填。`XlsFormatReaderTest:248` の `getType()=="X"` → 原文 `"半角英字"` へ修正＋長さ省略/recordType-from-raw のテスト追加（RED→GREEN）。
-5. **released 撤回**: `DataFile.java`(getAllFragments/getDirectives 削除)・`DataFileFragment.java`(getRecordType/getNames/getTypes/getLengths/getValues＋クラス`@Published`＋追加import 2 行削除)・`MessagePool.java`(getFwHeader を public→package-private、`@Published` 行削除/class 級は据置)。`QuotationTrimmer` は**据え置き**。`TestCoreReaderAdapterTest:336/362/386/410` を `TestCoreFileAdapter` 経由へ移送。
-6. **検証**: `git diff main..HEAD -- src/main/java/nablarch/test/core/file/DataFile.java src/main/java/nablarch/test/core/file/DataFileFragment.java src/main/java/nablarch/test/core/messaging/MessagePool.java` が**空**（QuotationTrimmer は +5 残置が正）。`mvn -o test`（reader+converter GREEN）。→ `complete task #6` 相当はまだ（電文4種=R3 が残るため #6 完了は R3 後）。本コミットは「R1+R2: Excel経路を2アダプタ＋原文復元・本体無変更へ」。
-
-**残リスク（R2 実装中に実 .xls fixture で確認）**: `-`長さ省略フィールドの**複数行値**が `PoiXlsReader.readLine()` で改行保持されるか。保持されなければ原文復元が生行だけでは不可＝その時点でユーザー相談（設計書通りに進められない検知）。
-
-**この後（#6 完了まで）**: R3=電文4種(`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`。6.3 コーパス messaging 系 6 クラスが使用＝必須。`TestCoreReaderAdapter` に send-sync 2 経路 `getMessageWithoutCache`/`getSendSyncMessage` を追加し `MessageDataBlock` の 4 種へ。FW ヘッダは 4 種とも空)→ 回帰・jacoco・3 観点レビュー(QA/Java/SWE)・`P3-6.md`・`complete task #6`。以降 R4(#7 YAML)・R5(util)・Phase4-6(#8-#14)で 6.3。
-
-## Recovery Plan（新設計書 = 正・D-G 反映・TDD・各 R は 1 commit→push→裏取り報告）
-
-- **R0（本コミット）**: 設計書（判断 A=(a) 2 アダプタ）＋ steering を確定コミット。
-- **R1 — 本体無変更化＋アダプタ 2 枚化（判断 A 確定）**:
-  - `TestCoreFileAdapter`（`nablarch.test.core.file` 相乗り・新設）を TDD で新設：`DataFileFragment` の `names`/`types`/`lengths`/`values`・長さ省略判定を plain で返す。`isOndemandCalc*` private 問題は D-G の (i)/(ii) を実装時に確定。
-  - `TestDataParserAdapter` → `TestCoreReaderAdapter` 改名。file 系は raw 器を返し、内部値は `TestCoreFileAdapter` 経由に。
-  - 本体撤回：`DataFile`(+18)・`DataFileFragment`(+47) getter／`MessagePool.getFwHeader` public。
-  - テスト追従：`TestDataParserAdapterTest`（336/362/386/410 が `file.getAllFragments().getValues()` を使用）を `TestCoreFileAdapter` 経由へ移送。`YamlTestDataParserTest:565` の stale コメントは撤回後に正となる。
-  - 検証：`git diff main..HEAD -- core/file core/messaging core/reader/*Parser*` が**本体ゼロ差分**（新規アダプタ・YAML 層・新規ファイルのみ）。reader 既存テスト全 GREEN。
-- **R2 — #6 XlsFormatReader を 2 アダプタ＋原文復元へ**: `TestCoreReaderAdapter`＋`TestCoreFileAdapter` で器・内部値を取得し、§共通「原文復元」3 点（長さ省略＝生行、型表記＝生行型行、LIST_MAP 列順＝HeaderLine／大文字化は復元不要）を Reader 側で組込。マーカー列除外で生行↔器 index 1:1。
-- **R3 — #6 電文 4 種編入**: `EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`（6.3 コーパスの messaging 系 6 クラスが使用＝必須）。`TestCoreReaderAdapter` に send-sync 2 経路（`getMessageWithoutCache`/`getSendSyncMessage`）を追加し `MessageDataBlock` の 4 種へ。FW ヘッダは 4 種とも空。
-- **R4 — #7 YAML 経路アセスメント**: 新設計書 §判断 B（構造マッピング層→**本体器**）と現状コード（`Raw*`→`Yaml*StructureMapper`→`YamlValueProcessor`）の乖離を評価。YAML は生行が無いため原文復元手段が Excel と異なる＝D-F(option C/Raw\*) を内部実装として温存できるか、設計書文言へ寄せて作り直すかを Plan エージェントで判定 → ユーザー相談。
-- **R5 — util 共通化**: マーカー列判定（`HeaderLine` private）・コメント/空行判定（`TestDataParsingTemplate`）を public util へ（観測挙動不変リファクタ）。本体と変換ツールで共有。
-- **R6 — #6 仕上げ**: 回帰 `mvn -o test`・カバレッジ jacoco・3 観点レビュー（QA/Java/SWE）・`P3-6.md`・`complete task #6`。
-
-- **旧 Notes（経緯・参考）**:
-  - **本セッションの経緯（重要）**: #6 残作業（要求/応答電文4種の扱い確定）を調査中、ユーザーが「本体既存コードに変更が入っている／設計書では本体無変更では？」と指摘。さらにユーザーが**設計書をローカル改訂**（commit `f20ee92`）。これにより設計書とコードにズレが生じ、リカバリ方針の検討に切り替えた。**まだコードは一切変更していない**。
-  - **設計書 `f20ee92` の改訂内容（main からの差分はこの 1 セクションのみ）**: §共通（器の中身を読む手段）を「**本体無変更**／getter は整備済み」と書き換え、`getRecordType` を getter 一覧から除外、`getFwHeader` の public 化記述を削除。さらに **判断 B の補足（option C＝Raw\*・構造ウォーク共有）の節をまるごと削除**し、判断 B を「構造マッピング層が**本体器**を返す」（＝元の文言・Raw\* 不採用）へ戻した。
-  - **現状コードと新設計書の一致度**: 約 8 割一致。中間モデル(#4)・Excel アダプタ(#5)・XlsFormatReader(#6 wip) は新設計書と**一致**。ズレは 2 点のみ（下記）。
-  - **ズレ①（本体既存コード変更・released 4 ファイル。`git diff main..HEAD` で確認済）**:
-    - `DataFile.java`(+18): public getter `getAllFragments`/`getDirectives` 追加（純粋追加・後方互換）。
-    - `DataFileFragment.java`(+47): public getter `getRecordType`/`getNames`/`getTypes`/`getLengths`/`getValues` 追加＋クラスに `@Published(tag=architect)`（純粋追加・後方互換）。
-    - `MessagePool.java`(+3/-1): `getFwHeader()` を **package-private→public** 化（可視性拡大）。**呼び出し元を全数調査した結果、この public 化を要する本番呼び出し元は無い**（アダプタは `MessageParser.getFwHeader` を呼ぶ／テストは同一パッケージ）。`YamlTestDataParserTest:565` に「package-private のため」という今や嘘のコメントが残存。→ **過剰公開＝package-private へ戻す是正候補**。
-    - `QuotationTrimmer.java`(+5): `if (str.length() < 2) return str;` ガード追加＝**唯一のロジック（挙動）変更**。引用符1文字で `substring(1,0)` 例外になるバグの修正。git 履歴に逡巡あり（`1f09271` で一度 main 同一へ revert→`c33e121` で再投入）。設計書 L56「Excel 読み込みの観測可能な挙動維持は必達」に抵触しうる。
-    - 評価: getter 追加 2 ファイルは設計書 L56「挙動を変えないリファクタリングは可」に収まり**残してよい**（doc L110 も読み手段として列挙）。`getFwHeader` public は**戻す**。`QuotationTrimmer` は**ユーザー判断**。
-  - **ズレ②（YAML 判断 B）→ ユーザーが設計書改訂で解決済（commit `d89c434`）**: 当初の論点（新設計書の「本体器を返す」が #2 の option C(Raw\*) と衝突し、本体器のままだと YAML 往復が壊れる＝品質 L2 未達）に対し、ユーザーが**第3の方式**を設計書へ明文化した：
-    - **方式＝「本体器を使う＋器が正規化する箇所だけ生行/HeaderLine から原文復元」**（Raw\* には依らない／素の本体器でもない）。器の取り出し経路で原文が変わるのは**3 点のみ**と全データタイプで確認済：① カラム名/テーブル名の大文字化＝NTF 仕様上無意味で**復元不要**、② 長さ省略(`-`)＝器 `isOndemandCalcFieldSize(i)` で識別し生行から原文の値・長さを取る、③ 型表記(X/N/B/Z)＝生行の型行から取る、④ LIST_MAP 列順＝`HeaderLine` から取る（器から取得可・生行不要）。生行はマーカー列(`[...]`)を除外すると器フィールドと index 1:1 対応。
-    - **重複実装回避**: 形式非依存の判定（マーカー列判定＝`HeaderLine` private、コメント/空行判定＝`TestDataParsingTemplate`、行末空セル＝`NablarchTestUtils.trimTailCopy`）を public util へ切り出し本体と共有（観測挙動不変のリファクタ）。行種別判定は本体状態機械から切り出せないため④の器＋生行 index 対応で代替。
-    - **QuotationTrimmer**: 設計書 L56 に「明確なバグの修正は観測挙動維持を破らないため許容」を追記＝**残してよい（解決）**。加えて「クォートは Excel では `QuotationTrimmer`、YAML では YAML ライブラリが解決＝YAML に QuotationTrimmer 不適用／YAML OUT は全値クォート」を明文化。
-  - **この解決がコードに与える影響（resume で最重要・要アセスメント）**: 新設計書は **#2 の option C(Raw\*) 群を使わない方式**。よって現状コード（`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`・`Yaml*StructureMapper` が Raw\* を返す・`YamlValueProcessor`）は**新設計書と乖離**。resume では「#2 を新方式（構造マッピング層→本体器、原文復元は呼び出し側=Reader が生行/HeaderLine から）へ作り直す」必要があるか、Raw\* を内部実装として温存しつつ設計書表現と整合させられるかを**最初にアセスメント**すること（D-F は旧 option C 決定。新設計書 `d89c434` が上書き＝D-F は要改訂/廃止）。Excel 側 #5/#6 も「原文復元 from 生行」を Reader 側で行う設計に合わせる（現 #6 は本体器のみ参照で原文復元未実装＝長さ省略/型表記の原文が器の正規化値のまま入る恐れ→要確認）。
-  - **残る確定事項（軽い是正）**: `MessagePool.getFwHeader()` の public 化は呼び出し元なし＝**package-private へ戻す是正**（新設計書は §共通で getter のみ列挙し getFwHeader public 化を記述しない＝本体無変更方針に沿う）。getter 追加(DataFile/DataFileFragment)は L56 リファクタ許容で残す。
-  - **削除して作り直すか**: **全削除は不要**（ユーザーへ報告済）。中間モデル #4・Excel アダプタ #5・XlsFormatReader #6 の骨格は新設計書と一致し健全。要改修は **#2 の YAML 経路（Raw\*→本体器+原文復元）** と **Excel/YAML 両 Reader への原文復元の組み込み**、および軽微是正(getFwHeader)。局所是正で収束する見込み。
-  - **resume 時の段取り**: ①新設計書 `d89c434` を精読（特に §「器が正規化する値の原文復元」「重複実装を避ける」「特殊記法の扱い」）→ ②#2 コード(Raw\*) と新方式の乖離をアセスメント（作り直し範囲を確定。必要なら Plan エージェント）→ ③steering の Tasks/Decisions を新設計書基準のリカバリプランへ更新（D-F 改訂・#7 以降の YAML 経路記述差し替え・「原文復元」「util 共通化」タスク追加・電文4種を #6 に正式編入）→ ④`MessagePool.getFwHeader` 是正 → ⑤改修を TDD で実施 → ⑥#6 残作業へ。**コードは未着手＝まず方針(リカバリプラン)をユーザーに提示してから着手**（ユーザーは方針提示を求める傾向）。
-  - **#6 残作業（設計整合の後）— 旧 State から継承**: (1) **要求/応答電文4種（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）は #6 で対応必須と判明**。本セッションの調査で **6.3 コーパスの 18 `*YamlTest` のうち 6 クラス（messaging 系：`RequestTestingSendSyncSupportYamlTest`/`RequestTestingSendSyncBatchYamlTest`/`RequestTestingMessagingClientYamlTest`/`RequestTestingMessagingContextYamlTest`/`MessagingRequestTestSupportYamlTest`/`MessagingReceiveTestSupportYamlTest`）がこの4種を使う**ことを確認（DataType 定数・各テストの直接参照で実証）。よって「先送り(b)」は不可、#6 内 or #14 前に必ず実装。実装方法は調査済: 本番は `BasicTestDataParser.getMessageWithoutCache`(SendSyncMessageParser・単体 MessagePool) と `getSendSyncMessage`(GroupMessageParser・caseNo グループ・`List<RequestTestingMessagePool>`) の 2 経路。本文は `SendSyncMessageParser.createFixedLengthFileParser`→`MockMessages`(FixedLengthFile)。**FW ヘッダは4種とも常に空**（`SendSyncMessageParser.getFwHeader` は例外／`GroupMessageParser` は emptyHeader）。`MessageDataBlock` は5種別対応済ゆえモデル追加不要。アダプタに `readSendSyncMessages`(または2経路分)を新設し `MessageDataBlock` の4種へ写す方針。**ただし判断②(YAML 経路)の結論次第で Excel/YAML の中間モデル整合が変わるため、設計整合を先に確定すること**。(2)回帰 `mvn -o test`、(3)カバレッジ jacoco（運用ノート参照）、(4)3観点レビュー（QA/Java/SWE）、(5)`P3-6.md` 確定＋`complete task #6` コミット。
-  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は**コミットしない**（[[new-code-prefer-ideal-design]]）＝`git status` に常に `M pom.xml` が残るのは正常。
-  - **教訓（memory 候補）**: サブエージェント（アーキテクト）の結論は実コードで裏取りする（電文4種の「readFiles 経由」提案は誤りだった）。設計書は固定の聖典でなく「あるべき姿に追随させる唯一の正」＝コードと食い違ったら設計書側を是正する運用（D-F が実例。今回のユーザー改訂で再確認）。
+- **Last completed**: #7（`complete task #7`）＝Phase 3 完了。
+- **Next**: #8 YamlFormatWriter 再構築（YAML OUT・Phase 4 先頭・TDD）。中間モデル(#4)→YAML を記法どおり書き出す（全値クォート・`${...}`/null/`""` 保持・YAML 列順・長さ省略・fw_header）。全種別（TABLE3/LIST_MAP/FILE FIXED+VARIABLE/MESSAGE/送信系4種）。#7 IN リーダと記法対称・L2 往復(#12)の片側。
+- **Notes**: 設計の正＝[[D-H]]。回帰ベースライン・カバレッジ取得手順・`M pom.xml` 既知変更は「環境情報」「運用ノート」節を参照。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談）。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
