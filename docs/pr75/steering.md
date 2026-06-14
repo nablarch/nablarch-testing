@@ -207,22 +207,24 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - 独自の構造解析（`parseBlocks`/`isDataRow`/`trimQuotation`/POI 直叩きの構造判定）を含まない（レビュー確認）✅（本体 `getDataType`/`getTypeValue`/`TestDataParsingTemplate` 再利用）
 - 単体テスト GREEN・C0/C1 100%（番人除く）✅
 
-### #7: YamlFormatReader 再構築（YAML IN・判断 B）
+### #7: YamlFormatReader 再構築（YAML IN・判断 B / D-H）
 
-**Purpose**: 本体の構造マッピング層(#2)を直接呼び、生の器を中間モデルへ写す。SnakeYAML 直叩きの構造解析は持たない。
+**Purpose**: YAML IN を Excel(#6) と**対称**の方式で再構築する＝**本体器**で構造を得て、**`YamlLoader.load` が返す順序保持 Map で原文を復元**し中間モデルへ写す。SnakeYAML 直叩きの独自構造解析は持たない。[[D-H]] に従い #2 の `Raw*`/StructureMapper/ValueProcessor は破棄する。
 
 **Prerequisites**: #2, #4
 
-**Steps**:
+**Steps**（D-H「次セッションの段取り」準拠）:
 
-- [ ] 構造マッピング層呼び出し→中間モデル組み立てを実装
-- [ ] 全データ種別の単体テスト（TDD）
-- [ ] セルフチェック
+- [x] 本体 YAML 読み込みを本体器生成へ作り直す（`YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder` が YAML Map を走査し `TableData`/`DataFile`/`MessagePool` を返す。`YamlTestDataParser` を再配線）。`Raw*`(6本)・`Yaml{Table,File,Message}StructureMapper`・`YamlValueProcessor` を削除、構造マッパテスト3本も削除、値加工テスト73件をビルダテストへ移送。reader-YAML **154件 GREEN**（Parser43/Equivalence16/TableBuilder30/FileBuilder14/MessageBuilder29/Loader11/Section10/Schema1）＝振る舞い不変・本体器ゼロ差分
+- [ ] `tool/converter` の YAML IN リーダを Excel と対称に新設（本体器で構造・`YamlLoader.load` Map で原文〔カラム名・YAML 列順・値・型表記・長さ省略〕復元 → 中間モデル）
+- [ ] 全データ種別の単体テスト（TDD・RED→GREEN）
+- [ ] 設計書 §判断 B 据え置き・§共通 原文復元を「Excel=生行 / YAML=YamlLoader Map」へ一般化是正
+- [ ] セルフチェック（`docs/pr75/checks/P3-7.md`）＋ 3 観点レビュー（QA/Java/SWE）
 
 **Completion criteria**:
 - 全種別を無損失で中間モデル化／IN 値が記法のまま
-- 独自の YAML 構造解析を含まない（レビュー確認）
-- 単体テスト GREEN・C0/C1 100%（番人除く）
+- 独自の YAML 構造解析を含まない・`Raw*` 系が消えている（レビュー確認）
+- 本体 YAML テスト全 GREEN（振る舞い不変）・変換ツール単体テスト GREEN・C0/C1 100%（番人除く）
 
 **Phase 3 完了ゲート**: 4 観点レビュー → ユーザーレビュー OK
 
@@ -417,13 +419,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-14
+- **Last completed**: **#7 Step 1（本体 YAML 再アーキテクチャ）完了・GREEN**。`YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder`（`reader/yaml`・YAML Map を走査し `TableData`/`DataFile`/`MessagePool` を直接生成）を新設し、`YamlTestDataParser` を再配線。`Raw*`(6)・`Yaml{Table,File,Message}StructureMapper`(3)・`YamlValueProcessor`(1) と 構造マッパテスト3本を削除、値加工テスト73件をビルダテスト（`Yaml{Table,File,Message}*BuilderTest`）へ移送（クラス・fixture ディレクトリも改名）。共有ヘルパ `isMarker`/`resolveColumns` を `YamlSection` へ集約。reader-YAML **154件 0F/0E**（Parser43/Equiv16/TableBuilder30/FileBuilder14/MsgBuilder29/Loader11/Section10/Schema1）＝`ExcelToYamlEquivalenceTest`+`YamlTestDataParserTest` 緑で**振る舞い不変**を実証。**released 本体ゼロ差分維持**。⚠ **未コミット（WIP）**＝#7 は1タスク1コミットのため #7 完了時に `complete task #7` でまとめてコミット予定。本 bb は wip コミット。
+- **Next**: **#7 Step 2 — 変換ツール側 YAML アダプタ新設**（`TestCoreReaderAdapter` と対称。空 interpreters・fill なし・`loadRawMap`=`YamlLoader.load` 透過の seam を持つ `nablarch.test.core.reader.YamlTestCoreAdapter` 等。生器を返す）。続いて **Step 3** `tool/converter/yaml/YamlFormatReader`（`xls/XlsFormatReader` と対称＝本体器で構造・YamlLoader Map で原文〔カラム名・YAML列順・値・型表記・長さ省略〕復元 → 中間モデル。全種別: TABLE/LIST_MAP/FILE/MESSAGE＋送信系4種。R3裏取り結論＝no/NO はメタ・runtime は本文マップ＋件数のみ比較）。**Step 4** 設計書 §共通 を「Excel=生行 / YAML=YamlLoader Map」へ一般化是正（§判断 B は据え置き）。**Step 5** セルフチェック`P3-7.md`＋3観点レビュー(QA/Java/SWE)＋jacoco(番人除く C0/C1 100%)＋全モジュール回帰（ベースライン比 新規失敗ゼロ）→ `complete task #7`。
+- **Notes**: 設計の正＝[[D-H]]（本体器＋YamlLoader Map で原文復元・Raw* 破棄）。Plan エージェント成果（#7 段取り）はセッション内で確定済＝Step 2 以降はその通りに進めてよい（再プラン不要）。**Plan の "旧ビルダを d3cd139 から verbatim 復元" 推奨は採用せず**＝#2 で直したバグの再混入を避け、現行（修正済）`YamlValueProcessor` ロジックから再構成した（採用済・GREEN で実証）。Step 3 の対称参照は `src/main/java/nablarch/test/tool/converter/xls/XlsFormatReader.java`＋`TestCoreReaderAdapter`/`TestCoreFileAdapter`＋`XlsFormatReaderTest`。中間モデルは `tool/converter/model/*`（#4 で5種別対応済・変更不要見込み）。`TestDataFormatReader` が IN インタフェース。**released 本体プロダクションコードに触れる必要が出たら着手前にユーザー相談**（Operating mode）。env: offline `mvn -o test` 可、jacoco は online `mvn package -Dmaven.javadoc.skip=true` 必須（運用ノート参照）。`pom.xml` の `6u3` はコミットしない（`M pom.xml` は正常）。ブランチ `add-yaml` で継続。
 
 ## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
 

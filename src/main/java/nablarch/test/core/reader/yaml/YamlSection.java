@@ -144,6 +144,29 @@ public final class YamlSection {
     }
 
     /**
+     * 先頭行のキーをカラム名（マーカー含む・YAML 記述順・大文字小文字保持）として決定する。
+     * 行が無い場合は空リストを返す。
+     *
+     * <p>
+     * SnakeYAML はマッピングを {@link java.util.LinkedHashMap} でロードするため、{@code keySet} の
+     * 順序は YAML 記述順と一致する。
+     * </p>
+     */
+    public static List<String> resolveColumns(List<Object> rows) {
+        if (rows.isEmpty()) {
+            return new ArrayList<String>();
+        }
+        return new ArrayList<String>(castMap(rows.get(0)).keySet());
+    }
+
+    /**
+     * マーカーカラム（{@code [COL]} 形式）か判定する。
+     */
+    public static boolean isMarker(String column) {
+        return column != null && column.startsWith("[") && column.endsWith("]");
+    }
+
+    /**
      * インタープリタチェーンを適用して値を変換する。
      */
     public static String interpret(String value, List<TestDataInterpreter> interps) {
