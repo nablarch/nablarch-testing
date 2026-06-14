@@ -81,12 +81,12 @@ flowchart LR
 
 > 1 章で「実行する」と定めた整形（行末空セル除去など）は外さない。外すのは③特殊記法変換のみ。
 
-**残る課題と対応**：本体の非公開メンバ（Parser の `getResult`・一部コンストラクタ、`DataFileFragment` の `names`/`types`/`lengths`/`values`・長さ省略判定）は、変換ツールの正しいパッケージから直接呼べない。これを越えるため、本体の非公開メンバを同一パッケージから読み plain で返す薄い**抽出アダプタ**を、器のパッケージごとに 1 枚ずつ置く。
+**残る課題と対応**：本体の非公開メンバ（Parser の `getResult`・一部コンストラクタ、`DataFileFragment` の `names`/`types`/`lengths`/`values`）は、変換ツールの正しいパッケージから直接呼べない。これを越えるため、本体の非公開メンバを同一パッケージから読み plain で返す薄い**抽出アダプタ**を、器のパッケージごとに 1 枚ずつ置く。
 
 | アダプタ | 相乗り先 | 役割 |
 |---|---|---|
 | `TestCoreReaderAdapter` | `nablarch.test.core.reader` | Parser を空 `interpreters` で `parse → getResult` し、生の器を取り出す。MESSAGE 本文は `MessageParser.getDelegate()` から `FixedLengthFile` を取る |
-| `TestCoreFileAdapter` | `nablarch.test.core.file` | `DataFileFragment` の `names`/`types`/`lengths`/`values` と長さ省略判定を読んで plain で返す |
+| `TestCoreFileAdapter` | `nablarch.test.core.file` | `DataFileFragment` の `names`/`types`/`lengths`/`values` を読んで plain で返す |
 
 いずれも構造を組み立てず、読み取った値を plain で返すだけ。相乗りはこの 2 枚に閉じる。これにより本体の getter 追加・可視性拡大は不要で、本体は無変更。
 
@@ -125,7 +125,7 @@ YAML の値は、数値・null・空白を文字列として保つため、書�
 | 器 | 中身を読む手段 |
 |---|---|
 | `TableData` | `getTableName`／`getColumnNames`／`getValue`（public） |
-| `DataFile`／`DataFileFragment` | `TestCoreFileAdapter`（`file` 相乗り）が `names`／`types`／`lengths`／`values`・長さ省略判定を読む |
+| `DataFile`／`DataFileFragment` | `TestCoreFileAdapter`（`file` 相乗り）が `names`／`types`／`lengths`／`values` を読む |
 | `MessagePool` | FW 制御ヘッダは `getFwHeader`（public）。本文は `FixedLengthFile` として取る |
 | LIST_MAP | 戻り値が `List<Map<String,String>>` の素の型 |
 
@@ -138,7 +138,7 @@ YAML の値は、数値・null・空白を文字列として保つため、書�
 | 正規化 | 器の挙動 | 原文の復元 |
 |---|---|---|
 | カラム名・テーブル名の大文字化 | キーを大文字化（値は無損失） | NTF 仕様上、カラム名の大小は無意味。復元不要 |
-| 長さ省略（`-`）フィールド | 値を改行除去・トリムし、長さを実バイト長に上書き | 器の `isOndemandCalcFieldSize(i)` で省略フィールドを識別し、原文の値・長さは生行から取る |
+| 長さ省略（`-`）フィールド | 値を改行除去・トリムし、長さを実バイト長に上書き | 長さ行のセルが `-`（`ONDEMAND_CALC_FIELD_SIZE`）かで省略フィールドを識別し、原文の値・長さは生行から取る |
 | 型表記 | 設計上の型名をフレームワーク表記（`X`/`N`/`B`/`Z`）に変換 | 原文の型は生行の型行から取る |
 | LIST_MAP の列順 | 値 Map を `TreeMap` でキーソート | 元の列順は `HeaderLine` が保持。器から取れる（生行不要） |
 
@@ -230,7 +230,7 @@ class TestCoreReaderAdapter {
 }
 class TestCoreFileAdapter {
   <<file相乗り>>
-  +names/types/lengths/values/長さ省略判定
+  +names/types/lengths/values
 }
 class ExcelParsers {
   <<本体>> DataFileParser ほか

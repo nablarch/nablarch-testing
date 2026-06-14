@@ -411,19 +411,31 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-14
-- **Last completed**: **R0**（設計書を判断 A=(a) 2 アダプタへ確定＋steering に D-G・Recovery Plan）コミット `5629a4b`・push 済。**コードは未着手**（#5=`cb881bc`／#6 wip=`4eedba3` のまま）。
-- **Next**: **R1**（本体撤回＋アダプタ 2 枚化）を TDD で着手。下記 Recovery Plan ＋「R1 着手前メモ（調査済）」参照。
-- **確定事項（D-G）**: ① 本体無変更へ収束＝getter 撤回(DataFile/DataFileFragment)・getFwHeader 撤回。② Excel は `TestCoreReaderAdapter`＋`TestCoreFileAdapter` の 2 枚。③ QuotationTrimmer 据え置き。
+- **Last completed**: **R0**（判断 A=(a) 2 アダプタ確定・`5629a4b`）。本セッション追加：①設計書 §共通 の内部矛盾（長さ省略の識別に private `isOndemandCalcFieldSize` を使う記述 vs「本体無変更・可視性拡大不要」）を検知→**ユーザーが B で解消**（識別も生行の長さ行セル `==-` から。設計書 L141/L128 改訂＝本コミットに含む）。②Plan エージェントで R1+R2 の実装計画を実コード根拠で確定（下記「R1+R2 実装計画」）。**コードは未着手**（#5=`cb881bc`／#6 wip は HEAD の `XlsFormatReader`/`TestDataParserAdapter` のまま）。
+- **Next**: **R1+R2 を 1 コミットで実装**（TDD）。理由＝private `recordType` 撤回が `XlsFormatReader` を壊し、生行復元(R2)でしか直せず中間にコンパイル可能状態が無いため統合（「各コミットはビルド通過」ルール上の正）。下記「R1+R2 実装計画」が唯一の手順。
+- **確定事項**: ① 本体無変更へ収束＝`DataFile`/`DataFileFragment` の getter 撤回・`MessagePool.getFwHeader` を package-private へ撤回・`QuotationTrimmer` は据え置き。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（B 確定）。
 
-## R1 着手前メモ（本セッションで調査済・resume はここから実装してよい）
+## R1+R2 実装計画（本セッションで Plan エージェント＋実コードで確定・resume はこの手順で実装）
 
-- **可視性（実コード確認）**: `DataFile.all`／`DataFile.directives` は **protected**＝`file` パッケージ相乗りの `TestCoreFileAdapter` から読める。`DataFileFragment.names`／`types`／`lengths`／`values` も **protected**＝読める。**ただし** `DataFileFragment.recordType` と `isOndemandCalcFieldSizeList`（長さ省略判定）は **private**＝同一パッケージでも**読めない**。さらに `replaceFieldSize`（`DataFileFragment.java:140-155`）が `lengths` を実バイト長へ**上書き**するため、器の `lengths` から原文 `-` は復元不可。
-- **→ 設計判断（本体無変更を優先）**: `recordType` と長さ省略判定は **R2 で生行（長さ行セル `== "-"`）から取得**。`TestCoreFileAdapter` は protected で読める `names/types/lengths/values`＋`DataFile.all/directives` のみを plain で返す。設計書 §共通「器の `isOndemandCalcFieldSize(i)` で識別」の文言からは外れるが、**本体可視性拡大を回避**（ユーザーに報告済・ブロックなしで進める合意）。これと食い違う実装が必要になったら可視性拡大の要否をユーザーに相談（released 本体）。
-- **撤回の安全性（実コード確認）**:
-  - `MessagePool.getFwHeader` public 化撤回は安全＝アダプタは `parser.getFwHeader()`（**MessageParser**・同一パッケージ）を使用（`TestDataParserAdapter.java:155`）。MessagePool の本番呼び出し元なし。テストの `message.getFwHeader()` はアダプタ内 `MessageData` 型のゲッタ（撤回対象外）。`MessageParserTest:63,106` の `pool.getFwHeader()` は同一パッケージ＝撤回後も可。
-  - getter 撤回で**壊れるのは** `TestDataParserAdapterTest:336/362/386/410`（`file.getAllFragments().get(0).getValues()...`）→ `TestCoreFileAdapter` 経由へ移送。`YamlTestDataParserTest:565` は stale コメント（撤回後に正となる）。
-- **R1 でやること（順）**: ① `TestCoreFileAdapter`（`nablarch.test.core.file`・新設）を TDD：`read(DataFile)` 等で `all`/`directives`/各 fragment の `names/types/lengths/values` を plain 返却。② `TestDataParserAdapter`→`TestCoreReaderAdapter` 改名（`readFiles` は raw 器を返すまま）＋全参照追従。③ 本体撤回（`DataFile`+18／`DataFileFragment`+47／`MessagePool` getFwHeader）。④ `TestDataParserAdapterTest`→`TestCoreReaderAdapterTest` 改名＋file-getter 箇所を `TestCoreFileAdapter` へ移送。⑤ 検証：`git diff main..HEAD -- 'core/file' 'core/messaging'` が**本体ゼロ差分**（新規 `TestCoreFileAdapter` は別ファイル＝差分は新規追加のみ）。reader 既存テスト全 GREEN（offline `mvn -o test`）。
-- **未確認（R1 開始時に最初に見る）**: `XlsFormatReader`（#6 wip）が HEAD に在るか・本体 getter を消費するか（割り込みで未確認）。消費していれば R1 で `TestCoreFileAdapter` 経由へ要追従。`grep -rn '\.getAllFragments\|\.getNames()\|\.getTypes()\|\.getLengths()\|\.getValues()' src/main/java/nablarch/test/tool` で確認。
+**前提（実コード確認済）**
+- 可視性: `DataFile.all/directives` = **protected**（同一 `file` パッケージの `TestCoreFileAdapter` から読める）。`DataFileFragment.names/types/lengths/values` = **protected**（読める）。**`DataFileFragment.recordType`(L58) と `isOndemandCalcFieldSizeList`(L55)/`isOndemandCalcFieldSize(int)`(L125) は private**（同一パッケージでも読めない）。`ONDEMAND_CALC_FIELD_SIZE = "-"`(L76, private)。
+- `replaceFieldSize`(`DataFileFragment.java:140-155`) が `lengths` を実バイト長へ上書き → 器から原文 `-`・原文長は復元不可。よって **recordType・長さ省略識別・原文長・型表記・`-`値は生行から復元**（B 確定）。
+- **FILE/MESSAGE はマーカー列(`[...]`)を使わない**。recordType は名前行の**列0**(`DataFileParser.java:250` `setRecordType(fieldNamesLine.get(0))`)、names/types/lengths/values は全て `tail(line)`(列0除去, `DataFileParser.java:163/173/186/251`)。よって生行↔器の対応は**「列0を落とす(tail)」だけ**で 1:1（`[...]`除外は LIST_MAP/TABLE のみ＝R2 では不要、R5 へ）。
+- 行種別: 名前行=列0が recordType・tail が names → 型行(tail=原文型) → (FIXED のみ)長さ行(tail=原文長 `-`含む) → 値行(`isDataRow`=列0空, `DataFileParser.java:204-210`)。VARIABLE は長さ行なし(`VariableLengthFileParser`)。生行は `TestDataParsingTemplate` がコメント/空行除去済、`trimTailCopy` は未適用→Reader 側で `NablarchTestUtils.trimTailCopy` を適用（本体 `onReadLine` と同じ）。
+- **撤回の安全性**: `MessagePool.getFwHeader` 撤回は安全＝アダプタは `MessageParser.getFwHeader`(同一パッケージ)を使用(`TestDataParserAdapter.java:155`)・本番呼び出し元なし・`YamlTestDataParserTest:565` はリフレクション(撤回後コメントが正)・`MessageParserTest`/`SendSyncMessageParserTest` は別メソッド。
+- **getter 撤回で壊れる消費者**: `XlsFormatReader.java`(`:192-193,213,222-243` が getAllFragments/getDirectives/getNames/getTypes/getLengths/getValues/getRecordType を使用)＋`TestDataParserAdapterTest.java:336/362/386/410`(`file.getAllFragments().get(0).getValues()`)。**`YamlValueProcessor`/Yaml系テスト/model系テストは Raw* や中間モデル独自getter＝無影響**。
+
+**実装手順（1 コミット・TDD・順序厳守）**
+1. **`TestCoreFileAdapter`**(新設, `nablarch.test.core.file`) を TDD。`static FileView read(DataFile)`。`FileView{path, Map<String,Object> directives, List<FragmentView> fragments}`、`FragmentView{List<String> names/types/lengths, List<Map<String,String>> values}`（**recordType・長さ省略判定は持たない**＝private のため）。protected `all/directives/names/types/lengths/values` のみ読む。`TestCoreFileAdapterTest` で C0/C1 100%。
+2. **生行コレクタ** を（改名後の）`TestCoreReaderAdapter` に追加。`HeaderCollector`(`TestDataParserAdapter.java:273-332`)と同じく `TestDataParsingTemplate` を継承し、対象ブロック(groupId,identifier,DataType)の**生ボディ行 `List<List<String>>`** を返す `readBlockLines(...)`。本体の readLine/getDataType/getTypeValue を再利用＝行/マーカー判定の二重実装なし。
+3. **改名** `TestDataParserAdapter`→`TestCoreReaderAdapter`（＋`TestDataParserAdapterTest`→`TestCoreReaderAdapterTest`）。全参照追従（`XlsFormatReader.java:18-20,61-67,75`／`XlsFormatReaderTest.java:15,33,117`）。`readFiles/readTables/readListMap/readMessage/readHeaders` は raw 器返却のまま。
+4. **`XlsFormatReader` R2 原文復元**。getter 呼びを `TestCoreFileAdapter.read(file)` 経由へ置換。recordType=生行名前行 列0／原文型=型行 tail／長さ省略識別＋原文長=長さ行 tail のセル `=="-"`／`-`値=生行値セル（器値は改行除去・トリム済 `DataFileFragment.java:111-113`）。器(`FragmentView`)を権威に fragment 数/区切りを決め、生行を `DataFileParser` 状態機械と同形にウォークして原文を充填。`XlsFormatReaderTest:248` の `getType()=="X"` → 原文 `"半角英字"` へ修正＋長さ省略/recordType-from-raw のテスト追加（RED→GREEN）。
+5. **released 撤回**: `DataFile.java`(getAllFragments/getDirectives 削除)・`DataFileFragment.java`(getRecordType/getNames/getTypes/getLengths/getValues＋クラス`@Published`＋追加import 2 行削除)・`MessagePool.java`(getFwHeader を public→package-private、`@Published` 行削除/class 級は据置)。`QuotationTrimmer` は**据え置き**。`TestCoreReaderAdapterTest:336/362/386/410` を `TestCoreFileAdapter` 経由へ移送。
+6. **検証**: `git diff main..HEAD -- src/main/java/nablarch/test/core/file/DataFile.java src/main/java/nablarch/test/core/file/DataFileFragment.java src/main/java/nablarch/test/core/messaging/MessagePool.java` が**空**（QuotationTrimmer は +5 残置が正）。`mvn -o test`（reader+converter GREEN）。→ `complete task #6` 相当はまだ（電文4種=R3 が残るため #6 完了は R3 後）。本コミットは「R1+R2: Excel経路を2アダプタ＋原文復元・本体無変更へ」。
+
+**残リスク（R2 実装中に実 .xls fixture で確認）**: `-`長さ省略フィールドの**複数行値**が `PoiXlsReader.readLine()` で改行保持されるか。保持されなければ原文復元が生行だけでは不可＝その時点でユーザー相談（設計書通りに進められない検知）。
+
+**この後（#6 完了まで）**: R3=電文4種(`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`。6.3 コーパス messaging 系 6 クラスが使用＝必須。`TestCoreReaderAdapter` に send-sync 2 経路 `getMessageWithoutCache`/`getSendSyncMessage` を追加し `MessageDataBlock` の 4 種へ。FW ヘッダは 4 種とも空)→ 回帰・jacoco・3 観点レビュー(QA/Java/SWE)・`P3-6.md`・`complete task #6`。以降 R4(#7 YAML)・R5(util)・Phase4-6(#8-#14)で 6.3。
 
 ## Recovery Plan（新設計書 = 正・D-G 反映・TDD・各 R は 1 commit→push→裏取り報告）
 
