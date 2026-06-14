@@ -409,11 +409,21 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: in_progress
+- **Status**: paused
 - **Date**: 2026-06-14
-- **Last completed**: #5（commit `cb881bc`）。#6 は wip（`4eedba3`）。設計書をユーザーが再改訂（`f20ee92`→`d89c434`→**本セッションで判断 A を (a) 2 アダプタ方式へ・未コミット `M`**）。判断は全て確定（D-G）。
-- **Next**: 下記 **Recovery Plan** を R1 から TDD で順次実施。R1＝本体撤回＋アダプタ 2 枚化。
+- **Last completed**: **R0**（設計書を判断 A=(a) 2 アダプタへ確定＋steering に D-G・Recovery Plan）コミット `5629a4b`・push 済。**コードは未着手**（#5=`cb881bc`／#6 wip=`4eedba3` のまま）。
+- **Next**: **R1**（本体撤回＋アダプタ 2 枚化）を TDD で着手。下記 Recovery Plan ＋「R1 着手前メモ（調査済）」参照。
 - **確定事項（D-G）**: ① 本体無変更へ収束＝getter 撤回(DataFile/DataFileFragment)・getFwHeader 撤回。② Excel は `TestCoreReaderAdapter`＋`TestCoreFileAdapter` の 2 枚。③ QuotationTrimmer 据え置き。
+
+## R1 着手前メモ（本セッションで調査済・resume はここから実装してよい）
+
+- **可視性（実コード確認）**: `DataFile.all`／`DataFile.directives` は **protected**＝`file` パッケージ相乗りの `TestCoreFileAdapter` から読める。`DataFileFragment.names`／`types`／`lengths`／`values` も **protected**＝読める。**ただし** `DataFileFragment.recordType` と `isOndemandCalcFieldSizeList`（長さ省略判定）は **private**＝同一パッケージでも**読めない**。さらに `replaceFieldSize`（`DataFileFragment.java:140-155`）が `lengths` を実バイト長へ**上書き**するため、器の `lengths` から原文 `-` は復元不可。
+- **→ 設計判断（本体無変更を優先）**: `recordType` と長さ省略判定は **R2 で生行（長さ行セル `== "-"`）から取得**。`TestCoreFileAdapter` は protected で読める `names/types/lengths/values`＋`DataFile.all/directives` のみを plain で返す。設計書 §共通「器の `isOndemandCalcFieldSize(i)` で識別」の文言からは外れるが、**本体可視性拡大を回避**（ユーザーに報告済・ブロックなしで進める合意）。これと食い違う実装が必要になったら可視性拡大の要否をユーザーに相談（released 本体）。
+- **撤回の安全性（実コード確認）**:
+  - `MessagePool.getFwHeader` public 化撤回は安全＝アダプタは `parser.getFwHeader()`（**MessageParser**・同一パッケージ）を使用（`TestDataParserAdapter.java:155`）。MessagePool の本番呼び出し元なし。テストの `message.getFwHeader()` はアダプタ内 `MessageData` 型のゲッタ（撤回対象外）。`MessageParserTest:63,106` の `pool.getFwHeader()` は同一パッケージ＝撤回後も可。
+  - getter 撤回で**壊れるのは** `TestDataParserAdapterTest:336/362/386/410`（`file.getAllFragments().get(0).getValues()...`）→ `TestCoreFileAdapter` 経由へ移送。`YamlTestDataParserTest:565` は stale コメント（撤回後に正となる）。
+- **R1 でやること（順）**: ① `TestCoreFileAdapter`（`nablarch.test.core.file`・新設）を TDD：`read(DataFile)` 等で `all`/`directives`/各 fragment の `names/types/lengths/values` を plain 返却。② `TestDataParserAdapter`→`TestCoreReaderAdapter` 改名（`readFiles` は raw 器を返すまま）＋全参照追従。③ 本体撤回（`DataFile`+18／`DataFileFragment`+47／`MessagePool` getFwHeader）。④ `TestDataParserAdapterTest`→`TestCoreReaderAdapterTest` 改名＋file-getter 箇所を `TestCoreFileAdapter` へ移送。⑤ 検証：`git diff main..HEAD -- 'core/file' 'core/messaging'` が**本体ゼロ差分**（新規 `TestCoreFileAdapter` は別ファイル＝差分は新規追加のみ）。reader 既存テスト全 GREEN（offline `mvn -o test`）。
+- **未確認（R1 開始時に最初に見る）**: `XlsFormatReader`（#6 wip）が HEAD に在るか・本体 getter を消費するか（割り込みで未確認）。消費していれば R1 で `TestCoreFileAdapter` 経由へ要追従。`grep -rn '\.getAllFragments\|\.getNames()\|\.getTypes()\|\.getLengths()\|\.getValues()' src/main/java/nablarch/test/tool` で確認。
 
 ## Recovery Plan（新設計書 = 正・D-G 反映・TDD・各 R は 1 commit→push→裏取り報告）
 
