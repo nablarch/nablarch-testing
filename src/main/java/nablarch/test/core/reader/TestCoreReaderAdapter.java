@@ -12,6 +12,7 @@ import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.FixedLengthFile;
+import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 
 /**
@@ -157,6 +158,40 @@ public class TestCoreReaderAdapter {
     }
 
     /**
+     * 送信同期メッセージ（要求/応答電文の 4 種：{@link DataType#EXPECTED_REQUEST_HEADER_MESSAGES}／
+     * {@link DataType#EXPECTED_REQUEST_BODY_MESSAGES}／{@link DataType#RESPONSE_HEADER_MESSAGES}／
+     * {@link DataType#RESPONSE_BODY_MESSAGES}）のうち、指定グループに属する全ブロックの本文
+     * （固定長ファイル）を取り出す。
+     * <p>
+     * これらのマーカーは {@code TYPE[group]=id} 形式で、本体は {@link GroupMessageParser} が
+     * グループ単位で {@link SendSyncMessageParser} へ委譲して解析する。本体 {@code GroupMessageParser}
+     * は結果を {@link MessagePool} 群へ包んで返すため、変換ツールが必要とする生の
+     * {@link FixedLengthFile} を取り出せない（{@link MessagePool#getSource()} は protected で
+     * 別パッケージから不可視）。そこで本メソッドは {@code GroupMessageParser} と同じ配線
+     * （{@code GroupDataParsingTemplate} ＋ {@code SendSyncMessageParser} 委譲）を本アダプタ内で
+     * 再現し、{@link SendSyncMessageParser#getDelegate()} が持つ {@link FixedLengthFile} 群を
+     * そのまま返す。FW 制御ヘッダは送信系では常に空のため返さない（本体 {@code GroupMessageParser}
+     * も空ヘッダで包む）。
+     * </p>
+     * <p>
+     * 各 {@link FixedLengthFile} の {@link DataFile#getPath()} はマーカー {@code =} 以降の識別子
+     * （本体 {@code GroupMessageParser} が {@code setRequestId(data.getPath())} に用いる値）に
+     * 一致する。同一グループ内に識別子の異なる複数ブロックがある場合は、その数だけ返る。
+     * </p>
+     *
+     * @param path     取得元パス
+     * @param resource 取得元リソース名
+     * @param groupId  グループ ID（{@code [case1]} 等。マーカーの {@code TYPE} と {@code =} の間の文字列）
+     * @param type     データタイプ（送信系 4 種のいずれか）
+     * @return 指定グループに属する本文（固定長ファイル）一覧（記述順。対象が無ければ空）
+     */
+    public List<FixedLengthFile> readSendSyncMessages(String path, String resource, String groupId, DataType type) {
+        SendSyncBodyCollector collector = new SendSyncBodyCollector(reader, type);
+        collector.parse(path, resource, groupId);
+        return collector.getResult();
+    }
+
+    /**
      * リソース内に存在する全データブロックの<b>ヘッダ</b>（データタイプ・グループ ID・識別子）を
      * シート記述順に列挙する。ブロック本体の解析は行わない。
      * <p>
@@ -285,6 +320,50 @@ public class TestCoreReaderAdapter {
         /** @return 本文（固定長ファイルの器。記法のまま・未加工） */
         public FixedLengthFile getBody() {
             return body;
+        }
+    }
+
+    /**
+     * 送信同期メッセージ（送信系 4 種）の本文（固定長ファイル）をグループ単位で収集する、
+     * 本体 {@link GroupMessageParser} と同型の {@link GroupDataParsingTemplate}。
+     * <p>
+     * {@code GroupMessageParser} は {@link SendSyncMessageParser} へ委譲して解析した結果を
+     * {@link MessagePool} 群へ包んで返すが、変換ツールは生の {@link FixedLengthFile} を要する。
+     * 本クラスは {@code GroupMessageParser} と同じ委譲構成を取りつつ、{@link #getResult()} で
+     * {@link SendSyncMessageParser#getDelegate()} の {@link FixedLengthFile} 群をそのまま返す。
+     * </p>
+     *
+     * @see #readSendSyncMessages(String, String, String, DataType)
+     */
+    private static final class SendSyncBodyCollector extends GroupDataParsingTemplate<List<FixedLengthFile>> {
+
+        /** 解析を委譲する送信同期メッセージパーサ */
+        private final SendSyncMessageParser delegate;
+
+        /**
+         * コンストラクタ。
+         *
+         * @param reader     テストデータリーダ
+         * @param targetType 対象データタイプ（送信系 4 種のいずれか）
+         */
+        SendSyncBodyCollector(TestDataReader reader, DataType targetType) {
+            super(reader, EMPTY_INTERPRETERS, targetType);
+            delegate = new SendSyncMessageParser(reader, EMPTY_INTERPRETERS, targetType);
+        }
+
+        @Override
+        void onReadLine(List<String> line) {
+            delegate.onReadLine(line);
+        }
+
+        @Override
+        void onTargetTypeFound(List<String> line) {
+            delegate.onTargetTypeFound(line);
+        }
+
+        @Override
+        List<FixedLengthFile> getResult() {
+            return delegate.getDelegate().getResult();
         }
     }
 

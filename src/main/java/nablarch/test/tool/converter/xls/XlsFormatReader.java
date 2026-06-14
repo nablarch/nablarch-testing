@@ -115,8 +115,11 @@ public class XlsFormatReader implements TestDataFormatReader {
                         blocks.add(block);
                     }
                 }
+            } else if (isSendSyncType(type)) {
+                if (processed.add(batchKey(type, header.getGroupId()))) {
+                    blocks.addAll(readSendSyncBlocks(basePath, resourceName, header.getGroupId(), type));
+                }
             }
-            // それ以外（要求/応答電文 4 種）は #6 スコープ外（別タスクで対応）
         }
         TestDataSection section = new TestDataSection(sheetName(resourceName), blocks);
         return new TestDataContainer(bookName(resourceName), Collections.singletonList(section));
@@ -228,6 +231,39 @@ public class XlsFormatReader implements TestDataFormatReader {
         return new MessageDataBlock(DataType.MESSAGE, header.getGroupId(), header.getIdentifier(),
                 toStringDirectives(view.getDirectives()), fwHeaderFields,
                 toRecordLayouts(view, bodyLines, true));
+    }
+
+    /**
+     * 送信同期メッセージ（要求/応答電文 4 種）の全ブロック（指定の (データタイプ, グループ) に属する）を
+     * {@link MessageDataBlock} 群へ写す。
+     * <p>
+     * 構造は MESSAGE と同型（名前行の先頭セルがレコード種別、{@code no} 列＝メタ情報は器が
+     * 値から除いて {@code FIRST_FIELD_NO} に隔離する）だが、送信系に FW 制御ヘッダは無い（常に空）。
+     * 本文の固定長ファイルは {@link TestCoreReaderAdapter#readSendSyncMessages} がグループ単位で
+     * まとめて返し、各ファイルの {@link DataFile#getPath()} がマーカー {@code =} 以降の識別子に一致する。
+     * 原文（レコード種別・型記法・長さ・値）は MESSAGE と同じく生行から復元する。
+     * </p>
+     *
+     * @param basePath     ディレクトリ
+     * @param resourceName リソース名
+     * @param groupId      グループ ID（{@code [case1]} 等）
+     * @param type         データタイプ（送信系 4 種）
+     * @return メッセージデータブロック一覧
+     */
+    private List<TestDataBlock> readSendSyncBlocks(String basePath, String resourceName, String groupId, DataType type) {
+        List<FixedLengthFile> bodies = adapter.readSendSyncMessages(basePath, resourceName, groupId, type);
+        List<TestDataBlock> result = new ArrayList<TestDataBlock>();
+        for (FixedLengthFile body : bodies) {
+            String identifier = body.getPath();
+            FileView view = TestCoreFileAdapter.read(body);
+            List<List<String>> bodyLines =
+                    adapter.readBlockBodyLines(basePath, resourceName, groupId, identifier, type);
+            result.add(new MessageDataBlock(type, groupId, identifier,
+                    toStringDirectives(view.getDirectives()),
+                    new LinkedHashMap<String, String>(),
+                    toRecordLayouts(view, bodyLines, true)));
+        }
+        return result;
     }
 
     /**
@@ -372,6 +408,19 @@ public class XlsFormatReader implements TestDataFormatReader {
      */
     private static boolean isFixed(DataType type) {
         return type == DataType.SETUP_FIXED || type == DataType.EXPECTED_FIXED;
+    }
+
+    /**
+     * 送信同期メッセージ（要求/応答電文 4 種）のデータタイプか判定する。
+     *
+     * @param type データタイプ
+     * @return 送信系なら真
+     */
+    private static boolean isSendSyncType(DataType type) {
+        return type == DataType.EXPECTED_REQUEST_HEADER_MESSAGES
+                || type == DataType.EXPECTED_REQUEST_BODY_MESSAGES
+                || type == DataType.RESPONSE_HEADER_MESSAGES
+                || type == DataType.RESPONSE_BODY_MESSAGES;
     }
 
     /**

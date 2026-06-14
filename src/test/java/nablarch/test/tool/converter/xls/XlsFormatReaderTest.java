@@ -343,6 +343,130 @@ public class XlsFormatReaderTest {
         assertThat(record.getRows().get(0), is(Arrays.asList("${b}", "xyz")));
     }
 
+    // ------------------------------------------------------------- send-sync messages
+
+    /**
+     * Given: {@code no} 列＋本文フィールドを持つ EXPECTED_REQUEST_HEADER_MESSAGES ブロック
+     *        （{@code TYPE[group]=id} 形式マーカー）。
+     * When : {@code read}。
+     * Then : MessageDataBlock に写される。グループ ID は {@code [case1]}、識別子は {@code =} 以降。
+     *        {@code no} 列はメタ情報のため脱落し、本文フィールド・値は記法のまま。FW ヘッダは空。
+     */
+    @Test
+    public void readMapsExpectedRequestHeaderMessageBlock() {
+        String resource = "book/readMapsExpectedRequestHeaderMessageBlock";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("text-encoding", "ms932"));
+        lines.add(row("no", "requestId", "resendFlag"));
+        lines.add(row("", "半角", "半角"));
+        lines.add(row("", "20", "1"));
+        lines.add(row("1", "RM21AA0104_01", "0"));
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        MessageDataBlock message = (MessageDataBlock) container.getSections().get(0).getBlocks().get(0);
+        assertThat(message.getDataType(), is(nablarch.test.core.reader.DataType.EXPECTED_REQUEST_HEADER_MESSAGES));
+        assertThat(message.getGroupId(), is("[case1]"));
+        assertThat(message.getIdentifier(), is("RM21AA0104_01"));
+        // 送信系に FW 制御ヘッダは無い（常に空）
+        assertTrue(message.getFwHeaderFields().isEmpty());
+        // ディレクティブは記法のまま
+        assertThat(message.getDirectives().get("text-encoding"), is("ms932"));
+        // 本文レコード: no 列は脱落し、フィールドは requestId/resendFlag のみ
+        assertThat(message.getRecords().size(), is(1));
+        RecordLayout record = message.getRecords().get(0);
+        List<String> fieldNames = new ArrayList<String>();
+        for (FieldDef field : record.getFields()) {
+            fieldNames.add(field.getName());
+        }
+        assertThat(fieldNames, is(Arrays.asList("requestId", "resendFlag")));
+        assertThat(record.getFields().get(0).getType(), is("半角"));
+        assertThat(record.getFields().get(0).getLength(), is("20"));
+        // 値行も no（NO 値）が脱落し、本文値のみ
+        assertThat(record.getRows().get(0), is(Arrays.asList("RM21AA0104_01", "0")));
+    }
+
+    /**
+     * Given: 同一グループ {@code [case1]} に EXPECTED_REQUEST_HEADER/BODY、
+     *        グループ {@code [res_case1]} に RESPONSE_HEADER/BODY を持つシート。
+     * When : {@code read}。
+     * Then : 4 種すべてが MessageDataBlock として写り、データタイプ・グループ ID が保たれる。
+     */
+    @Test
+    public void readMapsAllFourSendSyncMessageTypes() {
+        String resource = "book/readMapsAllFourSendSyncMessageTypes";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_01"));
+        lines.add(row("EXPECTED_REQUEST_BODY_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("no", "userId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "10"));
+        lines.add(row("1", "user01"));
+        lines.add(row("RESPONSE_HEADER_MESSAGES[res_case1]=RM21AA0104_01"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0101"));
+        lines.add(row("RESPONSE_BODY_MESSAGES[res_case1]=RM21AA0104_01"));
+        lines.add(row("no", "failureCode"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "0"));
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        List<TestDataBlock> blocks = container.getSections().get(0).getBlocks();
+        Map<nablarch.test.core.reader.DataType, String> typeToGroup =
+                new HashMap<nablarch.test.core.reader.DataType, String>();
+        for (TestDataBlock block : blocks) {
+            assertTrue(block instanceof MessageDataBlock);
+            MessageDataBlock m = (MessageDataBlock) block;
+            typeToGroup.put(m.getDataType(), m.getGroupId());
+        }
+        assertThat(blocks.size(), is(4));
+        assertThat(typeToGroup.get(nablarch.test.core.reader.DataType.EXPECTED_REQUEST_HEADER_MESSAGES), is("[case1]"));
+        assertThat(typeToGroup.get(nablarch.test.core.reader.DataType.EXPECTED_REQUEST_BODY_MESSAGES), is("[case1]"));
+        assertThat(typeToGroup.get(nablarch.test.core.reader.DataType.RESPONSE_HEADER_MESSAGES), is("[res_case1]"));
+        assertThat(typeToGroup.get(nablarch.test.core.reader.DataType.RESPONSE_BODY_MESSAGES), is("[res_case1]"));
+    }
+
+    /**
+     * Given: 同一データタイプ・同一グループに識別子の異なる 2 ブロック。
+     * When : {@code read}。
+     * Then : 各識別子ごとに MessageDataBlock が 1 件ずつ写る。
+     */
+    @Test
+    public void readMapsMultipleSendSyncBlocksInSameGroup() {
+        String resource = "book/readMapsMultipleSendSyncBlocksInSameGroup";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_01"));
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_02"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_02"));
+
+        TestDataContainer container = readerOf(resource, lines).read(DIR, resource);
+
+        List<TestDataBlock> blocks = container.getSections().get(0).getBlocks();
+        assertThat(blocks.size(), is(2));
+        List<String> identifiers = new ArrayList<String>();
+        for (TestDataBlock block : blocks) {
+            identifiers.add(((MessageDataBlock) block).getIdentifier());
+        }
+        assertThat(identifiers, hasItem("RM21AA0104_01"));
+        assertThat(identifiers, hasItem("RM21AA0104_02"));
+    }
+
     // ------------------------------------------------------------------ container / section
 
     /**

@@ -411,9 +411,19 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-14
-- **Last completed**: **R1+R2**（`6c5ef7a`）。Excel 経路を本体無変更で 2 アダプタ＋原文復元へ再構築。`TestCoreFileAdapter` 新設（file 相乗り・FileView/FragmentView）／`TestDataParserAdapter`→`TestCoreReaderAdapter` 改名＋`readBlockBodyLines`（生行収集・`TestDataParsingTemplate` 再利用）／`XlsFormatReader` R2（器を権威に断片・値行数を決め生行から recordType=名前行列0・型記法=型行・長さ省略`-`=長さ行を復元）。本体撤回完了＝`git diff main` の core/file・core/messaging 本体差分**ゼロ**（QuotationTrimmer +5 のみ据え置き）。テスト GREEN：TestCoreFileAdapterTest7／TestCoreReaderAdapterTest19／XlsFormatReaderTest11、touched パッケージ回帰 386 件 0F/0E。
-- **Next**: **R3 — 電文 4 種編入**（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）。本セッションで実コード調査済（下記「R3 調査メモ」が一次情報）。**着手前に「★未解決の設計判断＝NO/caseNo 列の表現非対称★」を裏取りすること**（Excel の `addValueWithId`/`FIRST_FIELD_NO`/recordType=col0 と YAML の `addValue`/recordType="default"/FW_HEADER スキップの差が 6.3 で assert 同値を壊さないか）。裏取り手順は調査メモ記載の①②③。その後 `TestCoreReaderAdapter` に送信系読み出しを新設→`XlsFormatReader` で 4 type を `MessageDataBlock`（空 fwHeaderFields）へ→テスト→回帰。R3 後に R6（jacoco C0/C1・3 観点レビュー・`P3-6.md`・`complete task #6`）。6.3 コーパス messaging 系 6 クラスが使用＝必須。
-- **確定事項**: ① 本体無変更へ収束（R1+R2 で完了）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（実装済）。④ R4(#7 YAML)・R5(util 共通化)・Phase4-6 は未着手。⑤ R3 は本セッションで**実コード調査済・コード未着手**（下記「R3 調査メモ」）。**未解決の設計判断あり（NO/caseNo 列の表現）＝着手前に裏取り要**。
+- **Last completed**: **R3 — 電文 4 種編入**（コミット予定）。`★未解決の設計判断（NO/caseNo 非対称）★` を実コードで裏取りし**良性と確定**（下記「R3 裏取り結論」）。`TestCoreReaderAdapter.readSendSyncMessages`（送信系 4 種をグループ単位で本文 `FixedLengthFile` 群として取り出す。本体 `GroupMessageParser` と同型の private `SendSyncBodyCollector`＝`GroupDataParsingTemplate`＋`SendSyncMessageParser` 委譲で、pool に包まず生器を返す）を新設。`XlsFormatReader` に `isSendSyncType` 分岐＋`readSendSyncBlocks`（MESSAGE と同型に `toRecordLayouts` を再利用・**空 fwHeaderFields**・`no`/NO は器＋生行 tail が落とす）。テスト追加：TestCoreReaderAdapterTest +3（22）／XlsFormatReaderTest +3（14）。**body 差分ゼロ維持**（DataFile/DataFileFragment/MessagePool）。touched パッケージ回帰 **419 件 0F/0E・8 Skip（@Ignore 群）**。
+- **Next**: **R6 — #6 仕上げ**。(1) jacoco C0/C1（運用ノートの online `mvn package -Dmaven.javadoc.skip=true`）で adapter/XlsFormatReader 送信系新規分のカバレッジ確認（番人除く 100%）。(2) 3 観点レビュー（QA/Java/SWE）をサブエージェントで→`docs/pr75/checks/P3-6.md`。(3) `complete task #6` コミット。**#14 へ申し送り（要検証）**：errorMode 行（`errorMode:timeout`/`msgException`）は YAML `buildFragments` が `addValue` で素通しだが runtime は値の `containsValue` で検知＝動くはず。本 R3 のユニット fixture は errorMode 未網羅。実 6.3 コーパス（RESPONSE 系の timeout ケース）で要確認。
+- **確定事項**: ① 本体無変更へ収束（R1+R2）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**。④ **R3 完了**＝送信系 4 種を MESSAGE と同型で `MessageDataBlock`(空 fwHeaderFields) へ。⑤ R4(#7 YAML)・R5(util 共通化)・Phase4-6 は未着手。
+
+## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
+
+**結論：NO/caseNo・recordType・FW ヘッダの Excel↔YAML 非対称は 6.3 の assert 同値を壊さない（良性）。** 根拠（`RequestTestingMessagingClient.assertSendingMessage` を精読）：
+- runtime が比較するのは **本文 DataRecord の フィールド名→値 マップ（または電文全体のバイト列）＋レコード件数**のみ。ヘッダの**値比較はコメントアウト**（`:380-384,405-409`）＝**件数のみ**意味を持つ（`:343` で header 件数==body 件数を要求）。
+- NO は **比較直前に `expectedBodyRecord.remove(FIRST_FIELD_NO)`** で除去（`:385-386`）＝失敗メッセージのラベル用途のみ。`FIRST_FIELD_NO = "DataFileFragment:firstFieldKey"`（"no" ではない）。
+- recordType は assert に一切入らない（レイアウトは DataRecord から `createLayoutFromDataRecord` で再構築・`:414`）。
+- **実 Excel 送信系ブロックの構造**（`RequestTestingSendSyncSupportTest.xls`/`RequestTestingMessagingContextTest.xls` をダンプして確認。データは `src/test/java/...` に同居）：マーカー `TYPE[group]=id`（例 `EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01`）→ `text-encoding` ディレクティブ → **名前行 col0=リテラル "no"** → 型行(col0空) → 長さ行(col0空) → 値行(col0=NO 値)。**実コーパスに `FW_HEADER` record_type は出現しない**＝`buildFragments(skipFwHeader=true)` の FW_HEADER スキップで header pool が空になる懸念は杞憂。
+- `SendSyncMessageParser` は `MessageParser` と違い `onReadingNames` を上書きしない→器 recordType=リテラル "no"・names=tail（col0除去）。値行は `addValueWithId`(col0→`FIRST_FIELD_NO`)。よって器 names は本文フィールドのみ・値は NO 隔離済＝MESSAGE と同じ「col0 を落とす」構造。`toRecordLayouts` は器 value を**件数にのみ**使い値は生行 tail から取るので、器の `FIRST_FIELD_NO` は出力に混ざらない。
+- ⇒ 変換ツールは **no/NO をメタ情報として落とし**、本文フィールド・値のみを `MessageDataBlock` へ。YAML 往復で record_type は `skipFwHeader=true` 下で "default" に固定され、"no"≠FW_HEADER ゆえスキップされない。Excel/YAML どちらの経路も比較対象マップが一致＝6.3 同値成立。
 
 ## R3 調査メモ（電文4種・本セッションで実コード調査・実装はこの知見で・サブエージェント結論は裏取り済/未済を明記）
 
@@ -438,7 +448,7 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - `buildFragments(skipFwHeader=true)`(`:288-339`)＝`FW_HEADER` record_type はスキップ、recordType は**常に "default"**(`DEFAULT_RECORD_TYPE`)、長さ未指定→`"-"`(動的)、**行は `fragment.addValue(rowValues)`（`addValueWithId` ではない！）**。
 - `RawMessage`＝`groupId/id/directives/fwHeader(Object)/records`。YAML 例（`docs/pr75/design` の messageData/yaml-examples）では **"no" は records.fields の先頭フィールド**として普通に並ぶ（メタでなく1フィールド）。
 
-**★未解決の設計判断（R3 着手前に必ず裏取り）★ — NO/caseNo 列の表現非対称**:
+**★【解決済 — 上記「R3 裏取り結論」で良性と確定】設計判断 — NO/caseNo 列の表現非対称**（以下は調査当時の論点。結論は冒頭「R3 裏取り結論」を正とする）:
 - Excel: `SendSyncMessageParser` は NO を `FIRST_FIELD_NO` に隔離・recordType=col0・FW_HEADER 行を本文レコードとして保持。
 - YAML: `buildFragments(skipFwHeader=true)` は recordType を "default" に固定・FW_HEADER レコードをスキップ・NO の特別扱いなし（"no" は普通の先頭フィールド・`addValue`）。
 - ⇒ Excel→runtime と Excel→YAML→runtime で生成される `MessagePool` の内部状態（recordType、FIRST_FIELD_NO の有無、FW_HEADER レコードの有無）が**一致しない恐れ**。**6.3（#14）はこの2経路の結果が assert で同値になることが必須**。

@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
+import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.file.TestCoreFileAdapter;
 import nablarch.test.core.file.VariableLengthFile;
 
@@ -476,6 +478,88 @@ public class TestCoreReaderAdapterTest {
         TestCoreReaderAdapter.MessageData message = adapter.readMessage(DIR, resource, "missing");
 
         assertThat(message, is(nullValue()));
+    }
+
+    // ------------------------------------------------------------- readSendSyncMessages
+
+    /**
+     * Given: グループ {@code [case1]} に属する EXPECTED_REQUEST_HEADER_MESSAGES ブロック 1 件。
+     * When : {@code readSendSyncMessages} をそのグループ・データタイプで呼ぶ。
+     * Then : 本文（固定長ファイル）が 1 件返り、{@link DataFile#getPath()} がマーカー識別子に一致する。
+     */
+    @Test
+    public void readSendSyncMessagesReturnsRawBodiesForGroup() {
+        String resource = "readSendSyncMessagesReturnsRawBodiesForGroup";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_01"));
+
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<FixedLengthFile> bodies = adapter.readSendSyncMessages(
+                DIR, resource, "[case1]", DataType.EXPECTED_REQUEST_HEADER_MESSAGES);
+
+        assertThat(bodies.size(), is(1));
+        assertThat(bodies.get(0).getPath(), is("RM21AA0104_01"));
+    }
+
+    /**
+     * Given: 同一グループ {@code [case1]} に識別子の異なる 2 ブロック。
+     * When : {@code readSendSyncMessages} を呼ぶ。
+     * Then : 識別子ごとに本文が 1 件ずつ（計 2 件）返る。
+     */
+    @Test
+    public void readSendSyncMessagesReturnsAllBlocksInGroup() {
+        String resource = "readSendSyncMessagesReturnsAllBlocksInGroup";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_01"));
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_02"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_02"));
+
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<FixedLengthFile> bodies = adapter.readSendSyncMessages(
+                DIR, resource, "[case1]", DataType.EXPECTED_REQUEST_HEADER_MESSAGES);
+
+        assertThat(bodies.size(), is(2));
+        assertThat(bodies.get(0).getPath(), is("RM21AA0104_01"));
+        assertThat(bodies.get(1).getPath(), is("RM21AA0104_02"));
+    }
+
+    /**
+     * Given: 対象グループのブロックが存在しないリソース。
+     * When : {@code readSendSyncMessages} を呼ぶ。
+     * Then : 空リストが返る。
+     */
+    @Test
+    public void readSendSyncMessagesEmptyWhenNoMatch() {
+        String resource = "readSendSyncMessagesEmptyWhenNoMatch";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("EXPECTED_REQUEST_HEADER_MESSAGES[case1]=RM21AA0104_01"));
+        lines.add(row("no", "requestId"));
+        lines.add(row("", "半角"));
+        lines.add(row("", "20"));
+        lines.add(row("1", "RM21AA0104_01"));
+
+        TestCoreReaderAdapter adapter = new TestCoreReaderAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<FixedLengthFile> bodies = adapter.readSendSyncMessages(
+                DIR, resource, "[other]", DataType.EXPECTED_REQUEST_HEADER_MESSAGES);
+
+        assertTrue(bodies.isEmpty());
     }
 
     // ------------------------------------------------------------------ readHeaders
