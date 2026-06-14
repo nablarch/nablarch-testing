@@ -233,11 +233,17 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 ### #8: YamlFormatWriter 再構築（YAML OUT）
 
-**Purpose**: 中間モデル→YAML を記法どおりに書き出す。
+**Purpose**: 中間モデル→YAML を記法どおりに書き出す。#7 IN リーダと記法対称（L2 往復(#12)の片側）。
 
 **Prerequisites**: #4
 
-**Completion criteria**: 全種別を YAML 出力／単体テスト GREEN・C0/C1 100%（番人除く）
+**Steps**（TDD・RED→GREEN）:
+
+- [x] `TestDataFormatWriter` インタフェース新設（`write(container, basePath)`。Reader と対称・本体非依存）
+- [x] `YamlFormatWriter implements TestDataFormatWriter` 新設。`serialize(TestDataSection)`＝純粋な中間モデル→YAML テキスト（テスト容易化）、`write`＝各セクションを `<basePath>/<section名>.yaml` へ出力。設計書 OUT 方針＝**全値ダブルクォート**（null はアンクォート `null`・`""`/`${...}` は記法保持）・キーは原則無クォート（YAML 特殊文字含む場合のみクォート）。`DataType`→セクションキー対応は writer 内 `sectionKey`（全13種・`dataTypeToSectionKey` は messaging 専用ゆえ流用不可）
+- [x] 全種別を #7 と対称の記法で出力：TABLE3（`table:`＋`rows:` map・group_id 整形 `[x]`→生値）・LIST_MAP（`id:`＋マーカー除外列）・FILE（`path:`/`type:`/`directives:`/`records:`〔`record_type` 省略時 null は出力なし・`fields:` flow `{name,type,length}`・length/type null は省略・`rows:` flow list〕）・MESSAGE（`id:`＋`fw_header:`＋FW_HEADER レコード非出力）・送信系4種（`group_id:` 必須＋`id:`＋fw_header なし＋"no" 保持）。セクションは初出順でグルーピング
+- [x] 全データ種別の単体テスト（TDD）。`serialize` 直アサート＋クォート/エスケープ（`"`/`\`/改行・制御文字・null・空文字）＋ `write` の I/O（`TemporaryFolder`）＋往復（モデル→write→実 `YamlFormatReader` で読み戻し同値・TABLE/固定長FILE/MESSAGE/送信系の4経路）。`YamlFormatWriterTest` 30件 GREEN・JaCoCo instr 99%/branch 96%（未到達は番人4＝sealed default・no-parent・制御文字キー・不均衡角括弧）
+- [ ] セルフチェック（`docs/pr75/checks/P4-8.md` 記載済）＋ **QA/Java/SWE レビュー（コードタスク）＝未実施**。⚠ ここで中断。resume はレビュー3観点をサブエージェントで実施→指摘対応→`complete task #8` へ
 
 ### #9: XlsFormatWriter＋ExcelFormatConfig 再構築（Excel OUT）
 
@@ -420,11 +426,11 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: (placeholder — reconciled)
+- **Status**: paused
 - **Date**: 2026-06-15
-- **Last completed**: #7（`complete task #7`）＝Phase 3 完了。
-- **Next**: #8 YamlFormatWriter 再構築（YAML OUT・Phase 4 先頭・TDD）。中間モデル(#4)→YAML を記法どおり書き出す（全値クォート・`${...}`/null/`""` 保持・YAML 列順・長さ省略・fw_header）。全種別（TABLE3/LIST_MAP/FILE FIXED+VARIABLE/MESSAGE/送信系4種）。#7 IN リーダと記法対称・L2 往復(#12)の片側。
-- **Notes**: 設計の正＝[[D-H]]。回帰ベースライン・カバレッジ取得手順・`M pom.xml` 既知変更は「環境情報」「運用ノート」節を参照。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談）。
+- **Last completed**: #7（`complete task #7`）＝Phase 3 完了。#8 は実装＋単体テスト＋カバレッジ＋回帰まで完了し**レビュー手前で中断**（下記）。
+- **Next**: **#8 の Verify を完了して `complete task #8`**。残るは Step5 の **QA/Java/SWE 3観点サブエージェントレビュー**のみ（task-workflow.md のコードタスク手順）。各レビュー: 役割＋対象3ファイル全文＋観点チェックリスト＋#8 完了条件＋OK/NG 出力形式を渡す。指摘は原則全件対応→再レビュー（最大3イテレ）。全 PASS 後に steering の最終 [ ] を [x]、`docs: complete task #8 — YamlFormatWriter 再構築（YAML OUT）` でコミット→push。その後 #9（XlsFormatWriter＋ExcelFormatConfig・Excel OUT）へ。
+- **Notes**: 設計の正＝[[D-H]]・設計書 §156-163/§116（OUT＝全値クォート）。**#8 実装済み成果物**（本体ゼロ差分・新規3ファイル）: `tool/converter/TestDataFormatWriter.java`（IF・Reader と対称 `write(container, basePath)`）／`tool/converter/yaml/YamlFormatWriter.java`（`serialize(TestDataSection)` 純粋直列化＋`write` 各セクション→`<basePath>/<section名>.yaml`。手書き YAML エミッタ：全値ダブルクォート・明示 null アンクォート・キー原則無クォート・`fields`/`rows` フロー・`table:`/`id:`/`path:`・group_id `[x]`→生値）／`YamlFormatWriterTest.java`（30件 GREEN）。**カバレッジ JaCoCo instr 99%/branch 96%**＝未到達は番人4のみ（emitBlock sealed default L130/133・write parent==null L70・isPlainSafeKey 制御文字キー L399・rawGroup 不均衡角括弧 L432）＝P4-8.md に妥当性記載。**回帰** offline `mvn -o test`＝1492件 0F/4E（4E は Mockito 環境起因 MockHttp/MockServlet のみ＝既知ベースライン一致・新規失敗ゼロ。BUILD FAILURE はオフライン既定）。カバレッジ手順・`M pom.xml` 既知変更（コミット禁止・resume で確認不要）は「環境情報」「運用ノート」節を参照。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談）。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
