@@ -420,13 +420,39 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-(written by /rn:bb, read and reset to this placeholder by /rn:hi)
-
 - **Status**: paused
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: context needed for resume
+- **Date**: 2026-06-15
+- **Last completed**: #7 Step 2（変換ツール側 YAML アダプタ `YamlTestCoreAdapter` 新設）まで完了・GREEN（コミット `a01f021`）。本セッションでは **#7 Step 3 の設計を完全確定**（下記「#7 Step 3 設計確定」）。**コードは未着手**＝作業ツリーは `M pom.xml`（ローカル `6u3`・コミットしない）のみ。reconcile コミット `86d988c` 済（State を placeholder へ→本 State で再記入）。全参照ファイル精読済（`xls/XlsFormatReader`・`YamlTestCoreAdapter`・3 ビルダ・`YamlSection`・`TestCoreFileAdapter`(FileView/FragmentView)・model 群・`XlsFormatReaderTest`・`YamlTestCoreAdapterTest`）。
+- **Next**: **#7 Step 3 — `tool/converter/yaml/YamlFormatReader` を TDD で新設**（下記「#7 Step 3 設計確定」のとおり実装）。RED→GREEN：テスト→実装→`mvn -o test` で reader-YAML/Excel/converter 回帰 GREEN。続けて Step 4（設計書 §共通 を「Excel=生行 / YAML=YamlLoader Map」へ一般化是正）・Step 5（`P3-7.md`＋3観点レビュー QA/Java/SWE＋jacoco 番人除く C0/C1 100%＋全モジュール回帰 → `complete task #7`）。
+- **Notes**: 設計の正＝[[D-H]]（本体器＋YamlLoader Map で原文復元・Raw* 破棄）。env: offline `mvn -o test` 可、jacoco は online `mvn package -Dmaven.javadoc.skip=true`（運用ノート）。`M pom.xml` の `6u3` はコミットしない（正常）。ブランチ `add-yaml`。**released 本体に触れる必要が出たら着手前にユーザー相談**（Operating mode）。本 Step は本体無変更で完結する見込み（reader/adapter/model は既存・新規は `YamlFormatReader` 1 本＋そのテストのみ）。
+
+## #7 Step 3 設計確定（本セッションで全ファイル精読のうえ確定。resume はこのまま実装してよい）
+
+**方針（D-H 準拠・Excel と対称）**: `YamlFormatReader implements TestDataFormatReader` を新設。`read(basePath, resourceName)`＝`adapter.loadRawMap` のトップレベル Map（`LinkedHashMap`＝YAML 記述順）を走査してブロック列挙し、各ブロックは **`adapter.read*` で本体器（構造の権威）** を得て、**同じ Map から原文** を充填して中間モデルへ写す。本体の YAML 構造解釈（グループ絞り・fixed/variable 判定・FW_HEADER スキップ・送信系グループ/NO 扱い・テーブル大文字化/マーカー除外）は器側で再利用し、変換ツールでは再実装しない（＝6.3 不整合の根治）。
+
+**コンストラクタ**: `public YamlFormatReader()` ＝ `this(new YamlTestCoreAdapter())`／`YamlFormatReader(YamlTestCoreAdapter adapter)`（package-private・テスト注入用。Excel と同型）。
+
+**ブロック列挙**: `loadRawMap` の各トップレベルキーを 1 回ずつ走査し、既知セクションキーのみ対応ハンドラへ。未知キーは無視。セクション内エントリは Map 順。section→DataType: `setup_tables`→SETUP_TABLE_DATA／`expected_tables`→EXPECTED_TABLE_DATA／`expected_complete_tables`→EXPECTED_COMPLETED／`list_maps`→LIST_MAP／`setup_files`→(SETUP_FIXED 代表で readFiles 呼出)／`expected_files`→(EXPECTED_FIXED 代表)／`messages`→MESSAGE／4 送信系→各 DataType（`YamlSection.dataTypeToSectionKey` の逆）。
+
+**型別の器↔原文の取り分け（確定）**:
+- **TABLE（3 種）**: 器のみ（Map 不要・Excel `readTableBlocks` と同一）。各 (type, formattedGroup) で `adapter.readTables(path,res,group,type)` を呼び、戻り `TableData` ごとに `TableDataBlock(type, group, td.getTableName()【大文字】, td.getColumnNames()【大文字・マーカー除外】, 器値)`。⚠ `buildTableDataList` は **全行空(`{}`)のエントリをスキップ**（builder L89-91）＝器リストはエントリより短くなりうる→**zip しない**ので問題なし。`formatGroup(entry)= group_id!=null? "["+gid+"]" : ""`。
+- **LIST_MAP**: `adapter.readListMap(path,res,id)`＝`List<Map>`（TreeMap・マーカー除外・raw 値）。**列順だけ Map から復元**＝`YamlSection.resolveColumns(entry.rows)`（YAML 順・マーカー込）から `YamlSection.isMarker` で非マーカーのみ＝`orderedColumns`。行＝各 mapRow を orderedColumns 順に `get`（null 保持）。`ListMapBlock(formatGroup(entry), id, orderedColumns, rows)`。`resolveColumns`/`isMarker` は `YamlSection` の public static を再利用（重複でない＝本体の規則）。
+- **FILE（setup/expected）**: `adapter.readFiles(path,res,formattedGroup,代表type)`＝`List<DataFile>`（Map 順・グループ絞り済・fixed+variable 混在）。`buildDataFileList` はエントリをスキップしない→器リストと「当該グループの Map エントリ列」が **1:1 同順**＝zip 可。各 (DataFile器, Map entry) で：fileType=`器 instanceof FixedLengthFile? FIXED:VARIABLE`／中間DataType=fileType×setup/expected（FIXED→SETUP/EXPECTED_FIXED、VARIABLE→SETUP/EXPECTED_VARIABLE）／directives=`toStringDirectives(FileView.getDirectives())`（Excel と同）／records=`toRecordLayouts(FileView, entry.records【スキップなし】)`。`FileDataBlock(中間DataType, formattedGroup, view.getPath(), fileType, directives, records)`。
+- **MESSAGE**: `adapter.readMessage(path,res,id)`→`MessageContent{fwHeader, body:FixedLengthFile}`（null なら skip）。`MessageDataBlock(MESSAGE, "", id, toStringDirectives(FileView(body).getDirectives()), new LinkedHashMap(content.getFwHeader())【原文・文字列化済・interpret なし】, toRecordLayouts(FileView(body), entry.records から FW_HEADER 除外))`。group なし＝""。
+- **送信系（4 種）**: グループは **生値で一致**（`buildSendSyncBodies` は `rawGroupId!=null && equals(groupId)`＝group_id 必須）。`adapter.readSendSyncMessages(path,res,rawGroup,type)`＝`List<FixedLengthFile>`（Map 順）。zip 対象＝当該セクションで `entry.group_id!=null && equals(rawGroup)` のエントリ列（同順）。各 body で：identifier=`body.getPath()`(=id)／**中間 groupId は `"["+rawGroup+"]"`（整形・Excel 中間と対称にするため。マッチは生値・格納は整形）**／fwHeader=**空 LinkedHashMap**／records=`toRecordLayouts(FileView(body), entry.records から FW_HEADER 除外)`／directives=`toStringDirectives(...)`。`MessageDataBlock(type, "["+rawGroup+"]", id, directives, emptyFw, records)`。
+
+**共有ヘルパー `toRecordLayouts(FileView view, List<Map> alignedRecords)`**（Excel の同名と別物・YAML 専用）:
+- `alignedRecords`＝呼出側が器フラグメントと整合させた Map records（FILE=全件／MESSAGE・送信系=`record_type=="FW_HEADER"` を除外）。
+- **fail-fast**: `view.getFragments().size() != alignedRecords.size()` なら `IllegalStateException`（Excel と同思想）。
+- 各 i: `fragment`＋`record`→ recordType=`toStr(record.get("record_type"))`【原文・null 可】／fields=`record.fields[]` から `FieldDef(name原文, type原文, length原文)`【length は Map 原文＝省略は null。器は replaceFieldSize で実バイト長へ正規化するので **Map を正とする**。type も Map 原文を使う】／rows=`fragment.getValues()`（List<Map<name,val>>）を `fragment.getNames()` 順に positional 化【器値＝raw・null 保持。送信系は addValue ゆえ "no" も通常フィールドとして含まれ忠実復元】。
+
+**送信系 "no" の扱い（確定・R3 裏取り結論を踏まえる）**: YAML reader は **原文に忠実**＝Map の records.fields にあるものをそのまま（"no" があれば 1 フィールドとして保持。`buildFragments(skipFwHeader=true)` は addValue で NO 隔離しないので器も "no" を含む）。Excel reader が "no" を落とす（NO 列を構造的にメタ隔離）のと**非対称**だが問題なし＝6.3 は Excel→YAML の一方向で、Excel 中間が "no" を落とす→生成 YAML に "no" 無し→この reader も "no" 無しを読む。L2 往復は各形式内で自己整合。よって reader は器/Map をそのまま素直に写すのが正。
+
+**コンテナ/セクション名**: YAML は 1 ファイル＝1 単位。`container 名 = resourceName`・単一 `TestDataSection(resourceName, blocks)`（#10 入口層で必要なら調整可）。
+
+**テスト方式（重要・in-memory）**: `YamlTestCoreAdapter` を匿名サブクラスで `loadRawMap` だけ override し in-memory `LinkedHashMap` を返す。**read*（readTables/readFiles/readListMap/readMessage/readSendSyncMessages）は内部で public `loadRawMap` を呼ぶ**ので、override 一点で器も原文も同一 in-memory Map から駆動＝実ビルダを通る統合テストになりファイル不要。`map(Object...kv)`=LinkedHashMap／`list(Object...)`=ArrayList ヘルパーを用意。GWT 形式。網羅: TABLE(setup/expected+group/complete)・LIST_MAP(列順保持・マーカー除外・null)・FILE(fixed 型/長さ/省略・variable 長さなし・複数レコード・directives)・MESSAGE(fw_header 原文・FW_HEADER レコード除外と本文の併存)・送信系(4 種・同一グループ複数 id・生値グループ→整形 groupId・"no" 保持)・原文未加工(${...}/null/"")・器↔Map 不整合 fail-fast・混在 1 セクション・未知キー無視・空ファイル。
+
+**確認済みの事実（実装の前提）**: ① model ctor: `TableDataBlock(DataType,groupId,id,cols,rows)`／`ListMapBlock(groupId,id,cols,rows)`／`FileDataBlock(DataType,groupId,id,FileType,Map<String,String>directives,List<RecordLayout>)`／`MessageDataBlock(DataType,groupId,id,directives,fwHeaderFields,records)`／`RecordLayout(String recordType【null 可】,List<FieldDef>,List<List<String>>)`／`FieldDef(name,type【null 可】,length【null 可】)`／`TestDataSection(name,blocks)`／`TestDataContainer(name,sections)`。② `FragmentView.getNames()`＝YAML 原文名（setNames が raw・大文字化なし）。`getTypes()`/`getLengths()` は器正規化済みのため **使わず Map 原文を使う**。`getValues()`＝raw 値マップ（使う）。③ `YamlSection`: `resolveColumns`/`isMarker`/`toStr`/`castMap`/`getList`/`objectToString`/`dataTypeToSectionKey` は public static で再利用可。`FIELD_*`/`KEY_*` 定数あり。④ `toStringDirectives`（null 値は null 保持・Excel と対称）は YamlFormatReader 内に private で持つ（Excel と重複するが別クラス・小さい）。
 
 ## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
 
