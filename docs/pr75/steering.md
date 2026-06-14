@@ -420,11 +420,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-14
-- **Last completed**: **#7 Step 2（変換ツール側 YAML アダプタ新設）完了・GREEN**。`nablarch.test.core.reader.YamlTestCoreAdapter`（Excel の `TestCoreReaderAdapter` と対称）を新設。本体ビルダを空インタープリタ・補完なしで配線し生器を返す `readTables`/`readListMap`/`readFiles`/`readMessage`(→`MessageContent`)/`readSendSyncMessages` ＋ `loadRawMap`(=`YamlLoader.load` 透過 seam)/`isResourceExisting`。**設計上の要点**: ① バイナリ注入をビルダ内蔵から呼び出し側へ移管＝新設 `InterpreterResolver`(`withBinaryFile`/`raw`) をビルダ 3 本の ctor に注入（`YamlTestDataParser` は `withBinaryFile`、アダプタは `raw`）→ `raw` で `${binaryFile:}` すら未解決のまま取得＝Excel と同じく真に raw。ビルダの build メソッド署名（basePath 含む）は不変＝テスト 161 呼び出し site 無改修・ctor 4 site のみ改修。② `StubDbInfo` を `TestCoreReaderAdapter` のネストから package-private 独立型へ抽出し両アダプタで共有。③ `YamlMessageBuilder` に `buildMessageContent`/`buildSendSyncBodies`/`MessageContent`(fwHeader+body) を追加（`MessagePool.getSource` が core.messaging で不可視＝本文 `FixedLengthFile` を直接取得するため）＋共有 private `buildBodyFile`/`buildSendSyncFile` 抽出。adapter **15件 GREEN**・回帰 **209件 0F/0E**（YamlTestCoreAdapter15/TableBuilder30/FileBuilder14/MsgBuilder29/Parser43/Equiv16/Loader11/Section10/Schema1/TestCoreReaderAdapter22/XlsFormatReader18）＝Equiv+Parser 緑で**振る舞い不変**。stale fixture(`YamlTableStructureMapperTest/`) 削除・stale Javadoc(`YamlLoader`/`YamlSection` の旧 StructureMapper/ValueProcessor 参照) 是正。**released 本体ゼロ差分維持**。⚠ **WIP コミット**（#7 完了時に `complete task #7` でまとめる）。
-- **Next**: **#7 Step 3 — `tool/converter/yaml/YamlFormatReader` を新設**（`xls/XlsFormatReader` と対称）。`YamlTestCoreAdapter` を注入し、各セクションを走査して `read*` で本体器（構造）＋`loadRawMap` Map で原文〔カラム名・YAML 列順・値・型表記・長さ省略・fw_header〕を復元 → 中間モデル（`tool/converter/model/*`・#4 で5種別対応済）。全種別: TABLE/LIST_MAP/FILE(fixed+variable)/MESSAGE＋送信系4種。**ブロック列挙は Excel の `readHeaders`(マーカー走査) と異なり Map のセクションキー＋各エントリの group_id/id から直接**（YAML はマーカー無し）。テーブルは器の大文字化カラムをそのまま使う（Excel 同様＝§共通「大文字化は復元不要」）。group_id 整形は型で異なる（テーブル/ファイル＝`[xxx]` 形式／送信系＝生値）＝既存ビルダ挙動に追従。R3裏取り結論＝no/NO はメタ・runtime は本文マップ＋件数のみ比較。**Step 4** 設計書 §判断 B 据え置き・§共通 を「Excel=生行 / YAML=YamlLoader Map」へ一般化是正。**Step 5** `P3-7.md`＋3観点レビュー(QA/Java/SWE)＋jacoco(番人除く C0/C1 100%)＋全モジュール回帰 → `complete task #7`。
-- **Notes**: 設計の正＝[[D-H]]（本体器＋YamlLoader Map で原文復元・Raw* 破棄）。Step 3 の対称参照は `xls/XlsFormatReader.java`（特に `toRecordLayouts` の器↔原文 充填パターン）＋`TestCoreFileAdapter`(`FileView`/`FragmentView`)＋`XlsFormatReaderTest`。`TestDataFormatReader` が IN インタフェース。YAML の原文源は `loadRawMap`（順序保持 LinkedHashMap・`firstRow.keySet()` が記述順カラム名原文）＝Excel の生行に相当。**released 本体プロダクションコードに触れる必要が出たら着手前にユーザー相談**（Operating mode）。env: offline `mvn -o test` 可、jacoco は online `mvn package -Dmaven.javadoc.skip=true` 必須（運用ノート参照）。`pom.xml` の `6u3` はコミットしない（`M pom.xml` は正常）。ブランチ `add-yaml` で継続。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
 
 ## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
 
