@@ -90,20 +90,17 @@ flowchart LR
 
 いずれも構造を組み立てず、読み取った値を plain で返すだけ。相乗りはこの 2 枚に閉じる。これにより本体の getter 追加・可視性拡大は不要で、本体は無変更。
 
-### 判断 B：YAML 経路 — 構造マッピング層を再利用
+### 判断 B：YAML 経路 — 本体の構造解釈を再利用（本体器を空インタープリタで取得）
 
 **検討した選択肢と却下理由**
 
-YAML も本体の読み込み（`YamlLoader` ＋ Builder 群）が同じ加工（特殊記法解釈・補完・マージ）を含むため、Excel と同じくアダプタで回避する案がまず考えられる。だが YAML は変更可（新規開発）であり、「空の `interpreters` を渡すと加工が外れる」という暗黙の切り替えに頼る回避策をあえて選ぶ理由がない。
+YAML も本体の読み込み（`YamlLoader` ＋ Builder 群）が構造解釈と値加工（特殊記法解釈・補完・マージ）を一体で行うため、変換ツールは値加工を外して器だけを取り出す必要がある。当初は本体読み込みを「構造マッピング層／値加工層」へ静的に二分割し、専用の中間表現（`Raw*`）を介す案を検討したが、本体に層と型を増やすコストに見合わず却下した（経緯は steering の D-F／D-H）。
 
 **決定**
 
-本体の YAML 読み込みを 2 層に分ける。
+Excel 経路（判断 A）と対称に、本体の YAML ビルダ（`YamlTableDataBuilder`／`YamlFileBuilder`／`YamlMessageBuilder`）を **空のインタープリタ・デフォルト値補完なし** で配線するアダプタ（`YamlTestCoreAdapter`、`reader` パッケージ相乗り）を変換ツール側に置く。ビルダは `YamlLoader` が返す順序保持 Map を走査して本体の器（`TableData`／`DataFile`／`MessagePool` 本文）を組み立てる処理をそのまま再利用し、空インタープリタにより `${...}`・`${binaryFile:...}`・`null`・`""` は記法のまま運ばれる。構造解釈は本体 1 箇所に集約され、変換ツールは再実装しない。
 
-- **構造マッピング層**：YAML の構造（テーブル名・カラム・行・型）を本体の器へ写す。値の加工はしない。本体テスト読み込みと変換ツールが共有する。
-- **値加工層**：特殊記法の解釈・補完・マージ。本体がテストとして読むときだけ上に乗せる。
-
-本体テスト読み込みは両層、変換ツールは構造マッピング層だけを呼ぶ。呼び分けが暗黙でなく明示になり、構造解釈は 1 箇所に集約される。YAML は新規開発なので、この分離を最初から織り込める。
+> **依存の向き**：主軸は NTF 本体。本体の YAML 読み込みは本体基準で設計し本体の器を返す。変換ツールはそれを再利用する側で、依存は変換ツール → 本体の一方向。本体が変換ツールの中間モデルに合わせて設計されることはない。
 
 > **依存の向き**：主軸は NTF 本体。本体の YAML 読み込みは本体基準で設計し本体の器を返す。変換ツールはそれを再利用する側で、依存は変換ツール → 本体の一方向。本体が変換ツールの中間モデルに合わせて設計されることはない。
 
@@ -111,7 +108,7 @@ YAML も本体の読み込み（`YamlLoader` ＋ Builder 群）が同じ加工�
 
 特殊記法には 2 種類あり、扱いが異なる。
 
-- **NTF 独自記法**（`${systemTime}`・`${binaryFile:...}` 等）：形式に依存しない NTF 仕様。Excel・YAML とも値加工層で解釈する（共有する）。変換ツールはいずれの形式でも解釈せず、記法のまま中間モデルへ運ぶ。
+- **NTF 独自記法**（`${systemTime}`・`${binaryFile:...}` 等）：形式に依存しない NTF 仕様。Excel・YAML とも本体がテストとして読むときの値加工（インタープリタチェーン）で解釈する。変換ツールはいずれの形式でも（空インタープリタ配線により）解釈せず、記法のまま中間モデルへ運ぶ。
 - **形式の構文に属する記法**（クォートによる文字列明示）：形式ごとに担い手が違う。
   - Excel：クォートは NTF 独自の記法で、本体の `QuotationTrimmer` が外す。
   - YAML：クォートは **YAML 標準仕様**であり、YAML ライブラリ（SnakeYAML Engine）が読み込み時に解決する。よって YAML には `QuotationTrimmer` を適用しない（適用すると二重処理になる）。
@@ -133,16 +130,16 @@ YAML の値は、数値・null・空白を文字列として保つため、書�
 
 ### 共通：器が正規化する値の原文復元
 
-本体の④構造解析は、テスト実行に必要な正規化を器に施す。変換ツールは原文（作成者の記述）が要るため、正規化される箇所だけ原文を補う。全データタイプを通した結果、取り出し経路で原文が変わるのは次の 3 点のみ（値の大半は無加工で器をそのまま使える）。
+本体の④構造解析は、テスト実行に必要な正規化を器に施す。変換ツールは原文（作成者の記述）が要るため、正規化される箇所だけ原文を補う。**原文の供給元は形式で異なる**：Excel は器を作る素材である**生行**（`PoiXlsReader` の出力）、YAML は器を作る素材である **`YamlLoader` の順序保持 Map**。いずれも器（構造の権威）と同じ素材から原文を取り、index／キーで器のフィールドへ対応させる。全データタイプを通した結果、取り出し経路で原文が変わるのは次の 3 点のみ（値の大半は無加工で器をそのまま使える）。
 
-| 正規化 | 器の挙動 | 原文の復元 |
-|---|---|---|
-| カラム名・テーブル名の大文字化 | キーを大文字化（値は無損失） | NTF 仕様上、カラム名の大小は無意味。復元不要 |
-| 長さ省略（`-`）フィールド | 値を改行除去・トリムし、長さを実バイト長に上書き | 長さ行のセルが `-`（`ONDEMAND_CALC_FIELD_SIZE`）かで省略フィールドを識別し、原文の値・長さは生行から取る |
-| 型表記 | 設計上の型名をフレームワーク表記（`X`/`N`/`B`/`Z`）に変換 | 原文の型は生行の型行から取る |
-| LIST_MAP の列順 | 値 Map を `TreeMap` でキーソート | 元の列順は `HeaderLine` が保持。器から取れる（生行不要） |
+| 正規化 | 器の挙動 | Excel の原文復元（生行） | YAML の原文復元（YamlLoader Map） |
+|---|---|---|---|
+| カラム名・テーブル名の大文字化 | キーを大文字化（値は無損失） | 復元不要（NTF 仕様上カラム名の大小は無意味） | 同左（復元不要） |
+| 長さ省略（`-`）フィールド | 値を改行除去・トリムし、長さを実バイト長に上書き | 長さ行のセルが `-`（`ONDEMAND_CALC_FIELD_SIZE`）かで省略を識別し、原文の値・長さは生行から取る | エントリ `records[].fields[].length` を Map 原文から取る（省略は `null`）。値は器（空インタープリタで未加工）から |
+| 型表記 | 設計上の型名をフレームワーク表記（`X`/`N`/`B`/`Z`）に変換 | 原文の型は生行の型行から取る | エントリ `records[].fields[].type` を Map 原文から取る |
+| LIST_MAP の列順 | 値 Map を `TreeMap` でキーソート | 元の列順は `HeaderLine` が保持＝器から取れる（生行不要） | 器は `TreeMap` で列順を喪失。エントリ先頭行のキー順（`YamlLoader` が記述順保持）から取る |
 
-生行（`PoiXlsReader` の出力）から原文を取る際は、生行から**マーカー列（`[...]` 形式のセル）を除外**すると、残セルが器のフィールドと同じ順序・同数で並ぶ（index で 1 対 1 対応）。これにより原文を中間モデルの正しいフィールドへ確実に置ける。
+Excel は生行から**マーカー列（`[...]` 形式のセル）を除外**すると、残セルが器のフィールドと同じ順序・同数で並ぶ（index で 1 対 1 対応）。YAML は `YamlLoader` Map のエントリ列が器（グループ絞り込み済み・FW_HEADER スキップ済み）と同順・同数で対応する（zip で 1 対 1）。いずれも器の断片数と原文側の要素数が食い違えば、誤った原文を静かに充填せず即座に失敗させる（fail-fast）。
 
 ### 重複実装を避ける：ロジックの共通化
 
@@ -213,7 +210,7 @@ RecordLayout "1" --> "*" FieldDef
 
 ### IN（形式 → 中間モデル）
 
-各形式を本体の読み込み（2 章）で読み解き、本体の器を受け取って中間モデルへ組む。Excel はアダプタ経由、YAML は構造マッピング層を直接呼びで経路が分かれる。器が正規化する値は、生行（または `HeaderLine`）から原文を補う（2 章）。
+各形式を本体の読み込み（2 章）で読み解き、本体の器を受け取って中間モデルへ組む。Excel・YAML とも `reader` 相乗りアダプタ（`TestCoreReaderAdapter`／`YamlTestCoreAdapter`）を空インタープリタで配線して器を取り出す対称な経路をとる。器が正規化する値は、**Excel は生行（`PoiXlsReader` 出力）から、YAML は `YamlLoader` の順序保持 Map から**原文を補う（2 章）。
 
 ```mermaid
 classDiagram
@@ -228,6 +225,11 @@ class TestCoreReaderAdapter {
   <<reader相乗り>>
   +readFiles/readTables/readListMap/readMessage()
 }
+class YamlTestCoreAdapter {
+  <<reader相乗り>>
+  +readFiles/readTables/readListMap/readMessage/readSendSyncMessages()
+  +loadRawMap()
+}
 class TestCoreFileAdapter {
   <<file相乗り>>
   +names/types/lengths/values
@@ -236,8 +238,8 @@ class ExcelParsers {
   <<本体>> DataFileParser ほか
   +parse() / +getResult()
 }
-class YamlReader {
-  <<本体>> YamlLoader + 構造マッピング層
+class YamlBuilders {
+  <<本体>> YamlLoader + Yaml*Builder（器生成）
 }
 class StructuredObjects {
   <<本体>> DataFile / TableData / MessagePool
@@ -250,15 +252,18 @@ TestCoreReaderAdapter --> ExcelParsers : 空interpretersを配線しparse→getR
 TestCoreFileAdapter --> StructuredObjects : DataFileFragment内部を読む
 ExcelParsers ..> StructuredObjects : 構築
 TestCoreReaderAdapter ..> StructuredObjects : 取り出して返す
-YamlFormatReader --> YamlReader : 構造マッピング層を呼ぶ（加工なし）
-YamlReader ..> StructuredObjects : 構築
+YamlFormatReader --> YamlTestCoreAdapter : 呼ぶ（器＋loadRawMap 原文）
+YamlFormatReader --> TestCoreFileAdapter : file系の内部値を読む
+YamlTestCoreAdapter --> YamlBuilders : 空interpretersを配線し器生成
+YamlBuilders ..> StructuredObjects : 構築
+YamlTestCoreAdapter ..> StructuredObjects : 取り出して返す
 XlsFormatReader ..> TestDataContainer : 組み立て
 YamlFormatReader ..> TestDataContainer : 組み立て
 ```
 
 受け取るのはいずれも**本体の器**で、それを変換ツールが中間モデルへ写す。中間モデルは変換ツール内部の表現で、本体には現れない（依存は変換ツール → 本体の一方向）。
 
-経路ごとの要点は 2 章の判断 A・B のとおり。Excel は可視性の壁を越えるため、`nablarch.test.core.reader` に `TestCoreReaderAdapter`（Parser を parse→getResult し構造を取り出す）、`nablarch.test.core.file` に `TestCoreFileAdapter`（`DataFileFragment` の内部値を読む）を相乗りさせ、相乗りの影響をこの 2 枚に局所化する。YAML は本体の YAML 読み込みの構造マッピング層を `YamlFormatReader` が直接呼ぶ。
+経路ごとの要点は 2 章の判断 A・B のとおり。Excel は可視性の壁を越えるため、`nablarch.test.core.reader` に `TestCoreReaderAdapter`（Parser を parse→getResult し構造を取り出す）、`nablarch.test.core.file` に `TestCoreFileAdapter`（`DataFileFragment` の内部値を読む）を相乗りさせ、相乗りの影響をこの 2 枚に局所化する。YAML も対称に、`nablarch.test.core.reader` へ `YamlTestCoreAdapter` を相乗りさせ、本体の Yaml ビルダを空インタープリタで配線して器を取り出す。`YamlFormatReader` は器に加えて `loadRawMap`（`YamlLoader` の順序保持 Map）から原文を補い、`DataFile` 内部値は Excel と同じく `TestCoreFileAdapter` で読む。
 
 ### OUT（中間モデル → 形式）
 
