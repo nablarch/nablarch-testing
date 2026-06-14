@@ -7,6 +7,7 @@ import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.messaging.MessagePool;
 import nablarch.test.core.messaging.RequestTestingMessagePool;
+import nablarch.test.core.reader.yaml.InterpreterResolver;
 import nablarch.test.core.reader.yaml.YamlFileBuilder;
 import nablarch.test.core.reader.yaml.YamlLoader;
 import nablarch.test.core.reader.yaml.YamlMessageBuilder;
@@ -179,8 +180,9 @@ public class YamlTestDataParser extends BasicTestDataParser {
     }
 
     private void rebuildBuilders() {
-        tableBuilder = new YamlTableDataBuilder(dbInfo, defaultValues, interpreters);
-        fileBuilder = new YamlFileBuilder(interpreters);
-        messageBuilder = new YamlMessageBuilder(interpreters);
+        InterpreterResolver resolver = InterpreterResolver.withBinaryFile(interpreters);
+        tableBuilder = new YamlTableDataBuilder(dbInfo, defaultValues, resolver);
+        fileBuilder = new YamlFileBuilder(resolver);
+        messageBuilder = new YamlMessageBuilder(resolver);
     }
 }

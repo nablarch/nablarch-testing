@@ -1,0 +1,19 @@
+setup_tables:
+  - table: users
+    rows:
+      - {id: "1", name: "${user.name}", note: null}
+      - {id: "2", name: "", note: "${binaryFile:data/x.bin}"}
+expected_tables:
+  - group_id: case01
+    table: orders
+    rows:
+      - {order_id: "10", amount: "100"}
+expected_complete_tables:
+  - table: items
+    rows:
+      - {item_id: "A", price: "${item.price}"}
+list_maps:
+  - id: lm1
+    rows:
+      - {key: "k1", val: "${v1}"}
+      - {key: "k2", val: null}

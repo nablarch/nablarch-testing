@@ -62,7 +62,7 @@ public class YamlTableDataBuilderTest {
     public void before() {
         dbInfo = repositoryResource.getComponent("dbInfo");
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        builder = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
+        builder = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), InterpreterResolver.withBinaryFile(interpreters));
     }
 
     @After
@@ -691,7 +691,7 @@ public class YamlTableDataBuilderTest {
                 new QuotationTrimmer(),
                 dateTimeInterpreter
         );
-        YamlTableDataBuilder builderWithSetUp = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), interpreters);
+        YamlTableDataBuilder builderWithSetUp = new YamlTableDataBuilder(dbInfo, new BasicDefaultValues(), InterpreterResolver.withBinaryFile(interpreters));
         Map<String, Object> yaml = YamlLoader.load(DIR, "YamlTableDataBuilderTest/nativeTypes");
 
         // When

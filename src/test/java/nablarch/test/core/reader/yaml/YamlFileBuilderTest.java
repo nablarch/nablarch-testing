@@ -48,7 +48,7 @@ public class YamlFileBuilderTest {
     @Before
     public void before() {
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        builder = new YamlFileBuilder(interpreters);
+        builder = new YamlFileBuilder(InterpreterResolver.withBinaryFile(interpreters));
     }
 
     @After

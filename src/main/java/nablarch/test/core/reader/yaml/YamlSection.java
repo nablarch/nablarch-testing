@@ -14,8 +14,8 @@ import java.util.Map;
  * YAML セクションキー定数と共通ヘルパーメソッド。
  *
  * <p>
- * {@code nablarch.test.core.reader.yaml} パッケージ内の構造マッピング層（{@code Yaml*StructureMapper}）・
- * 値加工層（{@link YamlValueProcessor}）および {@link nablarch.test.core.reader.YamlTestDataParser} から使用する。
+ * {@code nablarch.test.core.reader.yaml} パッケージ内のビルダ（{@code Yaml*Builder}）・
+ * {@link nablarch.test.core.reader.YamlTestDataParser}・{@link nablarch.test.core.reader.YamlTestCoreAdapter} から使用する。
  * </p>
  *
  * @author kiyotis
@@ -70,7 +70,7 @@ public final class YamlSection {
      * FW制御ヘッダレコード種別名。
      *
      * <p>
-     * {@link YamlValueProcessor} が messages セクションの records から FW_HEADER レコードを
+     * {@link YamlFileBuilder#buildFragments} が messages セクションの records から FW_HEADER レコードを
      * スキップする際に使用する。FW制御ヘッダ自体は {@link #FIELD_FW_HEADER} マップから取得する。
      * </p>
      */

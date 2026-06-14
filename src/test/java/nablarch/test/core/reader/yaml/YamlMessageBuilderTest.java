@@ -49,7 +49,7 @@ public class YamlMessageBuilderTest {
     @Before
     public void before() {
         List<TestDataInterpreter> interpreters = repositoryResource.getComponent("interpreters");
-        builder = new YamlMessageBuilder(interpreters);
+        builder = new YamlMessageBuilder(InterpreterResolver.withBinaryFile(interpreters));
     }
 
     @After

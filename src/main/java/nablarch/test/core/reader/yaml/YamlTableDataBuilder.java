@@ -16,7 +16,6 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ID;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TABLE;
 import static nablarch.test.core.reader.yaml.YamlSection.KEY_LIST_MAPS;
-import static nablarch.test.core.reader.yaml.YamlSection.addBinaryFileInterpreter;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.interpret;
@@ -43,20 +42,20 @@ public final class YamlTableDataBuilder {
 
     private final DbInfo dbInfo;
     private final DefaultValues defaultValues;
-    private final List<TestDataInterpreter> interpreters;
+    private final InterpreterResolver interpreterResolver;
 
     /**
      * コンストラクタ。
      *
-     * @param dbInfo        DB 情報（テーブル構築に使用）
-     * @param defaultValues デフォルト値設定（{@code fillDefaultValues} に使用）
-     * @param interpreters  インタープリタプロトタイプ（{@code ${binaryFile:}} は basePath 付きで都度先頭に積む）
+     * @param dbInfo              DB 情報（テーブル構築に使用）
+     * @param defaultValues       デフォルト値設定（{@code fillDefaultValues} に使用）
+     * @param interpreterResolver basePath ごとに値加工インタープリタチェーンを解決する戦略
      */
     public YamlTableDataBuilder(DbInfo dbInfo, DefaultValues defaultValues,
-                                List<TestDataInterpreter> interpreters) {
+                                InterpreterResolver interpreterResolver) {
         this.dbInfo = dbInfo;
         this.defaultValues = defaultValues;
-        this.interpreters = interpreters;
+        this.interpreterResolver = interpreterResolver;
     }
 
     /**
@@ -72,7 +71,7 @@ public final class YamlTableDataBuilder {
     public List<TableData> buildTableDataList(Map<String, Object> yaml, String sectionKey, String groupId,
                                               boolean fillDefaults, String basePath) {
         List<TableData> result = new ArrayList<TableData>();
-        List<TestDataInterpreter> interps = addBinaryFileInterpreter(basePath, interpreters);
+        List<TestDataInterpreter> interps = interpreterResolver.resolve(basePath);
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
             if (!groupMatches(toStr(map.get(FIELD_GROUP_ID)), groupId)) {
@@ -137,7 +136,7 @@ public final class YamlTableDataBuilder {
      * @return 行リスト（見つからない場合は空リスト）
      */
     public List<Map<String, String>> buildListMapRows(Map<String, Object> yaml, String id, String basePath) {
-        List<TestDataInterpreter> interps = addBinaryFileInterpreter(basePath, interpreters);
+        List<TestDataInterpreter> interps = interpreterResolver.resolve(basePath);
         for (Object entry : getList(yaml, KEY_LIST_MAPS)) {
             Map<String, Object> map = castMap(entry);
             if (id.equals(toStr(map.get(FIELD_ID)))) {

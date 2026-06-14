@@ -24,7 +24,6 @@ import static nablarch.test.core.reader.yaml.YamlSection.FIELD_ROWS;
 import static nablarch.test.core.reader.yaml.YamlSection.FIELD_TYPE;
 import static nablarch.test.core.reader.yaml.YamlSection.FILE_TYPE_FIXED;
 import static nablarch.test.core.reader.yaml.YamlSection.FW_HEADER_RECORD_TYPE;
-import static nablarch.test.core.reader.yaml.YamlSection.addBinaryFileInterpreter;
 import static nablarch.test.core.reader.yaml.YamlSection.castMap;
 import static nablarch.test.core.reader.yaml.YamlSection.getList;
 import static nablarch.test.core.reader.yaml.YamlSection.interpret;
@@ -46,15 +45,15 @@ import static nablarch.test.core.reader.yaml.YamlSection.toStr;
  */
 public final class YamlFileBuilder {
 
-    private final List<TestDataInterpreter> interpreters;
+    private final InterpreterResolver interpreterResolver;
 
     /**
      * コンストラクタ。
      *
-     * @param interpreters インタープリタプロトタイプ（{@code ${binaryFile:}} は basePath 付きで都度先頭に積む）
+     * @param interpreterResolver basePath ごとに値加工インタープリタチェーンを解決する戦略
      */
-    public YamlFileBuilder(List<TestDataInterpreter> interpreters) {
-        this.interpreters = interpreters;
+    public YamlFileBuilder(InterpreterResolver interpreterResolver) {
+        this.interpreterResolver = interpreterResolver;
     }
 
     /**
@@ -69,7 +68,7 @@ public final class YamlFileBuilder {
     public List<DataFile> buildDataFileList(Map<String, Object> yaml, String sectionKey,
                                             String groupId, String basePath) {
         List<DataFile> result = new ArrayList<DataFile>();
-        List<TestDataInterpreter> interps = addBinaryFileInterpreter(basePath, interpreters);
+        List<TestDataInterpreter> interps = interpreterResolver.resolve(basePath);
         for (Object entry : getList(yaml, sectionKey)) {
             Map<String, Object> map = castMap(entry);
             if (!groupMatches(toStr(map.get(FIELD_GROUP_ID)), groupId)) {

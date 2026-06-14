@@ -1,0 +1,10 @@
+messages:
+  - id: RM01
+    fw_header:
+      requestId: "RM01"
+      userId: "${user}"
+    records:
+      - fields:
+          - {name: m1, type: 半角英字, length: "3"}
+        rows:
+          - ["abc"]

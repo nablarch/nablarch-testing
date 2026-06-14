@@ -1,0 +1,22 @@
+setup_files:
+  - path: input.dat
+    type: fixed
+    directives:
+      file-type: "Fixed"
+      text-encoding: "UTF-8"
+    records:
+      - record_type: data
+        fields:
+          - {name: f1, type: 半角英字, length: "5"}
+          - {name: f2, type: 数値}
+        rows:
+          - ["${a}", "123"]
+expected_files:
+  - path: out.csv
+    type: variable
+    records:
+      - fields:
+          - {name: c1, type: 半角英字}
+          - {name: c2, type: 半角英字}
+        rows:
+          - ["x", "${b}"]
