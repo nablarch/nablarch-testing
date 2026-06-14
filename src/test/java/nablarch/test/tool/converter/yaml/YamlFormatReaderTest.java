@@ -200,6 +200,66 @@ public class YamlFormatReaderTest {
         assertThat(record.getRows().get(0), is(Arrays.asList("x", "${b}")));
     }
 
+    @Test
+    public void readFile_expectedFixedWithMultipleGroups_mapsExpectedFixedAndDedupesGroups() {
+        // Given: expected_files・固定長・同一グループ g1 に 2 件＋別グループ g2 に 1 件
+        Map<String, Object> yaml = map(
+                "expected_files", list(
+                        fixedFileEntry("g1", "a.dat"),
+                        fixedFileEntry("g1", "b.dat"),
+                        fixedFileEntry("g2", "c.dat")));
+
+        // When
+        List<TestDataBlock> blocks = blocks(reader(yaml).read(DIR, RESOURCE));
+
+        // Then: グループは初出順で重複排除、各エントリは当該グループへ整列、期待値固定長へ写る
+        assertThat(blocks.size(), is(3));
+        for (TestDataBlock block : blocks) {
+            assertThat(block.getDataType(), is(DataType.EXPECTED_FIXED));
+        }
+        assertThat(blocks.get(0).getGroupId(), is("[g1]"));
+        assertThat(((FileDataBlock) blocks.get(0)).getIdentifier(), is("a.dat"));
+        assertThat(blocks.get(1).getGroupId(), is("[g1]"));
+        assertThat(((FileDataBlock) blocks.get(1)).getIdentifier(), is("b.dat"));
+        assertThat(blocks.get(2).getGroupId(), is("[g2]"));
+        assertThat(((FileDataBlock) blocks.get(2)).getIdentifier(), is("c.dat"));
+    }
+
+    @Test
+    public void readFile_setupVariable_mapsSetupVariableType() {
+        // Given: setup_files・可変長
+        Map<String, Object> yaml = map(
+                "setup_files", list(
+                        map("path", "in.csv", "type", "variable",
+                                "records", list(map("fields", list(field("c1", "半角英字", null)),
+                                        "rows", list(list("x")))))));
+
+        // When
+        TestDataContainer container = reader(yaml).read(DIR, RESOURCE);
+
+        // Then
+        FileDataBlock block = (FileDataBlock) onlyBlock(container);
+        assertThat(block.getDataType(), is(DataType.SETUP_VARIABLE));
+        assertThat(block.getFileType(), is(FileDataBlock.FileType.VARIABLE));
+    }
+
+    @Test
+    public void readFile_recordTypeOmitted_keepsNullRecordType() {
+        // Given: 固定長・record_type 省略（FILE は器が "default" へ正規化するが、原文は省略＝null）
+        Map<String, Object> yaml = map(
+                "setup_files", list(
+                        map("path", "f.dat", "type", "fixed",
+                                "records", list(map("fields", list(field("f1", "半角英字", "1")),
+                                        "rows", list(list("v")))))));
+
+        // When
+        TestDataContainer container = reader(yaml).read(DIR, RESOURCE);
+
+        // Then: record_type 省略は中間モデルでも null（Map 原文どおり・器の正規化値は使わない）
+        FileDataBlock block = (FileDataBlock) onlyBlock(container);
+        assertThat(block.getRecords().get(0).getRecordType(), is(nullValue()));
+    }
+
     // ------------------------------------------------------------------------
     // MESSAGE
     // ------------------------------------------------------------------------
@@ -334,6 +394,26 @@ public class YamlFormatReaderTest {
         assertThat(blocks.get(3).getDataType(), is(DataType.RESPONSE_BODY_MESSAGES));
     }
 
+    @Test
+    public void readSendSync_entryWithoutGroupId_isDropped() {
+        // Given: group_id 付き 1 件＋group_id 無し 1 件（送信系は group_id 必須）
+        Map<String, Object> yaml = map(
+                "response_body_messages", list(
+                        map("group_id", "g1", "id", "KEEP",
+                                "records", list(map("fields", list(field("f", "半角英字", "1")),
+                                        "rows", list(list("v"))))),
+                        map("id", "DROP",
+                                "records", list(map("fields", list(field("f", "半角英字", "1")),
+                                        "rows", list(list("w")))))));
+
+        // When
+        List<TestDataBlock> blocks = blocks(reader(yaml).read(DIR, RESOURCE));
+
+        // Then: group_id 無しエントリは drop され（rawGroupsInOrder が null group_id を除外）、付きのみ残る
+        assertThat(blocks.size(), is(1));
+        assertThat(((MessageDataBlock) blocks.get(0)).getIdentifier(), is("KEEP"));
+    }
+
     // ------------------------------------------------------------------------
     // セクション構成・コンテナ
     // ------------------------------------------------------------------------
@@ -444,6 +524,13 @@ public class YamlFormatReaderTest {
                 return yaml;
             }
         });
+    }
+
+    /** 固定長ファイルの 1 エントリ（group/path・単一レコード）を組み立てる。 */
+    private static Map<String, Object> fixedFileEntry(String group, String path) {
+        return map("group_id", group, "path", path, "type", "fixed",
+                "records", list(map("record_type", "r", "fields", list(field("f", "半角英字", "1")),
+                        "rows", list(list("x")))));
     }
 
     /** 送信系の 1 エントリ（group/id・単一フィールド）を組み立てる。 */

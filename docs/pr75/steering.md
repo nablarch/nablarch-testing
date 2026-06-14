@@ -220,14 +220,14 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] `tool/converter/yaml/YamlFormatReader` を Excel と対称に新設（本体器で構造・`loadRawMap` Map で原文〔カラム名・YAML 列順・値・型表記・長さ省略・fw_header〕復元 → 中間モデル）。`read` はトップレベル Map を記述順走査→既知セクションをハンドラへ（未知キー無視）。TABLE=器のみ・LIST_MAP=器値＋Map 列順（マーカー除外）・FILE=器と Map エントリを zip・MESSAGE=fw_header 原文＋FW_HEADER レコード除外・送信系=生値グループで zip＋整形 groupId 格納＋"no" 保持。fail-fast 2 種（器↔エントリ数／器断片↔原文レコード数）。本体ゼロ差分
 - [x] 全データ種別の単体テスト（TDD・RED→GREEN）。`YamlFormatReaderTest` 15 件 GREEN（in-memory `loadRawMap` 差し替えで実ビルダ統合）。網羅: TABLE(setup/group×2/complete)・LIST_MAP(列順/マーカー/null)・FILE(fixed 型長省略/variable)・MESSAGE(fw_header 原文/FW_HEADER 除外/空本文/null skip)・送信系(同一グループ複数 id/4 種/"no")・未加工(${}/null/"")・混在＋未知キー・コンテナ名・fail-fast 2 種。reader/adapter/converter 回帰 136 件 0F/0E
 - [x] 設計書 §判断 B 据え置き（決定は維持）・§共通 原文復元を「Excel=生行 / YAML=YamlLoader Map」へ一般化是正。あわせて D-H 反映で stale 化していた箇所を是正：§判断 B 本文（構造マッピング層/値加工層 2 層分割→本体器を空インタープリタで取得・Raw* 却下は経緯として保持）・IN 概要・クラス図（`YamlTestCoreAdapter` 追加・`YamlReader`→`YamlBuilders`）・特殊記法節。設計書＝唯一の正をコード実態へ追随（D-A・教訓）
-- [ ] セルフチェック（`docs/pr75/checks/P3-7.md`）＋ 3 観点レビュー（QA/Java/SWE）
+- [x] セルフチェック（`docs/pr75/checks/P3-7.md`）＋ 4 観点レビュー（アーキ/QA/Java/SWE＝Phase 3 完了ゲート）— 全 PASS（must-fix なし）。Step5 で QA 提案 2 本＋カバレッジ穴 2 本＝計 +4 テスト追加し YamlFormatReader を instr/branch 99/99%（残 2 は番人＝本番 ctor・null ディレクティブ値）へ。全モジュール回帰 1128 件 0F/4E（P3-6 ベースライン一致＝新規失敗ゼロ）。本体ゼロ差分。
 
 **Completion criteria**:
 - 全種別を無損失で中間モデル化／IN 値が記法のまま
 - 独自の YAML 構造解析を含まない・`Raw*` 系が消えている（レビュー確認）
 - 本体 YAML テスト全 GREEN（振る舞い不変）・変換ツール単体テスト GREEN・C0/C1 100%（番人除く）
 
-**Phase 3 完了ゲート**: 4 観点レビュー → ユーザーレビュー OK
+**Phase 3 完了ゲート**: ✅ **通過**（#4〜#7 完了。#7 Step5 で 4 観点サブエージェントレビュー＝アーキ/QA/Java/SWE を最終成果物に実施し全 PASS・`docs/pr75/checks/P3-7.md` 記録。ユーザーレビューは Operating mode によりスキップ）。
 
 ## Phase 4 — OUT（書き出し）＋入口＋検証の再構築（TDD）
 
@@ -422,9 +422,9 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-15
-- **Last completed**: #7 Step 4（設計書 §共通 を Excel=生行/YAML=YamlLoader Map へ一般化是正・D-H 反映で stale 化した §判断 B 本文/IN 概要/クラス図/特殊記法節も実態へ是正）まで完了・コミット `0151e27`。Step 3（`YamlFormatReader` 新設＋`YamlFormatReaderTest` 15 件 GREEN）はコミット `024253b`。steering チェックボックス 220/221/222 済。**Step 5 着手中**＝3 観点レビュー（QA/Java/SWE）を実施し**全 PASS（must-fix なし）**まで完了。
-- **Next**: **#7 Step 5 を完了させて `complete task #7`**。残:(1) QA 提案の軽微テスト 2 本追加〔send-sync で `group_id` 無しエントリは drop されること（`rawGroupsInOrder` が null group_id を除外）／FILE か MESSAGE で `record_type` 省略時に `RecordLayout.getRecordType()==null` が保たれること〕。(2) カバレッジ穴の精査：`YamlFormatReader` 現状 **instr 98%/branch 94%**、未到達 LINES は本番ctor `YamlFormatReader()`(L65-67＝`new YamlTestCoreAdapter()` 配線のみ・番人/自明) のみ、未到達 branch 6/108 は未特定→精査して意味ある分岐は閉じ防御的分岐は番人として記録。`toStringDirectives` の null 値分岐は **実ビルダ経由では到達不能**（本体 `setDirective` が null 値で `stringValue.trim()` NPE＝YAML の器ディレクティブに null 値は入らない）＝Excel 対称の防御コード（番人扱い・テスト不要）。(3) 全モジュール回帰 `mvn -o test`（ベースライン失敗集合＝16 クラス 43F/44E と一致確認・surefire grep は `failures="[1-9][0-9]*"`）。(4) `docs/pr75/checks/P3-7.md` を Check file format で記述（レビュー 3 観点の verdict＝全 PASS を転記）。(5) チェックボックス 223 を [x]→`docs: complete task #7 — ...` でコミット。
-- **Notes**: 設計の正＝[[D-H]]。本 Step は**本体ゼロ差分**（新規は `tool/converter/yaml/YamlFormatReader` 1 本＋テストのみ／`docs` 是正）。**カバレッジ取得手順（重要・ハマった）**: online `mvn package -Dmaven.javadoc.skip=true -Dtest=YamlFormatReaderTest` で `jacoco.exec` 生成（BUILD SUCCESS・restore-instrumented-classes 走るが**1 クラスが instrument 残り**→`jacoco:report` が "Cannot process instrumented class" で失敗）→ **`mvn -o compile` でクリーン bytecode を target/classes へ復元** → `mvn jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`（レポート `target/site/jacoco/nablarch.test.tool.converter.yaml/YamlFormatReader.html`）。`M pom.xml` の `6u3` はコミットしない（正常）。ブランチ `add-yaml`。レビュー subagent（継続可・SendMessage）: QA `afcac28c8d2f0f239`／Java `a95e6acb449239eae`／SWE `acef9411ae28c9f52`。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談・本 Step は不要）。
+- **Last completed**: **#7 完了（`complete task #7`）＝Phase 3 完了**。#7 Step5 で QA 提案 2 本＋カバレッジ穴 2 本＝計 +4 テスト追加（`YamlFormatReaderTest` 19 件 GREEN）・`YamlFormatReader` を instr/branch **99/99%**（残 2 は番人＝本番 ctor L66-67・null ディレクティブ値 L545）へ・全モジュール回帰 1128 件 0F/4E（P3-6 ベースライン一致＝新規失敗ゼロ）・**4 観点レビュー（アーキ/QA/Java/SWE）全 PASS**・`docs/pr75/checks/P3-7.md` 記録・本体ゼロ差分。
+- **Next**: **#8 YamlFormatWriter 再構築（YAML OUT・Phase 4 の先頭・TDD）**。設計書 OUT 章＋[[D-H]]。中間モデル（#4）→ YAML を記法どおり書き出す（全値クォート・${...}/null/"" 記法保持・YAML 列順・長さ省略・fw_header）。全種別（TABLE3/LIST_MAP/FILE FIXED+VARIABLE/MESSAGE/送信系4種）。L2 往復（#12）の片側ゆえ #7 IN リーダと記法対称になること。完了条件: 全種別 YAML 出力・単体 GREEN・C0/C1 100%（番人除く）。
+- **Notes**: 設計の正＝[[D-H]]。**カバレッジ取得手順（重要・ハマった）**: online `mvn package -Dmaven.javadoc.skip=true -Dtest=<TestClass>` で `jacoco.exec` 生成（restore-instrumented-classes が**1 クラス instrument 残り**→`jacoco:report` が "Cannot process instrumented class" で失敗）→ **`mvn -o compile` でクリーン bytecode を target/classes へ復元** → `mvn jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`。回帰のベースライン: offline `mvn -o test` は 0F/4E（Mockito 環境起因 `MockHttpRequestTest`・`MockServletExecutionContextTest` のみ・PR75 非起因）＝新規失敗の判定基準。`M pom.xml` の `6u3` はコミットしない（正常）。ブランチ `add-yaml`。Operating mode により確認不要で自律続行可（released 本体に触れる時のみ相談）。
 
 ## #7 Step 3 設計確定（本セッションで全ファイル精読のうえ確定。resume はこのまま実装してよい）
 
