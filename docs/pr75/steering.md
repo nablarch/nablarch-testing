@@ -411,9 +411,9 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-14
-- **Last completed**: **R0**（判断 A=(a) 2 アダプタ確定・`5629a4b`）。本セッション追加：①設計書 §共通 の内部矛盾（長さ省略の識別に private `isOndemandCalcFieldSize` を使う記述 vs「本体無変更・可視性拡大不要」）を検知→**ユーザーが B で解消**（識別も生行の長さ行セル `==-` から。設計書 L141/L128 改訂＝本コミットに含む）。②Plan エージェントで R1+R2 の実装計画を実コード根拠で確定（下記「R1+R2 実装計画」）。**コードは未着手**（#5=`cb881bc`／#6 wip は HEAD の `XlsFormatReader`/`TestDataParserAdapter` のまま）。
-- **Next**: **R1+R2 を 1 コミットで実装**（TDD）。理由＝private `recordType` 撤回が `XlsFormatReader` を壊し、生行復元(R2)でしか直せず中間にコンパイル可能状態が無いため統合（「各コミットはビルド通過」ルール上の正）。下記「R1+R2 実装計画」が唯一の手順。
-- **確定事項**: ① 本体無変更へ収束＝`DataFile`/`DataFileFragment` の getter 撤回・`MessagePool.getFwHeader` を package-private へ撤回・`QuotationTrimmer` は据え置き。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（B 確定）。
+- **Last completed**: **R1+R2**（`6c5ef7a`）。Excel 経路を本体無変更で 2 アダプタ＋原文復元へ再構築。`TestCoreFileAdapter` 新設（file 相乗り・FileView/FragmentView）／`TestDataParserAdapter`→`TestCoreReaderAdapter` 改名＋`readBlockBodyLines`（生行収集・`TestDataParsingTemplate` 再利用）／`XlsFormatReader` R2（器を権威に断片・値行数を決め生行から recordType=名前行列0・型記法=型行・長さ省略`-`=長さ行を復元）。本体撤回完了＝`git diff main` の core/file・core/messaging 本体差分**ゼロ**（QuotationTrimmer +5 のみ据え置き）。テスト GREEN：TestCoreFileAdapterTest7／TestCoreReaderAdapterTest19／XlsFormatReaderTest11、touched パッケージ回帰 386 件 0F/0E。
+- **Next**: **R3 — 電文 4 種編入**（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）。`TestCoreReaderAdapter` に send-sync 2 経路（`getMessageWithoutCache`=SendSyncMessageParser・単体 MessagePool／`getSendSyncMessage`=GroupMessageParser・caseNo グループ・`List<RequestTestingMessagePool>`）を追加し `MessageDataBlock` の 4 種へ写す。FW ヘッダは 4 種とも空。6.3 コーパス messaging 系 6 クラスが使用＝必須。実装方法は下記「旧 Notes」#6 残作業 (1) に調査済。R3 後に R6（回帰・jacoco C0/C1・3 観点レビュー・`P3-6.md`・`complete task #6`）。
+- **確定事項**: ① 本体無変更へ収束（R1+R2 で完了）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（実装済）。④ R4(#7 YAML)・R5(util 共通化)・Phase4-6 は未着手。
 
 ## R1+R2 実装計画（本セッションで Plan エージェント＋実コードで確定・resume はこの手順で実装）
 
