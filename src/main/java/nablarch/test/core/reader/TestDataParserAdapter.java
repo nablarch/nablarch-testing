@@ -1,5 +1,6 @@
 package nablarch.test.core.reader;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +10,7 @@ import nablarch.test.core.db.DbInfo;
 import nablarch.test.core.db.DefaultValues;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
-import nablarch.test.core.messaging.MessagePool;
+import nablarch.test.core.file.FixedLengthFile;
 import nablarch.test.core.util.interpreter.TestDataInterpreter;
 
 /**
@@ -129,22 +130,205 @@ public class TestDataParserAdapter {
     }
 
     /**
-     * メッセージを取り出す。
+     * メッセージ（{@link DataType#MESSAGE}）を取り出す。
      * <p>
-     * FW 制御ヘッダ（{@link MessagePool#getFwHeader()}）と本文（固定長ファイル）を
-     * 持つ{@link MessagePool}を返す。対象が存在しない場合は{@code null}を返す
-     * （本体{@link MessageParser}の挙動を踏襲）。
+     * 変換ツールが中間モデルへ写すのに必要な FW 制御ヘッダと本文（固定長ファイル）を
+     * 併せ持つ{@link MessageData}を返す。本文の{@link FixedLengthFile}は本体
+     * {@link MessageParser#getDelegate()}（同一パッケージからのみ可視）から取り出す。
+     * これは{@link MessagePool#getSource()}が protected で変換ツールのパッケージから
+     * 読めないための相乗りであり、相乗りの影響は本アダプタに局所化される（設計書 §共通）。
+     * 対象が存在しない場合は{@code null}を返す（本体{@link MessageParser}の挙動を踏襲）。
      * </p>
      *
      * @param path     取得元パス
      * @param resource 取得元リソース名
-     * @param id       ID
+     * @param id       メッセージ ID（{@code =}以降の識別子）
      * @return メッセージ。対象が存在しない場合は{@code null}
      */
-    public MessagePool readMessage(String path, String resource, String id) {
+    public MessageData readMessage(String path, String resource, String id) {
         MessageParser parser = new MessageParser(reader, EMPTY_INTERPRETERS, DataType.MESSAGE);
         parser.parse(path, resource, id);
-        return parser.getResult();
+        List<FixedLengthFile> bodies = parser.getDelegate().getResult();
+        if (bodies.isEmpty()) {
+            return null;
+        }
+        return new MessageData(parser.getFwHeader(), bodies.get(0));
+    }
+
+    /**
+     * リソース内に存在する全データブロックの<b>ヘッダ</b>（データタイプ・グループ ID・識別子）を
+     * シート記述順に列挙する。ブロック本体の解析は行わない。
+     * <p>
+     * 変換ツールはアダプタの各 {@code read*} メソッドを (データタイプ, ID) 単位で呼ぶため、
+     * 「リソースにどのブロックが存在するか」を知る手段が要る。本メソッドは本体
+     * {@link TestDataParsingTemplate#getDataType(String)}／{@link TestDataParsingTemplate#getTypeValue(List)}
+     * を再利用してマーカー行を判定するため、行分類のロジックを本体と二重実装しない
+     * （変換ツール側に構造解析を持ち込まない）。グループ ID（{@code [g1]} 等）はデータタイプ名と
+     * {@code =}の間の文字列として切り出す。
+     * </p>
+     *
+     * @param path     取得元パス
+     * @param resource 取得元リソース名
+     * @return ブロックヘッダ一覧（記述順。マーカー行が無ければ空）
+     */
+    public List<BlockHeader> readHeaders(String path, String resource) {
+        HeaderCollector collector = new HeaderCollector(reader);
+        collector.parse(path, resource, "");
+        return collector.getResult();
+    }
+
+    /**
+     * 1 データブロックのヘッダ（マーカー行から取り出した属性）。
+     * <p>
+     * {@code SETUP_TABLE[g1]=USERS} のようなマーカー行を、データタイプ
+     * （{@code SETUP_TABLE}）・グループ ID（{@code [g1]}、無指定は空文字）・
+     * 識別子（{@code USERS}）へ分解して保持する。
+     * </p>
+     */
+    public static final class BlockHeader {
+
+        /** データタイプ */
+        private final DataType type;
+
+        /** グループ ID（{@code [g1]} 等。無指定は空文字） */
+        private final String groupId;
+
+        /** 識別子（テーブル名／ファイルパス／LIST_MAP ID／メッセージ ID） */
+        private final String identifier;
+
+        /**
+         * コンストラクタ。
+         *
+         * @param type       データタイプ
+         * @param groupId    グループ ID（無指定は空文字）
+         * @param identifier 識別子
+         */
+        BlockHeader(DataType type, String groupId, String identifier) {
+            this.type = type;
+            this.groupId = groupId;
+            this.identifier = identifier;
+        }
+
+        /** @return データタイプ */
+        public DataType getType() {
+            return type;
+        }
+
+        /** @return グループ ID（{@code [g1]} 等。無指定は空文字） */
+        public String getGroupId() {
+            return groupId;
+        }
+
+        /** @return 識別子（テーブル名／ファイルパス／LIST_MAP ID／メッセージ ID） */
+        public String getIdentifier() {
+            return identifier;
+        }
+    }
+
+    /**
+     * メッセージ（{@link DataType#MESSAGE}）の取り出し結果。FW 制御ヘッダと本文を併せ持つ。
+     *
+     * @see #readMessage(String, String, String)
+     */
+    public static final class MessageData {
+
+        /** FW 制御ヘッダ（{@code requestId}／{@code userId} 等。記法のまま・未加工） */
+        private final Map<String, String> fwHeader;
+
+        /** 本文（固定長ファイルの器。記法のまま・未加工） */
+        private final FixedLengthFile body;
+
+        /**
+         * コンストラクタ。
+         *
+         * @param fwHeader FW 制御ヘッダ
+         * @param body     本文
+         */
+        MessageData(Map<String, String> fwHeader, FixedLengthFile body) {
+            this.fwHeader = fwHeader;
+            this.body = body;
+        }
+
+        /** @return FW 制御ヘッダ（記法のまま・未加工） */
+        public Map<String, String> getFwHeader() {
+            return fwHeader;
+        }
+
+        /** @return 本文（固定長ファイルの器。記法のまま・未加工） */
+        public FixedLengthFile getBody() {
+            return body;
+        }
+    }
+
+    /**
+     * リソース内のマーカー行を走査してブロックヘッダを収集する、解析を伴わない
+     * {@link TestDataParsingTemplate}。
+     * <p>
+     * 本体のテンプレートが提供する{@code getDataType}／{@code getTypeValue}で
+     * マーカー行の判定・識別子抽出を行い、ブロック本体（カラム・行・型）の解析はしない。
+     * 特定のデータタイプを対象にしないため{@link #isTargetType}は常に偽を返し、
+     * 走査ロジックは{@link #parse(String)}を上書きして実装する。
+     * </p>
+     */
+    private static final class HeaderCollector extends TestDataParsingTemplate<List<BlockHeader>> {
+
+        /** 収集したヘッダ（記述順） */
+        private final List<BlockHeader> headers = new ArrayList<BlockHeader>();
+
+        /**
+         * コンストラクタ。
+         *
+         * @param reader テストデータリーダ
+         */
+        HeaderCollector(TestDataReader reader) {
+            super(reader, EMPTY_INTERPRETERS, DataType.DEFAULT);
+        }
+
+        @Override
+        void parse(String id) {
+            List<String> line;
+            while ((line = readLine()) != null) {
+                String first = line.get(0);
+                DataType type = getDataType(first);
+                if (type == DataType.DEFAULT) {
+                    continue;
+                }
+                String afterName = first.substring(type.getName().length());
+                int eq = afterName.indexOf('=');
+                if (eq < 0) {
+                    // データタイプ名で始まるがマーカー行でない（'='なし）＝対象外
+                    continue;
+                }
+                String groupId = afterName.substring(0, eq);
+                String identifier = getTypeValue(line);
+                headers.add(new BlockHeader(type, groupId, identifier));
+            }
+        }
+
+        @Override
+        void onReadLine(List<String> line) {
+            // ブロック本体は解析しない
+        }
+
+        @Override
+        void onTargetTypeFound(List<String> line) {
+            // 特定タイプを対象にしない
+        }
+
+        @Override
+        boolean isTargetType(List<String> line, String id) {
+            return false;
+        }
+
+        @Override
+        boolean shouldStopOnNextOne() {
+            return false;
+        }
+
+        @Override
+        List<BlockHeader> getResult() {
+            return headers;
+        }
     }
 
     /**

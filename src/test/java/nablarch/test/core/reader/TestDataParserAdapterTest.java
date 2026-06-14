@@ -15,7 +15,6 @@ import java.util.Map;
 import nablarch.test.core.db.TableData;
 import nablarch.test.core.file.DataFile;
 import nablarch.test.core.file.VariableLengthFile;
-import nablarch.test.core.messaging.MessagePool;
 
 import org.junit.Test;
 
@@ -432,7 +431,7 @@ public class TestDataParserAdapterTest {
     /**
      * Given: FW 制御ヘッダ（{@code ${...}}を含む）を持つ MESSAGE ブロック。
      * When : {@code readMessage} を呼ぶ。
-     * Then : 本体器{@link MessagePool}が返り、FW ヘッダ値が記法のまま（未加工）。
+     * Then : {@link TestDataParserAdapter.MessageData}が返り、FW ヘッダ値が記法のまま（未加工）。
      */
     @Test
     public void readMessageReturnsRawMessagePool() {
@@ -445,11 +444,13 @@ public class TestDataParserAdapterTest {
         TestDataParserAdapter adapter = new TestDataParserAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        MessagePool pool = adapter.readMessage(DIR, resource, "msg1");
+        TestDataParserAdapter.MessageData message = adapter.readMessage(DIR, resource, "msg1");
 
-        assertNotNull(pool);
-        assertThat(pool.getFwHeader().get("requestId"), is("${rid}"));
-        assertThat(pool.getFwHeader().get("userId"), is("U001"));
+        assertNotNull(message);
+        assertThat(message.getFwHeader().get("requestId"), is("${rid}"));
+        assertThat(message.getFwHeader().get("userId"), is("U001"));
+        // 本文（固定長ファイル）も取り出せる
+        assertNotNull(message.getBody());
     }
 
     /**
@@ -468,8 +469,119 @@ public class TestDataParserAdapterTest {
         TestDataParserAdapter adapter = new TestDataParserAdapter(
                 new FakeTestDataReader().put(resource, lines));
 
-        MessagePool pool = adapter.readMessage(DIR, resource, "missing");
+        TestDataParserAdapter.MessageData message = adapter.readMessage(DIR, resource, "missing");
 
-        assertThat(pool, is(nullValue()));
+        assertThat(message, is(nullValue()));
+    }
+
+    // ------------------------------------------------------------------ readHeaders
+
+    /**
+     * Given: 複数のデータタイプ（テーブル・ファイル・LIST_MAP・メッセージ）が混在するリソース。
+     * When : {@code readHeaders} を呼ぶ。
+     * Then : 全マーカー行が記述順に列挙され、データタイプ・グループ ID・識別子が分解される。
+     */
+    @Test
+    public void readHeadersEnumeratesAllBlocksInDescriptionOrder() {
+        String resource = "readHeadersEnumeratesAllBlocksInDescriptionOrder";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("SETUP_TABLE=USERS"));
+        lines.add(row("USER_NAME"));
+        lines.add(row("alice"));
+        lines.add(row("SETUP_FIXED=in.dat"));
+        lines.add(row("data", "f1"));
+        lines.add(row("", "半角英字"));
+        lines.add(row("", "5"));
+        lines.add(row("", "x"));
+        lines.add(row("LIST_MAP=result"));
+        lines.add(row("ID"));
+        lines.add(row("1"));
+        lines.add(row("MESSAGE=msg1"));
+        lines.add(row("requestId", "R001"));
+
+        TestDataParserAdapter adapter = new TestDataParserAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+
+        assertThat(headers.size(), is(4));
+        assertThat(headers.get(0).getType(), is(DataType.SETUP_TABLE_DATA));
+        assertThat(headers.get(0).getGroupId(), is(""));
+        assertThat(headers.get(0).getIdentifier(), is("USERS"));
+        assertThat(headers.get(1).getType(), is(DataType.SETUP_FIXED));
+        assertThat(headers.get(1).getIdentifier(), is("in.dat"));
+        assertThat(headers.get(2).getType(), is(DataType.LIST_MAP));
+        assertThat(headers.get(2).getIdentifier(), is("result"));
+        assertThat(headers.get(3).getType(), is(DataType.MESSAGE));
+        assertThat(headers.get(3).getIdentifier(), is("msg1"));
+    }
+
+    /**
+     * Given: グループ ID 付きマーカー（{@code SETUP_TABLE[g1]=USERS}）。
+     * When : {@code readHeaders} を呼ぶ。
+     * Then : グループ ID が {@code [g1]}、識別子が {@code USERS} として切り出される。
+     */
+    @Test
+    public void readHeadersExtractsGroupId() {
+        String resource = "readHeadersExtractsGroupId";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("SETUP_TABLE[g1]=USERS"));
+        lines.add(row("USER_NAME"));
+        lines.add(row("alice"));
+
+        TestDataParserAdapter adapter = new TestDataParserAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+
+        assertThat(headers.size(), is(1));
+        assertThat(headers.get(0).getType(), is(DataType.SETUP_TABLE_DATA));
+        assertThat(headers.get(0).getGroupId(), is("[g1]"));
+        assertThat(headers.get(0).getIdentifier(), is("USERS"));
+    }
+
+    /**
+     * Given: 同一データタイプ・同一グループの複数ブロック。
+     * When : {@code readHeaders} を呼ぶ。
+     * Then : 各ブロックが個別のヘッダとして記述順に列挙される（重複排除は呼び出し側の責務）。
+     */
+    @Test
+    public void readHeadersListsEachBlockEvenWhenSameTypeAndGroup() {
+        String resource = "readHeadersListsEachBlockEvenWhenSameTypeAndGroup";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("SETUP_TABLE=USERS"));
+        lines.add(row("USER_NAME"));
+        lines.add(row("alice"));
+        lines.add(row("SETUP_TABLE=ROLES"));
+        lines.add(row("ROLE_NAME"));
+        lines.add(row("admin"));
+
+        TestDataParserAdapter adapter = new TestDataParserAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+
+        assertThat(headers.size(), is(2));
+        assertThat(headers.get(0).getIdentifier(), is("USERS"));
+        assertThat(headers.get(1).getIdentifier(), is("ROLES"));
+    }
+
+    /**
+     * Given: マーカー行が存在しないリソース。
+     * When : {@code readHeaders} を呼ぶ。
+     * Then : 空リストが返る。
+     */
+    @Test
+    public void readHeadersReturnsEmptyWhenNoMarker() {
+        String resource = "readHeadersReturnsEmptyWhenNoMarker";
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(row("just", "some", "data"));
+
+        TestDataParserAdapter adapter = new TestDataParserAdapter(
+                new FakeTestDataReader().put(resource, lines));
+
+        List<TestDataParserAdapter.BlockHeader> headers = adapter.readHeaders(DIR, resource);
+
+        assertThat(headers.isEmpty(), is(true));
     }
 }
