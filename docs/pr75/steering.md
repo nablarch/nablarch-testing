@@ -412,8 +412,40 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - **Status**: paused
 - **Date**: 2026-06-14
 - **Last completed**: **R1+R2**（`6c5ef7a`）。Excel 経路を本体無変更で 2 アダプタ＋原文復元へ再構築。`TestCoreFileAdapter` 新設（file 相乗り・FileView/FragmentView）／`TestDataParserAdapter`→`TestCoreReaderAdapter` 改名＋`readBlockBodyLines`（生行収集・`TestDataParsingTemplate` 再利用）／`XlsFormatReader` R2（器を権威に断片・値行数を決め生行から recordType=名前行列0・型記法=型行・長さ省略`-`=長さ行を復元）。本体撤回完了＝`git diff main` の core/file・core/messaging 本体差分**ゼロ**（QuotationTrimmer +5 のみ据え置き）。テスト GREEN：TestCoreFileAdapterTest7／TestCoreReaderAdapterTest19／XlsFormatReaderTest11、touched パッケージ回帰 386 件 0F/0E。
-- **Next**: **R3 — 電文 4 種編入**（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）。`TestCoreReaderAdapter` に send-sync 2 経路（`getMessageWithoutCache`=SendSyncMessageParser・単体 MessagePool／`getSendSyncMessage`=GroupMessageParser・caseNo グループ・`List<RequestTestingMessagePool>`）を追加し `MessageDataBlock` の 4 種へ写す。FW ヘッダは 4 種とも空。6.3 コーパス messaging 系 6 クラスが使用＝必須。実装方法は下記「旧 Notes」#6 残作業 (1) に調査済。R3 後に R6（回帰・jacoco C0/C1・3 観点レビュー・`P3-6.md`・`complete task #6`）。
-- **確定事項**: ① 本体無変更へ収束（R1+R2 で完了）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（実装済）。④ R4(#7 YAML)・R5(util 共通化)・Phase4-6 は未着手。
+- **Next**: **R3 — 電文 4 種編入**（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）。本セッションで実コード調査済（下記「R3 調査メモ」が一次情報）。**着手前に「★未解決の設計判断＝NO/caseNo 列の表現非対称★」を裏取りすること**（Excel の `addValueWithId`/`FIRST_FIELD_NO`/recordType=col0 と YAML の `addValue`/recordType="default"/FW_HEADER スキップの差が 6.3 で assert 同値を壊さないか）。裏取り手順は調査メモ記載の①②③。その後 `TestCoreReaderAdapter` に送信系読み出しを新設→`XlsFormatReader` で 4 type を `MessageDataBlock`（空 fwHeaderFields）へ→テスト→回帰。R3 後に R6（jacoco C0/C1・3 観点レビュー・`P3-6.md`・`complete task #6`）。6.3 コーパス messaging 系 6 クラスが使用＝必須。
+- **確定事項**: ① 本体無変更へ収束（R1+R2 で完了）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（実装済）。④ R4(#7 YAML)・R5(util 共通化)・Phase4-6 は未着手。⑤ R3 は本セッションで**実コード調査済・コード未着手**（下記「R3 調査メモ」）。**未解決の設計判断あり（NO/caseNo 列の表現）＝着手前に裏取り要**。
+
+## R3 調査メモ（電文4種・本セッションで実コード調査・実装はこの知見で・サブエージェント結論は裏取り済/未済を明記）
+
+**対象 4 DataType**（`DataType.java:47-56`）: `EXPECTED_REQUEST_HEADER_MESSAGES`(10)・`EXPECTED_REQUEST_BODY_MESSAGES`(11)・`RESPONSE_HEADER_MESSAGES`(12)・`RESPONSE_BODY_MESSAGES`(13)。`MESSAGE`(9) は R2 で対応済。
+
+**ランタイム解析経路（裏取り済＝実コード確認）**:
+- 主経路＝`BasicTestDataParser.getSendSyncMessage(path,res,id,dataType)`(`:113`) → `GroupMessageParser`(`:16`)。`getResult`(`:50-65`)＝`delegate(SendSyncMessageParser).getDelegate().getResult()` で `List<FixedLengthFile>`（**マーカー1個＝ファイル1個**）を得て、各を `RequestTestingMessagePool(file, emptyHeader)` で包み `setRequestId(file.getPath())`。**FW ヘッダは常に空**（`Collections.emptyMap()`・`GroupMessageParser:58`）。主消費者＝`RequestTestingSendSyncSupport` が `getSendSyncMessage(path,res,"["+messageId+"]",dataType)` で groupId=`[messageId]` 指定（サブエージェント報告・要再確認だが整合的）。
+- 副経路＝`getMessageWithoutCache(path,res,dataType,id)`(`:99`) → `SendSyncMessageParser.parse(...,false)` → 単体 `MessagePool`。`SendSyncSupport` が RESPONSE_* の逐次取得で使用（サブエージェント報告・未裏取り）。**変換ツールの IN は「ブロック構造を読む」だけなので、単体/グループの実行時差は MessageDataBlock では区別不要（ブロック=マーカー単位で読めば足りる）**見込み。
+
+**SendSyncMessageParser の構造（裏取り済）**(`SendSyncMessageParser.java`):
+- `extends MessageParser` だが `createFixedLengthFileParser` を**丸ごと差し替え**（MessageParser の delegate ではない）。よって：
+  - **名前行**：base `onReadingNames`＝`createNewFragment`→`setRecordType(col0)`/`setNames(tail)`。MESSAGE のような col0→"default" 置換は**しない**。
+  - **ディレクティブ行**：base `processDirectives` のみ＝**FW ヘッダ分離なし**（`getFwHeader()` は例外送出 `:42`）。
+  - **値行**(`:116-135`)：`col0=NO`(caseNo, `NO_COLUMN_NUMBER=0`)、`col1`が `errorMode:timeout`/`errorMode:msgException` なら(`ERROR_MODE_COLUMN_NUMBER=1`)その1列のみ `addValue`。それ以外は `addValueWithId(temp, temp.remove(0))`＝**col0(NO)を除去し `FIRST_FIELD_NO` に格納、残りを names へマップ**。
+  - 本文ファイル＝`MockMessages`（`FixedLengthFile` のサブクラス）。
+  - **注意/未確認**：override 後 `onReadingValues` は `isDataRow`/新フラグメント生成を**持たない**。MESSAGE 系で FW_HEADER+BODY の複数レコードレイアウトを単一ブロックで持てるのか要確認（YAML 側 `buildFragments` は複数 records をループするので、Excel 側も複数フラグメント前提のはず＝base の名前行検出は status 遷移で効く？ `onReadingValues` 内で新フラグメントに移れない点が引っかかる。**実 fixture かテストで挙動確認すること**）。
+
+**Excel ブロック構造（送信系・推定＋一部裏取り）**: 各フラグメント＝名前行(col0=recordType, tail=names)→型行→長さ行→値行（**値行 col0=NO で非空**、残り=値）。通常ファイルと違い**値行 col0 が非空(NO)**。R2 の生行ウォークは `tail()` で col0 を落とすので NO も落ちる＝値だけ残り**たまたま整合**するが、recordType は名前行 col0 から取れる。器(`fragment.values`)は names→値（NO は別管理）。
+
+**YAML 側の対称表現（裏取り済）**(`YamlValueProcessor.java`):
+- `toSendSyncList(raws,groupId,basePath)`(`:257`)＝`raw.getGroupId()==groupId` で絞り、`MockMessages(id)`・`buildFragments(skipFwHeader=true)`・`RequestTestingMessagePool(file,emptyMap)`・`setRequestId(id)`。
+- `buildFragments(skipFwHeader=true)`(`:288-339`)＝`FW_HEADER` record_type はスキップ、recordType は**常に "default"**(`DEFAULT_RECORD_TYPE`)、長さ未指定→`"-"`(動的)、**行は `fragment.addValue(rowValues)`（`addValueWithId` ではない！）**。
+- `RawMessage`＝`groupId/id/directives/fwHeader(Object)/records`。YAML 例（`docs/pr75/design` の messageData/yaml-examples）では **"no" は records.fields の先頭フィールド**として普通に並ぶ（メタでなく1フィールド）。
+
+**★未解決の設計判断（R3 着手前に必ず裏取り）★ — NO/caseNo 列の表現非対称**:
+- Excel: `SendSyncMessageParser` は NO を `FIRST_FIELD_NO` に隔離・recordType=col0・FW_HEADER 行を本文レコードとして保持。
+- YAML: `buildFragments(skipFwHeader=true)` は recordType を "default" に固定・FW_HEADER レコードをスキップ・NO の特別扱いなし（"no" は普通の先頭フィールド・`addValue`）。
+- ⇒ Excel→runtime と Excel→YAML→runtime で生成される `MessagePool` の内部状態（recordType、FIRST_FIELD_NO の有無、FW_HEADER レコードの有無）が**一致しない恐れ**。**6.3（#14）はこの2経路の結果が assert で同値になることが必須**。
+- 解決に要る裏取り：① `RequestTestingMessagePool`/`MockMessages`/`SendSyncSupport`/`RequestTestingMessagingClient` が assert 時に**実際に何を比較するか**（`FIRST_FIELD_NO`/recordType を見るか、toDataRecords のバイト列だけか）。② 実 Excel fixture（6.3 コーパスの messaging 系）の送信系ブロックを1つ実際に読んで行構成を確認（`PoiXlsReader` 経由 or 既存テストデータの .xls を `mvn` 一時テストでダンプ）。③ YAML 例の "no" フィールドが Excel の NO 列とどう対応するのが正か。
+- 暫定方針（要検証）：変換ツールは **YAML の表現（"no" を先頭フィールド化・recordType は本文のまま or "default"・FW_HEADER の扱い）に合わせて MessageDataBlock を組む**。`MessageDataBlock` はモデル変更不要（State 確定）。NO は `RecordLayout` 先頭 `FieldDef("no",...)` ＋各 row 先頭値として持たせる線が有力。ただし上記①で「runtime が NO/recordType を比較しない」と確認できれば、より単純化できる。
+
+**R3 実装の概形（裏取り後）**: ① `TestCoreReaderAdapter` に送信系読み出し（`readSendSyncMessages` 等。`GroupMessageParser` または `SendSyncMessageParser` 経由で `List<FixedLengthFile>`＋識別子を返す。FW ヘッダ空）を新設。② `XlsFormatReader` の `read` で 4 type を分岐（現状 `:114` コメントで skip）→ 各マーカーを `MessageDataBlock`(該当 dataType, groupId, identifier=msgId, directives, **空 fwHeaderFields**, records) へ。原文復元は R2 同様 `readBlockBodyLines`＋`TestCoreFileAdapter` で（NO 列の扱いは上記判断に従う）。③ XlsFormatReaderTest に 4 type のテスト追加（NO 複数 row・errorMode 含む）。④ 回帰。R3 後に R6（jacoco・3観点レビュー・`complete task #6`）。
 
 ## R1+R2 実装計画（本セッションで Plan エージェント＋実コードで確定・resume はこの手順で実装）
 
