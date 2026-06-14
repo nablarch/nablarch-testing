@@ -102,29 +102,16 @@ YAML も本体の読み込み（`YamlLoader` ＋ Builder 群）が同じ加工�
 
 ### 共通：器の中身を読む手段
 
-取り出した器の中身は public getter で読める。`TableData` の getter は本体に整備済み（**本体無変更**）。`DataFile`／`DataFileFragment`／`MessagePool` の getter は、変換ツールが器を別パッケージ（`nablarch.test.tool.converter.*`）から読むために必要な**最小限の本体変更**として追加・公開する（いずれも `@Published(tag = "architect")`）。一方、取り出し口 `getResult` と一部 Parser のコンストラクタは、同一パッケージに相乗りするアダプタが直接呼ぶため可視性変更は不要＝**package-private のまま**とする（判断 A）。
+取り出した器の中身は、本体に整備済みの public getter で読める。いずれも**本体無変更**。
 
-| 器 | 中身を読む手段 | 本体変更 |
-|---|---|---|
-| `TableData` | `getTableName`／`getColumnNames`／`getValue` | なし（既存 public） |
-| `DataFile`／`DataFileFragment` | `getAllFragments`／`getDirectives`／`getRecordType`／`getNames`／`getTypes`／`getLengths`／`getValues` | getter 追加（public）。`getRecordType` は 1 章「空欄のレコード種別も無損失で保持」のため必須 |
-| `MessagePool` | FW 制御ヘッダは `getFwHeader`。本文は `FixedLengthFile` として取る | `getFwHeader` を package-private→public 化 |
-| LIST_MAP | 戻り値が `List<Map<String,String>>` の素の型 | なし |
+| 器 | 中身を読む手段 |
+|---|---|
+| `TableData` | `getTableName`／`getColumnNames`／`getValue` |
+| `DataFile`／`DataFileFragment` | `getAllFragments`／`getNames`／`getTypes`／`getLengths`／`getValues`／`getDirectives` |
+| `MessagePool` | FW 制御ヘッダは `getFwHeader`。本文は `FixedLengthFile` として取る |
+| LIST_MAP | 戻り値が `List<Map<String,String>>` の素の型 |
 
 テーブル系は構造解析（`TableData.addRow`）の途中で `dbInfo.getColumnType` を要求する。値は文字列のままで型に依存しないが `dbInfo` が null だと読めないため、カラム型を返すだけの**スタブ `DbInfo`** を構成で差し込む。
-
-> **この §共通（器の中身を getter で読む）は Excel 経路（判断 A）に適用する。** Excel は本体 Parser を再利用する以上、本体器を経由する以外に再利用手段がないため、アダプタが本体器を取り出し getter で読む。YAML 経路（判断 B）は下記の補足のとおり**本体器を経由しない**ので、これらの getter は YAML 経路では使用しない。
-
-### 判断 B の補足：YAML が共有するのは「本体器」ではなく「構造ウォーク」（実装時の精緻化）
-
-判断 B の**意図**（構造解釈を 1 箇所に集約し、加工を明示的に上乗せする）は維持しつつ、**機構**を精緻化する。「変換ツールが構造マッピング層を呼んで *本体器を受け取る*」を文字どおり実装すると、YAML 経路では往復変換が壊れる（下記）。本体器は本体テスト読み込みのための器であって、変換ツールにとっては非可逆な中間表現だからである。
-
-- **本体器を経由すると失われる情報（実コードで確認）**：`TableData` はカラム名を大文字化し（`TableData#setColumnNames`/`addRow`）、テーブル名も大文字化・トリムする → YAML に書いた `emp_name` が `EMP_NAME` になり往復で値が変わる。メッセージは長さ省略フィールドに `-` を注入し `DataFileFragment#addValue` が**実値のバイト長で `-` を上書き破壊**する → 「長さ省略」を復元できない。マーカーカラム `[COL]` は `TableData` 構築時に捨てられる。list_maps は `TreeMap` でキー順が変わる。これらはいずれも非可逆で、変換ツールが本体器から読むと原データを忠実に再現できない。
-- **共有すべきは器ではなくウォーク**：Excel（判断 A）は本体 Parser を再利用する都合上「本体器」が唯一の共有点だが、YAML は本体・変換ツールとも *同一の SnakeYAML Map（同一スキーマ）* から出発する。共有すべき「構造解釈の単一の真実」は **YAML Map → 構造の写し取り（ウォーク）** であって本体器ではない。
-- **構造マッピング層の出力＝生の構造レコード（`Raw*` 値オブジェクト）**：`nablarch.test.core.reader.yaml.model` に、値未加工・マーカー保持・YAML 順保持・長さ省略は `null` 保持・FW_HEADER もデータとして保持する素の値オブジェクト（`RawTableData`/`RawListMap`/`RawDataFile`/`RawRecordLayout`/`RawFieldDef`/`RawMessage`）を置く。これを本体テスト読み込み（値加工層）と変換ツール（中間モデルへの写し）が共有する。依存は変換ツール → 本体の一方向を維持（`Raw*` は本体パッケージに属す）。
-- **本体テスト経路**：構造マッピング層（`Yaml*StructureMapper`：Map→`Raw*`）→ 値加工＋組み立て層（`Raw*`→本体器。`interpret`・`BinaryFileInterpreter`(basePath)・`fillDefaultValues`・メッセージ長 `-` 注入をここで実施）。本体の振る舞いは不変。
-- **変換ツール経路（#7）**：同じ `Yaml*StructureMapper` を呼び、`Raw*` → 中間モデル（`TestDataBlock` 群）へ写す。現 `YamlFormatReader` の独自ウォーク（重複）は削除して構造マッピング層へ再接続する。
-- **エキスパート照合済み**：本精緻化はアーキテクト/Java エキスパートのレビューを経ており、判断 B の文言「本体器を受け取る」を YAML 経路に限り上記へ置換する（判断 A の Excel 経路は不変）。
 
 ### 書き出し（OUT）の整形方針
 
