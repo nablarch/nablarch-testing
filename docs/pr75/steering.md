@@ -398,27 +398,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-14
-- **Last completed**: **#5 完了**（commit `cb881bc`）。**#6 は実装＋単体テスト GREEN まで進行（wip commit `4eedba3`・未完）**。
-- **Next**: **#6 の残作業を完了させる**（コード本体は出来ている。残り＝①全種別のうち要求/応答電文4種の扱い確定、②回帰、③カバレッジ、④3観点レビュー、⑤check/steering 確定）。下記 Notes の手順どおり進める。
-- **Notes**:
-  - **#6 実装済み内容（wip `4eedba3`・単体テスト GREEN）**:
-    - アダプタ拡張（`src/main/java/nablarch/test/core/reader/TestDataParserAdapter.java`）: ① `readHeaders(path,resource)→List<BlockHeader>` 新設（本体 `TestDataParsingTemplate#getDataType`/`getTypeValue` を再利用する private `HeaderCollector` でマーカー列挙。reader 側に構造解析を持ち込まない）。`BlockHeader{type,groupId,identifier}` public 内部クラス。② `readMessage` の戻り値を `MessagePool`→`MessageData{Map fwHeader, FixedLengthFile body}` へ変更（本文を `MessageParser#getDelegate().getResult()` で公開。`MessagePool#getSource()` が protected で変換ツールパッケージから不可視のため）。`MessageData` public 内部クラス。
-    - `src/main/java/nablarch/test/tool/converter/TestDataFormatReader.java`（IF・`read(basePath,resourceName)→TestDataContainer`）新設。
-    - `src/main/java/nablarch/test/tool/converter/xls/XlsFormatReader.java` 新設。`readHeaders`→種別分岐（table/file は (type,groupId) で重複排除し一括読み／list_map・message は identifier で1件ずつ）→本体器を中間モデルへ写す。POI 直叩き・parseBlocks/isDataRow/trimQuotation を一切持たない。本番 ctor は実 `PoiXlsReader` 注入、package-private ctor でアダプタ注入（テスト用）。
-    - テスト: `TestDataParserAdapterTest`（19件 GREEN・readHeaders 4件追加＋readMessage 2件を MessageData へ更新）、`XlsFormatReaderTest`（10件 GREEN・table/list_map/fixed/variable/message/命名/空/混在）。`FakeTestDataReader`＋一意 resource 名で静的キャッシュ衝突回避。
-  - **確定した器固有挙動（判断 A 受容・テストで実証済）**: ① ファイル型記法（`半角英字`）は本体器が FW シンボル（`X`/`N`/`Z`）へ変換 → 中間モデルにも `X` 等で入る。② 可変長は `getLengths()`/`getTypes()` が **null** になりうる → reader の `orEmpty()` で空リスト正規化（length は `FieldDef.length=null`）。③ ディレクティブは本体 `HashMap<String,Object>`（`Charset`/enum/整数・順序不定・自動付与 `file-type` 含む）→ `String.valueOf` で文字列化（`toStringDirectives`）。④ テーブルのマーカーカラム `[COL]` は `TableData` 構築時に脱落（器固有）。⑤ MESSAGE 本文は recordType が常に `default`（`MessageParser` の匿名 `onReadingNames` が先頭列を `default` へ置換）、FW ヘッダ項目（requestId/userId/resendFlag/resultCode）は本文に出ず `fwHeader` へ。
-  - **#6 完了に必要な残タスク（この順で）**:
-    1. **要求/応答電文4種（`EXPECTED_REQUEST_HEADER/BODY_MESSAGES`・`RESPONSE_HEADER/BODY_MESSAGES`）の扱いを確定**。現状 `XlsFormatReader.read` は MESSAGE のみ処理し、この4種はスキップ（`P3-6.md` に先送り明記）。これらは `SendSyncMessageParser`/`GroupMessageParser`（caseNo グループ・`RequestTestingMessagePool`）経由で、本文は `RequestTestingMessagePool`（別パッケージ・protected `getSource()`）から取り出すため追加の本体露出が要る。**判断**: (a) #6 内で対応（アダプタに `readSendSyncMessages` 等を追加し `MessageDataBlock` の4種へ写す。本文は FixedLengthFile・FW ヘッダ空 Map）か、(b) 別タスク化して #6 は4種除外で完了とし #14 前に必ず対応、のどちらか。**先に 6.3 コーパス（既存 `*YamlTest` 18 クラスが読む Excel）が当該4種を実際に使うか調査**して判断（使わないなら (b) で安全）。アーキテクトは「readFiles 経由」を提案したが実コード照合で**誤り**（別パーサ）と判明済 — conflate しないこと。
-    2. **回帰確認**: `mvn -o test`（reader パッケージ既存テスト全 GREEN＝振る舞い不変）。特に `TestDataParserAdapterTest`・reader 系・既存ファイル/メッセージ系テストに #5 readMessage 変更の波及がないこと（readMessage は新規コードゆえ本体テストは依存しないはずだが要確認）。
-    3. **カバレッジ**: `mvn package -Dmaven.javadoc.skip=true -Dtest="TestDataParserAdapterTest,XlsFormatReaderTest"` で jacoco.exec 生成→`mvn jacoco:report`。`XlsFormatReader`・アダプタ新規分の C0/C1 100%（番人除く）を確認。未到達分岐があればテスト追加（例: 空 list_map 行・複数 fragment ファイル・グループ付きファイル等）。
-    4. **3観点レビュー（QA／Java／SWE）** をサブエージェントで実施（task-workflow 準拠）。`docs/pr75/checks/P3-6.md` の表を埋める。指摘は原則全件対応。
-    5. `docs/pr75/steering.md` の #6 ステップ3チェックボックスを `[x]` に、`P3-6.md` の Completion Criteria を確定。`git commit -m "docs: complete task #6 — XlsFormatReader 再構築（Excel IN）"`（`complete task #6` 表記必須）。push。
-  - **設計判断の根拠**: アーキテクトサブエージェント検証済（`P3-6.md` の「設計判断」節に (A)単一セクション read()／(B)readHeaders をアダプタに置く／(C)MESSAGE 本文露出 を記録）。read() は1リソース=1シート→1セクション。シート列挙・ディレクトリ走査は #10 へ委譲。
-  - **#7 申し送り（再掲）**: 変換ツール `YamlFormatReader` の独自 YAML ウォークを削除し `Yaml*StructureMapper`（`Raw*` を返す公開 API）へ再接続。`RawMessage.fwHeader` は生 `Object` 保持なので #7 で Map<String,String> へ検証・変換して `MessageDataBlock.fwHeaderFields` に詰める。#6 で作った中間モデル写し（`toRecordLayouts` 等）の発想は #7 でも流用可だが、YAML は Raw* 経由でマーカー/長さ省略/大文字小文字が保たれる点が Excel と異なる。
-  - **環境**: ブランチ `add-yaml`。`pom.xml` の `6u3` ローカル変更は未コミット残置（**コミットしない方針**・[[new-code-prefer-ideal-design]]）＝`git status` に常に `M pom.xml` が残るのは正常。JaCoCo/オフライン手順は「運用ノート」節参照。
-  - **運用上の留意**: Operating mode は「確認せず 6.3 まで自律」。1 タスク完了したら間を置かず次へ。困ったらサブエージェントに相談（#6 ではアーキテクト検証が有効だった。ただしアーキテクトの C2 提案は実コード照合で誤りを発見＝**サブエージェントの結論も必ずコードで裏取りする**）。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
