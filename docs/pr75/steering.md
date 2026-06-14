@@ -417,11 +417,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
+(written by /rn:bb, read and reset to this placeholder by /rn:hi)
+
 - **Status**: paused
-- **Date**: 2026-06-14
-- **Last completed**: **#6 完了（`complete task #6`）**。R6 仕上げ＝(1) jacoco で番人除く C0/C1 100% 確認（XlsFormatReader fc104/nc3＝防御 L221＋fail-fast 番人 L302/L348 のみ・TestCoreReaderAdapter/TestCoreFileAdapter 外側 100%・SendSyncBodyCollector 全行被覆）。(2) 3 観点レビュー（QA/Java/SWE）をサブエージェントで実施→本質的指摘を全反映：**toRecordLayouts を fail-fast 化**（器↔生行 不整合は `IllegalStateException`・沈黙縮退を排除）／**複数レコードレイアウト復元テスト**＋**errorMode 行原文保持テスト**追加／directive null を table 経路と対称化／マーカー分解を `markerGroupId` へ DRY／`java.sql.Types` import／既定コンストラクタ・不完全マーカーのテスト追加。(3) 対象 47 件 GREEN・全モジュール offline 回帰 **1111 件 0F/4E（既知 Mockito 2 クラス＝PR75 非起因）/25 Skip（@Ignore *YamlTest）＝新規失敗ゼロ**。`docs/pr75/checks/P3-6.md` 確定。**本体器ゼロ差分維持**。
-- **Next**: **R4 — #7 YAML 経路を「本体器＋YamlLoader Map で原文復元」へ作り直す（ユーザー決定 2026-06-14・下記 D-H）**。⚠ **#2 の `Raw*` 方式は破棄が確定**。premise を改めて #7 を再プラン（前回 Plan エージェントは「YAML に生行が無い」という誤前提で Raw* 温存を推奨＝**棄却**。正しい前提＝`YamlLoader.load` が返す **順序保持 LinkedHashMap（原文値・YAML 記述順）が Excel 生行に相当する原文源**＝実コードで確認済）。**具体段取り**: (1) Plan エージェントで正しい前提（Map=原文源）に基づき #7 を再設計（YAML 読み込みは**本体器**＝旧 `YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder` 相当が `TableData`/`DataFile`/`MessagePool` を返す方式へ。`tool/converter` 側 `YamlFormatReader` は Excel と対称に「器で構造・YamlLoader Map で原文（カラム名・列順・値・型表記・長さ省略）復元」→ 中間モデル）。(2) #2 で新設した `Raw*`(6本)・`Yaml{Table,File,Message}StructureMapper`・`YamlValueProcessor`・関連テストを**除去/作り直し**（`YamlTestDataParser` を本体器生成へ再配線）。(3) 設計書 §判断 B 据え置き・§共通 原文復元を「Excel=生行 / YAML=YamlLoader Map」と両形式へ一般化是正。(4) TDD で `tool/converter` の YAML IN リーダを全種別実装。**ブランチは add-yaml で継続**（全 #1-#6 はここ・origin/add-yaml にプッシュ済。ユーザーが見た `convert-testdata-excel-to-text`@`3d693bb` は 43 コミット前の古いベース＝Raw* が無いだけ。**ブランチ論は再燃させない**）。
-- **確定事項**: ① 本体無変更へ収束（R1+R2）。② Excel は `TestCoreReaderAdapter`(reader相乗り)＋`TestCoreFileAdapter`(file相乗り) の 2 枚。③ 長さ省略・recordType・型表記の原文は**生行から復元**（器↔生行 不整合は fail-fast）。④ **#6 完了**＝TABLE/LIST_MAP/FILE/MESSAGE＋送信系電文4種を中間モデルへ無損失・番人除く C0/C1 100%。⑤ **#7(R4) は本体器＋YamlLoader Map 方式へ（D-H・Raw* 破棄）**。R5(util 共通化)・Phase4-6(#8-#14) は未着手。
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: context needed for resume
 
 ## R3 裏取り結論（本セッション・実コードで確定。`★未解決の設計判断★` は良性と判明）
 
