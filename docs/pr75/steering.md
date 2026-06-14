@@ -180,10 +180,10 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 **Steps**:
 
-- [ ] `readFiles`/`readTables`/`readListMap`/`readMessage` 相当を実装（本体器を返す）
-- [ ] スタブ `DbInfo`（カラム型を返すだけ）を構成
-- [ ] 空 interpreters で `${...}`/`null`/`""` が未加工・補完/マージが起きないことをテストで実証
-- [ ] セルフチェック
+- [x] `readFiles`/`readTables`/`readListMap`/`readMessage` を実装（本体器を返す。`TestDataParserAdapter` 1 枚・本体パッケージ相乗り）
+- [x] スタブ `DbInfo`（読み込み経路で唯一呼ばれる `getColumnType`→VARCHAR のみ実値・他 9 メソッドは番人＝`UnsupportedOperationException`）を構成
+- [x] 空 interpreters で `${...}`/`null`/`""` が未加工・補完/マージが起きないことをテストで実証（後処理なしは番人発火＋カラム数非拡張で識別的に証明）
+- [x] セルフチェック（`docs/pr75/checks/P3-5.md`）— 3 観点レビュー（QA イテレ2／Java／SWE）全 **PASS**。adapter C0/C1 100%・テスト 15 件 GREEN・reader 回帰なし（33 件 GREEN）
 
 **Completion criteria**:
 - 各メソッドが本体器（`DataFile`/`TableData`/`MessagePool`/`List<Map>`）を返す
