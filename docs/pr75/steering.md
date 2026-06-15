@@ -274,7 +274,7 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 **Completion criteria**: 4 方向変換が入口（`TestDataConverter.convert`）から実行可能／テストコードから呼べる／単体テスト GREEN
 
-### #11: YamlTestDataValidator 再構築（検証モード）
+### #11: YamlTestDataValidator 再構築（検証モード）✅ 完了
 
 **Purpose**: リンタ（列数一致・構造境界・スキーマ適合＋V-FNAME/V-DKEY/V-MSGROW 等）を再構築。
 
@@ -454,28 +454,12 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-15
-- **Last completed**: **#10（変換ツール入口・周辺の再構築）**＝`complete task #10`（`c90f808`）。git 履歴と steering チェックは一致（#1〜#10 完了）。#9＝`a4c74ea`・#8＝`63e8dc7`。
-- **Now executing**: **#11（YamlTestDataValidator 再構築・検証モード）＝実装＋3観点レビュー イテレ1 反映まで完了・残り3点（下記）**。WIP コミット済（未完了）。Prerequisites #4/#7 完了済。
-- **#11 進捗（WIP）**:
-  - 実装：`ValidationError`＋`YamlTestDataValidator` 新設（main 2）＋テスト 2（計 31 件 GREEN・`mvn -o test` 確認）。**本体ゼロ差分**・中間モデル非依存。
-  - **3 観点レビュー イテレ1 実施**：言語/SWE=PASS、**QA=FAIL（must-fix 2 件）**。指摘 3 件すべて反映済（詳細 `docs/pr75/checks/P4-11.md`）：
-    - **V-MSGROW を不採用**（QA①・must-fix）。git `9465fa2`＝2026-06-03 ユーザー判断で「実データで成立しない制約」として削除済。steering #11 の「V-MSGROW 等」記述は**この削除以前のスタール**＝[[D-J]] として固定。代わりに **V-YAML**（不正構文・重複キー）を新設。
-    - **パース堅牢化**（QA②・must-fix）：`YamlEngineException`／`schema.validate` の `RuntimeException` を握り V-YAML/V-SCH 報告へ。リンタが壊れた入力で例外死しない。
-    - **V-DIR スコープ是正**（QA③）：`FW_HEADER_SECTION_KEYS`＝message_data 3 種に限定（response_* は V-SCH 委譲）。
-    - Java/SWE nice-to-have 反映：`Comparator.comparing`／FQCN コメント／**スキーマ↔本体 directives 整合テスト追加**。
-  - 確定ルール：**V-COL/V-FNAME/V-DKEY/V-DIR/V-SCH/V-YAML の 6 種**。`KNOWN_DIRECTIVE_NAMES` は validator 内 static final・本体↔スキーマ二方向の整合テストで保護。
-- **#11 残作業（次セッションの Next・順序どおり）**:
-  1. **QA 再レビュー（イテレ2）**＝must-fix 2 件の解消確認（iteration protocol）。サブエージェント QA に同条件で再依頼。
-  2. **JaCoCo 再測定**（`online mvn package -Dmaven.javadoc.skip=true` → `jacoco:report`）。番人＝`loadSchema` の resource不在/IO ＋ `schema.validate` の `RuntimeException` catch（parser 差異＝通常到達不能）。C0/C1 100%（番人除く）再確認。
-  3. **全モジュール回帰**（`mvn -o test`）＝0F/4E ベースライン一致再確認（V-MSGROW テスト削除で件数微減）。
-  4. P4-11.md Verdict 確定 → steering #11 チェック → `complete task #11` コミット → push。完了で **Phase 4 完了ゲート**到達。
-- **当初の #11 設計確定メモ（resume 時調査・一部スタール）**: 以下の「6 種ルール」記述のうち V-MSGROW は上記 [[D-J]] で不採用に置換済。それ以外（KNOWN_DIRECTIVE_NAMES を model に載せない／整合テストの作り方／配置）は有効。
-- **#11 設計確定（resume 時調査結果）**:
-  - **再構築するルール 6 種**: V-COL（列数一致＝fields 件数と各 row 長）／V-DIR（構造境界＝fw_header にディレクティブ名混入禁止）／V-SCH（`ntf-testdata-yaml-schema.json` 適合・networknt json-schema-validator）／V-FNAME（同一 record_fragment 内フィールド名重複）／V-DKEY（directives キーが既知ディレクティブ名）／**V-MSGROW（新規・steering 明示）**＝`expected_request_header_messages` と `expected_request_body_messages` の総 rows 一致（MS-05 相当・リンタとして前倒し検出）。旧実装（`8668af3^` で削除）は V-MSGROW を欠く＝今回追加。
-  - **あるべき姿（[[new-code-prefer-ideal-design]]）**: `KNOWN_DIRECTIVE_NAMES` は **model に載せない**（#4 で model を純データ化＝非搭載は意図的）。検証知識ゆえ **`YamlTestDataValidator` 内 private static final Set** に置く。
-  - **整合テスト（完了条件）**: 本体ディレクティブは enum でなく `Directive` クラスの `public static final Directive` フィールド群（`nablarch-core-dataformat`：`DataRecordFormatterSupport$Directive` 3＋`FixedLengthDataRecordFormatter$FixedLengthDirective` 8〔RECORD_LENGTH 含む〕＋`VariableLengthDataRecordFormatter$VariableLengthDirective` 6＝計 17）。各クラスの `getDeclaredFields()` から `Directive` 型 public static final を集め `getName()` の和集合を作り、`KNOWN_DIRECTIVE_NAMES` と一致を assert。
-  - **配置**: `src/main/java/nablarch/test/tool/converter/yaml/{ValidationError,YamlTestDataValidator}.java`＋`src/test/.../YamlTestDataValidatorTest.java`。`ValidationError`＝不変（filePath/location/message・requireNonNull）。`validate(Path dir)`＝dir 内 `*.yaml` を名前順に検証し `List<ValidationError>` を返す。
-- **Notes（#11 着手用 ＋ #10 残 nice-to-have）**:
+- **Last completed**: **#11（YamlTestDataValidator 再構築・検証モード）**＝`complete task #11`。QA 再レビュー（イテレ2）PASS・JaCoCo 95%instr/97%branch（未到達は番人 5 行のみ＝番人除き C0/C1 100%）・回帰 1262 件 0F/4E/25Skip（ベースライン同一集合・新規失敗ゼロ）。詳細 `docs/pr75/checks/P4-11.md`。**Phase 4 完了**。git 履歴と steering チェックは一致（#1〜#11 完了）。#10＝`c90f808`・#9＝`a4c74ea`・#8＝`63e8dc7`。
+- **Now executing**: なし（次タスク #12 未着手）。
+- **Next**: **#12（往復変換の可逆性確認・Phase 5）**。Prerequisites #6/#7/#8/#9/#10 完了済。Excel→中間→Excel・YAML→中間→YAML で NTF 仕様上の意味が不変であることを検証。色・書式・コメント等は対象外と明記。
+- **Notes（#11 完了申し送り ＋ #10 残 nice-to-have）**:
+  - **#11 確定ルール（6 種）**: V-COL/V-FNAME/V-DKEY/V-DIR/V-SCH/**V-YAML**。steering 当初の V-MSGROW は [[D-J]] で不採用（実データで成立しない誤った制約・ユーザー過去判断 `9465fa2`）＝V-YAML（解析可能性）へ置換。`KNOWN_DIRECTIVE_NAMES` は `YamlTestDataValidator` 内 static final（model 非搭載は意図的）・本体↔スキーマ二方向の整合テストで保護。リンタは中間モデル非依存（生 YAML テキスト／Map のみ）・壊れた入力でも例外停止しない。
+  - **JaCoCo 運用の注意**: parent 6u3 は jacoco **offline instrumentation**（`instrument`＋`restore-instrumented-classes`）。テストが 4E でこける（既存ベースライン）と build が `test` フェーズで止まり `restore-instrumented-classes` が走らず `target/classes` が instrumented のまま残る→`jacoco:report` が "Cannot process instrumented class" で失敗する。**復旧**: `cp -r target/generated-classes/jacoco/* target/classes/`（原クラス backup）→ `mvn -o jacoco:report -Djacoco.dataFile=jacoco.exec`（exec はリポジトリ root 直下）。
   - **#10 完了済の入口 API**（#11/#13 が利用）: `TestDataConverter.convert(ConversionRequest)` ＋ `convert(DataFormat from, DataFormat to, Path in, Path out)` ファサード。`ConversionRequest.Builder`（sourceFormat/targetFormat/inputPath/outputPath/overwrite/include/exclude・同形式許容）。`DataFormat`(XLS/YAML・`getArgument`/`fromArgument`)。`ConverterException`(非検査)。`ConverterPathResolver`(純関数・`outputBaseForYaml`/`outputBaseForXls`/package-private `stripExtension`)。`ConverterFileFilter`(`findXlsFiles`/`findYamlDirs`)。戻り値＝変換コンテナ件数(int)。上書き衝突は `ConverterException`。
   - **#13（Phase 6）への申し送り**: `YamlModeTestBase.prepareYamlData()` の再接続は `convert(ConversionRequest)` で Excel→一時 YAML（`overwrite(true)` 推奨）。入口は `inputPath`(Excel ルート)・`outputPath`(一時 dir)・`sourceFormat(XLS)`・`targetFormat(YAML)` を渡す。出力は `<out>/<ブック名>/<シート名>.yaml`（YamlFormatReader が読む単位と一致）。
   - **#10 残 nice-to-have（must-fix ではない・余裕があれば #11 と同時 or Phase 4 ゲート前に）**:
