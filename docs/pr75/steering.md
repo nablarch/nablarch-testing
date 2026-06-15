@@ -445,11 +445,15 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: paused
+- **Status**: in-progress
 - **Date**: 2026-06-15
-- **Last completed**: **#10（変換ツール入口・周辺の再構築）= 本セッションで Verify 完了**（3 観点レビュー全 PASS・must-fix なし・`docs/pr75/checks/P4-10.md`・38 件 GREEN・C0/C1 100%〔番人除く〕・全モジュール回帰 1231 件 0F/4E＝新規失敗ゼロ・本体ゼロ差分）。`complete task #10` でコミット済。#9＝`a4c74ea`・#8＝`63e8dc7`。
-- **Next**: **#11（YamlTestDataValidator 再構築・検証モード）**。Prerequisites #4/#7 完了済＝着手可。設計書 §リンタ／`KNOWN_DIRECTIVE_NAMES` が本体ディレクティブと一致する整合テストを含むこと。完了条件＝各検証ルール（列数一致・構造境界・スキーマ適合＋V-FNAME/V-DKEY/V-MSGROW 等）をテストで実証。**ただし #11 はゴール 6.3 達成の必須経路ではない**（6.3 は #13/#14＝Phase 6 で達成）。マージのキリどころを優先するなら #11 完了で **Phase 4 完了ゲート**に到達する（ユーザーと相談した「Phase 4 完了でマージ」の区切り）。
-- **マージ方針メモ（本セッションのユーザー相談結果）**: PR #1（head `add-yaml` → base `convert-testdata-excel-to-text`・MERGEABLE・FF 可）。`add-yaml` は base に対し先行のみ・0 遅れ＝コンフリクトなし。「フェーズの切れ目がキリが良い」→ **直近の妥当な区切りは Phase 4 完了（#10＋#11）**。ただし end-to-end で動く＝6.3 緑になるのは Phase 6（#13/#14）まで。理想は #14（6.3 達成＝PR 本来の exit 条件）。main（リリース系列）へは入れない＝統合ブランチ止まり。
+- **Last completed**: **#10（変換ツール入口・周辺の再構築）**＝`complete task #10`（`c90f808`）。git 履歴と steering チェックは一致（#1〜#10 完了・再同期不要）。#9＝`a4c74ea`・#8＝`63e8dc7`。
+- **Now executing**: **#11（YamlTestDataValidator 再構築・検証モード）**。Prerequisites #4/#7 完了済。resume 時調査で contract 確定（下記 Notes）。
+- **#11 設計確定（resume 時調査結果）**:
+  - **再構築するルール 6 種**: V-COL（列数一致＝fields 件数と各 row 長）／V-DIR（構造境界＝fw_header にディレクティブ名混入禁止）／V-SCH（`ntf-testdata-yaml-schema.json` 適合・networknt json-schema-validator）／V-FNAME（同一 record_fragment 内フィールド名重複）／V-DKEY（directives キーが既知ディレクティブ名）／**V-MSGROW（新規・steering 明示）**＝`expected_request_header_messages` と `expected_request_body_messages` の総 rows 一致（MS-05 相当・リンタとして前倒し検出）。旧実装（`8668af3^` で削除）は V-MSGROW を欠く＝今回追加。
+  - **あるべき姿（[[new-code-prefer-ideal-design]]）**: `KNOWN_DIRECTIVE_NAMES` は **model に載せない**（#4 で model を純データ化＝非搭載は意図的）。検証知識ゆえ **`YamlTestDataValidator` 内 private static final Set** に置く。
+  - **整合テスト（完了条件）**: 本体ディレクティブは enum でなく `Directive` クラスの `public static final Directive` フィールド群（`nablarch-core-dataformat`：`DataRecordFormatterSupport$Directive` 3＋`FixedLengthDataRecordFormatter$FixedLengthDirective` 8〔RECORD_LENGTH 含む〕＋`VariableLengthDataRecordFormatter$VariableLengthDirective` 6＝計 17）。各クラスの `getDeclaredFields()` から `Directive` 型 public static final を集め `getName()` の和集合を作り、`KNOWN_DIRECTIVE_NAMES` と一致を assert。
+  - **配置**: `src/main/java/nablarch/test/tool/converter/yaml/{ValidationError,YamlTestDataValidator}.java`＋`src/test/.../YamlTestDataValidatorTest.java`。`ValidationError`＝不変（filePath/location/message・requireNonNull）。`validate(Path dir)`＝dir 内 `*.yaml` を名前順に検証し `List<ValidationError>` を返す。
 - **Notes（#11 着手用 ＋ #10 残 nice-to-have）**:
   - **#10 完了済の入口 API**（#11/#13 が利用）: `TestDataConverter.convert(ConversionRequest)` ＋ `convert(DataFormat from, DataFormat to, Path in, Path out)` ファサード。`ConversionRequest.Builder`（sourceFormat/targetFormat/inputPath/outputPath/overwrite/include/exclude・同形式許容）。`DataFormat`(XLS/YAML・`getArgument`/`fromArgument`)。`ConverterException`(非検査)。`ConverterPathResolver`(純関数・`outputBaseForYaml`/`outputBaseForXls`/package-private `stripExtension`)。`ConverterFileFilter`(`findXlsFiles`/`findYamlDirs`)。戻り値＝変換コンテナ件数(int)。上書き衝突は `ConverterException`。
   - **#13（Phase 6）への申し送り**: `YamlModeTestBase.prepareYamlData()` の再接続は `convert(ConversionRequest)` で Excel→一時 YAML（`overwrite(true)` 推奨）。入口は `inputPath`(Excel ルート)・`outputPath`(一時 dir)・`sourceFormat(XLS)`・`targetFormat(YAML)` を渡す。出力は `<out>/<ブック名>/<シート名>.yaml`（YamlFormatReader が読む単位と一致）。
