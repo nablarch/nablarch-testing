@@ -258,11 +258,17 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] 単体テスト 33 件 GREEN・JaCoCo **C0/C1 100%（番人除く＝parent==null／sealed throw／isMarkerColumn null の 3 枝のみ未到達）**。ExcelFormatConfig 100%
 - [x] セルフチェック（`docs/pr75/checks/P4-9.md`）＋ 3 観点レビュー（QA イテレ2／Java／SWE）全 **PASS**。指摘対応: ① recordType=null×複数レコードの版面破壊→`appendRecords` 番人で早期失敗＋異常系/正常系テスト固定 ② null セル非可逆往復を実 Reader で固定 ③ 未使用 import 削除。全モジュール回帰 1192 件 0F/4E（P3-7 ベースライン一致＝新規失敗ゼロ）・本体ゼロ差分
 
-### #10: 変換ツール入口・周辺の再構築
+### #10: 変換ツール入口・周辺の再構築 ✅ 完了
 
 **Purpose**: `convert(from,to,input,output)` 入口、ディレクトリ走査・include/exclude・上書き可否を再構築（`TestDataConverter`/`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。
 
 **Prerequisites**: #6, #7, #8, #9
+
+- [x] main 6 クラス新設（`DataFormat`／`ConverterException`〔非検査〕／`ConversionRequest`+Builder〔source/target/in/out/overwrite/include/exclude・同形式許容〕／`ConverterPathResolver`〔4 方向出力 basePath・純関数〕／`ConverterFileFilter`〔`findXlsFiles`/`findYamlDirs`・glob include/exclude・決定性ソート〕／`TestDataConverter`〔`convert(ConversionRequest)`＋`convert(from,to,input,output)` ファサード〕）。入口が粒度差（Excel ブック=複数シート／YAML ディレクトリ=複数ファイル）を 1 コンテナへ集約。シート列挙は本体 `PoiXlsReader.getSheetNames`（順不同）→ 辞書順ソート。本体ゼロ差分
+- [x] 単体テスト 38 件 GREEN（DataFormat5/ConverterException2/ConversionRequest6/ConverterPathResolver6/ConverterFileFilter8/TestDataConverter11）。4 方向 E2E は実 Reader/Writer 往復で中間モデル一致を実証
+- [x] JaCoCo C0/C1 **100%（番人除く＝private ctor の AssertionError・IOException catch 再ラップ・到達不能な `parent==null`/`dot<0` 防御枝のみ未到達）**
+- [x] 全モジュール回帰 `mvn -o test` = 1231 件 **0F/4E**（4E は既存 Mockito 環境起因 `MockHttpRequestTest`/`MockServletExecutionContextTest`＝PR75 非起因・ベースライン一致／新規失敗ゼロ）。18 `*YamlTest` は @Ignore で Skip
+- [x] セルフチェック（`docs/pr75/checks/P4-10.md`）＋ 3 観点レビュー（QA/Java/SWE）全 **PASS（must-fix なし）**。SWE 指摘①`stripExtension` 重複を `ConverterPathResolver` へ集約済み。残 nice-to-have（QA 空文字往復・YAML 複数ファイル集約 E2E・include E2E／Java Predicate import・PathMatcher 事前コンパイル・glob 区切り Javadoc／SWE 拡張子定数集約）は次セッション繰延・must-fix ではない
 
 **スコープ（ユーザー決定 2026-06-15・[[D-I]]）**: **Maven プラグイン（`ConverterMojo`）はリポジトリ分割後に実施＝#10 スコープ外**。今は **6.3 のテスト（#13 `YamlModeTestBase`）からテストコードで `convert(ConversionRequest)` を呼べれば十分**。CLI（`main`/`run`）も 6.3 に不要なら最小限／後回しでよい。pom への `maven-plugin-api` 依存追加（環境変更）は行わない。`exec-maven-plugin` mainClass 是正もリポジトリ分割後の CLI/Mojo 整備時に回す。
 
@@ -432,7 +438,7 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 ### 運用ノート（恒久・過去タスクで確定）
 
 - **オフライン/オンラインの可否**: オフライン `mvn -o test` は可。ただし `package`（jacoco.exec 生成に必要）は clean-plugin/git-commit-id-plugin 等が未キャッシュで**オフライン不可**＝**online `mvn package -Dmaven.javadoc.skip=true`** で jacoco.exec を生成する。`clean` ゴールもオフライン不可なので `rm -rf target` で代替。Javadoc プラグインは BUILD FAILURE になるがテストは GREEN。
-- **失敗集合ベースライン（既存事象・PR75 非起因）**: 全モジュール 16 失敗クラス（43F/44E）＝Mockito 環境起因 3 クラス（`MockHttpRequestTest`/`MockServletExecutionContextTest`/`ConverterFileFilterTest`）＋ `*YamlTest` 統合 13 クラス（旧変換ツール経由・6.3 で解消対象）。`d3cd139`↔最終で完全一致。等価性テストの IllegalArgument/IllegalState ラップ差は T7 由来で PR75 マージ前に別途解消が必要。
+- **失敗集合ベースライン（既存事象・PR75 非起因）**: `mvn -o test` の残存 Error は Mockito 環境起因 **2 クラス＝`MockHttpRequestTest`(2E)/`MockServletExecutionContextTest`(2E)＝計 4E** のみ（#10 時点 1231 件 0F/4E で確認）。`*YamlTest` 統合 13 クラスは #3 で @Ignore 化済＝Skip（6.3＝#13/#14 で再有効化・解消対象）。※旧 `ConverterFileFilterTest`（Mockito 起因）は #3 で削除済→ #10 で実 temp dir ベースの新 `ConverterFileFilterTest` を新設し GREEN（もはや失敗集合に含まれない）。等価性テストの IllegalArgument/IllegalState ラップ差は T7 由来で PR75 マージ前に別途解消が必要。
 - **テスト集計の罠**: surefire-reports 走査で `failures="[1-9]"` は 1 桁しか拾わない。**`failures="[1-9][0-9]*"` を使うこと**（10 件以上の失敗を取りこぼす）。
 
 ---
@@ -441,17 +447,18 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-15
-- **Last completed**: **#9（XlsFormatWriter＋ExcelFormatConfig・Excel OUT）= 本セッションで Verify 完了**（3 観点レビュー全 PASS・`docs/pr75/checks/P4-9.md`・33 件 GREEN・C0/C1 100%〔番人除く〕・全モジュール 0F/4E＝新規失敗ゼロ）。`complete task #9` でコミット予定。#8（YamlFormatWriter）= `63e8dc7`。
-- **Next**: **#10（変換ツール入口・周辺の再構築）— スコープ縮小済み（[[D-I]]）**。Prerequisites #6/#7/#8/#9 すべて完了済み＝着手可。**Mojo はリポジトリ分割後・スコープ外**。今は `TestDataConverter.convert(ConversionRequest)` を中核に 4 方向変換を**テストコードから呼べる**ところまで（`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。完了条件＝入口 API から 4 方向実行可能・テストから呼べる・単体 GREEN。
-- **Notes（#10 着手用）**:
-  - 4 方向の Reader/Writer は全て揃った: IN＝`xls/XlsFormatReader`(#6)・`yaml/YamlFormatReader`(#7)、OUT＝`yaml/YamlFormatWriter`(#8)・`xls/XlsFormatWriter`(#9)。入口はこれらを `DataFormat`×方向で束ねて呼ぶ。共通 IF＝`TestDataFormatReader.read(basePath, resourceName)`（1 リソース＝Excel 1 シート/YAML 1 ファイル→単一セクションの container）・`TestDataFormatWriter.write(container, basePath)`（コンテナ単位・overwrite 引数なし＝上書き可否判定は入口の責務）。
-  - 入口が粒度差を吸収: 複数シート/複数 .yaml を Reader で個別に読み**1 コンテナへ集約**して Writer へ。シート列挙は本体 `nablarch.test.core.reader.PoiXlsReader.getSheetNames(File)`（public static・本体無変更）。コンテナ名＝ブック名(Excel源)/ディレクトリ名(YAML源)。同形式(XLS→XLS/YAML→YAML)も許容（4 方向要件）。
-  - **Mojo・CLI mainClass 是正はリポジトリ分割後**（[[D-I]]）。`#3` で一時無効化した `YamlModeTestBase`＋18 `*YamlTest` の再接続は **#13（Phase 6）** で実施（#10 完了が前提）。#13 が呼ぶ旧 API は `ConversionRequest.Builder`(sourceFormat/targetFormat/inputPath/outputPath/overwrite/include)→`convert(ConversionRequest)`。これと整合させる。旧入口の形は `git show 8668af3^:src/main/java/nablarch/test/tool/converter/TestDataConverter.java`・同親の `YamlModeTestBase` 参照（設計書が正・新 IF へ再設計）。
-  - 設計判断（[[D-I]] 範囲で自律確定）: ConverterException は非検査(RuntimeException 派生)・overwrite=false 衝突はスキップ/例外いずれか実装時決定・旧 `--validate`/`--delete-source`/`xlsFormat` は設計書 §10 に無いので入れない。
-  - 設計の正＝設計書 §10章入口・[[D-H]]・[[D-I]]。TDD・jacoco・3 観点レビュー・`docs/pr75/checks/P4-10.md`・`complete task #10`。
-  - **着手前調査 完了（本セッション）**: 新 IF 署名（`read(basePath,resourceName)` / `write(container,basePath)`）確認済（上記）。旧 `convert(ConversionRequest)`（`git show 8668af3^:.../TestDataConverter.java`）の骨子＝①source で reader/writer 選択 ②`findXlsFiles`/`findYamlDirs` で targets 走査 ③各 target を `reader.read` →（空ブロックは WARN skip）→ `ConverterPathResolver.xlsToYamlDir`/`yamlDirToXls` で出力先算出 →`writer.write(container, base, overwrite)`。**ただし旧 reader/writer は署名が違う（旧 `reader.read(target)` 1 引数・旧 `writer.write(c,base,overwrite)` 3 引数）→ 新 IF へ全面再配線が必要**。旧の skipCount/コメント行ロスト集計/validate-on-convert/delete-source/xlsFormat は [[D-I]]・§10 により**落とす**。旧 ConverterPathResolver は `xlsToYamlDir`/`yamlDirToXls` を持ち入口が `.getParent()` で basePath 化していた（新設計では Resolver が basePath を直接返す形に整理してよい）。
-  - **次の具体アクション**: TDD 開始。実装順＝①`DataFormat`(enum,`fromArgument`/`toArgument`) ②`ConverterException`(非検査) ③`ConversionRequest`+Builder(source/target/inputPath/outputPath/overwrite/include/exclude・同形式許容) ④`ConverterPathResolver`(4 方向の出力 basePath 算出・純関数) ⑤`ConverterFileFilter`(`findXlsFiles`/`findYamlDirs`・include/exclude・`@TempDir`) ⑥`TestDataConverter.convert(ConversionRequest)`+`convert(from,to,input,output)` ファサード（Reader/Writer モックで入口ロジック→実 Reader/Writer で 4 方向 E2E 各 1 本）。各クラス RED→GREEN。完了条件＝テストから 4 方向 convert 実行可能・単体 GREEN。
-  - **環境**: `M pom.xml`（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更＝**コミット禁止・resume で確認不要**（環境情報 §参照）。Operating mode により確認不要で自律続行可。カバレッジは online `mvn package -Dmaven.javadoc.skip=true` → `jacoco:restore-instrumented-classes` → `jacoco:report`（restore を挟まないと instrumented class 残留で report が失敗する場合あり）。
+- **Last completed**: **#10（変換ツール入口・周辺の再構築）= 本セッションで Verify 完了**（3 観点レビュー全 PASS・must-fix なし・`docs/pr75/checks/P4-10.md`・38 件 GREEN・C0/C1 100%〔番人除く〕・全モジュール回帰 1231 件 0F/4E＝新規失敗ゼロ・本体ゼロ差分）。`complete task #10` でコミット済。#9＝`a4c74ea`・#8＝`63e8dc7`。
+- **Next**: **#11（YamlTestDataValidator 再構築・検証モード）**。Prerequisites #4/#7 完了済＝着手可。設計書 §リンタ／`KNOWN_DIRECTIVE_NAMES` が本体ディレクティブと一致する整合テストを含むこと。完了条件＝各検証ルール（列数一致・構造境界・スキーマ適合＋V-FNAME/V-DKEY/V-MSGROW 等）をテストで実証。**ただし #11 はゴール 6.3 達成の必須経路ではない**（6.3 は #13/#14＝Phase 6 で達成）。マージのキリどころを優先するなら #11 完了で **Phase 4 完了ゲート**に到達する（ユーザーと相談した「Phase 4 完了でマージ」の区切り）。
+- **マージ方針メモ（本セッションのユーザー相談結果）**: PR #1（head `add-yaml` → base `convert-testdata-excel-to-text`・MERGEABLE・FF 可）。`add-yaml` は base に対し先行のみ・0 遅れ＝コンフリクトなし。「フェーズの切れ目がキリが良い」→ **直近の妥当な区切りは Phase 4 完了（#10＋#11）**。ただし end-to-end で動く＝6.3 緑になるのは Phase 6（#13/#14）まで。理想は #14（6.3 達成＝PR 本来の exit 条件）。main（リリース系列）へは入れない＝統合ブランチ止まり。
+- **Notes（#11 着手用 ＋ #10 残 nice-to-have）**:
+  - **#10 完了済の入口 API**（#11/#13 が利用）: `TestDataConverter.convert(ConversionRequest)` ＋ `convert(DataFormat from, DataFormat to, Path in, Path out)` ファサード。`ConversionRequest.Builder`（sourceFormat/targetFormat/inputPath/outputPath/overwrite/include/exclude・同形式許容）。`DataFormat`(XLS/YAML・`getArgument`/`fromArgument`)。`ConverterException`(非検査)。`ConverterPathResolver`(純関数・`outputBaseForYaml`/`outputBaseForXls`/package-private `stripExtension`)。`ConverterFileFilter`(`findXlsFiles`/`findYamlDirs`)。戻り値＝変換コンテナ件数(int)。上書き衝突は `ConverterException`。
+  - **#13（Phase 6）への申し送り**: `YamlModeTestBase.prepareYamlData()` の再接続は `convert(ConversionRequest)` で Excel→一時 YAML（`overwrite(true)` 推奨）。入口は `inputPath`(Excel ルート)・`outputPath`(一時 dir)・`sourceFormat(XLS)`・`targetFormat(YAML)` を渡す。出力は `<out>/<ブック名>/<シート名>.yaml`（YamlFormatReader が読む単位と一致）。
+  - **#10 残 nice-to-have（must-fix ではない・余裕があれば #11 と同時 or Phase 4 ゲート前に）**:
+    - QA: ①空文字 `""` 往復端点テスト ②YAML 複数 .yaml の 1 コンテナ集約 E2E（Excel 複数シートと対称）③`convert` 経由の include E2E（現状 exclude のみ）
+    - Java: ①`ConverterFileFilter.find` の `java.util.function.Predicate` を FQN→import ②`matchesAny` の `PathMatcher` をパターン毎に毎回生成→`find`/`findYamlDirs` 冒頭で事前コンパイルしてキャッシュ ③`ConversionRequest` の include/exclude Javadoc に glob 区切り規約（`/` 区切り）を明示
+    - SWE: ②拡張子定数（`.yaml`/`.xlsx`）が `ConverterFileFilter`/`TestDataConverter`/各 Writer に散在→集約余地（③`isSendSync` 分類重複は #10 スコープ外＝リポジトリ分割後）
+  - 設計の正＝設計書 §リンタ・[[D-H]]・[[D-I]]。TDD・jacoco（online `mvn package -Dmaven.javadoc.skip=true` → `jacoco:report`）・3 観点レビュー・`docs/pr75/checks/P4-11.md`・`complete task #11`。
+  - **環境**: `M pom.xml`（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更＝**コミット禁止・resume で確認不要**（環境情報 §参照）。Operating mode により確認不要で自律続行可。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 
