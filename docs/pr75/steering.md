@@ -382,6 +382,13 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **Rationale**: `maven-plugin-api`/`maven-plugin-annotations` の追加と packaging 変更は環境変更であり、リポジトリ分割（NTF 本体と変換ツールの分離）後にまとめて整備する方が自然。6.3（Level3）の達成に必要なのは「Excel→一時 YAML 変換をテストコードから起動する」ことのみ。
 - **影響**: `pom.xml` の `exec-maven-plugin` mainClass 是正（#3 ゲートの積み残し）もリポジトリ分割後の CLI/Mojo 整備時へ繰り延べ。#10 完了条件は「入口 API から 4 方向実行可能・テストから呼べる・単体 GREEN」へ収束。
 
+## D-J: #11 リンタは V-MSGROW を採用しない・代わりに V-YAML（ユーザー過去判断の踏襲・2026-06-15）
+
+- **Conclusion**: 検証モード（#11）の確定ルールは **V-COL / V-FNAME / V-DKEY / V-DIR / V-SCH / V-YAML の 6 種**。steering #11 の Purpose・完了条件にある「V-MSGROW」は**採用しない**。
+- **Rationale**: V-MSGROW（`expected_request_header_messages` と `expected_request_body_messages` の総行数一致）は過去に実装・3 観点レビュー OK まで到達したが、**コミット `9465fa2`（2026-06-03）でユーザーレビュー判断により削除**された。理由＝`RequestTestingSendSyncBatchTest.xls` の異常系テストに header/body 行数が**意図的に異なる正常データ**が多数存在し、V-MSGROW が正当なテストデータを誤検知する＝制約として成立しない。本ブランチ #11 で QA サブエージェントが同事実を再指摘。Operating mode「問題が起きたら常にあるべき姿を優先」＋確定済みユーザー判断に従い不採用とする。
+- **代替**: リンタが壊れた入力（不正構文・キー重複）で例外停止しない堅牢性を **V-YAML** として新設（`YamlEngineException`／`schema.validate` の `RuntimeException` を握って報告化）。
+- **影響**: steering #11 本文の「V-MSGROW 等」はスタール表記＝本決定が上書き。`KNOWN_DIRECTIVE_NAMES` の整合は本体 enum とスキーマ `$defs/directives/properties` の**二方向**整合テストで保護。
+
 ## 既存の有効な決定事項（YAML 仕様・本体①に適用、継続有効）
 
 判断に迷った場合は、対応する文書の該当章を正とする。
@@ -445,10 +452,24 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 # State
 
-- **Status**: in-progress
+- **Status**: paused
 - **Date**: 2026-06-15
-- **Last completed**: **#10（変換ツール入口・周辺の再構築）**＝`complete task #10`（`c90f808`）。git 履歴と steering チェックは一致（#1〜#10 完了・再同期不要）。#9＝`a4c74ea`・#8＝`63e8dc7`。
-- **Now executing**: **#11（YamlTestDataValidator 再構築・検証モード）**。Prerequisites #4/#7 完了済。resume 時調査で contract 確定（下記 Notes）。
+- **Last completed**: **#10（変換ツール入口・周辺の再構築）**＝`complete task #10`（`c90f808`）。git 履歴と steering チェックは一致（#1〜#10 完了）。#9＝`a4c74ea`・#8＝`63e8dc7`。
+- **Now executing**: **#11（YamlTestDataValidator 再構築・検証モード）＝実装＋3観点レビュー イテレ1 反映まで完了・残り3点（下記）**。WIP コミット済（未完了）。Prerequisites #4/#7 完了済。
+- **#11 進捗（WIP）**:
+  - 実装：`ValidationError`＋`YamlTestDataValidator` 新設（main 2）＋テスト 2（計 31 件 GREEN・`mvn -o test` 確認）。**本体ゼロ差分**・中間モデル非依存。
+  - **3 観点レビュー イテレ1 実施**：言語/SWE=PASS、**QA=FAIL（must-fix 2 件）**。指摘 3 件すべて反映済（詳細 `docs/pr75/checks/P4-11.md`）：
+    - **V-MSGROW を不採用**（QA①・must-fix）。git `9465fa2`＝2026-06-03 ユーザー判断で「実データで成立しない制約」として削除済。steering #11 の「V-MSGROW 等」記述は**この削除以前のスタール**＝[[D-J]] として固定。代わりに **V-YAML**（不正構文・重複キー）を新設。
+    - **パース堅牢化**（QA②・must-fix）：`YamlEngineException`／`schema.validate` の `RuntimeException` を握り V-YAML/V-SCH 報告へ。リンタが壊れた入力で例外死しない。
+    - **V-DIR スコープ是正**（QA③）：`FW_HEADER_SECTION_KEYS`＝message_data 3 種に限定（response_* は V-SCH 委譲）。
+    - Java/SWE nice-to-have 反映：`Comparator.comparing`／FQCN コメント／**スキーマ↔本体 directives 整合テスト追加**。
+  - 確定ルール：**V-COL/V-FNAME/V-DKEY/V-DIR/V-SCH/V-YAML の 6 種**。`KNOWN_DIRECTIVE_NAMES` は validator 内 static final・本体↔スキーマ二方向の整合テストで保護。
+- **#11 残作業（次セッションの Next・順序どおり）**:
+  1. **QA 再レビュー（イテレ2）**＝must-fix 2 件の解消確認（iteration protocol）。サブエージェント QA に同条件で再依頼。
+  2. **JaCoCo 再測定**（`online mvn package -Dmaven.javadoc.skip=true` → `jacoco:report`）。番人＝`loadSchema` の resource不在/IO ＋ `schema.validate` の `RuntimeException` catch（parser 差異＝通常到達不能）。C0/C1 100%（番人除く）再確認。
+  3. **全モジュール回帰**（`mvn -o test`）＝0F/4E ベースライン一致再確認（V-MSGROW テスト削除で件数微減）。
+  4. P4-11.md Verdict 確定 → steering #11 チェック → `complete task #11` コミット → push。完了で **Phase 4 完了ゲート**到達。
+- **当初の #11 設計確定メモ（resume 時調査・一部スタール）**: 以下の「6 種ルール」記述のうち V-MSGROW は上記 [[D-J]] で不採用に置換済。それ以外（KNOWN_DIRECTIVE_NAMES を model に載せない／整合テストの作り方／配置）は有効。
 - **#11 設計確定（resume 時調査結果）**:
   - **再構築するルール 6 種**: V-COL（列数一致＝fields 件数と各 row 長）／V-DIR（構造境界＝fw_header にディレクティブ名混入禁止）／V-SCH（`ntf-testdata-yaml-schema.json` 適合・networknt json-schema-validator）／V-FNAME（同一 record_fragment 内フィールド名重複）／V-DKEY（directives キーが既知ディレクティブ名）／**V-MSGROW（新規・steering 明示）**＝`expected_request_header_messages` と `expected_request_body_messages` の総 rows 一致（MS-05 相当・リンタとして前倒し検出）。旧実装（`8668af3^` で削除）は V-MSGROW を欠く＝今回追加。
   - **あるべき姿（[[new-code-prefer-ideal-design]]）**: `KNOWN_DIRECTIVE_NAMES` は **model に載せない**（#4 で model を純データ化＝非搭載は意図的）。検証知識ゆえ **`YamlTestDataValidator` 内 private static final Set** に置く。
