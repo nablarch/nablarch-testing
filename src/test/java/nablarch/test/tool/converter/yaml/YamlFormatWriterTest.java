@@ -4,8 +4,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import nablarch.test.core.reader.DataType;
+import nablarch.test.core.reader.yaml.YamlLoader;
 import nablarch.test.tool.converter.model.FieldDef;
 import nablarch.test.tool.converter.model.FileDataBlock;
 import nablarch.test.tool.converter.model.ListMapBlock;
@@ -26,6 +29,7 @@ import nablarch.test.tool.converter.model.TestDataBlock;
 import nablarch.test.tool.converter.model.TestDataContainer;
 import nablarch.test.tool.converter.model.TestDataSection;
 
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -48,6 +52,12 @@ public class YamlFormatWriterTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     private final YamlFormatWriter writer = new YamlFormatWriter();
+
+    /** 往復で実 {@link YamlFormatReader} を通すため、{@link YamlLoader} の LRU キャッシュをテスト間で残さない。 */
+    @After
+    public void clearLoaderCache() {
+        YamlLoader.clearCacheForTest();
+    }
 
     // ------------------------------------------------------------------------
     // テーブル系
@@ -437,7 +447,7 @@ public class YamlFormatWriterTest {
 
         try {
             serialize(block);
-            org.junit.Assert.fail("should throw");
+            fail("should throw");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("unsupported DataType"));
         }
@@ -453,8 +463,8 @@ public class YamlFormatWriterTest {
 
         try {
             writer.write(container, file.getAbsolutePath());
-            org.junit.Assert.fail("should throw");
-        } catch (java.io.UncheckedIOException e) {
+            fail("should throw");
+        } catch (UncheckedIOException e) {
             assertTrue(e.getMessage().contains("failed to write YAML"));
         }
     }
@@ -549,6 +559,31 @@ public class YamlFormatWriterTest {
         assertTrue(back.getFwHeaderFields().isEmpty());
         assertFieldDef(back.getRecords().get(0).getFields().get(0), "no", "半角英字", "1");
         assertThat(back.getRecords().get(0).getRows().get(0), is(Arrays.asList("1", "${z}")));
+    }
+
+    @Test
+    public void roundTrip_leadingTrailingWhitespace_isPreservedThroughRealReader() {
+        // Given: 前後・中間に半角/全角空白を持つ値（全値クォートが効かなければ脱落する）
+        TableDataBlock original = new TableDataBlock(DataType.SETUP_TABLE_DATA, "", "WS",
+                list("LEAD", "TRAIL", "MID", "FULL"),
+                rows(row(" lead", "trail ", " mid ", "　全角　")));
+
+        // When / Then: 読み戻しても前後空白が脱落しない（クォートが効いている証明）
+        TableDataBlock back = (TableDataBlock) roundTrip(original);
+        assertThat(back.getRows().get(0), is(Arrays.asList(" lead", "trail ", " mid ", "　全角　")));
+    }
+
+    @Test
+    public void roundTrip_nullAndNullStringAndNumeric_areDistinguishedThroughRealReader() {
+        // Given: 明示 null・文字列 "null"・数値文字列 "123"（全値クォート＋null例外規則の往復健全性）
+        TableDataBlock original = new TableDataBlock(DataType.SETUP_TABLE_DATA, "", "T",
+                list("V"), rows(row((String) null), row("null"), row("123")));
+
+        // When / Then: null は null、"null"/"123" は文字列として区別保持される
+        TableDataBlock back = (TableDataBlock) roundTrip(original);
+        assertThat(back.getRows().get(0), is(Arrays.asList((String) null)));
+        assertThat(back.getRows().get(1), is(Arrays.asList("null")));
+        assertThat(back.getRows().get(2), is(Arrays.asList("123")));
     }
 
     // ------------------------------------------------------------------------

@@ -225,7 +225,7 @@ public final class YamlFormatWriter implements TestDataFormatWriter {
             return;
         }
         parent.header("rows");
-        int rowLevel = parent.level + 2;
+        int rowLevel = parent.childLevel();
         for (List<String> row : rows) {
             Seq item = new Seq(sb, rowLevel);
             if (columns.isEmpty()) {
@@ -250,7 +250,7 @@ public final class YamlFormatWriter implements TestDataFormatWriter {
             return;
         }
         parent.header("records");
-        int recordLevel = parent.level + 2;
+        int recordLevel = parent.childLevel();
         for (RecordLayout record : records) {
             Seq item = new Seq(sb, recordLevel);
             if (record.getRecordType() != null) {
@@ -274,7 +274,7 @@ public final class YamlFormatWriter implements TestDataFormatWriter {
             return;
         }
         parent.header(keyName);
-        String indent = ind(parent.level + 2);
+        String indent = ind(parent.childLevel());
         for (Map.Entry<String, String> e : map.entrySet()) {
             sb.append(indent).append(key(e.getKey())).append(": ").append(q(e.getValue())).append('\n');
         }
@@ -298,7 +298,7 @@ public final class YamlFormatWriter implements TestDataFormatWriter {
             return;
         }
         parent.header(keyName);
-        int itemLevel = parent.level + 2;
+        int itemLevel = parent.childLevel();
         for (T item : items) {
             new Seq(sb, itemLevel).line(renderer.apply(item));
         }
@@ -505,6 +505,19 @@ public final class YamlFormatWriter implements TestDataFormatWriter {
          */
         void header(String k) {
             line(key(k) + ":");
+        }
+
+        /**
+         * この項目のプロパティ配下に置く子シーケンス（{@code - } 行）のレベルを返す。
+         * <p>
+         * プロパティ本体は {@code level + 1} に出るので、その子シーケンス項目の {@code - } は
+         * さらに 1 段下げて {@code level + 2} に揃える。
+         * </p>
+         *
+         * @return 子シーケンスのレベル
+         */
+        int childLevel() {
+            return level + 2;
         }
 
         /**
