@@ -260,11 +260,13 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 
 ### #10: 変換ツール入口・周辺の再構築
 
-**Purpose**: `convert(from,to,input,output)` 入口、CLI/Mojo、ディレクトリ走査・include/exclude・上書き可否を再構築（`TestDataConverter`/`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。
+**Purpose**: `convert(from,to,input,output)` 入口、ディレクトリ走査・include/exclude・上書き可否を再構築（`TestDataConverter`/`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。
 
 **Prerequisites**: #6, #7, #8, #9
 
-**Completion criteria**: 4 方向変換が入口から実行可能／単体テスト GREEN
+**スコープ（ユーザー決定 2026-06-15・[[D-I]]）**: **Maven プラグイン（`ConverterMojo`）はリポジトリ分割後に実施＝#10 スコープ外**。今は **6.3 のテスト（#13 `YamlModeTestBase`）からテストコードで `convert(ConversionRequest)` を呼べれば十分**。CLI（`main`/`run`）も 6.3 に不要なら最小限／後回しでよい。pom への `maven-plugin-api` 依存追加（環境変更）は行わない。`exec-maven-plugin` mainClass 是正もリポジトリ分割後の CLI/Mojo 整備時に回す。
+
+**Completion criteria**: 4 方向変換が入口（`TestDataConverter.convert`）から実行可能／テストコードから呼べる／単体テスト GREEN
 
 ### #11: YamlTestDataValidator 再構築（検証モード）
 
@@ -368,6 +370,12 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - **次セッションの段取り**: ① 正しい前提で #7 を Plan 再設計（YAML 読み込みを本体器生成へ＝旧 `YamlTableDataBuilder`/`YamlFileBuilder`/`YamlMessageBuilder` 相当を復活/再構成、`YamlTestDataParser` を再配線）。② `Raw*`/StructureMapper/ValueProcessor とテストを除去/作り直し。③ `tool/converter` の YAML IN リーダ（旧名 `YamlFormatReader`・#3 で削除済）を Excel と対称に新設（器＋YamlLoader Map→中間モデル）。④ 設計書 §共通を両形式一般化へ是正。⑤ TDD・jacoco・3 観点レビュー・`P3-7.md`・`complete task #7`。
 - **released 本体への影響**: 本方式は released 本体プロダクションコードの変更を要しない見込み（YAML 系は未リリース新規コード）。万一 released 本体に触れる必要が出たら**着手前にユーザー相談**（Operating mode）。
 
+## D-I: 変換ツール入口 #10 は「テストコードから呼べる convert」までに絞る・Mojo はリポジトリ分割後（ユーザー決定 2026-06-15）
+
+- **Conclusion**: #10 は `TestDataConverter.convert(ConversionRequest)` を中核に、4 方向変換を**テストコード（#13 `YamlModeTestBase`）から呼べる**ところまでを実装する。**Maven プラグイン `ConverterMojo` はリポジトリ分割後**に実施＝#10／本ブランチのスコープ外。CLI（`main`/`run`）は 6.3 達成に不要なら最小限または後回し。
+- **Rationale**: `maven-plugin-api`/`maven-plugin-annotations` の追加と packaging 変更は環境変更であり、リポジトリ分割（NTF 本体と変換ツールの分離）後にまとめて整備する方が自然。6.3（Level3）の達成に必要なのは「Excel→一時 YAML 変換をテストコードから起動する」ことのみ。
+- **影響**: `pom.xml` の `exec-maven-plugin` mainClass 是正（#3 ゲートの積み残し）もリポジトリ分割後の CLI/Mojo 整備時へ繰り延べ。#10 完了条件は「入口 API から 4 方向実行可能・テストから呼べる・単体 GREEN」へ収束。
+
 ## 既存の有効な決定事項（YAML 仕様・本体①に適用、継続有効）
 
 判断に迷った場合は、対応する文書の該当章を正とする。
@@ -434,12 +442,13 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 - **Status**: paused
 - **Date**: 2026-06-15
 - **Last completed**: **#9（XlsFormatWriter＋ExcelFormatConfig・Excel OUT）= 本セッションで Verify 完了**（3 観点レビュー全 PASS・`docs/pr75/checks/P4-9.md`・33 件 GREEN・C0/C1 100%〔番人除く〕・全モジュール 0F/4E＝新規失敗ゼロ）。`complete task #9` でコミット予定。#8（YamlFormatWriter）= `63e8dc7`。
-- **Next**: **#10（変換ツール入口・周辺の再構築）**。Prerequisites #6/#7/#8/#9 すべて完了済み＝着手可。`convert(from,to,input,output)` 入口・CLI/Mojo・ディレクトリ走査・include/exclude・上書き可否を再構築（`TestDataConverter`/`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。完了条件＝4 方向変換が入口から実行可能／単体テスト GREEN。
+- **Next**: **#10（変換ツール入口・周辺の再構築）— スコープ縮小済み（[[D-I]]）**。Prerequisites #6/#7/#8/#9 すべて完了済み＝着手可。**Mojo はリポジトリ分割後・スコープ外**。今は `TestDataConverter.convert(ConversionRequest)` を中核に 4 方向変換を**テストコードから呼べる**ところまで（`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。完了条件＝入口 API から 4 方向実行可能・テストから呼べる・単体 GREEN。
 - **Notes（#10 着手用）**:
-  - 4 方向の Reader/Writer は全て揃った: IN＝`xls/XlsFormatReader`(#6)・`yaml/YamlFormatReader`(#7)、OUT＝`yaml/YamlFormatWriter`(#8)・`xls/XlsFormatWriter`(#9)。入口はこれらを `DataFormat`×方向で束ねて呼ぶ。
-  - `#3` で `pom.xml` の exec mainClass が削除済みクラスを指したまま（Phase 2 ゲート注記）。#10 の CLI/Mojo 再構築時に是正する。
-  - `#3` で一時無効化した `YamlModeTestBase`＋18 `*YamlTest` の再接続は **#13（Phase 6）** で実施（#10 完了が前提）。
-  - 設計の正＝設計書 §10章入口/CLI/Mojo・[[D-H]]。TDD・jacoco・3 観点レビュー・`docs/pr75/checks/P4-10.md`・`complete task #10`。
+  - 4 方向の Reader/Writer は全て揃った: IN＝`xls/XlsFormatReader`(#6)・`yaml/YamlFormatReader`(#7)、OUT＝`yaml/YamlFormatWriter`(#8)・`xls/XlsFormatWriter`(#9)。入口はこれらを `DataFormat`×方向で束ねて呼ぶ。共通 IF＝`TestDataFormatReader.read(basePath, resourceName)`（1 リソース＝Excel 1 シート/YAML 1 ファイル→単一セクションの container）・`TestDataFormatWriter.write(container, basePath)`（コンテナ単位・overwrite 引数なし＝上書き可否判定は入口の責務）。
+  - 入口が粒度差を吸収: 複数シート/複数 .yaml を Reader で個別に読み**1 コンテナへ集約**して Writer へ。シート列挙は本体 `nablarch.test.core.reader.PoiXlsReader.getSheetNames(File)`（public static・本体無変更）。コンテナ名＝ブック名(Excel源)/ディレクトリ名(YAML源)。同形式(XLS→XLS/YAML→YAML)も許容（4 方向要件）。
+  - **Mojo・CLI mainClass 是正はリポジトリ分割後**（[[D-I]]）。`#3` で一時無効化した `YamlModeTestBase`＋18 `*YamlTest` の再接続は **#13（Phase 6）** で実施（#10 完了が前提）。#13 が呼ぶ旧 API は `ConversionRequest.Builder`(sourceFormat/targetFormat/inputPath/outputPath/overwrite/include)→`convert(ConversionRequest)`。これと整合させる。旧入口の形は `git show 8668af3^:src/main/java/nablarch/test/tool/converter/TestDataConverter.java`・同親の `YamlModeTestBase` 参照（設計書が正・新 IF へ再設計）。
+  - 設計判断（[[D-I]] 範囲で自律確定）: ConverterException は非検査(RuntimeException 派生)・overwrite=false 衝突はスキップ/例外いずれか実装時決定・旧 `--validate`/`--delete-source`/`xlsFormat` は設計書 §10 に無いので入れない。
+  - 設計の正＝設計書 §10章入口・[[D-H]]・[[D-I]]。TDD・jacoco・3 観点レビュー・`docs/pr75/checks/P4-10.md`・`complete task #10`。
   - **環境**: `M pom.xml`（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更＝**コミット禁止・resume で確認不要**（環境情報 §参照）。Operating mode により確認不要で自律続行可。カバレッジは online `mvn package -Dmaven.javadoc.skip=true` → `jacoco:restore-instrumented-classes` → `jacoco:report`（restore を挟まないと instrumented class 残留で report が失敗する場合あり）。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
