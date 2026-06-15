@@ -245,13 +245,18 @@ Nablarch は銀行・保険・官公庁等のミッションクリティカル�
 - [x] 全データ種別の単体テスト（TDD）。`serialize` 直アサート＋クォート/エスケープ（`"`/`\`/改行・制御文字・null・空文字）＋ `write` の I/O（`TemporaryFolder`）＋往復（モデル→write→実 `YamlFormatReader` で読み戻し同値・TABLE/固定長FILE/MESSAGE/送信系の4経路）。`YamlFormatWriterTest` 30件 GREEN・JaCoCo instr 99%/branch 96%（未到達は番人4＝sealed default・no-parent・制御文字キー・不均衡角括弧）
 - [x] セルフチェック（`docs/pr75/checks/P4-8.md`）＋ QA/Java/SWE 3観点サブエージェントレビュー（Phase 4 コードタスク手順）＝**全 PASS**（must-fix なし）。指摘は原則全件対応：QA→往復テスト2件追加（前後空白・null/"null"/数値の往復区別を実 Reader で実証）／Java→`@After clearLoaderCache()`＋FQCN import 化／SWE→`Seq.childLevel()` 抽出で `level+2` 散在集約。`YamlFormatWriterTest` 32件 GREEN・JaCoCo instr 99%/branch 96%（番人4枝のみ未到達）・本体ゼロ差分
 
-### #9: XlsFormatWriter＋ExcelFormatConfig 再構築（Excel OUT）
+### #9: XlsFormatWriter＋ExcelFormatConfig 再構築（Excel OUT）✅ 完了
 
 **Purpose**: 中間モデル→Excel を整形設定（`ExcelFormatConfig`、デフォルト備え上書き可）に従い書き出す。
 
 **Prerequisites**: #4
 
 **Completion criteria**: 全種別を Excel 出力／整形はデフォルトで見やすい既定値／単体テスト GREEN
+
+- [x] 全種別 Excel 出力（TABLE3/LIST_MAP/FILE(FIXED,VARIABLE)/MESSAGE/送信系4種）＝build 検証＋実 `XlsFormatReader` 往復 8 経路
+- [x] 整形デフォルト＝`ExcelFormatConfig.defaults()`（ヘッダ淡青/マーカー淡橙/列幅自動/外枠細線/ブロック間1空行・`with*` 上書き可）
+- [x] 単体テスト 33 件 GREEN・JaCoCo **C0/C1 100%（番人除く＝parent==null／sealed throw／isMarkerColumn null の 3 枝のみ未到達）**。ExcelFormatConfig 100%
+- [x] セルフチェック（`docs/pr75/checks/P4-9.md`）＋ 3 観点レビュー（QA イテレ2／Java／SWE）全 **PASS**。指摘対応: ① recordType=null×複数レコードの版面破壊→`appendRecords` 番人で早期失敗＋異常系/正常系テスト固定 ② null セル非可逆往復を実 Reader で固定 ③ 未使用 import 削除。全モジュール回帰 1192 件 0F/4E（P3-7 ベースライン一致＝新規失敗ゼロ）・本体ゼロ差分
 
 ### #10: 変換ツール入口・周辺の再構築
 
@@ -428,23 +433,14 @@ mvn jacoco:report -Djacoco.dataFile=/path/to/nablarch-testing/jacoco.exec
 
 - **Status**: paused
 - **Date**: 2026-06-15
-- **Last completed**: #8（YamlFormatWriter・YAML OUT）= commit `63e8dc7`。今セッションで reconcile commit `bf1d1de`（State リセット）も実施済み。
-- **Next**: **#9（XlsFormatWriter＋ExcelFormatConfig・Excel OUT）— コード＋テスト完了済み・Verify 残**。実装は WIP コミット済み。残作業＝3観点サブエージェントレビュー（QA/Java/SWE）→ 指摘対応 → `docs/pr75/checks/P4-9.md` 作成 → 全モジュール回帰 → steering #9 を完了マーク → `complete task #9` commit → push。
-- **Notes（#9 resume 用・この会話なしで継続可）**:
-  - **実装済み（WIP commit）**: `src/main/java/nablarch/test/tool/converter/xls/ExcelFormatConfig.java`（整形設定・不変・`defaults()`＋`with*` コピー・色は POI IndexedColors index）／`XlsFormatWriter.java`（`implements TestDataFormatWriter`・POI 3.8 XSSF・全種別・`build(container)` で in-memory ブック生成しテスト容易化）。テスト `XlsFormatWriterTest.java` **28件 GREEN**。
-  - **状態（検証済み）**: 単体 28 GREEN・converter パッケージ回帰 124 GREEN・jacoco **C0/C1 100%（番人除く）**。残 3 番人＝`write` の parent==null 枝／`layout` の sealed 到達不能 throw／`isMarkerColumn` の null カラム枝（render が null カラムを扱えないため到達不能）。ExcelFormatConfig は完全カバー。
-  - **版面仕様（本体 round-trip 解析の確定結論・XlsFormatReader が委譲する本体パーサ準拠）**:
-    - マーカーセル＝`type.getName() + groupId + "=" + identifier`（groupId は中間モデルが `[g1]` 込み or 空で保持）。
-    - TABLE/LIST_MAP＝識別行→カラム名行→データ行（全て列0始まり）。マーカーカラム（`[...]`）は読み戻し時に本体が除外。
-    - FILE＝識別行→ディレクティブ行`[key,value]`→レコードごとに 名前行`[recordType, fields…]`／型行`["", types…]`／長さ行（FIXED のみ）`["", lens…]`／データ行`["", values…]`。本体は「列0空=データ行 / 非空=新レコード名前行」判定ゆえ 2レコード目以降の recordType は非空必須。
-    - MESSAGE＝+ FW ヘッダ行`[key,value]`（名前行より前）。本文データ行の列0は**空**。
-    - 送信系4種＝データ行の列0は **no（連番 "1","2"…）**（本体が列0を no 値として除去）。FW ヘッダ無し。
-    - null 値のデータセル→リテラル `null`（NTF 慣習・空インタープリタ読み戻しでは文字列 "null" として戻り、null↔null は Excel 経路では復元不可＝既知の限界）。"" は空セルで保持（非トレーリングなら往復可）。
-    - 整形=ブロックを矩形整形し外枠細線＋ヘッダ/マーカー背景色＋自動列幅＋ブロック間1空行（全て `ExcelFormatConfig`、可逆性対象外）。
-  - **本体ゼロ差分**（released 本体プロダクションコード未変更）。1コンテナ=1ブック `<basePath>/<コンテナ名>.xlsx`、1セクション=1シート。
-  - **resume 手順**: ① QA/Java/SWE 3観点レビューを Agent ツールで独立実施（対象＝上記2ファイル＋テスト。`docs/pr75/checks/P3-7.md`／`P4-8.md` が前例フォーマット）。② 指摘原則全件対応。③ `docs/pr75/checks/P4-9.md` を check file format（task-workflow.md）で作成。④ 全モジュール回帰（`mvn package -Dmaven.javadoc.skip=true`・ベースライン 43F/44E と新規失敗ゼロ確認・「テスト集計の罠」参照）。⑤ steering の #9 を完了マーク（#9 セクションは [ ] step が無いので Completion criteria 充足を本文 or check で記録し、Phase 4 進捗注記を更新）。⑥ `docs: complete task #9 — XlsFormatWriter＋ExcelFormatConfig 再構築（Excel OUT）` で commit → push。
-  - カバレッジ手順は「カバレッジ取得方法」節（online `mvn package -Dmaven.javadoc.skip=true` で jacoco.exec 生成 → `mvn jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`）。`M pom.xml` は既知変更（コミット禁止・resume で確認不要）。Operating mode により確認不要で自律続行可。
-  - Phase 4 残（#9 後）: #10 入口/CLI/Mojo・#11 Validator。設計の正＝[[D-H]]・設計書 §156-170（OUT 整形）・§268-287（OUT クラス図）。
+- **Last completed**: **#9（XlsFormatWriter＋ExcelFormatConfig・Excel OUT）= 本セッションで Verify 完了**（3 観点レビュー全 PASS・`docs/pr75/checks/P4-9.md`・33 件 GREEN・C0/C1 100%〔番人除く〕・全モジュール 0F/4E＝新規失敗ゼロ）。`complete task #9` でコミット予定。#8（YamlFormatWriter）= `63e8dc7`。
+- **Next**: **#10（変換ツール入口・周辺の再構築）**。Prerequisites #6/#7/#8/#9 すべて完了済み＝着手可。`convert(from,to,input,output)` 入口・CLI/Mojo・ディレクトリ走査・include/exclude・上書き可否を再構築（`TestDataConverter`/`ConversionRequest`/`DataFormat`/`ConverterFileFilter`/`ConverterPathResolver`/`ConverterException`）。完了条件＝4 方向変換が入口から実行可能／単体テスト GREEN。
+- **Notes（#10 着手用）**:
+  - 4 方向の Reader/Writer は全て揃った: IN＝`xls/XlsFormatReader`(#6)・`yaml/YamlFormatReader`(#7)、OUT＝`yaml/YamlFormatWriter`(#8)・`xls/XlsFormatWriter`(#9)。入口はこれらを `DataFormat`×方向で束ねて呼ぶ。
+  - `#3` で `pom.xml` の exec mainClass が削除済みクラスを指したまま（Phase 2 ゲート注記）。#10 の CLI/Mojo 再構築時に是正する。
+  - `#3` で一時無効化した `YamlModeTestBase`＋18 `*YamlTest` の再接続は **#13（Phase 6）** で実施（#10 完了が前提）。
+  - 設計の正＝設計書 §10章入口/CLI/Mojo・[[D-H]]。TDD・jacoco・3 観点レビュー・`docs/pr75/checks/P4-10.md`・`complete task #10`。
+  - **環境**: `M pom.xml`（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更＝**コミット禁止・resume で確認不要**（環境情報 §参照）。Operating mode により確認不要で自律続行可。カバレッジは online `mvn package -Dmaven.javadoc.skip=true` → `jacoco:restore-instrumented-classes` → `jacoco:report`（restore を挟まないと instrumented class 残留で report が失敗する場合あり）。
 
 ## Operating mode（ユーザー指示・2026-06-13・継続有効）
 

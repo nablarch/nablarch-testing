@@ -276,6 +276,63 @@ public class XlsFormatWriterTest {
         assertThat(line(sheet, 5), is(Arrays.asList("data", "d1")));
     }
 
+    /**
+     * Given: 2 レコード目のレコード種別が null の固定長ファイル。
+     * When : build。
+     * Then : IllegalStateException（列 0 が空の名前行は本体パーサが直前レコードのデータ行と誤読し、
+     *        読み戻せない版面になるため、黙って書かず早期に失敗する）。
+     */
+    @Test(expected = IllegalStateException.class)
+    public void rejectsNullRecordTypeOnSecondRecord() {
+        RecordLayout first = new RecordLayout("header",
+                Collections.singletonList(new FieldDef("h1", "半角英字", "5")),
+                Collections.singletonList(row("AAAAA")));
+        RecordLayout second = new RecordLayout(null,   // 2 レコード目はレコード種別必須
+                Collections.singletonList(new FieldDef("d1", "半角英字", "2")),
+                Collections.singletonList(row("xy")));
+        FileDataBlock file = new FileDataBlock(DataType.SETUP_FIXED, "", "bad.dat",
+                FileDataBlock.FileType.FIXED, map(), Arrays.asList(first, second));
+
+        build(container("book", "sheet", file));
+    }
+
+    /**
+     * Given: 2 レコード目のレコード種別が空文字の固定長ファイル。
+     * When : build。
+     * Then : IllegalStateException（空文字も列 0 が空になるため null と同様に弾く）。
+     */
+    @Test(expected = IllegalStateException.class)
+    public void rejectsEmptyRecordTypeOnSecondRecord() {
+        RecordLayout first = new RecordLayout("header",
+                Collections.singletonList(new FieldDef("h1", "半角英字", "5")),
+                Collections.singletonList(row("AAAAA")));
+        RecordLayout second = new RecordLayout("",   // 空文字も列 0 空＝NG
+                Collections.singletonList(new FieldDef("d1", "半角英字", "2")),
+                Collections.singletonList(row("xy")));
+        FileDataBlock file = new FileDataBlock(DataType.SETUP_FIXED, "", "bad.dat",
+                FileDataBlock.FileType.FIXED, map(), Arrays.asList(first, second));
+
+        build(container("book", "sheet", file));
+    }
+
+    /**
+     * Given: レコード種別が null の単一レコード固定長ファイル。
+     * When : build。
+     * Then : 例外にならない（1 レコード目の列 0 空は本体パーサが位置で名前行を特定でき、誤読しない）。
+     */
+    @Test
+    public void allowsNullRecordTypeOnSingleRecord() {
+        RecordLayout only = new RecordLayout(null,
+                Collections.singletonList(new FieldDef("f1", "半角英字", "2")),
+                Collections.singletonList(row("xy")));
+        FileDataBlock file = new FileDataBlock(DataType.SETUP_FIXED, "", "ok.dat",
+                FileDataBlock.FileType.FIXED, map(), Collections.singletonList(only));
+        Sheet sheet = onlySheet(build(container("book", "sheet", file)), "sheet");
+
+        // 名前行の列 0 は空（レコード種別省略）
+        assertThat(line(sheet, 1), is(Arrays.asList("", "f1")));
+    }
+
     // ------------------------------------------------------------------ message
 
     /**
@@ -599,6 +656,27 @@ public class XlsFormatWriterTest {
     }
 
     /**
+     * Given: null セルと空文字セルを持つテーブル。
+     * When : 書き出し → 実 Reader で読み戻し。
+     * Then : null は文字列 {@code "null"} として戻り（リテラル null を書くため、空インタープリタの読み戻しで
+     *        文字列化される＝既知の非可逆。Writer Javadoc 記載）、空文字 {@code ""} は空文字のまま戻る。
+     *        この非可逆挙動をテストで固定し将来のリグレッションを検知する。
+     */
+    @Test
+    public void roundTripsNullCellAsLiteralNullString() {
+        TableDataBlock table = new TableDataBlock(DataType.SETUP_TABLE_DATA, "", "T",
+                row("A", "B"), Collections.singletonList(row(null, "")));
+
+        TestDataBlock read = roundTrip("rt_null", "s", table).getSections().get(0).getBlocks().get(0);
+
+        TableDataBlock actual = (TableDataBlock) read;
+        // null → リテラル "null" を書く → 読み戻しは文字列 "null"（null ↔ null は Excel 経路では復元不可）
+        assertThat(actual.getRows().get(0).get(0), is("null"));
+        // "" は空文字のまま
+        assertThat(actual.getRows().get(0).get(1), is(""));
+    }
+
+    /**
      * Given: LIST_MAP ブロック。
      * When : 往復。
      * Then : 列順・値が一致。
@@ -642,6 +720,33 @@ public class XlsFormatWriterTest {
         assertThat(rec.getFields().get(0).getLength(), is("-"));
         assertThat(rec.getFields().get(1).getLength(), is("5"));
         assertThat(rec.getRows().get(0), is(Arrays.asList("abcd", "xy")));
+    }
+
+    /**
+     * Given: 2 レコードレイアウト（種別非空）を持つ固定長ファイル。
+     * When : 往復。
+     * Then : 2 レコードが各レコード種別・フィールド・値のまま分割復元される
+     *        （番人が弾かない正常側の境界＝複数レコード版面の対称性を実 Reader で固定）。
+     */
+    @Test
+    public void roundTripsMultipleRecordLayouts() {
+        RecordLayout header = new RecordLayout("header",
+                Collections.singletonList(new FieldDef("h1", "半角英字", "5")),
+                Collections.singletonList(row("AAAAA")));
+        RecordLayout data = new RecordLayout("data",
+                Collections.singletonList(new FieldDef("d1", "半角英字", "2")),
+                Collections.singletonList(row("xy")));
+        FileDataBlock file = new FileDataBlock(DataType.SETUP_FIXED, "", "multi.dat",
+                FileDataBlock.FileType.FIXED, map(), Arrays.asList(header, data));
+
+        TestDataBlock read = roundTrip("rt_multi", "s", file).getSections().get(0).getBlocks().get(0);
+
+        FileDataBlock actual = (FileDataBlock) read;
+        assertThat(actual.getRecords().size(), is(2));
+        assertThat(actual.getRecords().get(0).getRecordType(), is("header"));
+        assertThat(actual.getRecords().get(0).getRows().get(0), is(Arrays.asList("AAAAA")));
+        assertThat(actual.getRecords().get(1).getRecordType(), is("data"));
+        assertThat(actual.getRecords().get(1).getRows().get(0), is(Arrays.asList("xy")));
     }
 
     /**

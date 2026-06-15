@@ -19,10 +19,8 @@ import nablarch.test.tool.converter.TestDataFormatWriter;
 import nablarch.test.tool.converter.model.ColumnRowDataBlock;
 import nablarch.test.tool.converter.model.FieldDef;
 import nablarch.test.tool.converter.model.FileDataBlock;
-import nablarch.test.tool.converter.model.ListMapBlock;
 import nablarch.test.tool.converter.model.MessageDataBlock;
 import nablarch.test.tool.converter.model.RecordLayout;
-import nablarch.test.tool.converter.model.TableDataBlock;
 import nablarch.test.tool.converter.model.TestDataBlock;
 import nablarch.test.tool.converter.model.TestDataContainer;
 import nablarch.test.tool.converter.model.TestDataSection;
@@ -211,9 +209,7 @@ public final class XlsFormatWriter implements TestDataFormatWriter {
         l.add(RowKind.HEADER, Arrays.asList(marker(block)));
         appendKeyValueRows(l, block.getDirectives());
         boolean fixed = block.getFileType() == FileDataBlock.FileType.FIXED;
-        for (RecordLayout record : block.getRecords()) {
-            appendRecord(l, record, fixed, false);
-        }
+        appendRecords(l, block.getRecords(), fixed, false, block.getIdentifier());
         return l;
     }
 
@@ -230,11 +226,39 @@ public final class XlsFormatWriter implements TestDataFormatWriter {
         appendKeyValueRows(l, block.getDirectives());
         appendKeyValueRows(l, block.getFwHeaderFields());
         boolean sendSync = isSendSync(block.getDataType());
-        for (RecordLayout record : block.getRecords()) {
-            // 本文は固定長（長さ行を持つ）。送信系はデータ行の列 0 に no（連番）を置く。
-            appendRecord(l, record, true, sendSync);
-        }
+        // 本文は固定長（長さ行を持つ）。送信系はデータ行の列 0 に no（連番）を置く。
+        appendRecords(l, block.getRecords(), true, sendSync, block.getIdentifier());
         return l;
+    }
+
+    /**
+     * 複数レコードレイアウトを版面へ追加する。
+     * <p>
+     * 本体パーサは「名前行の列 0（レコード種別）が空＝直前レコードのデータ行 / 非空＝新レコードの名前行」で
+     * 判別するため、2 レコード目以降でレコード種別が空（{@code null}／空文字）だと、その名前行が直前レコードの
+     * データ行と誤読され版面対称性が崩れる（書いたものを読み戻せない）。読み戻せない版面を黙って書かず、
+     * 前提崩れとして即座に失敗させる（{@link XlsFormatReader} の番人と同じ思想）。
+     * </p>
+     *
+     * @param l          版面
+     * @param records    レコードレイアウト群
+     * @param fixed      固定長（長さ行を持つ）なら真
+     * @param sendSync   送信系（データ行の列 0 に no を置く）なら真
+     * @param identifier 識別子（診断メッセージ用）
+     */
+    private void appendRecords(BlockLayout l, List<RecordLayout> records,
+                               boolean fixed, boolean sendSync, String identifier) {
+        for (int i = 0; i < records.size(); i++) {
+            RecordLayout record = records.get(i);
+            String recordType = record.getRecordType();
+            if (i > 0 && (recordType == null || recordType.isEmpty())) {
+                throw new IllegalStateException(
+                        "2 レコード目以降のレコード種別は省略できません"
+                                + "（列 0 が空だと本体パーサが直前レコードのデータ行と誤読します）。"
+                                + " identifier=[" + identifier + "] レコード番号=" + i);
+            }
+            appendRecord(l, record, fixed, sendSync);
+        }
     }
 
     /**
