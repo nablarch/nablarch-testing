@@ -130,9 +130,9 @@ setup_files:
     records:
       - record_type: DATA
         fields:
-          - {name: USER_ID,   type: X, length: 10}
-          - {name: USER_NAME, type: N, length: 20}
-          - {name: AMOUNT,    type: Z, length: 10}
+          - {name: USER_ID,   type: 半角, length: 10}
+          - {name: USER_NAME, type: 全角, length: 20}
+          - {name: AMOUNT,    type: 数値, length: 10}
         rows:
           - ["001", "山田太郎", "5000"]
           - ["002", "鈴木花子", "3000"]

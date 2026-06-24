@@ -109,10 +109,10 @@ list_maps:
 expected_request_header_messages:
   - group_id: case1
     id: RM21AA0104_01
+    directives:
+      text-encoding: ms932
     records:
-      - record_type: DEFAULT
-        directives:
-          text-encoding: ms932
+      - record_type: default
         fields:
           - {name: requestId, type: 半角, length: 20}
         rows:

@@ -85,7 +85,7 @@ flowchart LR
 
 | アダプタ | 相乗り先 | 役割 |
 |---|---|---|
-| `TestCoreReaderAdapter` | `nablarch.test.core.reader` | Parser を空 `interpreters` で `parse → getResult` し、生の器を取り出す。MESSAGE 本文は `MessageParser.getDelegate()` から `FixedLengthFile` を取る |
+| `TestCoreReaderAdapter` | `nablarch.test.core.reader` | Parser を空 `interpreters` で `parse → getResult` し、生の器を取り出す。`readFiles`/`readTables`/`readListMap`/`readMessage`/`readSendSyncMessages`/`readHeaders`/`readBlockBodyLines` を提供。MESSAGE 本文は `MessageParser.getDelegate()` から `FixedLengthFile` を取る |
 | `TestCoreFileAdapter` | `nablarch.test.core.file` | `DataFileFragment` の `names`/`types`/`lengths`/`values` を読んで plain で返す |
 
 いずれも構造を組み立てず、読み取った値を plain で返すだけ。相乗りはこの 2 枚に閉じる。これにより本体の getter 追加・可視性拡大は不要で、本体は無変更。
@@ -99,8 +99,6 @@ YAML も本体の読み込み（`YamlLoader` ＋ Builder 群）が構造解釈�
 **決定**
 
 Excel 経路（判断 A）と対称に、本体の YAML ビルダ（`YamlTableDataBuilder`／`YamlFileBuilder`／`YamlMessageBuilder`）を **空のインタープリタ・デフォルト値補完なし** で配線するアダプタ（`YamlTestCoreAdapter`、`reader` パッケージ相乗り）を変換ツール側に置く。ビルダは `YamlLoader` が返す順序保持 Map を走査して本体の器（`TableData`／`DataFile`／`MessagePool` 本文）を組み立てる処理をそのまま再利用し、空インタープリタにより `${...}`・`${binaryFile:...}`・`null`・`""` は記法のまま運ばれる。構造解釈は本体 1 箇所に集約され、変換ツールは再実装しない。
-
-> **依存の向き**：主軸は NTF 本体。本体の YAML 読み込みは本体基準で設計し本体の器を返す。変換ツールはそれを再利用する側で、依存は変換ツール → 本体の一方向。本体が変換ツールの中間モデルに合わせて設計されることはない。
 
 > **依存の向き**：主軸は NTF 本体。本体の YAML 読み込みは本体基準で設計し本体の器を返す。変換ツールはそれを再利用する側で、依存は変換ツール → 本体の一方向。本体が変換ツールの中間モデルに合わせて設計されることはない。
 
@@ -184,8 +182,13 @@ class TestDataContainer
 class TestDataSection
 class TestDataBlock {
   <<sealed>>
+  +dataType
+  +groupId
+  +identifier
 }
-class FileDataBlock
+class FileDataBlock {
+  +fileType: FileType
+}
 class ColumnRowDataBlock {
   <<sealed>>
 }
@@ -217,18 +220,19 @@ classDiagram
 direction LR
 class TestDataFormatReader {
   <<interface>>
-  +read(path) TestDataContainer
+  +read(basePath, resourceName) TestDataContainer
 }
 class XlsFormatReader
 class YamlFormatReader
 class TestCoreReaderAdapter {
   <<reader相乗り>>
   +readFiles/readTables/readListMap/readMessage()
+  +readSendSyncMessages/readHeaders/readBlockBodyLines()
 }
 class YamlTestCoreAdapter {
   <<reader相乗り>>
   +readFiles/readTables/readListMap/readMessage/readSendSyncMessages()
-  +loadRawMap()
+  +isResourceExisting/loadRawMap()
 }
 class TestCoreFileAdapter {
   <<file相乗り>>
@@ -279,31 +283,41 @@ class XlsFormatWriter
 class ExcelFormatConfig {
   背景色 / 列幅 / 罫線 / 空行
 }
+class YamlTestDataValidator {
+  +validate(yaml)
+}
 YamlFormatWriter ..|> TestDataFormatWriter
 XlsFormatWriter ..|> TestDataFormatWriter
 XlsFormatWriter --> ExcelFormatConfig : 整形設定を参照
+YamlFormatWriter --> YamlTestDataValidator : 出力後スキーマ検証
 ```
+
+`YamlTestDataValidator`（`ValidationError` と対）は YAML OUT 後にスキーマ検証を行うリンターで、不正な YAML が生成された場合は `ValidationError` リストを返す。
 
 `YamlFormatWriter` は記法どおり（全値クォート）、`XlsFormatWriter` は `ExcelFormatConfig`（2 章の整形表。デフォルトを備え上書き可能）を参照して整形付きで書き出す。
 
 ### 利用の入口
 
-利用 PJ も開発チームも、同じ入口 `TestDataConverter`（form／to と入出力先を受け、IN→OUT を実行）を使う。
+利用 PJ も開発チームも、同じ入口 `TestDataConverter`（form／to と入出力先を受け、IN→OUT を実行）を使う。`FormatHandler`（`XlsFormatHandler`／`YamlFormatHandler`）がソース探索・IN・OUT 経路の解決を担い、`TestDataConverter` はこれらを介す。
 
 ```mermaid
 classDiagram
 direction LR
-class ConverterMojo { +execute() }
 class TestDataConverter { +convert(from,to,input,output) }
-ConverterMojo --> TestDataConverter : Maven から呼ぶ
+class FormatHandler { <<interface>> +findSources/read/createWriter/resolveOutputBase/outputPaths() }
+class XlsFormatHandler
+class YamlFormatHandler
 NTF本体TestCode --> TestDataConverter : テストコードから呼ぶ
+TestDataConverter --> FormatHandler : IN/OUT経路解決
+FormatHandler <|.. XlsFormatHandler
+FormatHandler <|.. YamlFormatHandler
 TestDataConverter --> TestDataFormatReader : IN
 TestDataConverter --> TestDataFormatWriter : OUT
 ```
 
 | 利用者 | やりたいこと | 呼び方 |
 |---|---|---|
-| NTF 利用 PJ | 既存 Excel を AI が扱える YAML へ移す（または逆） | `ConverterMojo`（Maven プラグイン）が include／exclude・上書き可否を受けディレクトリ単位で起動 |
+| NTF 利用 PJ | 既存 Excel を AI が扱える YAML へ移す（または逆） | `TestDataConverter` を `ConversionRequest`（include／exclude・上書き可否等）とともに呼ぶ。`ConverterFileFilter` / `ConverterPathResolver` がファイル選択・パス解決を担う |
 | Nablarch 開発チーム | 本体テストを変えず YAML 経路でも通るか確認 | テストコードが `TestDataConverter` を直接呼び、実行時に Excel を一時 YAML へ変換 |
 
 開発チーム用途では出力先に一時ディレクトリを渡し、変換結果の YAML は git 管理せず実行のたびに生成・破棄する。入口は出力先を引数で受けるだけで、一時／永続を区別しない（後始末はテストコード側の責務）。
