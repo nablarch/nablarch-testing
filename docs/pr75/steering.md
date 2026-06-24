@@ -27,16 +27,15 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-- **Status**: paused — 本体後始末完了・ユーザーレビュー承認待ち
-- **Date**: 2026-06-23
-- **Last completed**: 本体を develop へ戻し（reset --hard origin/develop）、キャッシュTemplate Method集約5ファイルのみ再適用。テスト840件緑、C0/C1カバレッジ実質100%、mvn install BUILD SUCCESS。
-- **Next**: ユーザー承認後 → このブランチのPR作業完了
+- **Status**: paused — ドキュメント整合修正完了・ユーザーレビュー承認待ち
+- **Date**: 2026-06-24
+- **Last completed**: docs/pr75/docs/ と ntf-impl-spec-list.md を git 履歴から復元（f45c565）。その後、設計書・NTF解説書 examples・仕様リストの実装不整合を全件修正してプッシュ（d39f07e）。
+- **Next**: ユーザーレビュー承認後 → PR 作業完了
 - **Notes**: |
-    - ブランチ状態: origin/develop と完全一致 + 5ファイル差分のみ（pom.xml 差分なし）
-    - 5ファイル: DataFileParser.java / ListMapParser.java / TableDataParser.java / TestDataParsingTemplate.java / TestDataParsingTemplateTest.java
-    - 未カバー箇所はすべて意図的: TestDataParsingTemplate のデフォルトno-op実装、DataFileParser の到達不能 default ブランチ（コメント入り）
-    - mvn install 済み（6u3 ローカルリポジトリへインストール完了）
-    - reset --hard により docs/ が消えたため steering.md を再作成。checks/ 配下のファイルも消失済み。
+    - ブランチ状態: origin/convert-testdata-excel-to-text と同期済み（d39f07e が最新）
+    - 本体差分: DataFileParser.java / ListMapParser.java / TableDataParser.java / TestDataParsingTemplate.java / TestDataParsingTemplateTest.java の5ファイルのみ（pom.xml 差分なし）
+    - 修正済み不整合: 設計書4件（readシグネチャ・ConverterMojo→FormatHandler構成・クラス図フィールド追記・重複削除）、解説書2件（directives位置・type記法統一）、仕様リスト4件（testプレフィックス除去・メソッド名修正・未実装テスト訂正）
+    - docs/ 復元元コミット: a5628c6（ntf-testdata-doc等）、16f59c9（ntf-impl-spec-list）
     - 次のアクション: ユーザー承認 → 完了
 
 ---
