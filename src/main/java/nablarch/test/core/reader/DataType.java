@@ -89,16 +89,4 @@ public enum DataType {
     public String getName() {
         return name;
     }
-
-    /**
-     * 送信同期メッセージ（要求/応答電文 4 種）のデータタイプか判定する。
-     *
-     * @return 送信系なら真
-     */
-    public boolean isSendSyncType() {
-        return this == EXPECTED_REQUEST_HEADER_MESSAGES
-                || this == EXPECTED_REQUEST_BODY_MESSAGES
-                || this == RESPONSE_HEADER_MESSAGES
-                || this == RESPONSE_BODY_MESSAGES;
-    }
 }
