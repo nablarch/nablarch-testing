@@ -22,20 +22,26 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - `pom.xml` の `M` 差分（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更。コミット不要
 - テスト実行は必ず `LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test`
 - 残存 4E（`MockHttpRequestTest`/`MockServletExecutionContextTest`）は PR75 非起因の既知事象
+- **カバレッジ取得**: 親 POM に JaCoCo Offline Instrumentation 設定済み。`pom.xml` 変更不要。
+  ```
+  mvn clean jacoco:instrument test jacoco:restore-instrumented-classes jacoco:report \
+    [-Dtest="YamlTestDataReaderTest,..."]
+  mvn jacoco:report -Djacoco.dataFile=/home/tie303177/work/nablarch-testing/jacoco.exec
+  ```
+  出力先は `${user.dir}/jacoco.exec`（プロジェクトルート）。`target/site/jacoco/` に HTML 生成。
 
 ---
 
 # State
 
-- **Status**: paused — ドキュメント整合修正完了・ユーザーレビュー承認待ち
+- **Status**: paused — カバレッジ手順を Rules に追記・ユーザーレビュー承認待ち
 - **Date**: 2026-06-24
-- **Last completed**: docs/pr75/docs/ と ntf-impl-spec-list.md を git 履歴から復元（f45c565）。その後、設計書・NTF解説書 examples・仕様リストの実装不整合を全件修正してプッシュ（d39f07e）。
+- **Last completed**: Rules に JaCoCo Offline Instrumentation 手順を追記（pom.xml 変更不要・dataFile はプロジェクトルート）
 - **Next**: ユーザーレビュー承認後 → PR 作業完了
 - **Notes**: |
     - ブランチ状態: origin/convert-testdata-excel-to-text と同期済み（d39f07e が最新）
     - 本体差分: DataFileParser.java / ListMapParser.java / TableDataParser.java / TestDataParsingTemplate.java / TestDataParsingTemplateTest.java の5ファイルのみ（pom.xml 差分なし）
-    - 修正済み不整合: 設計書4件（readシグネチャ・ConverterMojo→FormatHandler構成・クラス図フィールド追記・重複削除）、解説書2件（directives位置・type記法統一）、仕様リスト4件（testプレフィックス除去・メソッド名修正・未実装テスト訂正）
-    - docs/ 復元元コミット: a5628c6（ntf-testdata-doc等）、16f59c9（ntf-impl-spec-list）
+    - 修正済み不整合（前回）: 設計書4件・解説書2件・仕様リスト4件
     - 次のアクション: ユーザー承認 → 完了
 
 ---
