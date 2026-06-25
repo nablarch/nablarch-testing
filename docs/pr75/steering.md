@@ -20,6 +20,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - **1 task = 1 commit・push 必須**
 - released NTF 本体プロダクションコードの変更は**事前にユーザー相談**
 - `pom.xml` の `M` 差分（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更。コミット不要
+- **Java/Maven 環境**: OpenJDK 17 (Temurin-17.0.19) + Maven 3.9.9。`compile`・`test`・`install` はすべて Java 17 で実行する
 - テスト実行は必ず `LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test`
 - 残存 4E（`MockHttpRequestTest`/`MockServletExecutionContextTest`）は PR75 非起因の既知事象
 - **カバレッジ取得**: 親 POM に JaCoCo Offline Instrumentation 設定済み。`pom.xml` 変更不要。
@@ -34,15 +35,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-- **Status**: paused — カバレッジ手順を Rules に追記・ユーザーレビュー承認待ち
-- **Date**: 2026-06-24
-- **Last completed**: Rules に JaCoCo Offline Instrumentation 手順を追記（pom.xml 変更不要・dataFile はプロジェクトルート）
-- **Next**: ユーザーレビュー承認後 → PR 作業完了
-- **Notes**: |
-    - ブランチ状態: origin/convert-testdata-excel-to-text と同期済み（d39f07e が最新）
-    - 本体差分: DataFileParser.java / ListMapParser.java / TableDataParser.java / TestDataParsingTemplate.java / TestDataParsingTemplateTest.java の5ファイルのみ（pom.xml 差分なし）
-    - 修正済み不整合（前回）: 設計書4件・解説書2件・仕様リスト4件
-    - 次のアクション: ユーザー承認 → 完了
+<!-- template placeholder -->
 
 ---
 
