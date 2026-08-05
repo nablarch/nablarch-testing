@@ -36,14 +36,10 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 # State
 
 - **Status**: paused
-- **Date**: 2026-06-25
-- **Last completed**: PR #75 のタイトル・本文を見直し、マージ先を `develop` に確認した上で更新（https://github.com/nablarch/nablarch-testing/pull/75）
+- **Date**: 2026-08-05
+- **Last completed**: 仕様一覧（docs/pr75/ntf-impl-spec-list.md）の rsXX_ プレフィックスを削除し push 済み（3191c9f）
 - **Next**: ユーザーレビュー承認後 → PR マージ
-- **Notes**: |
-    - ブランチ状態: origin/convert-testdata-excel-to-text と同期済み
-    - 全タスク（Phase 1〜6、#1〜#20、J-4/J-5）達成済み
-    - PR #75 更新済み: タイトル「refactor: テストデータパーサーをTemplate Methodパターンで整理」、マージ先 develop
-    - 次のアクション: ユーザー PR レビュー承認 → マージ
+- **Notes**: 全タスク達成済み・PR #75 更新済み（マージ先 develop）。次のアクション: ユーザー承認 → マージ
 
 ---
 
