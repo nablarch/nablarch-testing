@@ -285,17 +285,87 @@ if (dataTypeCell.startsWith(type.getName())) {
 
 ---
 
-## 8. 解説書への反映（`nablarch-document` チーム向け）
+## 8. 実測結果（2026-08-19）
+
+本章の数値はすべて 2026-08-19 に実行して得たものである。
+
+### 8.1 既存 Excel テストデータの走査（本リポジトリ）
+
+`src/test` 配下の `.xls`/`.xlsx` 全件を Apache POI で走査した。空行を除去したうえで、テーブル系識別子行
+（`SETUP_TABLE=`／`EXPECTED_TABLE=`／`EXPECTED_COMPLETE_TABLE=`／`LIST_MAP=`）の直後の行を判定した。
+
+| 走査対象 | 件数 |
+|---|---|
+| ファイル | 59 |
+| シート | 242 |
+| テーブル系識別子行 | 324 |
+
+| 検出した形 | 件数 |
+|---|---|
+| 識別子行の直後が識別子行（問題2(a)） | **0** |
+| 識別子行がシート末尾（カラム名行なし） | **0** |
+| ヘッダ行がマーカーカラムのみ | 14（すべて `LIST_MAP=requestParams`） |
+| ヘッダ行の先頭カラムが DataType 名で始まる（`MESSAGE_ID` 型の罠） | **0** |
+
+マーカーカラムのみの14件はすべて `LIST_MAP` であり、`ListMapParser` 経由で `TableData` を生成しないため
+`loadData()` に到達しない。
+
+**→ 本リポジトリに、問題1の修正で挙動が変わる既存テストデータは存在しない。**
+
+走査プログラムは scratchpad に置いたのみでリポジトリには残していない。再実行が必要な場合は上記の判定条件で書き直すこと。
+
+### 8.2 問題1の影響範囲（コードで確認）
+
+`loadData()` の呼び出し元は `src/main/java/nablarch/test/Assertion.java:81` の1箇所のみで、
+`assertTableEquals(String, TableData)` からしか到達しない（`grep -rn "loadData()" src/main`）。
+期待値検証の入口は `src/main/java/nablarch/test/core/db/DbAccessTestSupport.java:362` の1本であり、
+`TestShot`・`AbstractHttpRequestTestTemplate` もここを通る。
+
+### 8.3 マーカーカラム案の実測
+
+本体の `TableDataParser` に行リストを直接流して測定した
+（`DataType.SETUP_TABLE_DATA`／インメモリ `TestDataReader`／スタブ `DbInfo`）。
+
+| 入力 | 結果 |
+|---|---|
+| 識別子行のみ（現状の問題2） | ブロック **2→1件**。`table=EMPTY_T columnNames=[SETUP_TABLE=NEXT_T] rows=2` |
+| 識別子行＋マーカーカラムのみのヘッダ行 | ブロック **2件**。`table=EMPTY_T columnNames=[] rows=0`／`table=NEXT_T columnNames=[PK, NAME] rows=1` |
+| 通常の2ブロック（対照） | ブロック 2件。正常 |
+
+**→ マーカーカラム行を1行はさむと、0件テーブルが正しく生成され、次のブロックも無傷になる。**
+マーカーカラムの判定は `startsWith("[") && endsWith("]")` のみである
+（`src/main/java/nablarch/test/core/reader/HeaderLine.java:88-90`）。
+
+`nablarch-testing-converter` の `issues.md` XLS-27 に「マーカーカラム案の実測は未実施」とあるが、
+**本体側の成立は本測定で確認した。**
+
+**未確認**: 本測定はパーサ層に行リストを直接流したものであり、`XlsReader` を通した実 `.xlsx` 経路では
+実行していない。converter 側（実 `.xlsx` 経路・Excel→YAML の逆変換）も未確認である。
+
+### 8.4 マーカーカラム案は現行記法に反しない
+
+`testdata_notation.rst:802` は「データ行を書かない場合でも、カラム名の行は省略できない」と定めている。
+マーカーカラム行はカラム名行として実在するため、この記法を破らない。
+**マーカーカラム案を採る場合、記法の変更は不要である。**
+
+---
+
+## 9. 解説書への反映（`nablarch-document` チーム向け）
 
 以下は本リポジトリのスコープ外。解説書チームへ別途伝達する。
 
-- **0件のテーブルブロックはカラム名行を省略できる**旨を明記する。現状の解説書には「必須」「省略した場合はこうなる」の記述が無い
+- ~~0件のテーブルブロックはカラム名行を省略できる旨を明記する。現状の解説書には「必須」「省略した場合はこうなる」の記述が無い~~
+  **← この記述は誤りだった。訂正する（2026-08-19）。** `testdata_notation.rst:802`
+  （`nablarch-document` の `ntf-yaml-support` ブランチ・`b75f1d7`・2026-08-14 追記）に
+  「データ行を書かない場合でも、カラム名の行は省略できない。識別子行の次の行がカラム名の行として
+  読み込まれるため、カラム名の行を書かないと、その次に現れた行がカラム名の行になる。」と明記されている。
+  **問題2は未文書の不具合ではなく、明文化された現行仕様である。**
 - **YAML の `rows: []` が0件検証として有効**である旨を明記する。`ja/development_tools/` 配下の rst に `rows: []` の記述は無い（未確認: この件数は本セッションでは再確認していない）
 - 公式の記載例はいずれもカラム名行を書いているため、**例の変更は不要**
 
 ---
 
-## 9. 未確認事項
+## 10. 未確認事項
 
 - **カラム名0件かつ行が1件以上ある期待値**（Excel でマーカーカラムのみのヘッダにデータ行が続く形）の
   問題1修正後の挙動。現状は実データ0行扱いで PK 不一致 fail、修正後は `expected.getValue()` 側に値が無く
@@ -308,7 +378,7 @@ if (dataTypeCell.startsWith(type.getName())) {
 
 ---
 
-## 10. 参照した出典の一覧
+## 11. 参照した出典の一覧
 
 | 内容 | 出典 |
 |---|---|
