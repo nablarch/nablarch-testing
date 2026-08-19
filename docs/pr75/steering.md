@@ -110,17 +110,15 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-19
-- **Last completed**: 新事象（期待値0件テーブルの偽陰性）の対応方針を実測で詰め、`docs/pr75/docs/ntf-empty-table-assertion.md` に §8「実測結果」を追記／§9 の誤記（解説書に記述が無い）を訂正
-- **Next**: 再開後、下記2点を整理して議論する。結論が出たら #23（問題1）の設計を確定して起票し、そのうえで #21 の再現テスト作成に着手する
-- **Notes**: ブランチ `convert-testdata-excel-to-text` / ドラフトPR lovaizu/nablarch-testing#1。Phase 1〜6 はユーザー承認済みでマージ待ち。#21・#22 は未着手（着手はユーザーの明示的な合図待ち）。
-  **再開後に議論する2点（ユーザー提起・2026-08-19）**:
-  (1) 問題2により、カラム名を書かないブロックは利用PJで発生していない。奇跡的に動いているだけなので見直した方がよい。
-  (2) そうなると問題1の対応で影響を受けて NG となったなら利用PJ側で見直すべき。したがって**設定で現行の動きを残さない方がよい**。
-  この2点は、直前に合意しかけた「設定フラグ（デフォルト無効）」案を見直すもの。**#23 の設計は未確定**。
-  **議論の前提（すべて `ntf-empty-table-assertion.md` §8 に出典付きで記録済み）**: 本リポジトリの既存 xls 全59ファイル・242シート・テーブル系識別子行324箇所を走査し、問題1の修正で挙動が変わる既存データは0件。マーカーカラム行を1行はさめば0件テーブルが正しく読めることを実測済み（本体変更不要）。対象PJのテストデータは未走査。
-  **未決**: (a) 上記2点の結論、(b) #23 の設計（設定フラグの要否）、(c) #24 の要否（converter のマーカーカラム対応で代替できるか）、(d) #21〜#24 の実施順。対象PJは YAML→Excel 変換して Excel で NTF を使う運用。解説書チームへの回答報告（4事象＋新事象）は本steeringのスコープ外・別途必要。
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 ---
 
