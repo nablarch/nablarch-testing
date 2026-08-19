@@ -2,7 +2,7 @@
 
 作成日: 2026-08-13 / 全面改訂: 2026-08-19
 
-**位置づけ**: NTF 本体（`nablarch-testing`）への修正提案。`docs/pr75/steering.md` の #23・#24 の根拠となる文書であり、この文書が正である。
+**位置づけ**: NTF 本体（`nablarch-testing`）への修正提案。`docs/pr75/steering.md` の #23 の根拠となる文書であり、この文書が正である。関連して `nablarch-testing-converter` への申し送りを含む（8章）。
 
 **出典の書き方**: 事実は実物のソースで確認したものに限り、「リポジトリ相対パス:行番号」で示す。リポジトリ名の記載が無いものは `nablarch-testing`（本リポジトリ）を指す。実測値には実行日を添える。確認していないことは「未確認」と明記する。案件担当者の知見に基づく前提は、その旨を明記する。
 
@@ -10,36 +10,43 @@
 
 ## 1. 提案（結論）
 
-**0件のテーブルブロックにカラム名は不要。形式を問わず統一する。** カラム名は「検証対象カラムの絞り込み」であり、行が0件なら絞り込む対象が存在しない。**カラム名を書いたか書かなかったかで検証結果が変わってはならない。**
+**本体（`nablarch-testing`）を直す箇所は1つだけである。** `TableData#loadData()` が、カラム名0件のとき DB を読まずに0行を返す点（問題1）。これが YAML の `rows: []`（0件テーブル）を偽陰性にしている。
 
-この原則が2箇所で破れている。層の異なる別問題なので、2タスクに分けて本体を修正する。
+**Excel 形式の挙動（問題2）は直さない。** Excel 記法はデータ行が0件でもカラム名の行を書く。これは記載例・実データの双方が示す仕様であり（1.1）、記法どおりに書けば問題2 は発生しない。
 
-| | #23（問題1） | #24（問題2） |
+| | #23（問題1） | 問題2 |
 |---|---|---|
-| 層 | `TableData`（**形式共通**） | 表形式リーダ（**Excel 等の行指向データ**） |
-| 何が起きるか | 検証すべきものを検証しない（偽陰性） | テストデータの一部を捨て、別の意味に解釈する |
-| 直す場所 | `TableData#loadData()` | `TestDataParsingTemplate` ＋ 各パーサの `onTargetTypeFound` |
-| 後方互換影響 | 嘘の合格をしていたテストが落ちる（該当データは実測0件） | 実質ゼロ（該当データは現状すでに壊れて読まれている） |
+| 層 | `TableData`（**形式共通**） | 表形式リーダ（Excel 等の行指向データ） |
+| 何が起きるか | 検証すべきものを検証しない（偽陰性） | 記法違反のデータを黙って別の意味に読む |
+| 判定 | **不具合。本体を修正する** | **不具合ではない。本体は修正しない**（1.1） |
+| 直す場所 | `TableData#loadData()` | — |
+| 後方互換影響 | 実測で該当0件（3章） | なし（変更しない） |
 
-**順序は #23 → #24 で固定。逆順は禁止**（理由は 5.3）。
-
-**現行動作へ戻すための設定は設けない**（理由は 6.2）。
+**converter（`nablarch-testing-converter`）側に1件の対応が要る。** 中間モデルのカラム名が0件のとき、Excel 書き出しで**マーカーカラム（`[ ]`）だけのカラム名行**を出す。現在は例外で変換を中止している。これは Excel 記法に反しない対応であり、#23 と組み合わせて0件テーブルの検証が成立する（5.2）。
 
 **後方互換影響は極小**である。その根拠が本書の中心であり、3章にまとめた。
 
-### 1.1 不具合か、仕様変更か
+**現行動作へ戻すための設定は設けない**（理由は 6.2）。
 
-**両方とも不具合である。** 解説書チームへ回答した事象1〜4と同じ枠組みで判定した。
+### 1.1 不具合か、仕様変更か
 
 | | 判定 | 根拠 |
 |---|---|---|
-| **問題1** | **不具合** | 公開中の解説書は `EXPECTED_TABLE` を「テスト実行後の期待するデータベースのデータ」と定義しており（`06_TestFWGuide/01_Abstract.rst:275-276`）、**検証を行わない条件はどこにも書かれていない**。「カラム名が0件なら DB を読まない」は実装都合であって仕様ではない。テストが嘘の合格を返すのは、テスティングフレームワークの目的に反する |
-| **問題2** | **不具合** | 公開中の解説書は「1行目：識別子行 / 2行目：カラム名 / 3行目～：データ行」と構成を定義するのみで（`02_DbAccessTest.rst:110-117, 228-235`）、**カラム名行を省略したときに次のブロックを食う挙動は書かれていない**。テストデータが黙って消え、別テーブルのデータとして解釈されるのは設計された挙動ではない |
+| **問題1** | **不具合** | 公開中の解説書は `EXPECTED_TABLE` を「テスト実行後の期待するデータベースのデータ」と定義しており（`nablarch-document` `origin/main` `06_TestFWGuide/01_Abstract.rst:275-276`）、**検証を行わない条件はどこにも書かれていない**。「カラム名が0件なら DB を読まない」は実装都合であって仕様ではない。テストが嘘の合格を返すのは、テスティングフレームワークの目的に反する |
+| **問題2** | **不具合ではない** | Excel 記法では**データ行が0件でもカラム名の行を書く**。記載例がそうなっており、本リポジトリの実データもそうなっている（下記）。記法どおりに書けば識別子行が連続することはなく、問題2 は発生しえない |
 
-**ただし #24 には「記法の拡張」が付随する。** 問題2を直すと、これまで書けなかった「カラム名行を省略した0件ブロック」という**新しい書き方が可能になる**。これは不具合修正の結果として生じる記法の追加であり、既存の書き方（カラム名行を書く）は一切変わらない。
+**Excel 記法がそうであることの根拠**:
 
-**「カラム名の行は省略できない」という明文は未リリースである。** `ntf-yaml-support` ブランチに 2026-08-14 に追加された記述（`testdata_notation.rst:802`）は、解説書の作り直しの過程で現行挙動＝問題2をそのまま書き取ったものであり、公開済みの解説書には存在しない。**リリース前に直せるため、公開済み仕様の変更にはならない**（8章）。
+- **記載例** — `nablarch-document`（`ntf-yaml-support`）`testdata_examples.rst` の「0件のテーブルデータを記述する」は、`SETUP_TABLE=ORDER_HEADER` / `ORDER_ID ITEM_COUNT STATUS` / （データ行なし）という形を示し、`EXPECTED_TABLE` も同様である。本文に「いずれもカラム名の行までを記述し、データ行を記述していない。」とある（`b75f1d7`・2026-08-14 追加）
+- **実データ** — 本リポジトリの `.xls` 走査（2026-08-19）で、カラム名行を書いてデータ行が0件のブロックが**5件**実在する（3.2）。いずれも `columnNames.length >= 1` であり、問題1 にも当たらず正しく動いている
+- **公開中の解説書** — 「1行目：`SETUP_TABLE=<テーブル名>` / 2行目：そのテーブルのカラム名 / 3行目～：登録するレコード」と構成を定義している（`origin/main` `06_TestFWGuide/02_DbAccessTest.rst:110-117, 228-235`）
 
+**では、なぜ YAML では本体の変更が要るのか。** YAML は表ではなく NTF のデータモデルを表す形式であり、カラム名は行の並びから決まる（`nablarch-testing-yaml` `YamlSection.java:145-150`。先頭行のキーがカラム名）。行が0件なら**カラム名を書く場所が構造上存在しない**。カラム名の行は表形式（Excel）の記法要素であって、データモデルの構成要素ではない。したがって、
+
+- **Excel**: 表なのでカラム名の行が構造上必要。**現状で正しい**
+- **YAML**: モデルなので `rows: []` だけで0件を表現できる。**本体が対応すべきはここだけ**
+
+**「カラム名の行は省略できない」という明文は未リリースだが、記法の追加ではなく現行仕様の明文化である。** `ntf-yaml-support` ブランチに 2026-08-14 に追加された記述（`testdata_notation.rst:802`）は `origin/main` には存在しないが、上記の記載例・実データと一致しており、現行の Excel 記法をそのまま書き取ったものである。#23 はこの記述に触れない。
 
 ---
 
@@ -50,7 +57,7 @@
 - 利用PJは規模の大きい基幹システムであり、NTF のテストデータ量が多い。とくにテーブル周りはテストデータが膨大である
 - したがって、本体変更による後方互換影響は出したくない。既存テストが落ちる形の変更は受け入れにくい
 
-**対象PJの運用**: テストデータを YAML で生成し（AI がテストデータを生成するため）、YAML→Excel 変換を通して **Excel で NTF を使う**。したがって YAML 経路と Excel 経路の両方が関わる。
+**対象PJの運用**: テストデータを YAML で生成し（AI がテストデータを生成するため）、converter を通して **Excel で NTF を使う**。したがって YAML 経路と Excel 経路の両方が関わる。
 
 この前提のもとで、影響を出さないために「設定で現行動作を残す」案まで検討した。最終的に採らない判断に至っている（6.2）。
 
@@ -58,20 +65,18 @@
 
 ## 3. 後方互換影響が極小である理由
 
-### 3.1 問題2があるため、問題1に該当するデータは書けていない
+### 3.1 Excel 記法どおりに書かれたデータは、#23 の分岐に入らない
 
-Excel で問題1（`columnNames.length == 0`）に到達する経路は、**2つしかない**。
+#23 が変えるのは `colNames.length == 0` のときの挙動だけである（`src/main/java/nablarch/test/core/db/TableData.java:343`）。Excel 経路でここに到達する経路は、**2つしかない**。
 
-| 到達経路 | 根拠 |
-|---|---|
-| 識別子行がシート末尾にあり、次の行が無い | `readLine()` が返さず `HeaderLine` の `keys` が空になる（`src/main/java/nablarch/test/core/reader/HeaderLine.java:32-38`） |
-| ヘッダ行がマーカーカラム（`[ ]`）のみ | `getEffectiveColumnNames()` がマーカーカラムを除外するため長さ0になる（`HeaderLine.java:39-40, 47-50, 85-91`） |
+| 到達経路 | 根拠 | 記法との関係 |
+|---|---|---|
+| 識別子行がシート末尾にあり、次の行が無い | `readLine()` が返さず `HeaderLine` の `keys` が空になる（`src/main/java/nablarch/test/core/reader/HeaderLine.java:32-38`） | カラム名の行が無い＝**記法違反** |
+| ヘッダ行がマーカーカラム（`[ ]`）のみ | `getEffectiveColumnNames()` がマーカーカラムを除外するため長さ0になる（`HeaderLine.java:39-40, 47-50, 85-91`） | カラム名の行は存在するので記法どおり。ただし DB 操作対象カラムが1つも無い |
 
-**「識別子行を2行続けて書く」——0件テーブルを書こうとしたときの最も自然な書き方は、問題1に到達しない。** 次の識別子行がカラム名行として消費され、`columnNames` は長さ1（例: `["EXPECTED_TABLE=NEXT_T"]`）になるからである（`src/main/java/nablarch/test/core/reader/TableDataParser.java:107-116`）。代わりに問題2が起き、後続ブロックが消える。
+**記載例どおりに書いた0件テーブル（カラム名行あり・データ行0件）は、`columnNames.length >= 1` なので分岐に入らない。** 挙動は1ミリも変わらない。
 
-つまり、**問題2があるせいで、問題1に該当する書き方が事実上封じられている。** 書けば別のバグに当たるため、問題1に当たるデータは利用PJに蓄積されていない。動いているように見えているものは、この2つのバグが打ち消し合っている状態にすぎない。
-
-**なお「記法違反だから存在しない」とは言い切れない。** 公開中の解説書（`nablarch-document` `origin/main`）は「1行目：`SETUP_TABLE=<テーブル名>` / 2行目：そのテーブルのカラム名 / 3行目～：登録するレコード」と構成を定義しているだけで（`ja/development_tools/testing_framework/guide/development_guide/06_TestFWGuide/02_DbAccessTest.rst:110-117, 228-235`）、**カラム名行を省略した場合の扱いは書かれていない**。「データ行を書かない場合でも、カラム名の行は省略できない」と明記した文は `ntf-yaml-support` ブランチに 2026-08-14 に追加されたもので（`testdata_notation.rst:802`、`b75f1d7`）、**未リリースである**。したがって該当データが無いことの根拠は、記法ではなく上記の機械的な理由と 3.2 の実測による。
+**「識別子行を2行続けて書く」も #23 には到達しない。** 次の識別子行がカラム名行として消費され、`columnNames` は長さ1（例: `["SETUP_TABLE=NEXT_T"]`）になるからである（`src/main/java/nablarch/test/core/reader/TableDataParser.java:107-116`）。この書き方は記法違反であり、現状は後続ブロックが消える（4.3）。**#23 でも挙動は変わらない。**
 
 ### 3.2 実測 — 本リポジトリに該当は0件（2026-08-19）
 
@@ -83,16 +88,25 @@ Excel で問題1（`columnNames.length == 0`）に到達する経路は、**2つ
 | シート | 242 |
 | テーブル系識別子行 | 324 |
 
-| 検出した形 | 件数 |
-|---|---|
-| 識別子行の直後が識別子行（問題2(a)） | **0** |
-| 識別子行がシート末尾（カラム名行なし） | **0** |
-| ヘッダ行がマーカーカラムのみ | 14（すべて `LIST_MAP=requestParams`） |
-| ヘッダ行の先頭カラムが DataType 名で始まる（`MESSAGE_ID` 型の罠。5.2 参照） | **0** |
+| 検出した形 | 件数 | #23 の影響 |
+|---|---|---|
+| 識別子行の直後が識別子行（記法違反） | **0** | — |
+| 識別子行がシート末尾（カラム名行なし・記法違反） | **0** | — |
+| ヘッダ行がマーカーカラムのみ | 14 | すべて `LIST_MAP`。`ListMapParser` 経由で `TableData` を生成しないため `loadData()` に到達しない。**なし** |
+| **カラム名行あり・データ行0件（記載例どおりの0件テーブル）** | **5** | `columnNames.length >= 1` で分岐に入らない。**なし** |
+| ヘッダ行の先頭カラムが DataType 名で始まる（`MESSAGE_ID` 型の罠） | **0** | — |
 
-マーカーカラムのみの14件はすべて `LIST_MAP` であり、`ListMapParser` 経由で `TableData` を生成しないため `loadData()` に到達しない。
+カラム名行あり・データ行0件の5件（0件テーブルが実在することの証拠）:
 
-**→ 本リポジトリに、問題1・問題2の修正で挙動が変わる既存テストデータは存在しない。**
+| ファイル | シート | ブロック |
+|---|---|---|
+| `MessagingReceiveTestSupportTest.xls` | `testExtends` | `SETUP_TABLE=RECEIVE_TEST` |
+| `MessagingReceiveTestSupportTest.xls` | `testUnExtends` | `SETUP_TABLE=RECEIVE_TEST` |
+| `AbstractHttpRequestTestTemplateTest.xls` | `testGetEmptyTestCase` | `LIST_MAP=testCases` |
+| `HttpRequestTestSupportTest.xls` | `testAssertObjectPropertyEquals2` | `LIST_MAP=nullValue` |
+| `MessagingRequestTestSupportTest.xls` | `testMessagingSample` | `LIST_MAP[case2]=EXPECTED_LOG` |
+
+**→ 本リポジトリに、#23 で挙動が変わる既存テストデータは存在しない。**
 
 走査プログラムは scratchpad に置いたのみでリポジトリには残していない。再実行が必要な場合は上記の判定条件で書き直すこと。
 
@@ -106,7 +120,7 @@ Excel で問題1（`columnNames.length == 0`）に到達する経路は、**2つ
 | 準備データ投入・マスタデータ投入 | `loadData()` を通らない。影響なし |
 | 変換ツール（converter）の読み込み経路 | `loadData()` を通らない。影響なし |
 | `LIST_MAP` | `TableData` を作らない。影響なし |
-| カラム名を1つでも書いているテーブル | 分岐条件は `colNames.length == 0` のみ（`src/main/java/nablarch/test/core/db/TableData.java:343`）。影響なし |
+| カラム名を1つでも書いているテーブル | 分岐条件は `colNames.length == 0` のみ（`TableData.java:343`）。影響なし |
 
 ### 3.4 影響が出るとしたら、どう出るか
 
@@ -114,15 +128,17 @@ Excel で問題1（`columnNames.length == 0`）に到達する経路は、**2つ
 - **DB に行が残っていた** → 新たに FAIL する。これは検証されていなかったものが検証されるようになった結果であり、意図したアサートの失敗である
 - **テーブル名を誤記していた** → 新たに例外になる。現状の0件カラム経路は `dbInfo` に触れずに return するため誤記でも PASS するが、修正後は `getPrimaryKeys()` → `dbInfo.getPrimaryKeys(tableName)`（`TableData.java:480-482`）に到達する
 
+いずれも記法違反のデータでのみ起こる。実測では該当0件（3.2）。
+
 ### 3.5 未走査の範囲
 
-**対象PJのテストデータは未走査である。** 本リポジトリの結果をもって対象PJに該当が無いとは言えない。3.1 の論理（問題2があるため書けない）は形式上の制約なので対象PJにも当てはまるが、機械での確認は行っていない。
+**対象PJのテストデータは未走査である。** 本リポジトリの結果をもって対象PJに該当が無いとは言えない。記法どおりのデータは分岐に入らないという 3.1 の論理は形式上の制約なので対象PJにも当てはまるが、記法違反データの有無は機械で確認していない。
 
 ---
 
 ## 4. 何が起きているか
 
-### 4.1 なぜ「0件にカラム名は不要」と言えるか
+### 4.1 カラム名は表形式の記法要素であって、データモデルの構成要素ではない
 
 **0件のとき、テストデータに書かれたカラム名はどこからも参照されない。**
 
@@ -130,11 +146,13 @@ Excel で問題1（`columnNames.length == 0`）に到達する経路は、**2つ
 
 **準備データ（`SETUP_TABLE`）が0行のとき** — `deleteData` はテーブル名のみを使う（`TableData.java:127-130`）。`insertData` の INSERT 文は `getNonComputedColumns()`＝`dbInfo` 由来で組み立てられ（`TableData.java:139-141`）、`contents` が0件なのでバインドループが回らない（`TableData.java:143`）。
 
-| 形式 | カラム名の要否 | 理由 |
+つまり、**0件テーブルの意味を成り立たせるのにカラム名は要らない。** それでも Excel がカラム名の行を書くのは、表という記法がブロックの区切りをその行に頼っているからである。
+
+| 形式 | カラム名の行 | 理由 |
 |---|---|---|
-| 仕様（データモデル） | **不要** | 0件では参照されない。カラム名は DB スキーマが持つ情報 |
-| YAML | **不要**（書く場所が無い） | `rows: []` が0件表明として成立する。構造でブロックが区切られる |
-| Excel | **不要** | 識別子行の並びから0件ブロックであることを判別できる（4.3） |
+| データモデル（仕様） | 概念として存在しない | 0件では参照されない。カラム名は DB スキーマが持つ情報 |
+| Excel（表） | **必要**（記法どおり） | 識別子行の次の行がカラム名の行と決まっており、そこがブロックの区切りになる |
+| YAML（モデル） | **書く場所が無い** | カラム名は `rows` の先頭要素のキーから決まる（`nablarch-testing-yaml` `YamlSection.java:145-150`）。`rows: []` にはキーが無い |
 
 ### 4.2 問題1 — カラム名0件だと SQL を発行しない（形式共通）
 
@@ -159,7 +177,7 @@ public void loadData() {
 
 「カラム名が無いと SELECT が組めない」も成立しない。カラム名は DB スキーマが持っており、`TableData` は `dbInfo` を保持している。実際、`getColumnNames()` は `columnNames == null` のとき `dbInfo.getColumns(tableName)` にフォールバックする（`TableData.java:501-506`）。**情報源は既にあり、長さ0の配列のときだけそこに繋がっていない。**
 
-### 4.3 問題2 — カラム名行として次の識別子行を食う（表形式リーダ）
+### 4.3 問題2 — 記法違反のデータを黙って別の意味に読む（本体では直さない）
 
 `TableDataParser.java:107-116`
 
@@ -173,30 +191,28 @@ void onTargetTypeFound(List<String> line) {
 }
 ```
 
-`readLine()` が返した行が本当にカラム名行なのかを検証していない。空行は `readTestData()` で既に除去済みなので（`src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:180-182`）、ここで返るのは「次の非空行」である。同じ書き方が `src/main/java/nablarch/test/core/reader/ListMapParser.java:78-82` にもある。`TableDataParser` 固有ではなく、表形式リーダ層に共通する構造である。
+`readLine()` が返した行が本当にカラム名行なのかを検証していない。空行は `readTestData()` で既に除去済みなので（`src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:180-182`）、ここで返るのは「次の非空行」である。同じ書き方が `src/main/java/nablarch/test/core/reader/ListMapParser.java:78-82` にもある。
 
-**(a) 次の行が別ブロックの識別子行のとき** — その行がカラム名として消費される。`doParse` のループはその次から再開し、`nowReading` は真のままなので、**次ブロックのデータ行が手前のテーブルのデータ行として取り込まれる**（`TestDataParsingTemplate.java:287-309`、`TableDataParser.java:97-100`）。次ブロックは消え、手前のテーブルは汚染される。**エラーにも警告にもならない。**
+**識別子行が連続していると、次ブロックが消える。**
 
 ```
-SETUP_TABLE=EMPTY_T     ← 0件にしたいテーブル
+SETUP_TABLE=EMPTY_T     ← カラム名の行を省略した（記法違反）
 SETUP_TABLE=NEXT_T      ← 食われる（カラム名行にされる）
 PK   NAME
 1    foo
 ```
 
-→ `EMPTY_T` のカラム名が `SETUP_TABLE=NEXT_T`、データ2行。**`NEXT_T` は消滅する。**
+→ `EMPTY_T` のカラム名が `SETUP_TABLE=NEXT_T`、データ2行。**`NEXT_T` は消滅する。** `doParse` のループはその次から再開し、`nowReading` は真のままなので、次ブロックのデータ行が手前のテーブルのデータ行として取り込まれる（`TestDataParsingTemplate.java:287-309`、`TableDataParser.java:97-100`）。**エラーにも警告にもならない。**
 
-**(b) 次の行が無い（シート末尾）のとき** — `HeaderLine` が空になり（`HeaderLine.java:32-38`）、カラム名0件の `TableData` ができる。これは問題1に落ちる。
+**これは不具合ではない。** Excel 記法はカラム名の行を必須としており（1.1）、上の入力は記法違反である。記法どおりに書けば発生しない。
 
-**なぜ誤りか** — **(a) は曖昧ではない。パーサは判別できる。** カラム名に `EXPECTED_TABLE=` のような文字列は現れない。`doParse` は既に全行に対して `getDataType()` を実行しており（`TestDataParsingTemplate.java:290`）、判定手段は最初から手元にある。問題は判定できないことではなく、`onTargetTypeFound` が判定せずに無条件で `readLine()` していることである。
-
-なお、識別子行の次が**通常行**のとき、それが「カラム名行」なのか「カラム名を省略したデータ行」なのかは区別できない。ここは現状どおりカラム名行と解釈するしかないが、**0件ブロックにはデータ行が無いのでこの曖昧さに突き当たらない。**
+**本体を直さない判断の意味** — 記法違反のデータは今後も黙って壊れる。エラー化も行わない（理由は 6.1）。converter は既にこの形を書き出さないよう番人を置いており（`nablarch-testing-converter` `XlsFormatWriter.java:233-240`）、5.2 の対応後もカラム名の行を必ず出す。
 
 ---
 
 ## 5. 修正案
 
-### 5.1 #23 — 問題1: 0件テーブルでも DB の実データを読む
+### 5.1 #23（本体 `nablarch-testing`）— 0件テーブルでも DB の実データを読む
 
 | 項目 | 内容 |
 |---|---|
@@ -209,52 +225,63 @@ PK   NAME
 
 **修正後、検証は実際に効く。** 期待値の行ループが0回なのでカラム比較（`Assertion.java:296-303`）は回らないが、`dbDataFound` の走査が余剰行を検出して `an unexpected record is included in the table of [T]` で落ちる（`Assertion.java:306-314`）。PK 値も `dbInfo` 由来のカラムで SELECT した `contents` に入っているので `getPkValues`（`TableData.java:683-691`）は動く。
 
-### 5.2 #24 — 問題2: 識別子行をカラム名行として消費しない
+### 5.2 converter（`nablarch-testing-converter`）— Excel 書き出しでマーカーカラム行を出す
 
-識別子行の次の行が:
+**現状** — 中間モデルのカラム名が0件のブロックを Excel へ書き出そうとすると `IllegalArgumentException` で変換を中止する（`XlsFormatWriter.java:233-240`）。YAML の `rows: []` はカラム名0件の中間モデルになるため、**0件テーブルを含む YAML は Excel へ変換できない**。実際に climan サンプルの `SETUP_TABLE=CLIENT` で変換が止まり、その状態がテストとして固定されている（`SampleConversionTest.java:65-82`）。
 
-| 次の行 | 扱い | 現状からの変更 |
-|---|---|---|
-| 通常行（`DataType.DEFAULT`） | カラム名行として消費する | なし |
-| **識別子行** | **消費しない。カラム名0件ブロックとして確定し、その識別子行は次の反復で処理する** | **本修正** |
-| 無い（シート末尾） | カラム名0件ブロックとして確定 | なし |
+**対応** — 例外の代わりに、識別子行の次へ**マーカーカラム（`[ ]`）だけのカラム名行**を1行出力する。
 
-**エラーにする箇所は無い。** 「0件にカラム名は不要」という仕様と一貫する。
-
-| 項目 | 内容 |
-|---|---|
-| 修正箇所 | `TestDataParsingTemplate` にヘッダ行読み込み用のヘルパを追加し、次行が識別子行の書式なら消費せずに `index` を巻き戻す（`TestDataParsingTemplate.java:352-357`）。`TableDataParser.java:111` と `ListMapParser.java:80` の `readLine()` をこのヘルパに置き換える |
-| ループ側 | 変更不要。巻き戻された識別子行は次の反復で読まれ、同じデータタイプなら `onTargetTypeFound`、別のデータタイプなら `else` 節で `break` と、いずれも正しく処理される（`TestDataParsingTemplate.java:292-308`） |
-| 再現テスト | 識別子行の直後に別の識別子行が続くテストデータを読ませ、現状では後続ブロックが結果に現れず、手前のテーブルにそのデータ行が混入することを示す |
-
-**実装上の注意 — 判定は厳密にしないと既存を壊す。** 既存の `getDataType()` をそのままヘッダ行の判定に流用してはいけない。判定が前方一致だからである（`TestDataParsingTemplate.java:328`）。
-
-```java
-if (dataTypeCell.startsWith(type.getName())) {
+```
+SETUP_TABLE=EMPTY_T
+[空]                    ← カラム名の行として実在する
+SETUP_TABLE=NEXT_T      ← 無傷
+PK   NAME
+1    foo
 ```
 
-`DataType` には `MESSAGE` がある（`src/main/java/nablarch/test/core/reader/DataType.java:44`）。したがって **`MESSAGE_ID` というカラム名は `DataType.MESSAGE` と判定される。** 先頭カラムが `MESSAGE_ID` のテーブルのヘッダ行を「識別子行だから消費しない」と扱うと、そのテーブルはカラム名0件になり、ヘッダ行は `else` 節で `break` されて**ブロックが壊れる**。
+読み戻すと、マーカーカラムは本体が「比較対象外の列」として除外するため（`HeaderLine.java:39-40, 85-91`）、`EMPTY_T` はカラム名0件・0行の `TableData` になる。#23 が入っていれば、そこから DB の全カラムで SELECT され**検証が効く**。カラム名の行が物理的に存在するので**次のブロックも無傷**であり、問題2 は起きない。
 
-判定は識別子の書式そのもの、すなわち **`TYPE=` または `TYPE[groupId]=`** に限定する。`getTypeValue` が `indexOf('=')` を前提にしていること（`TestDataParsingTemplate.java:342-343`）からも、識別子行は `=` を含む形で確定している。カラム名に `=` は現れない。
+**実測（2026-08-19）**: 本体の `TableDataParser` に行リストを直接流して測定した（`DataType.SETUP_TABLE_DATA`／インメモリ `TestDataReader`／スタブ `DbInfo`）。
 
-### 5.3 順序は #23 → #24 で固定。逆順は禁止
-
-**#24 を先に入れると、新たな偽陰性を作る。** これまで書けなかった「識別子行だけの0件ブロック」が書けるようになり、それが問題1に落ちて全部 PASS するからである。
-
-| 単独で入れると | 結果 |
+| 入力 | 結果 |
 |---|---|
-| **#23 のみ** | YAML `rows: []` の偽陰性が解消する。`nablarch-testing-yaml` の `@Ignore` 4件が外せる。Excel は現行記法のまま（0件テーブルは書けない）→ **安全** |
-| **#24 のみ** | Excel で0件テーブルが書けるようになるが、全部 PASS する → **入れてはいけない** |
+| 識別子行のみ（記法違反） | ブロック **2→1件**。`table=EMPTY_T columnNames=[SETUP_TABLE=NEXT_T] rows=2` |
+| 識別子行＋マーカーカラムのみのヘッダ行 | ブロック **2件**。`table=EMPTY_T columnNames=[] rows=0`／`table=NEXT_T columnNames=[PK, NAME] rows=1` |
+| 通常の2ブロック（対照） | ブロック 2件。正常 |
 
-### 5.4 それぞれが解くもの
+マーカーカラムの判定は `startsWith("[") && endsWith("]")` のみである（`HeaderLine.java:85-91`）。本リポジトリの既存データにも同じ形が14件あり実際に動いている（3.2）。
+
+**この案は Excel 記法に反しない。** 公開中の解説書が定める「2行目はそのテーブルのカラム名」（`02_DbAccessTest.rst:110-117`）に対し、マーカーカラム行はカラム名行として実在する。未リリースの `testdata_notation.rst:802`（「カラム名の行は省略できない」）にも反しない。
+
+**なぜ「YAML 出力時にマーカーを出す」では解けないか** — converter は Excel／YAML の双方を中間モデル経由で扱い、**どちらの入口でもマーカーカラムは中間モデルに入る前に除去される**。
+
+| 経路 | 実装 | マーカーの扱い |
+|---|---|---|
+| 中間モデルの契約 | `model/TableDataBlock.java:43` | カラム名リストは「マーカーカラムを含む」 |
+| YAML→中間モデル | `yaml/YamlFormatReader.java:154-170`（159・169） | `nablarch-testing-yaml` の `YamlTableDataBuilder.java:100-115`（105 で `isMarker` 除外・115 で `TableData` 生成）が返したカラム名をそのまま渡す。**除去される** |
+| Excel→中間モデル | `xls/XlsFormatReader.java:149, 161` | 本体 `HeaderLine.java:41` が除外済みのカラム名をそのまま渡す。**除去される** |
+| 中間モデル→YAML | `yaml/YamlFormatWriter.java:274-277` | 行0件なら `rows: []` のみ。カラム名は書かない |
+| 中間モデル→Excel | `xls/XlsFormatWriter.java:233-240` | カラム名0件なら例外（本節で置き換える箇所） |
+
+YAML にマーカーを書いても中間モデルのカラム名は0件のままなので、Excel 書き出し時の例外は消えない。**マーカーを出せるのは中間モデル→Excel の書き出しだけである。** 書き手側の下地は既にあり、マーカー位置を `BlockLayout` に記録して `Fill.MARKER` で塗る処理が実装済みである（`XlsFormatWriter.java:246-249`）。
+
+**往復の可逆性は壊れない。** `RoundTripTest`（`src/test/java/nablarch/test/tool/converter/RoundTripTest.java:34-56`）が検証しているのは**中間モデル → 同一形式 → 中間モデル**の往復であり、XLS 経路・YAML 経路それぞれで独立に見ている。クロス形式（Excel→YAML→Excel）の一致は対象外である。
+
+- XLS 経路: 中間モデル(カラム名0件) → Excel(`[空]`) → 中間モデル(カラム名0件)。**一致する**。現状は例外で往復できないため、可逆になる方向の変更である
+- YAML 経路: 中間モデル(カラム名0件) → `rows: []` → 中間モデル(カラム名0件)。**現状も一致し、変わらない**
+
+**マーカーカラムのセルに何を書くかは converter 側で決める**（`[空]` を想定。未決。9章）。
+
+### 5.3 それぞれが解くもの
 
 | 目的 | 必要な対応 |
 |---|---|
 | YAML を直接読んで検証する（`rows: []` を効かせる） | **#23 のみ**（`YamlTableDataBuilder` は表形式リーダを通らない） |
-| Excel で0件テーブルを素直に書けるようにする | #23 ＋ #24 |
-| converter の変換制約（0件ブロックを Excel へ書き出せない）を解く | #23 ＋ #24 |
+| YAML の0件テーブルを Excel へ変換できるようにする | **converter のマーカーカラム行出力**（5.2） |
+| 変換した Excel で0件テーブルの検証を効かせる | **#23 ＋ converter**（マーカーカラムは本体が除外するのでカラム名0件になり、#23 が DB から補う） |
+| 手書き Excel で0件テーブルを書く | **対応不要**。記載例どおりカラム名の行を書けばよい（1.1） |
 
-converter の制約とは、`nablarch-testing-converter` の `XlsFormatWriter.java:233-240` にある番人である。カラム名を1件も持たないブロックを書き出そうとすると `IllegalArgumentException` を投げる。#24 が入れば、この番人を外して「識別子行だけ」を書き出せるようになる。
+**順序の制約は無い。** #23 と converter の対応は独立に入れられる。ただし converter の対応だけ先に入れた場合、生成された Excel の0件テーブルは #23 が入るまで偽陰性のまま（検証が素通り）になるため、**#23 を先に入れるのが望ましい**。
 
 ---
 
@@ -264,12 +291,11 @@ converter の制約とは、`nablarch-testing-converter` の `XlsFormatWriter.ja
 
 | 案 | 採否理由 |
 |---|---|
-| **YAML 形式のときだけ直す** | 形式によって検証の挙動が変わる。`TableData` は読み込み元の形式を保持していない（コンストラクタは `dbInfo`/`tableName`/`columnNames`/`defaultValues` のみ。`TableData.java:71-75, 85`）ため、現構造とも噛み合わない。Excel 側の事象も残る |
+| **問題2 を本体で直す（識別子行を消費せず、カラム名0件ブロックとして確定する）** | Excel 記法はカラム名の行を必須としており、問題2 は記法違反時にだけ起こる（1.1）。直すと「カラム名行を省略した0件ブロック」という**新しい書き方が Excel に生まれる**。記法を増やす変更であり、YAML 対応に必要でもない（5.3）。converter は記法どおりの Excel しか書かないため、対象PJの運用でも不要 |
+| **問題2 をエラーにする** | 記法違反の検出という意味はあるが、リリース済みの読み込み挙動を変える。実測で該当0件（3.2）であり、払うべきコストに見合う便益が観測できていない。将来の課題として 8章に申し送る |
+| **YAML 形式のときだけ問題1を直す** | 形式によって検証の挙動が変わる。`TableData` は読み込み元の形式を保持していない（コンストラクタは `dbInfo`/`tableName`/`columnNames`/`defaultValues` のみ。`TableData.java:71-75, 85`）ため、現構造とも噛み合わない |
 | **YAML に `columns:` フィールドを追加する** | カラム名は DB スキーマが持つ情報であり、テストデータに二重に持たせるものではない。YAML はデータモデルをそのまま表す形式であり、現在のスキーマがあるべき姿である |
-| **問題2 で識別子行を食うケースをエラーにする** | 曖昧ではなく判別できるので、エラーにする理由が無い。「0件にカラム名は不要」という仕様と矛盾する |
-| **問題2 でカラム名行が無い（シート末尾）ケースをエラーにする** | 現在動作している「識別子行のみでテーブルをクリアする」書き方を壊す。かつ問題1を直せば偽陰性は消えるので不要 |
-| **「明示的に0件と宣言されたテーブル」にだけカラムを補う（フラグ案）** | 後方互換は完全に不変にできる（`TableData` に「明示的0件宣言」フラグを持たせ、YAML の `rows: []` と #24 修正後の Excel でだけ立てる）。しかし既存 Excel の「シート末尾に `EXPECTED_TABLE=X` だけ書く」を素通りさせ続ける判断になり、**嘘の合格を返す経路を仕様として恒久化する**。実測で払うべき互換コストが観測できていない（3.2）ため、採らない |
-| **#24 を見送り、converter のマーカーカラム出力で代替する** | マーカーカラム案（7章）が救うのは converter が生成した Excel だけであり、手書き Excel で識別子行が連続した場合に後続ブロックが消える事象（4.3(a)）は残る。またマーカーカラム行というノイズが記法に残り続ける。**恒久対応としては #24 が必要** |
+| **「明示的に0件と宣言されたテーブル」にだけカラムを補う（フラグ案）** | 後方互換は完全に不変にできる（`TableData` に「明示的0件宣言」フラグを持たせ、YAML の `rows: []` でだけ立てる）。しかし既存 Excel の「シート末尾に `EXPECTED_TABLE=X` だけ書く」を素通りさせ続ける判断になり、**嘘の合格を返す経路を仕様として恒久化する**。実測で払うべき互換コストが観測できていない（3.2）ため、採らない |
 
 ### 6.2 設定フラグを設けない理由
 
@@ -277,8 +303,8 @@ converter の制約とは、`nablarch-testing-converter` の `XlsFormatWriter.ja
 
 **この案は採らない。** 判断の根拠は次の2点である（案件担当者の判断・2026-08-19）。
 
-1. **問題2があるため、カラム名行を書かないブロックは利用PJで成立していない**（3.1）。動いているように見えているものは2つのバグが打ち消し合っているだけであり、利用PJ側で見直すべき書き方である
-2. **したがって、問題1の修正で NG になるテストは、利用PJ側が見直す対象である。** 設定で温存することは、その見直しを先送りするだけになる
+1. **#23 の分岐に入るのは記法違反のデータだけである**（3.1）。記法どおりに書かれたデータは1件も挙動が変わらない
+2. **したがって、#23 で NG になるテストは、利用PJ側が見直す対象である。** 設定で温存することは、その見直しを先送りするだけになる
 
 加えて、設定を残すと「0件テーブルの検証が効くかどうかが設定に依存する」という状態が恒久化し、テスティングフレームワークとして筋が悪い。実測でも本リポジトリの該当は0件である（3.2）。
 
@@ -286,37 +312,7 @@ converter の制約とは、`nablarch-testing-converter` の `XlsFormatWriter.ja
 
 ## 7. 本体リリースを待たない暫定策（対象PJ向け）
 
-対象PJは、本体の #23・#24 を待たずに `rows: []` 相当を使える。**本体クラスの上書きは不要で、本体対応が入ったら順に外せる形になっている。**
-
-### 7.1 問題2の回避 — converter がマーカーカラム行を出す
-
-0件ブロックを Excel へ書き出すとき、識別子行の次に**マーカーカラム（`[ ]`）のみのヘッダ行**を1行出す。
-
-```
-SETUP_TABLE=EMPTY_T
-[空]                    ← これが身代わりに食われる
-SETUP_TABLE=NEXT_T      ← 無傷
-PK   NAME
-1    foo
-```
-
-食われるべき行がそこにあるので次のブロックは無事であり、マーカーカラムは本体が「比較対象外の列」として除外するため（`HeaderLine.java:39-40, 85-91`）、`EMPTY_T` はカラム名0件・0行のテーブルとして読まれる。
-
-**実測（2026-08-19）**: 本体の `TableDataParser` に行リストを直接流して測定した（`DataType.SETUP_TABLE_DATA`／インメモリ `TestDataReader`／スタブ `DbInfo`）。
-
-| 入力 | 結果 |
-|---|---|
-| 識別子行のみ（現状の問題2） | ブロック **2→1件**。`table=EMPTY_T columnNames=[SETUP_TABLE=NEXT_T] rows=2` |
-| 識別子行＋マーカーカラムのみのヘッダ行 | ブロック **2件**。`table=EMPTY_T columnNames=[] rows=0`／`table=NEXT_T columnNames=[PK, NAME] rows=1` |
-| 通常の2ブロック（対照） | ブロック 2件。正常 |
-
-マーカーカラムの判定は `startsWith("[") && endsWith("]")` のみである（`HeaderLine.java:85-91`）。本リポジトリの既存データにも同じ形が14件あり実際に動いている（3.2）。
-
-**この案は記法に反しない。** 公開中の解説書が定める「2行目はそのテーブルのカラム名」（`02_DbAccessTest.rst:110-117`）に対し、マーカーカラム行はカラム名行として実在するため、記法の変更は不要である。未リリースの `testdata_notation.rst:802`（「カラム名の行は省略できない」）にも反しない。
-
-converter 側では `XlsFormatWriter.java:233-240` の番人を、例外ではなくマーカーカラム行の出力に置き換えることになる。
-
-### 7.2 問題1の回避 — PJ 側で `testDataParser` を包む
+#23 が本体に入って `install` されるまでの間、対象PJは PJ 側の実装で同じ効果を得られる。**本体クラスの上書きは不要で、本体対応が入ったら設定から外すだけで済む。**
 
 `TestDataParser` は `SystemRepository.get("testDataParser")` で解決される（`src/main/java/nablarch/test/TestSupport.java:404`）。PJ 側で `BasicTestDataParser` を包む実装を登録し、`getExpectedTableData` の戻り値を後処理すればよい。
 
@@ -352,14 +348,7 @@ public class ColumnFillingTestDataParser implements TestDataParser {
 - 期待値検証の入口は `DbAccessTestSupport#assertTableEquals` → `TestSupport#getExpectedTableData` の1本（`DbAccessTestSupport.java:362`、`TestSupport.java:278-281`）。`TestShot` も `AbstractHttpRequestTestTemplate` もここを通る
 - 準備データ・マスタデータは `loadData()` を通らないので包む必要がない（3.3）
 
-**問題2はPJ側では実質対応できない。** `onTargetTypeFound` は package-private（`TestDataParsingTemplate.java:63`）、巻き戻しに使う `index` は private（`TestDataParsingTemplate.java:40`）であるため、7.1 の converter 側対応で回避する。
-
-### 7.3 本体対応が入った後
-
-| | 暫定策 | #23・#24 投入後 |
-|---|---|---|
-| 問題2 | converter がマーカーカラム行を出す | converter は「識別子行だけ」を書き出すよう切り替える。マーカーカラムのノイズが消える |
-| 問題1 | PJ が `testDataParser` の wrapper を登録する | wrapper を設定から外すだけ |
+**converter 側（5.2）には暫定策が無い。** 現状は変換が中止されるため、0件テーブルを含む YAML は Excel へ変換できない。5.2 の対応が入るまでは、該当テーブルのカラム名行を手で足すか、YAML 側で1行だけダミーを持たせる等の回避が要る（未検討）。
 
 ---
 
@@ -368,8 +357,10 @@ public class ColumnFillingTestDataParser implements TestDataParser {
 | 項目 | 対応先 | 前提 |
 |---|---|---|
 | `@Ignore` 4件の解除と `YamlTableDataBuilder.java:110-114` の FIXME 削除 | `nablarch-testing-yaml`（別リポジトリ・別セッション） | #23 が本体に入り `install` された後でないと検証できない |
-| マーカーカラム行の出力対応（`XlsFormatWriter.java:233-240` の番人の置き換え） | `nablarch-testing-converter` | 暫定策として #24 より先に必要。#24 投入後は「識別子行だけ」へ切り替え |
-| 解説書の記述更新 | `nablarch-document` | 9章 |
+| **マーカーカラム行の出力対応**（`XlsFormatWriter.java:233-240` の番人の置き換え。5.2） | `nablarch-testing-converter` | #23 とは独立に着手可。ただし #23 より先に入れると、変換後の Excel は #23 が入るまで偽陰性のまま |
+| 上に伴うテストの書き換え | `nablarch-testing-converter` | 番人の存在を前提にした3件。`XlsFormatWriterTest.java:451`（テーブル）／`:471`（`LIST_MAP`）／`SampleConversionTest.java:65-82`（climan サンプルの変換が中止されることの確認）。`SampleConversionTest` の Javadoc は「本体が対応したら変換が成功して2冊出力されるテストへ戻す」と予告している |
+| 記法違反（識別子行の連続）のエラー化 | `nablarch-testing`（将来の課題） | 今回は見送り（6.1）。記法違反データが黙って壊れる状態は残る |
+| 解説書の記述更新 | `nablarch-document` | 下記 |
 
 `nablarch-testing-yaml` で `@Ignore` されている4件（revert コミット `190cc9a` のメッセージに記載）:
 
@@ -380,21 +371,21 @@ public class ColumnFillingTestDataParser implements TestDataParser {
 
 ### 解説書（`nablarch-document`）への反映
 
-- **`testdata_notation.rst:802` は #24 の投入に合わせて書き直す。** この文（「データ行を書かない場合でも、カラム名の行は省略できない。識別子行の次の行がカラム名の行として読み込まれるため…」）は 2026-08-14 に `ntf-yaml-support` ブランチへ追加されたもので**未リリース**であり、現行挙動＝問題2をそのまま記述したものである。#24 が入れば「**データ行が0件の場合に限り**カラム名の行を省略できる。省略した場合は0件のテーブルとして扱われる」に置き換わる。**リリース前に直せるため、公開済み記述の訂正にはならない**
-- 公開中の解説書には、カラム名行を省略した場合の扱いに関する記述が無い（`02_DbAccessTest.rst:110-117, 228-235` は「2行目はカラム名」と定義するのみ）。#23・#24 の投入は、公開済みの記述と矛盾しない
+- **`testdata_notation.rst:802`（「データ行を書かない場合でも、カラム名の行は省略できない」）は変更不要。** Excel 記法として正しく、#23 でも変わらない
 - **YAML の `rows: []` が0件検証として有効**である旨を明記する。`ja/development_tools/` 配下の rst に `rows: []` の記述は無い（未確認: この件数は再確認していない）
-- 公式の記載例はいずれもカラム名行を書いているため、**例の変更は不要**
+- 公式の記載例はいずれもカラム名行を書いており、**例の変更は不要**
+- converter が出力するマーカーカラム行（5.2）を記法の説明に載せるかは、converter の対応内容が固まってから解説書チームが判断する
 
 ---
 
 ## 9. 未確認事項
 
-- **対象PJのテストデータは未走査**（3.5）。本リポジトリ以外での該当パターンの出現頻度は確認していない
+- **対象PJのテストデータは未走査**（3.5）。記法違反データの出現頻度は確認していない
 - **カラム名0件かつ行が1件以上ある期待値**（Excel でマーカーカラムのみのヘッダにデータ行が続く形）の #23 修正後の挙動。現状は実データ0行扱いで PK 不一致 fail、修正後は `expected.getValue()` 側に値が無く別の失敗の仕方になる可能性がある
-- **先頭カラム名がデータタイプ名で始まるテーブル**（`MESSAGE_ID` 等）が既存テストデータに実在するか。本リポジトリの xls 走査では0件（3.2）だが、対象PJは未確認
-- **実 `.xlsx` を通した経路**。7.1 の実測はパーサ層に行リストを直接流したものであり、`XlsReader` の空セル処理を挟んだ往復では実行していない
-- **Excel→YAML の逆変換**でマーカーカラム行が `rows: []` に戻るか。converter 側の `XlsFormatReader` と XLS-08 の正規化が絡む。未確認
-- **マーカーカラムのセルに何を書くかの取り決め**（`[空]` など）。未決
+- **先頭カラム名がデータタイプ名で始まるテーブル**（`MESSAGE_ID` 等）が既存テストデータに実在するか。本リポジトリの xls 走査では0件（3.2）だが、対象PJは未確認。`getDataType()` の判定が前方一致であるため（`TestDataParsingTemplate.java:328`）、将来ここを触る場合の注意点として残す
+- **実 `.xlsx` を通した経路**。5.2 の実測はパーサ層に行リストを直接流したものであり、`XlsReader` の空セル処理を挟んだ往復では実行していない
+- **マーカーカラムのセルに何を書くかの取り決め**（`[空]` など）。未決。converter 側で決める
+- **0件テーブルを含む YAML を Excel へ変換したい場合の暫定回避策**（7章）。未検討
 
 ---
 
@@ -416,22 +407,27 @@ public class ColumnFillingTestDataParser implements TestDataParser {
 | 識別子行の次の行を無条件にカラム名行として読む | `src/main/java/nablarch/test/core/reader/TableDataParser.java:107-116` |
 | 同じ書き方が `ListMapParser` にもある | `src/main/java/nablarch/test/core/reader/ListMapParser.java:78-82` |
 | 読む行が無ければカラム名0件になる | `src/main/java/nablarch/test/core/reader/HeaderLine.java:32-38` |
-| マーカーカラムを除外して有効カラム名を作る | `src/main/java/nablarch/test/core/reader/HeaderLine.java:39-40, 47-50` |
+| マーカーカラムを除外して有効カラム名を作る | `src/main/java/nablarch/test/core/reader/HeaderLine.java:39-41, 47-50` |
 | マーカーカラムの判定は `[` 始まり `]` 終わり | `src/main/java/nablarch/test/core/reader/HeaderLine.java:85-91` |
 | 空行は読み込み時に除去される | `src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:180-182` |
-| `onTargetTypeFound` は package-private／`index` は private | `src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:63, 40` |
 | `doParse` のループ構造 | `src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:284-310` |
 | `getDataType()` は前方一致 | `src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:321-333`（判定は328行目） |
-| 識別子行は `=` を含む | `src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:341-344` |
-| `readLine()` は `index` を進めて返す | `src/main/java/nablarch/test/core/reader/TestDataParsingTemplate.java:352-357` |
-| `DataType.MESSAGE` の存在 | `src/main/java/nablarch/test/core/reader/DataType.java:44` |
 | 期待値検証の入口 | `src/main/java/nablarch/test/core/db/DbAccessTestSupport.java:362`／`src/main/java/nablarch/test/TestSupport.java:278-281` |
 | `testDataParser` は `SystemRepository` 解決 | `src/main/java/nablarch/test/TestSupport.java:404` |
 | `BasicTestDataParser#setDbInfo` | `src/main/java/nablarch/test/core/reader/BasicTestDataParser.java:221` |
-| YAML はカラム名を `rows` の先頭要素から解決する | `nablarch-testing-yaml` `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java:88` |
+| YAML はカラム名を `rows` の先頭要素のキーから解決する | `nablarch-testing-yaml` `src/main/java/nablarch/test/core/reader/yaml/YamlSection.java:145-150`（呼び出しは `yaml/YamlTableDataBuilder.java:88`） |
+| YAML 読み込みはマーカーカラムを除外する | `nablarch-testing-yaml` `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java:100-115`（105・115）／`yaml/YamlSection.java:155-157` |
 | 本事象の FIXME コメント | `nablarch-testing-yaml` `src/main/java/nablarch/test/core/reader/yaml/YamlTableDataBuilder.java:110-114` |
 | 差し戻しの経緯と `@Ignore` した4件 | `nablarch-testing-yaml` コミット `190cc9a` |
+| 中間モデルのカラム名は「マーカーカラムを含む」契約 | `nablarch-testing-converter` `src/main/java/nablarch/test/tool/converter/model/TableDataBlock.java:43` |
+| YAML→中間モデルでカラム名は本体アダプタ由来（マーカー除去済み） | `nablarch-testing-converter` `src/main/java/nablarch/test/tool/converter/yaml/YamlFormatReader.java:154-170`（159・169） |
+| Excel→中間モデルでカラム名は本体アダプタ由来（マーカー除去済み） | `nablarch-testing-converter` `src/main/java/nablarch/test/tool/converter/xls/XlsFormatReader.java:149, 161` |
+| 中間モデル→YAML は行0件なら `rows: []` のみでカラム名を書かない | `nablarch-testing-converter` `src/main/java/nablarch/test/tool/converter/yaml/YamlFormatWriter.java:274-277` |
 | カラム名0件ブロックを書き出せない番人 | `nablarch-testing-converter` `src/main/java/nablarch/test/tool/converter/xls/XlsFormatWriter.java:233-240` |
+| マーカーカラムの版面記録（書き手側の下地） | `nablarch-testing-converter` `src/main/java/nablarch/test/tool/converter/xls/XlsFormatWriter.java:246-249` |
+| 往復テストは中間モデル→同一形式→中間モデルのみ（クロス形式は対象外） | `nablarch-testing-converter` `src/test/java/nablarch/test/tool/converter/RoundTripTest.java:34-56` |
+| 番人を前提にした既存テスト | `nablarch-testing-converter` `src/test/java/nablarch/test/tool/converter/xls/XlsFormatWriterTest.java:451, 471`／`src/test/java/nablarch/test/tool/converter/SampleConversionTest.java:65-82` |
 | 公開中の記法定義（1行目=識別子行／2行目=カラム名／3行目～=データ行） | `nablarch-document` `origin/main` `ja/development_tools/testing_framework/guide/development_guide/06_TestFWGuide/02_DbAccessTest.rst:110-117, 228-235` |
-| 「カラム名の行は省略できない」（**未リリース**。`origin/main` に同記述なし） | `nablarch-document`（`ntf-yaml-support`）`testdata_notation.rst:802`（`b75f1d7`・2026-08-14 追加） |
+| 0件テーブルの記載例（カラム名の行までを記述し、データ行を記述しない） | `nablarch-document`（`ntf-yaml-support`）`ja/development_tools/testing_framework/implementation/testdata_examples.rst`「0件のテーブルデータを記述する」（`b75f1d7`・2026-08-14 追加） |
+| 「カラム名の行は省略できない」（`origin/main` に同記述なし。現行 Excel 記法の明文化） | `nablarch-document`（`ntf-yaml-support`）`testdata_notation.rst:802`（`b75f1d7`・2026-08-14 追加） |
 | `EXPECTED_TABLE` の定義（テスト実行後の期待するデータベースのデータ） | `nablarch-document` `origin/main` `06_TestFWGuide/01_Abstract.rst:275-276` |
