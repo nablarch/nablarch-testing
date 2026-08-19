@@ -110,11 +110,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-18
-- **Last completed**: 期待値0件テーブル検証の偽陰性（新事象）の対応方針を検討し、`docs/pr75/docs/ntf-empty-table-assertion.md` に整理（steering未起票）
-- **Next**: 同文書の内容にユーザーの合意を得る。合意後、#23（問題1: `TableData#loadData` が0件カラムでもDBを読む）・#24（問題2: 表形式リーダが識別子行をカラム名行として食わない）を起票してから、#21 の再現テスト作成に着手する
-- **Notes**: ブランチ `convert-testdata-excel-to-text` / ドラフトPR lovaizu/nablarch-testing#1。Phase 1〜6 はユーザー承認済みでマージ待ち。#21・#22 は解説書チームからの4事象判定依頼のうち事象3・4のTDD対応で、着手はユーザーの明示的な合図待ち。**未決事項3件**: (1) `ntf-empty-table-assertion.md` の内容合意、(2) 同文書を上記「成果物」表に追加するか、(3) #23・#24 の起票可否。新事象は #21・#22 とは別系統（後方互換影響あり）で、問題1は既存テストが新たにFAILし得るため段階投入の要否も要判断。解説書チームへの回答報告（4事象＋新事象）は本steeringのスコープ外・別途必要。
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 ---
 
