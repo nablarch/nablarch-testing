@@ -148,15 +148,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
-session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
-so only a genuinely suspended session reads `paused`.)
-
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-19
+- **Last completed**: 追加フェーズのタスクは未着手（#21〜#23 すべて未チェック）。直近の成果は `docs/ntf-empty-table-assertion.md` を Nablarch 本体チーム宛の変更提案書へ組み替えたこと（`2315be0`）
+- **Next**: #21 SendSyncSupport のYAML形式再読み込み対応
+- **Notes**: branch `convert-testdata-excel-to-text`（push 済み・HEAD `2315be0`）。**ユーザーから「再開後に21を進めて」の着手合図あり。再開後は改めて確認せず #21 の Steps 1 から始めてよい**。最初の具体アクションは失敗する再現テストの追加（リクエストID同名ディレクトリ配下のファイルを書き換え後、2回目の読み出しで1件目の応答電文に戻らないことを示す）。テストのみを先にコミットしてから `SendSyncSupport.createTestDataInfo` を直す。ブロッカーなし。未決事項2件——(1) `ntf-empty-table-assertion.md` を Nablarch 本体チームへ渡す段取り（提案書は完成済み）、(2) converter が出すマーカーカラムのセルに何を書くか（`[空]` を想定・converter 側で決定）。スコープ外の申し送り3件は同文書 付録B。user-deferred な未追跡パスなし
 
 ---
 
