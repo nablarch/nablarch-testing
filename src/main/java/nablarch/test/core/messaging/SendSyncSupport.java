@@ -335,7 +335,7 @@ public class SendSyncSupport {
     /**
      * メッセージを生成する。
      * <p>
-     * 読み込むテストデータファイルのタイムスタンプが変更されていない場合は、キャッシュからメッセージを取得する。
+     * 読み込むテストデータのタイムスタンプが変更されていない場合は、キャッシュからメッセージを取得する。
      * </p>
      * @param dataType データタイプ
      * @param requestId リクエストID
@@ -357,8 +357,8 @@ public class SendSyncSupport {
         TestDataInfo testDataInfo;
         if (fileCache.containsKey(cacheKey)) {
             TestDataInfo cachedTestDataInfo = fileCache.get(cacheKey);
-            // 読み込むテストデータファイルのタイムスタンプが変更された場合、再読み込みを行う
-            if (file.lastModified() != cachedTestDataInfo.lastModified) {
+            // 読み込むテストデータのタイムスタンプが変更された場合、再読み込みを行う
+            if (getLastModified(file) != cachedTestDataInfo.lastModified) {
                 testDataInfo = createTestDataInfo(dataType, requestId, basePath,
                         resourceName, file, cacheKey);
             } else {
@@ -387,9 +387,35 @@ public class SendSyncSupport {
             String basePath, String resourceName, File file, String cacheKey) {
         TestDataInfo testDataInfo;
         MessagePool pool = getMessages(basePath, resourceName, dataType, requestId);
-        testDataInfo = new TestDataInfo(file.lastModified(), pool, basePath, resourceName);
+        testDataInfo = new TestDataInfo(getLastModified(file), pool, basePath, resourceName);
         fileCache.put(cacheKey, testDataInfo);
         return testDataInfo;
+    }
+
+    /**
+     * テストデータの最終更新日時を取得する。
+     * <p>
+     * テストデータがディレクトリの場合（ベースパスに拡張子が設定されていない場合）、
+     * ディレクトリ自体の最終更新日時は配下のファイルの内容が書き換えられても変化しない。
+     * このため、ディレクトリ自体および配下のファイルの最終更新日時のうち、最大のものを最終更新日時とする。
+     * </p>
+     * @param file テストデータのファイルまたはディレクトリ
+     * @return 最終更新日時
+     */
+    private long getLastModified(File file) {
+        long lastModified = file.lastModified();
+        if (!file.isDirectory()) {
+            return lastModified;
+        }
+        File[] files = file.listFiles();
+        if (files == null) {
+            // ディレクトリの一覧が取得できない場合は、ディレクトリ自体の最終更新日時を使用する
+            return lastModified;
+        }
+        for (File child : files) {
+            lastModified = Math.max(lastModified, getLastModified(child));
+        }
+        return lastModified;
     }
     
     /**
