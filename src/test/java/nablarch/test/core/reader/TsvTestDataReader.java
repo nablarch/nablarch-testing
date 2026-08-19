@@ -4,11 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import nablarch.core.util.StringUtil;
 
 /**
  * タブ区切りテキストからテストデータを読み込むテスト用の{@link TestDataReader}実装クラス。<br/>
@@ -36,6 +37,9 @@ public class TsvTestDataReader implements TestDataReader {
 
     /** {@inheritDoc} */
     public void open(String path, String dataName) {
+        if (StringUtil.isNullOrEmpty(dataName)) {
+            throw new IllegalArgumentException("dataName must not be null or empty.");
+        }
         File file = toFile(path, dataName);
         try {
             lines = Files.readAllLines(file.toPath(), CHARSET).iterator();
@@ -56,7 +60,7 @@ public class TsvTestDataReader implements TestDataReader {
             return null;
         }
         // 行末の空セルも列として扱うため、limitに負数を指定する。
-        return new ArrayList<String>(Arrays.asList(COLUMN_SEPARATOR.split(lines.next(), -1)));
+        return Arrays.asList(COLUMN_SEPARATOR.split(lines.next(), -1));
     }
 
     /** {@inheritDoc} */

@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -335,7 +336,7 @@ public class SendSyncSupport {
     /**
      * メッセージを生成する。
      * <p>
-     * 読み込むテストデータのタイムスタンプが変更されていない場合は、キャッシュからメッセージを取得する。
+     * 読み込むテストデータのタイムスタンプ署名が変更されていない場合は、キャッシュからメッセージを取得する。
      * </p>
      * @param dataType データタイプ
      * @param requestId リクエストID
@@ -354,22 +355,26 @@ public class SendSyncSupport {
         
         String cacheKey = createCacheKey(dataType, requestId);
 
+        // テストデータの読み込み中に行われた書き換えを取りこぼさないよう、
+        // 実データを読み込む前にタイムスタンプ署名を1度だけ取得し、比較にも記録にも同じ値を使用する。
+        long timestampSignature = getTimestampSignature(file);
+
         TestDataInfo testDataInfo;
         if (fileCache.containsKey(cacheKey)) {
             TestDataInfo cachedTestDataInfo = fileCache.get(cacheKey);
-            // 読み込むテストデータのタイムスタンプが変更された場合、再読み込みを行う
-            if (getLastModified(file) != cachedTestDataInfo.lastModified) {
+            // 読み込むテストデータのタイムスタンプ署名が変更された場合、再読み込みを行う
+            if (timestampSignature != cachedTestDataInfo.timestampSignature) {
                 testDataInfo = createTestDataInfo(dataType, requestId, basePath,
-                        resourceName, file, cacheKey);
+                        resourceName, timestampSignature, cacheKey);
             } else {
                 cachedTestDataInfo.incrementNo(); // 読み込む番号をインクリメントする
                 testDataInfo = cachedTestDataInfo;
             }
         } else {
             testDataInfo = createTestDataInfo(dataType, requestId, basePath,
-                    resourceName, file, cacheKey);
+                    resourceName, timestampSignature, cacheKey);
         }
-        
+
         return testDataInfo;
     }
 
@@ -379,30 +384,47 @@ public class SendSyncSupport {
      * @param requestId リクエストID
      * @param basePath ベースパス
      * @param resourceName リソース名
-     * @param file ファイル
+     * @param timestampSignature テストデータのタイムスタンプ署名
      * @param cacheKey キャッシュのキー
      * @return ロードしたメッセージ
      */
     private TestDataInfo createTestDataInfo(DataType dataType, String requestId,
-            String basePath, String resourceName, File file, String cacheKey) {
+            String basePath, String resourceName, long timestampSignature, String cacheKey) {
         TestDataInfo testDataInfo;
         MessagePool pool = getMessages(basePath, resourceName, dataType, requestId);
-        testDataInfo = new TestDataInfo(getLastModified(file), pool, basePath, resourceName);
+        testDataInfo = new TestDataInfo(timestampSignature, pool, basePath, resourceName);
         fileCache.put(cacheKey, testDataInfo);
         return testDataInfo;
     }
 
     /**
-     * テストデータの最終更新日時を取得する。
+     * テストデータのタイムスタンプ署名を取得する。
+     * <p>
+     * テストデータがファイルの場合（ベースパスに拡張子が設定されている場合）は、
+     * そのファイルの最終更新日時をそのまま返却する。
+     * </p>
      * <p>
      * テストデータがディレクトリの場合（ベースパスに拡張子が設定されていない場合）、
      * ディレクトリ自体の最終更新日時は配下のファイルの内容が書き換えられても変化しない。
-     * このため、ディレクトリ自体および配下のファイルの最終更新日時のうち、最大のものを最終更新日時とする。
+     * このため、ディレクトリ自体および配下の全エントリの最終更新日時を畳み込んだ値を署名とする。
+     * 最大値を採らないのは、未来日時の最終更新日時を持つファイルが1つでも存在すると、
+     * 以降どのファイルを書き換えても値が変化せず、再読み込みが恒久的に行われなくなるためである。
+     * </p>
+     * <p>
+     * {@link File#listFiles()} が返すエントリの順序は保証されないため、
+     * 走査順によって署名が変化しないよう、畳み込む前にソートする。
+     * </p>
+     * <p>
+     * なお、畳み込んだ値であるため、内容が異なるにも関わらず署名が一致し
+     * 再読み込みが行われない可能性が確率的に残る。
+     * </p>
+     * <p>
+     * このメソッドの戻り値をテストから検証するため、可視性をpackage privateとしている。
      * </p>
      * @param file テストデータのファイルまたはディレクトリ
-     * @return 最終更新日時
+     * @return タイムスタンプ署名
      */
-    private long getLastModified(File file) {
+    long getTimestampSignature(File file) {
         long lastModified = file.lastModified();
         if (!file.isDirectory()) {
             return lastModified;
@@ -412,12 +434,15 @@ public class SendSyncSupport {
             // ディレクトリの一覧が取得できない場合は、ディレクトリ自体の最終更新日時を使用する
             return lastModified;
         }
+        // 走査順に依存しない署名とするため、エントリをソートしてから畳み込む
+        Arrays.sort(files);
+        long signature = lastModified;
         for (File child : files) {
-            lastModified = Math.max(lastModified, getLastModified(child));
+            signature = signature * 31 + getTimestampSignature(child);
         }
-        return lastModified;
+        return signature;
     }
-    
+
     /**
      * 読み込んだテストデータをキャッシュするためのキーを生成する。
      * @param dataType データタイプ
@@ -461,8 +486,8 @@ public class SendSyncSupport {
     /** テストデータ情報 */
     private static class TestDataInfo {
         
-        /** 最終更新日時 */
-        private long lastModified;
+        /** テストデータのタイムスタンプ署名 */
+        private long timestampSignature;
         /** メッセージ */
         private MessagePool messagePool;
         /** 読み込む番号 */
@@ -474,13 +499,13 @@ public class SendSyncSupport {
 
         /**
          * コンストラクタ
-         * @param lastModified 最終更新日時
+         * @param timestampSignature テストデータのタイムスタンプ署名
          * @param messagePool メッセージ
          * @param basePath ベースパス名
          * @param resourceName リソース名
          */
-        TestDataInfo(long lastModified, MessagePool messagePool, String basePath, String resourceName) {
-            this.lastModified = lastModified;
+        TestDataInfo(long timestampSignature, MessagePool messagePool, String basePath, String resourceName) {
+            this.timestampSignature = timestampSignature;
             this.messagePool = messagePool;
             this.basePath = basePath;
             this.resourceName = resourceName;

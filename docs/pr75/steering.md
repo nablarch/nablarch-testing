@@ -59,7 +59,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - `pom.xml` の `M` 差分（parent `6-NEXT-SNAPSHOT`→`6u3`）は既知のローカル変更。コミット不要
 - **Java/Maven 環境**: OpenJDK 17 (Temurin-17.0.19) + Maven 3.9.9。`compile`・`test`・`install` はすべて Java 17 で実行する
 - テスト実行は必ず `LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test`
-- 残存 4E（`MockHttpRequestTest`/`MockServletExecutionContextTest`）は PR75 非起因の既知事象
+- 以前は残存 4E（`MockHttpRequestTest`/`MockServletExecutionContextTest`）を PR75 非起因の既知事象としていたが、2026-08-19 の全件実行では発生しない（`LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o clean test` → `Tests run: 841, Failures: 0, Errors: 0, Skipped: 7`。実装エキスパートと Verification エキスパートが別々に実行し同結果）。**テストの失敗・エラーは原則すべて対処対象として扱う**
 - **カバレッジ取得**: 親 POM に JaCoCo Offline Instrumentation 設定済み。`pom.xml` 変更不要。
   ```
   mvn clean jacoco:instrument test jacoco:restore-instrumented-classes jacoco:report \
@@ -88,7 +88,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 - [x] 失敗する再現テストを追加する（リクエストID同名ディレクトリ配下のファイルを書き換え後、2回目の読み出しで1件目の応答電文に戻らないことを示す）→ `df0ea24`
 - [x] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）→ `df0ea24`
-- [x] `SendSyncSupport.createTestDataInfo` を修正する（`file.isDirectory()`の場合、配下ファイルの最大`lastModified()`を実効タイムスタンプとする）→ `15f4dbb`
+- [x] `SendSyncSupport.createTestDataInfo` を修正する（`file.isDirectory()`の場合、ディレクトリ自体と配下エントリの`lastModified()`を**順序非依存に畳み込んだ署名**を実効値とする。`listFiles()` の順序は保証されないため畳み込み前に `Arrays.sort` する。署名は `createTestDataInfo(DataType, String)` の冒頭で1度だけ、`getMessages` の**前**に採る）→ `15f4dbb`（最大値方式で実装）→ 方式変更コミットで署名方式へ差し替え
 - [x] 再現テストが通ることを確認する
 - [x] 既存テスト（`MockMessagingContextTest#test6`含む）が壊れていないことを確認する
 - [x] 修正をコミットする → `15f4dbb`
@@ -103,7 +103,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 | # | 指摘 | 出所 | 対応 |
 |---|---|---|---|
-| A | `SendSyncSupport.java:405-419` の `Math.max` 集約は、ディレクトリ内に自分より新しい mtime のファイルがあるとタイムスタンプの巻き戻る変更を隠す。呼び出し側の判定は `!=`（`:361`）で「値が変わったか」を見ているため、ファイル単体を見ていた従来と意味が噛み合わない。`cp -p`・`unzip`・`tar -x`・`rsync --times` による復元やクロックスキューで踏みうる | Craft (High) | **ユーザー判断待ち。** 最大値のまま確定するか、全エントリの `lastModified()` を順序非依存に畳み込んだ署名へ変更するか。後者は本 Steps の記載（「最大`lastModified()`」）からの逸脱であり、かつ released 本体プロダクションコードの変更方式のため Rules により事前相談が必要。**コーディネータの推奨は署名方式**（既存が依拠する `!=` の意味を保てる／本PJの変換ツール自身がテストデータを生成する側にいる） |
+| A | `SendSyncSupport.java:405-419` の `Math.max` 集約は、ディレクトリ内に自分より新しい mtime のファイルがあるとタイムスタンプの巻き戻る変更を隠す。呼び出し側の判定は `!=`（`:361`）で「値が変わったか」を見ているため、ファイル単体を見ていた従来と意味が噛み合わない。`cp -p`・`unzip`・`tar -x`・`rsync --times` による復元やクロックスキューで踏みうる | Craft (High) | **署名方式へ変更するで確定（2026-08-19 ユーザー判断）。** 決め手は巻き戻りではなく、**未来日時のファイル1つで最大値が張り付き、以後恒久的に再読み込みされなくなる経路**。`fileCache` は static（`SendSyncSupport.java:52`）で JVM 存続中残るため気づく契機がなく、かつ未来 mtime は指摘 F のとおり現行テスト自身が作っている |
 | B | 再読み込み時に `getLastModified` が比較用（`:361`）と記録用（`:390`）で計2回ツリーを歩く。かつ `:389` の実データ読み込みの**後**に `:390` でタイムスタンプを採るため、読み込み中の書き換えが「読み込み済み」として記録され以後検知されない | Craft (High) | 修正する。`createTestDataInfo(DataType, String)` の冒頭で1度だけ採取し `long` を引数で渡す。`getMessages` より前に採る |
 | C | `getLastModified` の再帰分岐がテストで一度も通っていない。1階層しか見ない実装でもテストが通る | QA・Verification（独立に一致） | 修正する。サブディレクトリを含む fixture を追加し、サブディレクトリ配下のファイル更新で再読み込みされることを検証する |
 | D | テストのリクエストID `RM11AD0201` が `RequestTestingMessagingClientTest` と重複。現状は別クラスの別 static キャッシュ経由のため衝突しないが、`cacheKey`（`:428`）がベースパスを含まないため将来の順序依存の種になる | QA | 修正する。未使用のリクエストIDに変える |
