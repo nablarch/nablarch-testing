@@ -86,12 +86,32 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] 失敗する再現テストを追加する（リクエストID同名ディレクトリ配下のファイルを書き換え後、2回目の読み出しで1件目の応答電文に戻らないことを示す）
-- [ ] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）
-- [ ] `SendSyncSupport.createTestDataInfo` を修正する（`file.isDirectory()`の場合、配下ファイルの最大`lastModified()`を実効タイムスタンプとする）
-- [ ] 再現テストが通ることを確認する
-- [ ] 既存テスト（`MockMessagingContextTest#test6`含む）が壊れていないことを確認する
-- [ ] 修正をコミットする
+- [x] 失敗する再現テストを追加する（リクエストID同名ディレクトリ配下のファイルを書き換え後、2回目の読み出しで1件目の応答電文に戻らないことを示す）→ `df0ea24`
+- [x] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）→ `df0ea24`
+- [x] `SendSyncSupport.createTestDataInfo` を修正する（`file.isDirectory()`の場合、配下ファイルの最大`lastModified()`を実効タイムスタンプとする）→ `15f4dbb`
+- [x] 再現テストが通ることを確認する
+- [x] 既存テスト（`MockMessagingContextTest#test6`含む）が壊れていないことを確認する
+- [x] 修正をコミットする → `15f4dbb`
+- [ ] **【ユーザー判断待ち】** ディレクトリ用タイムスタンプの実装方式を確定する（下記「レビュー指摘」A）
+- [ ] レビュー指摘 B〜G を修正する（下記「レビュー指摘」の表）
+- [ ] 修正後に QA・Craft・Verification を再実行し、`checks/21.md` のレビュー欄を更新する
+- [ ] 既存テスト全件が成功することを確認し、修正をコミットする
+
+**レビュー指摘（QA・Craft・Verification の3エキスパートを実施済み。総合はいずれも pass だが下記が未対応）**
+
+`checks/21.md` に判定と根拠を記録済み。A のみユーザー判断待ち、B〜G は Valid としてトリアージ済み。
+
+| # | 指摘 | 出所 | 対応 |
+|---|---|---|---|
+| A | `SendSyncSupport.java:405-419` の `Math.max` 集約は、ディレクトリ内に自分より新しい mtime のファイルがあるとタイムスタンプの巻き戻る変更を隠す。呼び出し側の判定は `!=`（`:361`）で「値が変わったか」を見ているため、ファイル単体を見ていた従来と意味が噛み合わない。`cp -p`・`unzip`・`tar -x`・`rsync --times` による復元やクロックスキューで踏みうる | Craft (High) | **ユーザー判断待ち。** 最大値のまま確定するか、全エントリの `lastModified()` を順序非依存に畳み込んだ署名へ変更するか。後者は本 Steps の記載（「最大`lastModified()`」）からの逸脱であり、かつ released 本体プロダクションコードの変更方式のため Rules により事前相談が必要。**コーディネータの推奨は署名方式**（既存が依拠する `!=` の意味を保てる／本PJの変換ツール自身がテストデータを生成する側にいる） |
+| B | 再読み込み時に `getLastModified` が比較用（`:361`）と記録用（`:390`）で計2回ツリーを歩く。かつ `:389` の実データ読み込みの**後**に `:390` でタイムスタンプを採るため、読み込み中の書き換えが「読み込み済み」として記録され以後検知されない | Craft (High) | 修正する。`createTestDataInfo(DataType, String)` の冒頭で1度だけ採取し `long` を引数で渡す。`getMessages` より前に採る |
+| C | `getLastModified` の再帰分岐がテストで一度も通っていない。1階層しか見ない実装でもテストが通る | QA・Verification（独立に一致） | 修正する。サブディレクトリを含む fixture を追加し、サブディレクトリ配下のファイル更新で再読み込みされることを検証する |
+| D | テストのリクエストID `RM11AD0201` が `RequestTestingMessagingClientTest` と重複。現状は別クラスの別 static キャッシュ経由のため衝突しないが、`cacheKey`（`:428`）がベースパスを含まないため将来の順序依存の種になる | QA | 修正する。未使用のリクエストIDに変える |
+| E | `SendSyncSupportTest.java:71` が `setLastModified` の戻り値を捨てており、失敗時に黙って「1秒の時計粒度頼み」の flaky に劣化する | Craft (Medium) | 修正する。`assertTrue` で表明する |
+| F | `@After` が無く `target/test-classes/.../message.txt` が更新後内容かつ未来 mtime で残る。src 側の方が mtime が古いため `mvn process-test-resources` でも再コピーされない（Craft が実測確認）。`mvn clean` するまで fixture の編集が反映されない | Craft (Medium) | 修正する。`@After` で内容と mtime を復元する |
+| G | 軽微: `new Date().getTime()` → `System.currentTimeMillis()`、マジックナンバー `2000` の定数化、`TsvTestDataReader.open` の `dataName` 未検証（`PoiXlsReader.java:49-58` は検証する）、`TsvTestDataReader.java:60` の不要な `ArrayList` コピー、定数宣言位置・import 順 | Craft (Low) | 修正する |
+
+`SendSyncSupport.java:411-413`（`listFiles()` が null）は**未カバーのまま残す**と判断済み。ディレクトリを読み取り不可にするとテストデータ自体も読めなくなるため public API 経由では到達できず、リフレクション以外に手段がない（`checks/21.md` に記録）
 
 **Completion criteria**:
 
@@ -148,15 +168,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
-session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
-so only a genuinely suspended session reads `paused`.)
-
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-19
+- **Last completed**: #21 の Steps 1〜6（再現テスト `df0ea24` → 修正 `15f4dbb`）。QA・Craft・Verification の3レビューも実施済みで、判定と根拠は `checks/21.md` に記録済み
+- **Next**: #21 の残り Steps。まずレビュー指摘 A（実装方式）のユーザー判断を仰ぎ、確定後に B〜G とまとめて1回の修正ラウンドを回す
+- **Notes**: branch `convert-testdata-excel-to-text`（push 済み）。**再開時の最初のアクションは、#21「レビュー指摘」表の A をユーザーに提示して判断を仰ぐこと**（`Math.max` 集約のまま確定するか署名方式へ変えるか。コーディネータの推奨は署名方式）。B〜G はトリアージ済みで判断不要、A 確定後に実装エキスパートへ1回で投げる。修正ラウンドは task-verify-workflow の3イテレーション上限のうち1回目。ブロッカーなし。**Rules の記述1件が実測と不一致**——「残存 4E（`MockHttpRequestTest`/`MockServletExecutionContextTest`）は PR75 非起因の既知事象」とあるが、実装エキスパートと Verification エキスパートが別々に実行した全件テストはいずれも `Tests run: 841, Failures: 0, Errors: 0, Skipped: 7`（コーディネータ自身は未実行）。Rules を実測に合わせるかはユーザー判断。未決事項2件は従来どおり——(1) `ntf-empty-table-assertion.md` を Nablarch 本体チームへ渡す段取り、(2) converter が出すマーカーカラムのセルに何を書くか。スコープ外の申し送り3件は同文書 付録B
 
 ---
 
