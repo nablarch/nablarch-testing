@@ -168,11 +168,15 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-19
-- **Last completed**: #21 の Steps 1〜6（再現テスト `df0ea24` → 修正 `15f4dbb`）。QA・Craft・Verification の3レビューも実施済みで、判定と根拠は `checks/21.md` に記録済み
-- **Next**: #21 の残り Steps。まずレビュー指摘 A（実装方式）のユーザー判断を仰ぎ、確定後に B〜G とまとめて1回の修正ラウンドを回す
-- **Notes**: branch `convert-testdata-excel-to-text`（push 済み）。**再開時の最初のアクションは、#21「レビュー指摘」表の A をユーザーに提示して判断を仰ぐこと**（`Math.max` 集約のまま確定するか署名方式へ変えるか。コーディネータの推奨は署名方式）。B〜G はトリアージ済みで判断不要、A 確定後に実装エキスパートへ1回で投げる。修正ラウンドは task-verify-workflow の3イテレーション上限のうち1回目。ブロッカーなし。**Rules の記述1件が実測と不一致**——「残存 4E（`MockHttpRequestTest`/`MockServletExecutionContextTest`）は PR75 非起因の既知事象」とあるが、実装エキスパートと Verification エキスパートが別々に実行した全件テストはいずれも `Tests run: 841, Failures: 0, Errors: 0, Skipped: 7`（コーディネータ自身は未実行）。Rules を実測に合わせるかはユーザー判断。未決事項2件は従来どおり——(1) `ntf-empty-table-assertion.md` を Nablarch 本体チームへ渡す段取り、(2) converter が出すマーカーカラムのセルに何を書くか。スコープ外の申し送り3件は同文書 付録B
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 ---
 
