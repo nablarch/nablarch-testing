@@ -92,26 +92,42 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - [x] 再現テストが通ることを確認する
 - [x] 既存テスト（`MockMessagingContextTest#test6`含む）が壊れていないことを確認する
 - [x] 修正をコミットする → `15f4dbb`
-- [ ] **【ユーザー判断待ち】** ディレクトリ用タイムスタンプの実装方式を確定する（下記「レビュー指摘」A）
-- [ ] レビュー指摘 B〜G を修正する（下記「レビュー指摘」の表）
+- [x] ディレクトリ用タイムスタンプの実装方式を確定する（1ラウンド目 指摘A）→ 署名方式で確定（2026-08-19 ユーザー判断）
+- [x] 1ラウンド目のレビュー指摘 B〜G を修正する → `b22e5b9`
+- [x] 既存テスト全件が成功することを確認し、修正をコミットする → `b22e5b9`（`Tests run: 848, Failures: 0, Errors: 0, Skipped: 7`）
+- [x] 修正後に QA・Craft・Verification を再実行する（2ラウンド目）→ QA=fail / Craft=fail / Verification=conditional pass。判定と根拠は `checks/21.md` に記録
+- [ ] **【ユーザー判断待ち】** 畳み込みの設計を A/B/C から確定する（下記「レビュー指摘（2ラウンド目）」H）
+- [ ] レビュー指摘 I〜T を修正する（下記の表）
 - [ ] 修正後に QA・Craft・Verification を再実行し、`checks/21.md` のレビュー欄を更新する
 - [ ] 既存テスト全件が成功することを確認し、修正をコミットする
 
-**レビュー指摘（QA・Craft・Verification の3エキスパートを実施済み。総合はいずれも pass だが下記が未対応）**
+**レビュー指摘（2ラウンド目。QA・Craft・Verification を `b22e5b9` に対して再実行）**
 
-`checks/21.md` に判定と根拠を記録済み。A のみユーザー判断待ち、B〜G は Valid としてトリアージ済み。
+1ラウンド目の指摘 A〜G は `b22e5b9` で処置済み（判定と根拠は `checks/21.md`）。H のみユーザー判断待ち、I〜T はトリアージ済み。
 
 | # | 指摘 | 出所 | 対応 |
 |---|---|---|---|
-| A | `SendSyncSupport.java:405-419` の `Math.max` 集約は、ディレクトリ内に自分より新しい mtime のファイルがあるとタイムスタンプの巻き戻る変更を隠す。呼び出し側の判定は `!=`（`:361`）で「値が変わったか」を見ているため、ファイル単体を見ていた従来と意味が噛み合わない。`cp -p`・`unzip`・`tar -x`・`rsync --times` による復元やクロックスキューで踏みうる | Craft (High) | **署名方式へ変更するで確定（2026-08-19 ユーザー判断）。** 決め手は巻き戻りではなく、**未来日時のファイル1つで最大値が張り付き、以後恒久的に再読み込みされなくなる経路**。`fileCache` は static（`SendSyncSupport.java:52`）で JVM 存続中残るため気づく契機がなく、かつ未来 mtime は指摘 F のとおり現行テスト自身が作っている |
-| B | 再読み込み時に `getLastModified` が比較用（`:361`）と記録用（`:390`）で計2回ツリーを歩く。かつ `:389` の実データ読み込みの**後**に `:390` でタイムスタンプを採るため、読み込み中の書き換えが「読み込み済み」として記録され以後検知されない | Craft (High) | 修正する。`createTestDataInfo(DataType, String)` の冒頭で1度だけ採取し `long` を引数で渡す。`getMessages` より前に採る |
-| C | `getLastModified` の再帰分岐がテストで一度も通っていない。1階層しか見ない実装でもテストが通る | QA・Verification（独立に一致） | 修正する。サブディレクトリを含む fixture を追加し、サブディレクトリ配下のファイル更新で再読み込みされることを検証する |
-| D | テストのリクエストID `RM11AD0201` が `RequestTestingMessagingClientTest` と重複。現状は別クラスの別 static キャッシュ経由のため衝突しないが、`cacheKey`（`:428`）がベースパスを含まないため将来の順序依存の種になる | QA | 修正する。未使用のリクエストIDに変える |
-| E | `SendSyncSupportTest.java:71` が `setLastModified` の戻り値を捨てており、失敗時に黙って「1秒の時計粒度頼み」の flaky に劣化する | Craft (Medium) | 修正する。`assertTrue` で表明する |
-| F | `@After` が無く `target/test-classes/.../message.txt` が更新後内容かつ未来 mtime で残る。src 側の方が mtime が古いため `mvn process-test-resources` でも再コピーされない（Craft が実測確認）。`mvn clean` するまで fixture の編集が反映されない | Craft (Medium) | 修正する。`@After` で内容と mtime を復元する |
-| G | 軽微: `new Date().getTime()` → `System.currentTimeMillis()`、マジックナンバー `2000` の定数化、`TsvTestDataReader.open` の `dataName` 未検証（`PoiXlsReader.java:49-58` は検証する）、`TsvTestDataReader.java:60` の不要な `ArrayList` コピー、定数宣言位置・import 順 | Craft (Low) | 修正する |
+| H | `Arrays.sort(files)`（`SendSyncSupport.java:438`）を削除しても全848テストが通る。`listFiles()` は未変更ディレクトリに対し同一プロセス内で決定的に同じ順序を返すため、走査順非依存という主眼は原理的にテストで検出できない。かつ `SendSyncSupportTest.java:234` の Javadoc は検証していないことを断言している | QA・Craft・Verification（別 worktree で独立に実測、3者一致） | **ユーザー判断待ち。** A=`Arrays.sort` 維持＋エントリ名ハッシュとエントリ数を畳み込みに追加 / B=可換な加算畳み込みへ変更し `Arrays.sort` を廃止（順序非依存が構造的に保証される） / C=署名をやめ `Map<相対パス, lastModified>` のスナップショットを `equals` 比較（**推奨**。衝突・sort・マジックナンバーが同時に消える） |
+| I | `SendSyncSupport.java:441` の畳み込みは直下ファイル `f` とサブディレクトリ `s` の係数がどちらも 31 になり（`d*961 + 31f + 31s + n`）、両者の `lastModified` が入れ替わると署名が一致する。確率的ではなく**構造的な衝突クラス**。`:419` の「確率的に残る」は不正確 | Craft (Medium)（実測再現。コーディネーターが算術でも確認） | H の決定に含めて処置する。なお単一ファイルの変更は必ず検知される（係数 `31^k` は奇数で mod 2^64 可逆。QA が3位置×6デルタで実測） |
+| J | 「署名を `getMessages` の前に1度だけ採る」（2026-08-19 ユーザー制約3）が無検証。採取を読み込み後に戻しても全テストが通る | QA・Verification（独立に一致、実測） | 修正する。`getMessages` 実行中にテストデータを書き換えるテスト用リーダを差し込み、次回呼び出しで再読み込みされることを表明する |
+| K | `SendSyncSupport.java:52` の `/** Excel情報のキャッシュ */` が、ディレクトリ形式も入るようになった実態と不一致 | Craft (Low) | 修正する |
+| L | `SendSyncSupportTest.java:306` が `setReadable(false)` を `Assume` より**前**に `assertTrue` しており、読み取り権限の概念がない環境ではスキップでなく失敗する。`FileUtilsTest.java:505-509` の `assumeNotWindows()` が確立した作法で、`:395-396` `:428-429` は権限操作の前に置いている | Craft (Medium)（前例をコーディネーターが実物で確認） | 修正する |
+| M | `SendSyncSupportTest.java:315` の `finally` 内 `assertTrue` が本来の失敗を隠す。`restoreTestData`（`:97-106`）も同様にループ内 `assertTrue` で、1件目の復元失敗時に残りが未復元のまま終わる | Craft (Low)・QA | 修正する。ベストエフォートで全件復元してから失敗を報告する |
+| N | 却下した最大値方式を `SendSyncSupportTest.java:326-336` にテスト側で再実装し、`:290` でその性質を表明している。production コードを何も検証していない | Craft (Medium-Low) | 修正する。`:288` を残して `maxLastModified` と `:290` を削除する |
+| O | 本ラウンドの主眼（最大値→畳み込み）が `getTimestampSignature` の直接検証1件でしか担保されておらず、E2E は素通りする | QA (Medium) | 修正する。`RM11AD0301/` に未来日時のダミーファイルを置き、`message.txt` の更新で再読み込みされることを公開 API 経由で表明する |
+| P | エントリの**追加・削除**のテストがない。ディレクトリ自身の mtime を畳み込みに含める設計意図（`long signature = lastModified`）は、空ディレクトリのテストに偶発的に固定されているだけ | Verification | 修正する |
+| Q | 非ディレクトリの早期 return（`:429-431`）は、`listFiles()` が非ディレクトリに null を返すため `files == null` 分岐と意味論的に等価で、削除しても全テストが通る。「テストで担保されている」体裁は誤解を招く | Verification (Medium)（実測） | 修正する。可読性のための冗長分岐である旨を Javadoc に明記し、`testGetTimestampSignatureReturnsLastModifiedWhenNotDirectory` を `setLastModified` した値そのものとの比較に改める |
+| R | `testGetTimestampSignatureWhenFilesCanNotBeListed` の `Assume` スキップは root 実行の CI・Windows・WSL の DrvFs では無言で消え、その環境では `files == null` 分岐が未検証・未カバーになる | Verification (Low) | L の修正と併せ、環境依存である旨を `checks/21.md` に記録する |
+| S | `SendSyncSupportTest.java:170` の期待値 `is("test2")` が `:159` と同値で、再読み込みの有無を区別できない。`FUTURE_OFFSET_MILLIS`（未来方向のオフセット）を `:248` で過去方向の刻み幅に流用している | Craft (Low) | 修正する |
+| T | `getTimestampSignature` の Javadoc が15行のメソッドに26行（同ファイルの `createCacheKey`/`getMessages` は5〜7行）。`TsvTestDataReader` の open 失敗時の例外型が `PoiXlsReader.java:191`（`RuntimeException`）と不一致 | Craft (Low) | 修正する |
 
-`SendSyncSupport.java:411-413`（`listFiles()` が null）は**未カバーのまま残す**と判断済み。ディレクトリを読み取り不可にするとテストデータ自体も読めなくなるため public API 経由では到達できず、リフレクション以外に手段がない（`checks/21.md` に記録）
+**Invalid と判定（修正しない。根拠は `checks/21.md`）**
+
+- symlink 循環による `StackOverflowError` — QA・Craft がともに実測し発生しないことを確認（Linux の ELOOP で `isDirectory()` が false になり停止する）
+- `target/test-classes` 配下を書き換えるテスト構成 — 既存の `MockMessagingContextTest.java:151-192` が同じ構成で、しかも未来 mtime を戻していない。新テストは `@After` で復元する分むしろ厳格
+- Excel 経路でも署名の採取タイミングが変わる点 — 2026-08-19 のユーザー制約3そのもの
+- `getTimestampSignature` を `private` へ戻す提案 — ユーザー制約5「Excel形式で今日と同一の値を返すことをテストで示す」が成立しなくなる
+- `fileCache` を `@Before` でクリアしていない点 — QA が汚染なしを実測（`RM11AD0301`/`RM11AD0302` が本テスト専用であることをリポジトリ走査で確認）。既存の `MockMessagingContextTest` も同じ規約に依存しており、本変更に起因しない
 
 **Completion criteria**:
 
@@ -153,7 +169,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - [ ] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）
 - [ ] `TableData#loadData()`（`TableData.java:337-346`）の early return を削除し、`colNames.length == 0` のとき `dbInfo.getColumns(tableName)` を SELECT 対象カラムとする。`getColumnNames()` は変更しない（`ntf-empty-table-assertion.md` 4章）
 - [ ] 再現テストが通ることを確認する
-- [ ] 既存テストが壊れていないことを確認する（`mvn -o test` 全件。残存4Eを除く）
+- [ ] 既存テストが壊れていないことを確認する（`mvn -o test` 全件。失敗・エラーは原則すべて対処対象）
 - [ ] 修正をコミットする
 
 **Completion criteria**:
@@ -168,15 +184,17 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
-session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
-so only a genuinely suspended session reads `paused`.)
-
-- **Status**: not suspended
-- **Date**: YYYY-MM-DD
-- **Last completed**: #N description
-- **Next**: #N description
-- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
+- **Status**: paused
+- **Date**: 2026-08-19
+- **Last completed**: #20 変換ツール再構築 Phase 6（#21 は修正2ラウンド目のユーザー判断待ちで進行中）
+- **Next**: #21 SendSyncSupport のYAML形式再読み込み対応 — レビュー指摘 H（畳み込みの設計）の確定から
+- **Notes**:
+  - ブランチ `convert-testdata-excel-to-text` / ドラフト PR [lovaizu/nablarch-testing#1](https://github.com/lovaizu/nablarch-testing/pull/1)。実装の現状は `b22e5b9`（署名方式、全件 `848/0/0/7`）
+  - **次アクション**: 指摘 H の回答（A/B/C）を受け、I〜T とまとめて1回の修正ラウンドを実装エキスパートへ発注する。修正ラウンドは3回上限のうち**2回目**
+  - **未決はH のみ**。推奨は C（署名をやめ `Map<相対パス, lastModified>` スナップショットを `equals` 比較）。A/B/C の内容と判断材料は #21 の「レビュー指摘（2ラウンド目）」の表を参照
+  - 既知のローカル変更: `pom.xml` の parent `6-NEXT-SNAPSHOT`→`6u3`（コミット不要）
+  - steering に **Evaluation sign-off タスクが存在しない**。#23 完了時点で未着手タスクが無くなるため、その時点でユーザーへエスカレーションが必要（`task-verify-workflow.md` Phase: Complete）
+  - 停止中の worktree `.claude/worktrees/agent-a4f8d5f0638c27fee`（detached `b22e5b9`）が `git worktree list` に残存。削除は未実施（`.claude/worktrees/` は `.gitignore` へ追加済み）
 
 ---
 
