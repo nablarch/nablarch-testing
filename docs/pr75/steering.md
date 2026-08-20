@@ -184,17 +184,15 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 # State
 
-- **Status**: paused
-- **Date**: 2026-08-19
-- **Last completed**: #20 変換ツール再構築 Phase 6（#21 は修正2ラウンド目のユーザー判断待ちで進行中）
-- **Next**: #21 SendSyncSupport のYAML形式再読み込み対応 — レビュー指摘 H（畳み込みの設計）の確定から
-- **Notes**:
-  - ブランチ `convert-testdata-excel-to-text` / ドラフト PR [lovaizu/nablarch-testing#1](https://github.com/lovaizu/nablarch-testing/pull/1)。実装の現状は `b22e5b9`（署名方式、全件 `848/0/0/7`）
-  - **次アクション**: 指摘 H の回答（A/B/C）を受け、I〜T とまとめて1回の修正ラウンドを実装エキスパートへ発注する。修正ラウンドは3回上限のうち**2回目**
-  - **未決はH のみ**。推奨は C（署名をやめ `Map<相対パス, lastModified>` スナップショットを `equals` 比較）。A/B/C の内容と判断材料は #21 の「レビュー指摘（2ラウンド目）」の表を参照
-  - 既知のローカル変更: `pom.xml` の parent `6-NEXT-SNAPSHOT`→`6u3`（コミット不要）
-  - steering に **Evaluation sign-off タスクが存在しない**。#23 完了時点で未着手タスクが無くなるため、その時点でユーザーへエスカレーションが必要（`task-verify-workflow.md` Phase: Complete）
-  - 停止中の worktree `.claude/worktrees/agent-a4f8d5f0638c27fee`（detached `b22e5b9`）が `git worktree list` に残存。削除は未実施（`.claude/worktrees/` は `.gitignore` へ追加済み）
+(written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
+session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
+so only a genuinely suspended session reads `paused`.)
+
+- **Status**: not suspended
+- **Date**: YYYY-MM-DD
+- **Last completed**: #N description
+- **Next**: #N description
+- **Notes**: bounded forward pointer — branch/PR, next concrete action, open blockers, user-deferred paths, open questions / pending decisions not yet captured in `design.md`; not a re-narration of the session (that lives in `git log`)
 
 ---
 
