@@ -44,8 +44,9 @@ public class TsvTestDataReader implements TestDataReader {
         try {
             lines = Files.readAllLines(file.toPath(), CHARSET).iterator();
         } catch (IOException e) {
-            throw new IllegalArgumentException(
-                    "test data file was not readable. path=[" + file.getAbsolutePath() + ']', e);
+            // オープンに失敗した場合の例外型は、PoiXlsReaderに合わせる
+            throw new RuntimeException(
+                    "test data file open failed. path=[" + file.getAbsolutePath() + ']', e);
         }
     }
 

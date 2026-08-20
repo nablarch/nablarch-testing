@@ -92,34 +92,34 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - [x] 再現テストが通ることを確認する
 - [x] 既存テスト（`MockMessagingContextTest#test6`含む）が壊れていないことを確認する
 - [x] 修正をコミットする → `15f4dbb`
-- [x] ディレクトリ用タイムスタンプの実装方式を確定する（1ラウンド目 指摘A）→ 署名方式で確定（2026-08-19 ユーザー判断）
+- [x] ディレクトリ用タイムスタンプの実装方式を確定する（1ラウンド目 指摘A）→ 署名方式で確定（2026-08-19 ユーザー判断）→ 2026-08-20 のユーザー判断で **Map スナップショット方式（選択肢 C）へ再確定**
 - [x] 1ラウンド目のレビュー指摘 B〜G を修正する → `b22e5b9`
 - [x] 既存テスト全件が成功することを確認し、修正をコミットする → `b22e5b9`（`Tests run: 848, Failures: 0, Errors: 0, Skipped: 7`）
 - [x] 修正後に QA・Craft・Verification を再実行する（2ラウンド目）→ QA=fail / Craft=fail / Verification=conditional pass。判定と根拠は `checks/21.md` に記録
-- [ ] **【ユーザー判断待ち】** 畳み込みの設計を A/B/C から確定する（下記「レビュー指摘（2ラウンド目）」H）
-- [ ] レビュー指摘 I〜T を修正する（下記の表）
-- [ ] 修正後に QA・Craft・Verification を再実行し、`checks/21.md` のレビュー欄を更新する
-- [ ] 既存テスト全件が成功することを確認し、修正をコミットする
+- [x] 畳み込みの設計を A/B/C から確定する（下記「レビュー指摘（2ラウンド目）」H）→ **C を採用**（2026-08-20 ユーザー判断。A・B は採用しない）。`Map<相対パス, lastModified>` のスナップショットを `equals` 比較する方式に差し替え、`Arrays.sort` と畳み込みを削除
+- [x] レビュー指摘 I〜T を修正する（下記の表）→ 12件すべて処置。採否と根拠は `checks/21.md`「修正ラウンド2」
+- [ ] 修正後に QA・Craft・Verification を再実行し、`checks/21.md` のレビュー欄を更新する（**未実施**。本ラウンドの作業指示のゲートに含まれないため次ステップとして残している）
+- [x] 既存テスト全件が成功することを確認し、修正をコミットする（`Tests run: 851, Failures: 0, Errors: 0, Skipped: 7`。基準 848 ＋ 追加3件。ゲート1〜10 の実測は `checks/21.md`）
 
 **レビュー指摘（2ラウンド目。QA・Craft・Verification を `b22e5b9` に対して再実行）**
 
-1ラウンド目の指摘 A〜G は `b22e5b9` で処置済み（判定と根拠は `checks/21.md`）。H のみユーザー判断待ち、I〜T はトリアージ済み。
+1ラウンド目の指摘 A〜G は `b22e5b9` で処置済み（判定と根拠は `checks/21.md`）。H〜T は 2026-08-20 の修正ラウンド2 で全件処置済み（ゲート1〜10 の実測を含む記録は `checks/21.md`「修正ラウンド2」）。
 
 | # | 指摘 | 出所 | 対応 |
 |---|---|---|---|
-| H | `Arrays.sort(files)`（`SendSyncSupport.java:438`）を削除しても全848テストが通る。`listFiles()` は未変更ディレクトリに対し同一プロセス内で決定的に同じ順序を返すため、走査順非依存という主眼は原理的にテストで検出できない。かつ `SendSyncSupportTest.java:234` の Javadoc は検証していないことを断言している | QA・Craft・Verification（別 worktree で独立に実測、3者一致） | **ユーザー判断待ち。** A=`Arrays.sort` 維持＋エントリ名ハッシュとエントリ数を畳み込みに追加 / B=可換な加算畳み込みへ変更し `Arrays.sort` を廃止（順序非依存が構造的に保証される） / C=署名をやめ `Map<相対パス, lastModified>` のスナップショットを `equals` 比較（**推奨**。衝突・sort・マジックナンバーが同時に消える） |
-| I | `SendSyncSupport.java:441` の畳み込みは直下ファイル `f` とサブディレクトリ `s` の係数がどちらも 31 になり（`d*961 + 31f + 31s + n`）、両者の `lastModified` が入れ替わると署名が一致する。確率的ではなく**構造的な衝突クラス**。`:419` の「確率的に残る」は不正確 | Craft (Medium)（実測再現。コーディネーターが算術でも確認） | H の決定に含めて処置する。なお単一ファイルの変更は必ず検知される（係数 `31^k` は奇数で mod 2^64 可逆。QA が3位置×6デルタで実測） |
-| J | 「署名を `getMessages` の前に1度だけ採る」（2026-08-19 ユーザー制約3）が無検証。採取を読み込み後に戻しても全テストが通る | QA・Verification（独立に一致、実測） | 修正する。`getMessages` 実行中にテストデータを書き換えるテスト用リーダを差し込み、次回呼び出しで再読み込みされることを表明する |
-| K | `SendSyncSupport.java:52` の `/** Excel情報のキャッシュ */` が、ディレクトリ形式も入るようになった実態と不一致 | Craft (Low) | 修正する |
-| L | `SendSyncSupportTest.java:306` が `setReadable(false)` を `Assume` より**前**に `assertTrue` しており、読み取り権限の概念がない環境ではスキップでなく失敗する。`FileUtilsTest.java:505-509` の `assumeNotWindows()` が確立した作法で、`:395-396` `:428-429` は権限操作の前に置いている | Craft (Medium)（前例をコーディネーターが実物で確認） | 修正する |
-| M | `SendSyncSupportTest.java:315` の `finally` 内 `assertTrue` が本来の失敗を隠す。`restoreTestData`（`:97-106`）も同様にループ内 `assertTrue` で、1件目の復元失敗時に残りが未復元のまま終わる | Craft (Low)・QA | 修正する。ベストエフォートで全件復元してから失敗を報告する |
-| N | 却下した最大値方式を `SendSyncSupportTest.java:326-336` にテスト側で再実装し、`:290` でその性質を表明している。production コードを何も検証していない | Craft (Medium-Low) | 修正する。`:288` を残して `maxLastModified` と `:290` を削除する |
-| O | 本ラウンドの主眼（最大値→畳み込み）が `getTimestampSignature` の直接検証1件でしか担保されておらず、E2E は素通りする | QA (Medium) | 修正する。`RM11AD0301/` に未来日時のダミーファイルを置き、`message.txt` の更新で再読み込みされることを公開 API 経由で表明する |
-| P | エントリの**追加・削除**のテストがない。ディレクトリ自身の mtime を畳み込みに含める設計意図（`long signature = lastModified`）は、空ディレクトリのテストに偶発的に固定されているだけ | Verification | 修正する |
-| Q | 非ディレクトリの早期 return（`:429-431`）は、`listFiles()` が非ディレクトリに null を返すため `files == null` 分岐と意味論的に等価で、削除しても全テストが通る。「テストで担保されている」体裁は誤解を招く | Verification (Medium)（実測） | 修正する。可読性のための冗長分岐である旨を Javadoc に明記し、`testGetTimestampSignatureReturnsLastModifiedWhenNotDirectory` を `setLastModified` した値そのものとの比較に改める |
-| R | `testGetTimestampSignatureWhenFilesCanNotBeListed` の `Assume` スキップは root 実行の CI・Windows・WSL の DrvFs では無言で消え、その環境では `files == null` 分岐が未検証・未カバーになる | Verification (Low) | L の修正と併せ、環境依存である旨を `checks/21.md` に記録する |
-| S | `SendSyncSupportTest.java:170` の期待値 `is("test2")` が `:159` と同値で、再読み込みの有無を区別できない。`FUTURE_OFFSET_MILLIS`（未来方向のオフセット）を `:248` で過去方向の刻み幅に流用している | Craft (Low) | 修正する |
-| T | `getTimestampSignature` の Javadoc が15行のメソッドに26行（同ファイルの `createCacheKey`/`getMessages` は5〜7行）。`TsvTestDataReader` の open 失敗時の例外型が `PoiXlsReader.java:191`（`RuntimeException`）と不一致 | Craft (Low) | 修正する |
+| H | `Arrays.sort(files)`（`SendSyncSupport.java:438`）を削除しても全848テストが通る。`listFiles()` は未変更ディレクトリに対し同一プロセス内で決定的に同じ順序を返すため、走査順非依存という主眼は原理的にテストで検出できない。かつ `SendSyncSupportTest.java:234` の Javadoc は検証していないことを断言している | QA・Craft・Verification（別 worktree で独立に実測、3者一致） | **C を採用**（2026-08-20 ユーザー判断。A・B は採用しない）。署名をやめ `Map<相対パス, lastModified>` のスナップショットを `equals` 比較する。`Arrays.sort` は削除（走査順非依存が Map の等価判定により構造的に保証され、テストで担保する必要自体が消えた） |
+| I | `SendSyncSupport.java:441` の畳み込みは直下ファイル `f` とサブディレクトリ `s` の係数がどちらも 31 になり（`d*961 + 31f + 31s + n`）、両者の `lastModified` が入れ替わると署名が一致する。確率的ではなく**構造的な衝突クラス**。`:419` の「確率的に残る」は不正確 | Craft (Medium)（実測再現。コーディネーターが算術でも確認） | **修正不要**（C の採用により解消）。畳み込みを行わないため構造的衝突が原理的に存在しない。「確率的に残る」の記述も Javadoc ごと削除 |
+| J | 「署名を `getMessages` の前に1度だけ採る」（2026-08-19 ユーザー制約3）が無検証。採取を読み込み後に戻しても全テストが通る | QA・Verification（独立に一致、実測） | **修正済み**。`testReloadWhenTestDataIsUpdatedWhileReading` を追加（読み込み中に mtime を動かすテスト用リーダを差し込む）。採取を読み込み後に移す変異で本テストが落ちることを実測（ゲート8） |
+| K | `SendSyncSupport.java:52` の `/** Excel情報のキャッシュ */` が、ディレクトリ形式も入るようになった実態と不一致 | Craft (Low) | **修正済み**。`読み込んだテストデータ情報のキャッシュ` に改めた |
+| L | `SendSyncSupportTest.java:306` が `setReadable(false)` を `Assume` より**前**に `assertTrue` しており、読み取り権限の概念がない環境ではスキップでなく失敗する。`FileUtilsTest.java:505-509` の `assumeNotWindows()` が確立した作法で、`:395-396` `:428-429` は権限操作の前に置いている | Craft (Medium)（前例をコーディネーターが実物で確認） | **修正済み**。`assumeNotWindows()` を権限操作の前に置き、`setReadable(false)` の結果は `Assume.assumeTrue` で受ける |
+| M | `SendSyncSupportTest.java:315` の `finally` 内 `assertTrue` が本来の失敗を隠す。`restoreTestData`（`:97-106`）も同様にループ内 `assertTrue` で、1件目の復元失敗時に残りが未復元のまま終わる | Craft (Low)・QA | **修正済み**。`finally` は復元結果を受けるだけとし表明は try を抜けた後に置いた。`restoreTestData` は全件復元を試み失敗ファイルをまとめて1度だけ表明する |
+| N | 却下した最大値方式を `SendSyncSupportTest.java:326-336` にテスト側で再実装し、`:290` でその性質を表明している。production コードを何も検証していない | Craft (Medium-Low) | **修正済み**。`maxLastModified` とそれを使う表明を削除し、production コードの戻り値の変化のみを表明する |
+| O | 本ラウンドの主眼（最大値→畳み込み）が `getTimestampSignature` の直接検証1件でしか担保されておらず、E2E は素通りする | QA (Medium) | **修正済み**。`RM11AD0301/dummy.txt` を新設し `testReloadWhenFutureTimestampedFileExists` を追加。公開 API 経由で表明する |
+| P | エントリの**追加・削除**のテストがない。ディレクトリ自身の mtime を畳み込みに含める設計意図（`long signature = lastModified`）は、空ディレクトリのテストに偶発的に固定されているだけ | Verification | **修正済み**。`testGetTimestampSnapshotChangesWhenEntryIsAddedOrRemoved` を追加。C ではキー集合の変化として構造的に現れる |
+| Q | 非ディレクトリの早期 return（`:429-431`）は、`listFiles()` が非ディレクトリに null を返すため `files == null` 分岐と意味論的に等価で、削除しても全テストが通る。「テストで担保されている」体裁は誤解を招く | Verification (Medium)（実測） | **テストのみ修正**。`testGetTimestampSnapshotForNotDirectory` を `setLastModified` した値そのものとの比較に改め、冗長分岐である旨をコメントに明記。**分岐の冗長性は C を採っても消えなかった**（分岐を削除しても `SendSyncSupportTest` 11件が全通過することを実測。`checks/21.md`） |
+| R | `testGetTimestampSignatureWhenFilesCanNotBeListed` の `Assume` スキップは root 実行の CI・Windows・WSL の DrvFs では無言で消え、その環境では `files == null` 分岐が未検証・未カバーになる | Verification (Low) | **記録済み**（`checks/21.md`「修正ラウンド2」R 欄・未カバー項目）。本実行環境では `Skipped: 0` で到達している |
+| S | `SendSyncSupportTest.java:170` の期待値 `is("test2")` が `:159` と同値で、再読み込みの有無を区別できない。`FUTURE_OFFSET_MILLIS`（未来方向のオフセット）を `:248` で過去方向の刻み幅に流用している | Craft (Low) | **修正済み**。末尾に `assertResponseMessageNotExists(..., 2)` を追加し、刻み幅用に `STEP_MILLIS` を新設して `FUTURE_OFFSET_MILLIS` の流用を解消 |
+| T | `getTimestampSignature` の Javadoc が15行のメソッドに26行（同ファイルの `createCacheKey`/`getMessages` は5〜7行）。`TsvTestDataReader` の open 失敗時の例外型が `PoiXlsReader.java:191`（`RuntimeException`）と不一致 | Craft (Low) | **修正済み**。Javadoc を11行に短縮し、例外型・メッセージを `PoiXlsReader` に合わせた |
 
 **Invalid と判定（修正しない。根拠は `checks/21.md`）**
 

@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +48,7 @@ public class SendSyncSupport {
     /** テストデータが格納されるディレクトリ名 */
     public static final String SEND_SYNC_TEST_DATA_BASE_PATH = "sendSyncTestData";
     
-    /** Excel情報のキャッシュ */
+    /** 読み込んだテストデータ情報のキャッシュ */
     private static Map<String, TestDataInfo> fileCache = new HashMap<String, TestDataInfo>();
     
     
@@ -336,7 +335,7 @@ public class SendSyncSupport {
     /**
      * メッセージを生成する。
      * <p>
-     * 読み込むテストデータのタイムスタンプ署名が変更されていない場合は、キャッシュからメッセージを取得する。
+     * 読み込むテストデータの最終更新日時が変更されていない場合は、キャッシュからメッセージを取得する。
      * </p>
      * @param dataType データタイプ
      * @param requestId リクエストID
@@ -356,23 +355,23 @@ public class SendSyncSupport {
         String cacheKey = createCacheKey(dataType, requestId);
 
         // テストデータの読み込み中に行われた書き換えを取りこぼさないよう、
-        // 実データを読み込む前にタイムスタンプ署名を1度だけ取得し、比較にも記録にも同じ値を使用する。
-        long timestampSignature = getTimestampSignature(file);
+        // 実データを読み込む前にスナップショットを1度だけ取得し、比較にも記録にも同じ値を使用する。
+        Map<String, Long> timestampSnapshot = getTimestampSnapshot(file);
 
         TestDataInfo testDataInfo;
         if (fileCache.containsKey(cacheKey)) {
             TestDataInfo cachedTestDataInfo = fileCache.get(cacheKey);
-            // 読み込むテストデータのタイムスタンプ署名が変更された場合、再読み込みを行う
-            if (timestampSignature != cachedTestDataInfo.timestampSignature) {
+            // 読み込むテストデータの最終更新日時が変更された場合、再読み込みを行う
+            if (!timestampSnapshot.equals(cachedTestDataInfo.timestampSnapshot)) {
                 testDataInfo = createTestDataInfo(dataType, requestId, basePath,
-                        resourceName, timestampSignature, cacheKey);
+                        resourceName, timestampSnapshot, cacheKey);
             } else {
                 cachedTestDataInfo.incrementNo(); // 読み込む番号をインクリメントする
                 testDataInfo = cachedTestDataInfo;
             }
         } else {
             testDataInfo = createTestDataInfo(dataType, requestId, basePath,
-                    resourceName, timestampSignature, cacheKey);
+                    resourceName, timestampSnapshot, cacheKey);
         }
 
         return testDataInfo;
@@ -384,63 +383,64 @@ public class SendSyncSupport {
      * @param requestId リクエストID
      * @param basePath ベースパス
      * @param resourceName リソース名
-     * @param timestampSignature テストデータのタイムスタンプ署名
+     * @param timestampSnapshot テストデータの最終更新日時のスナップショット
      * @param cacheKey キャッシュのキー
      * @return ロードしたメッセージ
      */
     private TestDataInfo createTestDataInfo(DataType dataType, String requestId,
-            String basePath, String resourceName, long timestampSignature, String cacheKey) {
+            String basePath, String resourceName, Map<String, Long> timestampSnapshot, String cacheKey) {
         TestDataInfo testDataInfo;
         MessagePool pool = getMessages(basePath, resourceName, dataType, requestId);
-        testDataInfo = new TestDataInfo(timestampSignature, pool, basePath, resourceName);
+        testDataInfo = new TestDataInfo(timestampSnapshot, pool, basePath, resourceName);
         fileCache.put(cacheKey, testDataInfo);
         return testDataInfo;
     }
 
     /**
-     * テストデータのタイムスタンプ署名を取得する。
+     * テストデータの最終更新日時のスナップショットを取得する。
      * <p>
-     * テストデータがファイルの場合（ベースパスに拡張子が設定されている場合）は、
-     * そのファイルの最終更新日時をそのまま返却する。
-     * </p>
-     * <p>
-     * テストデータがディレクトリの場合（ベースパスに拡張子が設定されていない場合）、
-     * ディレクトリ自体の最終更新日時は配下のファイルの内容が書き換えられても変化しない。
-     * このため、ディレクトリ自体および配下の全エントリの最終更新日時を畳み込んだ値を署名とする。
-     * 最大値を採らないのは、未来日時の最終更新日時を持つファイルが1つでも存在すると、
-     * 以降どのファイルを書き換えても値が変化せず、再読み込みが恒久的に行われなくなるためである。
-     * </p>
-     * <p>
-     * {@link File#listFiles()} が返すエントリの順序は保証されないため、
-     * 走査順によって署名が変化しないよう、畳み込む前にソートする。
-     * </p>
-     * <p>
-     * なお、畳み込んだ値であるため、内容が異なるにも関わらず署名が一致し
-     * 再読み込みが行われない可能性が確率的に残る。
+     * ディレクトリ自体の最終更新日時は配下のファイルが書き換えられても変化しないため、
+     * ディレクトリ自体と配下の全エントリの最終更新日時を、起点からの相対パスをキーとするMapで採取する。
+     * Mapの等価判定はキーの順序に依存しないため、{@link File#listFiles()}が返す
+     * エントリの順序によって比較結果が変わることはない。
+     * 保持するサイズと比較のコストはツリーのエントリ数に比例する（ツリーの走査回数は変わらない）。
      * </p>
      * <p>
      * このメソッドの戻り値をテストから検証するため、可視性をpackage privateとしている。
      * </p>
      * @param file テストデータのファイルまたはディレクトリ
-     * @return タイムスタンプ署名
+     * @return 起点からの相対パスをキー、最終更新日時を値とするスナップショット
      */
-    long getTimestampSignature(File file) {
-        long lastModified = file.lastModified();
+    Map<String, Long> getTimestampSnapshot(File file) {
+        Map<String, Long> snapshot = new HashMap<String, Long>();
+        collectTimestamp(file, "", snapshot);
+        return snapshot;
+    }
+
+    /**
+     * 最終更新日時をスナップショットに採取する。<br/>
+     * ディレクトリの場合は、配下のエントリを再帰的に辿る。
+     * @param file 対象のファイルまたはディレクトリ
+     * @param relativePath 起点からの相対パス（起点自身は空文字）
+     * @param snapshot 採取先のスナップショット
+     */
+    private void collectTimestamp(File file, String relativePath, Map<String, Long> snapshot) {
+        snapshot.put(relativePath, file.lastModified());
+        // ファイルに対しても listFiles() はnullを返すため次の分岐でも停止するが、
+        // ディレクトリでない場合は再帰しないことを明示するための冗長な分岐である。
         if (!file.isDirectory()) {
-            return lastModified;
+            return;
         }
         File[] files = file.listFiles();
         if (files == null) {
-            // ディレクトリの一覧が取得できない場合は、ディレクトリ自体の最終更新日時を使用する
-            return lastModified;
+            // ディレクトリの一覧が取得できない場合は、ディレクトリ自体のエントリのみを採取する
+            return;
         }
-        // 走査順に依存しない署名とするため、エントリをソートしてから畳み込む
-        Arrays.sort(files);
-        long signature = lastModified;
+        // 実行環境によってキーが変わらないよう、区切り文字は"/"に固定する
+        String prefix = relativePath.isEmpty() ? "" : relativePath + "/";
         for (File child : files) {
-            signature = signature * 31 + getTimestampSignature(child);
+            collectTimestamp(child, prefix + child.getName(), snapshot);
         }
-        return signature;
     }
 
     /**
@@ -486,8 +486,8 @@ public class SendSyncSupport {
     /** テストデータ情報 */
     private static class TestDataInfo {
         
-        /** テストデータのタイムスタンプ署名 */
-        private long timestampSignature;
+        /** テストデータの最終更新日時のスナップショット */
+        private Map<String, Long> timestampSnapshot;
         /** メッセージ */
         private MessagePool messagePool;
         /** 読み込む番号 */
@@ -499,13 +499,13 @@ public class SendSyncSupport {
 
         /**
          * コンストラクタ
-         * @param timestampSignature テストデータのタイムスタンプ署名
+         * @param timestampSnapshot テストデータの最終更新日時のスナップショット
          * @param messagePool メッセージ
          * @param basePath ベースパス名
          * @param resourceName リソース名
          */
-        TestDataInfo(long timestampSignature, MessagePool messagePool, String basePath, String resourceName) {
-            this.timestampSignature = timestampSignature;
+        TestDataInfo(Map<String, Long> timestampSnapshot, MessagePool messagePool, String basePath, String resourceName) {
+            this.timestampSnapshot = timestampSnapshot;
             this.messagePool = messagePool;
             this.basePath = basePath;
             this.resourceName = resourceName;
