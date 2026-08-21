@@ -218,9 +218,9 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
 - **Date**: 2026-08-21
-- **Last completed**: PR #75 本文の全文差し替え（`指示/75-PR本文.md` の `## 概要` 以降を投入。先頭行・`Tests run: 854` ともゲート通過。タイトル・ラベル・レビュアー・draft 状態は不変）。#21〜#23 は Steps 全件チェック済み
+- **Last completed**: PR #75 のタイトル差し替え（`Excel形式以外（YAML形式）のテストデータを読み込めるようにする`。title 完全一致・body 先頭 `## 概要` と `Tests run: 854` 保持・isDraft `true`／labels `[]`／reviewRequests `[]` 不変・作業ツリー差分なしの4ゲート通過）。#21〜#23 は Steps 全件チェック済み
 - **Next**: 未着手のタスクは無い。次の一手はユーザー判断
-- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は本ファイル冒頭のヘッダ参照。**未決の判断は無し**（前回の「PR #75 本文を更新するか」は差し替え実施により解消）。差し替え前の本文は `/tmp/pr75-body-before.md`（セッション限りの一時ファイル。恒久的には PR の編集履歴から復元する）。**残置物**: 隔離 worktree 4つ（`.claude/worktrees/agent-a2956f59…`・`agent-a4f8d5f0…`・`agent-ab61116d…`・`agent-acc1fb78…`。`git worktree list` で実測）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
+- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は本ファイル冒頭のヘッダ参照。**未決の判断は無し**。差し替え前のタイトルは `refactor: テストデータパーサーをTemplate Methodパターンで整理`（退避 `/tmp/pr75-title-before.txt`）、差し替え前の本文は `/tmp/pr75-body-before.md`。いずれもセッション限りの一時ファイルで、恒久的には PR の編集履歴から復元する。**残置物**: 隔離 worktree 4つ（`.claude/worktrees/agent-a2956f59…`・`agent-a4f8d5f0…`・`agent-ab61116d…`・`agent-acc1fb78…`。`git worktree list` で実測）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
 
 ---
 
