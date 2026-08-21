@@ -214,11 +214,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-21
+- **Last completed**: #23 期待値0件テーブルでも DB の実データを読む（ゲート1〜10 を実測し `bbb1ee1` まで。Steps は全件チェック済み。実測の全量は `checks/23.md`）
+- **Next**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（最初のステップ「失敗する再現テストを追加する」から）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。**未決のユーザー判断が2件、いずれも次の一手の前に要る** — (1) #23 のレビュー（QA・Craft・Verification）を回すか、回すなら誰を回すか。判断材料は `checks/23.md`「ユーザー判断を仰ぐ事項」（`src/main` の変更は `TableData#loadData()` 内の1分岐のみ、守るテストは再現テスト1件のみ）。(2) #22 着手前に要る、#21 の4ラウンド目レビューの要否（`#22` の節に記載）。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し
 
 ---
 
