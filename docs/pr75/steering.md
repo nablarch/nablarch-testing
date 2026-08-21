@@ -289,14 +289,21 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
   | `TestDataParsingTemplate.java:266` | `mi=2` | `tryLoadFromCache` の既定実装 `return false;` |
   | `TestDataParsingTemplate.java:277` | `mi=1` | `storeToCache` の既定実装（空） |
 
-  `TestDataParsingTemplate` の2件は**プロダクションコードの経路からは到達しない**。`:204` `if (!cacheEnabled() || !saveCache)` により既定実装を呼ぶ `cachedParse`（`:228-233`）へ入るのは `cacheEnabled() == true` のサブクラスだけであり、該当する3クラスはいずれも既定実装を通らない（`ListMapParser.java:58,68` と `TableDataParser.java:78,88` は両メソッドを override、`DataFileParser.java:106` は `cachedParse` 自体を override）。`:246` の Javadoc が「キャッシュを持つサブクラスは `true` を返し、`tryLoadFromCache`・`storeToCache`・`prepareResult` を実装する」と規約を定めているため、既定実装に到達する構成は規約違反にあたる。**判断はユーザー**
-- [ ] 意味のあるテストを追加する（担保内容を javadoc に1文で書く。**その行／分岐を壊す変更で落ちることを実測**し、コマンドと結果を報告に書く）
-- [ ] 到達不能と判断した行・分岐は、テストで埋めず**理由を行番号付きで報告する**（判断はユーザー）
-- [ ] コミット・push する
+  `TestDataParsingTemplate` の2件は**プロダクションコードの経路からは到達しない**。`:204` `if (!cacheEnabled() || !saveCache)` により既定実装を呼ぶ `cachedParse`（`:228-233`）へ入るのは `cacheEnabled() == true` のサブクラスだけであり、該当する3クラスはいずれも既定実装を通らない（`ListMapParser.java:58,68` と `TableDataParser.java:78,88` は両メソッドを override、`DataFileParser.java:106` は `cachedParse` 自体を override）。`:246` の Javadoc が「キャッシュを持つサブクラスは `true` を返し、`tryLoadFromCache`・`storeToCache`・`prepareResult` を実装する」と規約を定めているため、既定実装に到達する構成は規約違反にあたる。**2026-08-21 ユーザー判断: 到達不能として報告のみとし、テストも `src/main` も足さない。** 中間クラスを挟めば未達3命令は構造的に消えるが、3命令のためにクラス階層を変えない判断をした
+- [x] 意味のあるテストを追加する（担保内容を javadoc に1文で書く。**その行／分岐を壊す変更で落ちることを実測**し、コマンドと結果を報告に書く）→ **1件**。`MasterDataSetUpperTest#testGetAllTableDataFromFileWithNoExtension`。担保するのは「拡張子を持たないマスタデータファイルをExcel形式と誤判定せず、ファイル全体を1リソースとして `TestDataParser` へ問い合わせること」。フィクスチャのファイル名を `xls` にしているのは、早期return の有無を判別できる唯一の入力だから（`.` が無い名前は早期return が無いとそのまま拡張子として扱われ `xls` に一致してしまう。8種の名前で実測）。
+
+  変異2種とも kill（`mvn -o test -Dtest=MasterDataSetUpperTest#testGetAllTableDataFromFileWithNoExtension`）。
+
+  | ゲート | 変異 | 結果 |
+  | --- | --- | --- |
+  | A | `:220` の `return false;` を `return true;` にする | `Tests run: 1, Failures: 0, Errors: 1` |
+  | B | `:218-221` の早期return をブロックごと削除する | `Tests run: 1, Failures: 0, Errors: 1` |
+- [x] 到達不能と判断した行・分岐は、テストで埋めず**理由を行番号付きで報告する**（判断はユーザー）→ `TestDataParsingTemplate.java:266`（`mi=2`）と `:277`（`mi=1`）の2件。2026-08-21 ユーザー判断で報告のみとした（上表参照）
+- [x] コミット・push する
 
 **Completion criteria**:
 
-- 差分に含まれる行・分岐の `INSTRUCTION_MISSED` と `BRANCH_MISSED` が 0（または到達不能として報告済み）
+- 差分に含まれる行・分岐の `INSTRUCTION_MISSED` と `BRANCH_MISSED` が 0（または到達不能として報告済み）→ **達成**。再実測で変更行の未達は `TestDataParsingTemplate.java:266` `:277` の2行のみ（いずれも到達不能として報告済み）。`Tests run: 856, Failures: 0, Errors: 0, Skipped: 7`
 - 追加した各テストについて「壊す変更で落ちた」確認結果がある
 
 ### #28: 全テストを流して緑を確認する（手順5）
