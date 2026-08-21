@@ -218,9 +218,9 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
 - **Date**: 2026-08-21
-- **Last completed**: #22 の記録訂正（`ec1298f`。`checks/22.md:152` の拡張子件数を Git 追跡ファイル基準の実測値に差し替え）。#21〜#23 は Steps 全件チェック済み
+- **Last completed**: PR #75 本文の全文差し替え（`指示/75-PR本文.md` の `## 概要` 以降を投入。先頭行・`Tests run: 854` ともゲート通過。タイトル・ラベル・レビュアー・draft 状態は不変）。#21〜#23 は Steps 全件チェック済み
 - **Next**: 未着手のタスクは無い。次の一手はユーザー判断
-- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は本ファイル冒頭のヘッダ参照。**未決の判断が1件** — PR #75 本文を更新するか（`.xlsm`／大文字 `.XLS` が非Excel経路に落ちる旨の追記、および `#21`〜`#23` 未記載・テスト件数 `840` のまま／現在 854 の乖離解消）。貼る文面は `checks/22.md` の「拡張子の判定」節。**残置物**: 隔離 worktree 4つ（`.claude/worktrees/agent-a2956f59…`・`agent-a4f8d5f0…`・`agent-ab61116d…`・`agent-acc1fb78…`。`git worktree list` で実測）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
+- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は本ファイル冒頭のヘッダ参照。**未決の判断は無し**（前回の「PR #75 本文を更新するか」は差し替え実施により解消）。差し替え前の本文は `/tmp/pr75-body-before.md`（セッション限りの一時ファイル。恒久的には PR の編集履歴から復元する）。**残置物**: 隔離 worktree 4つ（`.claude/worktrees/agent-a2956f59…`・`agent-a4f8d5f0…`・`agent-ab61116d…`・`agent-acc1fb78…`。`git worktree list` で実測）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
 
 ---
 
