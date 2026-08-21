@@ -210,17 +210,117 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 ---
 
+# 仕上げフェーズのタスク（NTF 本体 YAML 対応の仕上げ）
+
+**出典**: `/home/tie303177/work/cowork/nablarch/ntf-testing/指示/00-共通ルール.md` および
+`/home/tie303177/work/cowork/nablarch/ntf-testing/指示/本体-あるべき姿とカバレッジ.md`（2026-08-21 着手）。
+到達すべき状態は3つ。`@Ignore` 0件・`TODO`/`FIXME` 0件・**PR が base から変更した `src/main` の行／分岐**の C0/C1 100%。
+
+### #24: install する（下流5リポジトリの前提）
+
+**Purpose**: 修正後の本体を `~/.m2` へ入れ、下流リポジトリが着手できる状態にする。着手前の jar は 6/25 のもので `#21`・`#22`・`#23` がどれも入っていない。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] `mvn -o clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
+- [ ] `unzip -l` で `TestDataParsingTemplate`・`MasterDataSetUpper.class`・`SendSyncSupport.class` のタイムスタンプが install 実行時刻であることを確認する
+- [ ] 完了をユーザーに報告する（下流の並行着手の合図になる）
+
+**Completion criteria**:
+
+- 4クラスすべてのタイムスタンプが install 実行時刻である
+- ファイル変更が無いためコミットは発生しない
+
+### #25: 本体の TODO / FIXME を無くす（手順2）
+
+**Purpose**: `src` 配下の `TODO`/`FIXME` を0件にする。実測2件（`MockHttpRequest.java:379` の `//FIXME`、`MockConnection.java:23` の `TODO write document comment.`）。**どちらも本 PR で入れたものではない。**
+
+**Prerequisites**: #24
+
+**Steps**:
+
+- [ ] 2件それぞれについて、いつ誰が入れたものかを `git log -L` 等で実測して報告する
+- [ ] `MockHttpRequest.java:379` — **推測で消さない。** まず再現テストを書き、マルチバイト本文で `Content-Length` がバイト数とずれるかを実測する
+- [ ] 実測結果に応じて処置する（ずれる→直す／ずれない→なぜ問題ないかを1文のコメントにして `//FIXME` を消す）
+- [ ] `MockConnection.java:23` — 実物を読み、このクラスが何をするものかを1〜3文のクラスコメントにして `TODO` を消す
+- [ ] `grep -rn 'TODO\|FIXME\|@Ignore' src --include=*.java` が0件であることを確認し、コミット・push する
+
+**Completion criteria**:
+
+- `src` 配下の `TODO`/`FIXME`/`@Ignore` が0件
+- `MockHttpRequest.java:379` の処置が、推測ではなく再現テストの実測に基づいている
+
+### #26: 下流から他責先として指されている3件の行番号照合（手順3・報告のみ）
+
+**Purpose**: 下流の指示書が出典として引いている行番号が実物と合っているかを確かめる。**3件とも 2026-08-21 に「対応不要」で決着済み。**
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [ ] XLS-40 — `TableData.java:97` `:492` `:530` がテーブル名・カラム名を大文字化しているかを実物で確認する
+- [ ] YML-14 — `DataFileFragment.java:105-113` の `addValue` が `names.size()` ぶんしか読まないかを実物で確認する
+- [ ] RepositoryInitializer — `RepositoryInitializer.java` の `static {}` と `MainForRequestTesting.java:24` の `finally { revertDefaultRepository(); }` を実物で確認する
+- [ ] ずれていたら正しい行番号を報告する
+
+**Completion criteria**:
+
+- **`src/main` を1行も変更していない**
+- 3件の行番号の照合結果が報告されている（コミットはしない）
+
+### #27: 変更差分の C0/C1 を 100% にする（手順4）
+
+**Purpose**: PR が `origin/develop` から変更した `src/main` の行・分岐について、C0（命令網羅）と C1（分岐網羅）を 100% にする。**モジュール全体ではなく変更差分が対象**（2026-08-21 ユーザー判断）。
+
+**Prerequisites**: #25
+
+**Steps**:
+
+- [ ] `git diff --stat origin/develop...HEAD -- src/main` と `git diff origin/develop...HEAD -- src/main` を採り直し、どの行が差分かを報告に貼る
+- [ ] `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で実測する（**`pom.xml`・`argLine` は変更しない**）
+- [ ] 未達の行・分岐の一覧を**まず報告する**（テストを足すのはその後。何件足すかが分かってからでないとユーザーが判断できない）
+- [ ] 意味のあるテストを追加する（担保内容を javadoc に1文で書く。**その行／分岐を壊す変更で落ちることを実測**し、コマンドと結果を報告に書く）
+- [ ] 到達不能と判断した行・分岐は、テストで埋めず**理由を行番号付きで報告する**（判断はユーザー）
+- [ ] コミット・push する
+
+**Completion criteria**:
+
+- 差分に含まれる行・分岐の `INSTRUCTION_MISSED` と `BRANCH_MISSED` が 0（または到達不能として報告済み）
+- 追加した各テストについて「壊す変更で落ちた」確認結果がある
+
+### #28: 全テストを流して緑を確認する（手順5）
+
+**Purpose**: `mvn -o clean test` 全件で緑を確認し、`Tests run` の行をそのまま報告する。
+
+**Prerequisites**: #27
+
+**Steps**:
+
+- [ ] `mvn -o clean test` を実行する
+- [ ] `Tests run: N, Failures: F, Errors: E, Skipped: S` の行をそのまま転記する（要約しない）
+- [ ] 着手前の基準 `Tests run: 854, Failures: 0, Errors: 0, Skipped: 7` と突き合わせる（`Skipped: 7` は `org.junit.Assume` 由来で `@Ignore` ではない）
+- [ ] コミット・push する
+
+**Completion criteria**:
+
+- `Failures: 0, Errors: 0`
+- `Skipped` の内訳が `@Ignore` ではないことを確認済み
+
+---
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-21
-- **Last completed**: PR #75 のタイトル差し替え（`Excel形式以外（YAML形式）のテストデータを読み込めるようにする`。title 完全一致・body 先頭 `## 概要` と `Tests run: 854` 保持・isDraft `true`／labels `[]`／reviewRequests `[]` 不変・作業ツリー差分なしの4ゲート通過）。#21〜#23 は Steps 全件チェック済み
-- **Next**: 未着手のタスクは無い。次の一手はユーザー判断
-- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は本ファイル冒頭のヘッダ参照。**未決の判断は無し**。差し替え前のタイトルは `refactor: テストデータパーサーをTemplate Methodパターンで整理`（退避 `/tmp/pr75-title-before.txt`）、差し替え前の本文は `/tmp/pr75-body-before.md`。いずれもセッション限りの一時ファイルで、恒久的には PR の編集履歴から復元する。**残置物**: 隔離 worktree 4つ（`.claude/worktrees/agent-a2956f59…`・`agent-a4f8d5f0…`・`agent-ab61116d…`・`agent-acc1fb78…`。`git worktree list` で実測）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
 
 ---
 
