@@ -163,7 +163,9 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Purpose**: マスタデータファイルの拡張子がExcel（`.xls`/`.xlsx`）以外の場合、POIによるシート列挙を経由せず`TestDataParser`へ1リソースとして直接問い合わせることで、YAML形式のマスタデータ投入を可能にする。Excel形式の既存動作は変えない。
 
-**Prerequisites**: #21（依頼順に従い先に着手。技術的には独立）
+**Prerequisites**: #23（2026-08-20 ユーザー判断により、#23 を #22 より先に行う。技術的には独立）
+
+**未決のユーザー判断（#22 着手前に要る）**: #21 の4ラウンド目レビューを回すか、回すなら誰を回すか。判断材料は `checks/21.md`「修正ラウンド3 → 次のレビューの判断材料」（`src/main` の変更は Javadoc・コメントのみ）。
 
 **Steps**:
 
@@ -185,7 +187,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Purpose**: 期待値のカラム名が0件のとき `TableData#loadData()` が DB を読まずに0行を返し、DB に行が残っていても検証が必ず PASS してしまう偽陰性をなくす。カラム名の宣言は「検証対象カラムの絞り込み」であって「検証するかどうか」のスイッチではない。YAML の `rows: []` はカラム名を書く場所が構造上無いため必ずこの経路に落ちる。**不具合修正ではなく、YAML 対応に必要な本体変更**である（`ntf-empty-table-assertion.md` 3章）。
 
-**Prerequisites**: #22（後方互換に影響するため、依頼分を先に片付けてから着手する。技術的には独立）
+**Prerequisites**: #21（2026-08-20 ユーザー判断により、#22 より先に着手する。技術的には独立）
 
 **Steps**:
 
@@ -212,11 +214,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-21
-- **Last completed**: #21 SendSyncSupport のYAML形式再読み込み対応（レビューラウンド3 の指摘 U〜AH を14件すべて処置し `6007a17` で push 済み。Steps は全件チェック済み）
-- **Next**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（最初のステップ「失敗する再現テストを追加する」から）
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（`6007a17` = `origin`、作業ツリーはクリーン）。**未決のユーザー判断**: #21 の4ラウンド目レビューを回すか、回すなら誰を回すか（判断材料は `checks/21.md`「修正ラウンド3 → 次のレビューの判断材料」。`src/main` の変更は Javadoc・コメントのみ）。#22 に着手する前にこの判断が要る。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
 
 ---
 
