@@ -215,11 +215,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-21
-- **Last completed**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（`a94fa08` 再現テスト / `3de41ff` 修正 / `f0435c6` 記録。実測の全量は `checks/22.md`）
-- **Next**: 未着手のタスクは無い（#1〜#23 すべて Steps 全件チェック済み）。次の一手はユーザー判断
-- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は上のヘッダ参照。**未決の判断が1件** — 指示書 `22-実装.md` §5 が求める「`.xlsm`／大文字 `.XLS` が非Excel経路に落ちる」旨の一文を PR #75 本文に入れるか、および #75 本文全体を現状（`#21`〜`#23` 未記載、テスト件数 `840` のまま／現在 854）に合わせて更新するか。貼る文面は `checks/22.md` の「拡張子の判定」節にある。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため書いた瞬間に古くなる）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
 
 ---
 
