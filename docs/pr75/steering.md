@@ -224,9 +224,9 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] `mvn -o clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する
-- [ ] `unzip -l` で `TestDataParsingTemplate`・`MasterDataSetUpper.class`・`SendSyncSupport.class` のタイムスタンプが install 実行時刻であることを確認する
-- [ ] 完了をユーザーに報告する（下流の並行着手の合図になる）
+- [x] `mvn -o clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する → `BUILD SUCCESS`（2026-08-21 17:46:14）
+- [x] `unzip -l` で `TestDataParsingTemplate`・`MasterDataSetUpper.class`・`SendSyncSupport.class` のタイムスタンプが install 実行時刻であることを確認する → 4クラスとも `2026-08-21 17:46`。jar 本体は `17:46:12.568`。**着手前の jar は指示書の言う 6/25 ではなく `2026-08-21 15:27:53` だった**（別セッションで install 済み）
+- [x] 完了をユーザーに報告する（下流の並行着手の合図になる）
 
 **Completion criteria**:
 
