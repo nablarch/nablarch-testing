@@ -340,11 +340,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-21
+- **Last completed**: #28（全テスト緑 `Tests run: 856, Failures: 0, Errors: 0, Skipped: 7`）。#24〜#28 すべて完了。#25 反映後に再 install 済み（jar 2026-08-21 18:28:54）
+- **Next**: このリポジトリに未着手タスクは無い。次の一手はユーザー判断（下流5リポジトリの着手可否）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`。下流は 18:28:54 の jar を使うこと（17:46 の jar には #25 が入っていない）。下流の指示書が引く XLS-40 の行番号は実物とずれており、正は `TableData.java:493` / `:531`（指示書は `:492` / `:530`）。差分カバレッジの未達は `TestDataParsingTemplate.java:266` `:277` の2命令のみで、いずれも到達不能・報告のみでユーザー了承済み。`.claude/worktrees/` 配下に過去セッションの worktree 4件と `worktree-agent-*` ブランチ8件が残置（gitignore 済みのため `git status` には出ない）
 
 ---
 
