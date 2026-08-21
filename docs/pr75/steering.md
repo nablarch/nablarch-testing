@@ -212,11 +212,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-21
+- **Last completed**: #21 SendSyncSupport のYAML形式再読み込み対応（レビューラウンド3 の指摘 U〜AH を14件すべて処置し `6007a17` で push 済み。Steps は全件チェック済み）
+- **Next**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（最初のステップ「失敗する再現テストを追加する」から）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（`6007a17` = `origin`、作業ツリーはクリーン）。**未決のユーザー判断**: #21 の4ラウンド目レビューを回すか、回すなら誰を回すか（判断材料は `checks/21.md`「修正ラウンド3 → 次のレビューの判断材料」。`src/main` の変更は Javadoc・コメントのみ）。#22 に着手する前にこの判断が要る。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない
 
 ---
 
