@@ -175,6 +175,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - [x] 再現テストが通ることを確認する → `Tests run: 7, Failures: 0, Errors: 0`
 - [x] 既存のExcel形式マスタデータ投入テストが壊れていないことを確認する → 既存6件のソースに差分なし。変異2種で分岐の両方向を実測（`checks/22.md`「ゲート5」）
 - [x] 修正をコミットする → `3de41ff`（`Tests run: 854, Failures: 0, Errors: 0, Skipped: 7`。基準 853 ＋ 追加1件。ゲート1〜8 の実測は `checks/22.md`）
+- [x] `checks/22.md:152` の拡張子件数を実測値に直す → `ec1298f`。レビュー役の「`xls` 523件・`xlsx` 18件」はどの走査範囲でも再現しない誤りだったため、Git 追跡ファイル基準（`xls` 59件・`xlsx` 2件）と出典コマンド `git ls-files | grep -iE '\.(xls|xlsx|xlsm|xlsb)$'` に差し替えた。`xlsm`・`xlsb`・大文字拡張子0件は Git 追跡・作業ツリー（`target` 除く 295/10・含む 580/20）の3範囲すべてで一致し、本タスクの設計判断は変わらない
 
 **Completion criteria**:
 
@@ -215,11 +216,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-21
+- **Last completed**: #22 の記録訂正（`ec1298f`。`checks/22.md:152` の拡張子件数を Git 追跡ファイル基準の実測値に差し替え）。#21〜#23 は Steps 全件チェック済み
+- **Next**: 未着手のタスクは無い。次の一手はユーザー判断
+- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は本ファイル冒頭のヘッダ参照。**未決の判断が1件** — PR #75 本文を更新するか（`.xlsm`／大文字 `.XLS` が非Excel経路に落ちる旨の追記、および `#21`〜`#23` 未記載・テスト件数 `840` のまま／現在 854 の乖離解消）。貼る文面は `checks/22.md` の「拡張子の判定」節。**残置物**: 隔離 worktree 4つ（`.claude/worktrees/agent-a2956f59…`・`agent-a4f8d5f0…`・`agent-ab61116d…`・`agent-acc1fb78…`。`git worktree list` で実測）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
 
 ---
 
