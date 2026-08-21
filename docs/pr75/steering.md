@@ -260,10 +260,10 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] XLS-40 — `TableData.java:97` `:492` `:530` がテーブル名・カラム名を大文字化しているかを実物で確認する
-- [ ] YML-14 — `DataFileFragment.java:105-113` の `addValue` が `names.size()` ぶんしか読まないかを実物で確認する
-- [ ] RepositoryInitializer — `RepositoryInitializer.java` の `static {}` と `MainForRequestTesting.java:24` の `finally { revertDefaultRepository(); }` を実物で確認する
-- [ ] ずれていたら正しい行番号を報告する
+- [x] XLS-40 — `TableData.java:97` `:492` `:530` がテーブル名・カラム名を大文字化しているかを実物で確認する → **`:492` `:530` は1行ずれ。正しくは `:493` `:531`**。`:97` は正しい
+- [x] YML-14 — `DataFileFragment.java:105-113` の `addValue` が `names.size()` ぶんしか読まないかを実物で確認する → **一致**。`addValue` の定義は `:102`、`for (int i = 0; i < names.size(); i++)` が `:105`、その閉じ括弧が `:113`
+- [x] RepositoryInitializer — `RepositoryInitializer.java` の `static {}` と `MainForRequestTesting.java:24` の `finally { revertDefaultRepository(); }` を実物で確認する → **一致**。`static {}` は `:32`（指示書に行番号の記載なし）、`revertDefaultRepository()` の呼び出しは `:24`（`finally` キーワード自体は `:23`）
+- [x] ずれていたら正しい行番号を報告する → XLS-40 の2件を報告（`:492`→`:493`、`:530`→`:531`）。**`src/main` は1行も変更していない**
 
 **Completion criteria**:
 
@@ -278,9 +278,18 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] `git diff --stat origin/develop...HEAD -- src/main` と `git diff origin/develop...HEAD -- src/main` を採り直し、どの行が差分かを報告に貼る
-- [ ] `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で実測する（**`pom.xml`・`argLine` は変更しない**）
-- [ ] 未達の行・分岐の一覧を**まず報告する**（テストを足すのはその後。何件足すかが分かってからでないとユーザーが判断できない）
+- [x] `git diff --stat origin/develop...HEAD -- src/main` と `git diff origin/develop...HEAD -- src/main` を採り直し、どの行が差分かを報告に貼る → **8ファイル `+272 / -43`**（`#25` で `MockHttpRequest.java` が加わり、着手前の7ファイル `+265/-42` から増えた）
+- [x] `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec` で実測する（**`pom.xml`・`argLine` は変更しない**）→ 実施。`jacoco.xml` の行単位データと `git diff -U0 origin/develop...HEAD -- src/main` の変更行を突き合わせて判定した（クラス単位の `jacoco.csv` では未変更行を含んでしまうため）
+- [x] 未達の行・分岐の一覧を**まず報告する**（テストを足すのはその後。何件足すかが分かってからでないとユーザーが判断できない）→ **変更行のうち未達は4行・3か所**。
+
+  | 場所 | 未達 | 内容 |
+  | --- | --- | --- |
+  | `MasterDataSetUpper.java:218` | `mb=1 cb=1` | `if (dotPosition < 0)` の true 側（拡張子なしファイル）が未到達 |
+  | `MasterDataSetUpper.java:220` | `mi=2` | 同上の `return false;` |
+  | `TestDataParsingTemplate.java:266` | `mi=2` | `tryLoadFromCache` の既定実装 `return false;` |
+  | `TestDataParsingTemplate.java:277` | `mi=1` | `storeToCache` の既定実装（空） |
+
+  `TestDataParsingTemplate` の2件は**プロダクションコードの経路からは到達しない**。`:204` `if (!cacheEnabled() || !saveCache)` により既定実装を呼ぶ `cachedParse`（`:228-233`）へ入るのは `cacheEnabled() == true` のサブクラスだけであり、該当する3クラスはいずれも既定実装を通らない（`ListMapParser.java:58,68` と `TableDataParser.java:78,88` は両メソッドを override、`DataFileParser.java:106` は `cachedParse` 自体を override）。`:246` の Javadoc が「キャッシュを持つサブクラスは `true` を返し、`tryLoadFromCache`・`storeToCache`・`prepareResult` を実装する」と規約を定めているため、既定実装に到達する構成は規約違反にあたる。**判断はユーザー**
 - [ ] 意味のあるテストを追加する（担保内容を javadoc に1文で書く。**その行／分岐を壊す変更で落ちることを実測**し、コマンドと結果を報告に書く）
 - [ ] 到達不能と判断した行・分岐は、テストで埋めず**理由を行番号付きで報告する**（判断はユーザー）
 - [ ] コミット・push する
