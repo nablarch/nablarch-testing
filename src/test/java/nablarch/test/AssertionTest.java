@@ -66,6 +66,24 @@ public class AssertionTest extends AssertionTestSupport {
         }
     }
 
+    /**
+     * {@link Assertion#assertTableEquals(String, nablarch.test.core.db.TableData)}のテスト<br/>
+     * 期待値のカラム名が0件でも、DBのテーブルが真に空であれば検証が成功することを確認する。
+     * <p/>
+     * {@link #testAssertTableEqualsWithEmptyColumnNames()}が「DBに行が残っていれば落ちる」側を、
+     * 本テストが「DBが空なら通る」側を担保する。カラム名0件を一律で失敗として扱う変更を検知する。
+     */
+    @Test
+    public void testAssertTableEqualsWithEmptyColumnNamesOnEmptyTable() {
+        // TEST_TABLEは@Before（AssertionTestSupport#before）で全削除されているため、行を入れない
+        TableData expected = new TableData();
+        expected.setTableName("test_table");
+        expected.setDbInfo(dbInfo);
+        expected.setColumnNames(new String[0]);
+
+        Assertion.assertTableEquals("", expected);
+    }
+
     @Test
     public void testAssertTableEqualsStringListOfTableData() {
         // INSERT文実行
