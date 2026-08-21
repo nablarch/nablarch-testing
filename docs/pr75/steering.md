@@ -227,6 +227,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - [x] `mvn -o clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true` を実行する → `BUILD SUCCESS`（2026-08-21 17:46:14）
 - [x] `unzip -l` で `TestDataParsingTemplate`・`MasterDataSetUpper.class`・`SendSyncSupport.class` のタイムスタンプが install 実行時刻であることを確認する → 4クラスとも `2026-08-21 17:46`。jar 本体は `17:46:12.568`。**着手前の jar は指示書の言う 6/25 ではなく `2026-08-21 15:27:53` だった**（別セッションで install 済み）
 - [x] 完了をユーザーに報告する（下流の並行着手の合図になる）
+- [x] **`#25` 完了後に再 install する**（初回 install `17:46:12` は `#25` の `MockHttpRequest.java` 修正より前だった）→ `2026-08-21 18:28:54`。4クラスとも `18:28`。`javap -c nablarch/fw/web/MockHttpRequest.class` に `String.getBytes` 参照1件を確認。**下流が使うのはこの jar**
 
 **Completion criteria**:
 
