@@ -3,7 +3,7 @@ Rn version: 0.8.0
 # NTF テストデータ変換ツール 再構築フェーズ（設計書 6.3 到達）
 
 ブランチ: `convert-testdata-excel-to-text`
-ドラフト PR: [lovaizu/nablarch-testing#1](https://github.com/lovaizu/nablarch-testing/pull/1)
+ドラフト PR: [nablarch/nablarch-testing#75](https://github.com/nablarch/nablarch-testing/pull/75)（head `convert-testdata-excel-to-text` / base `develop`。`origin` もこのリポジトリ。2026-08-21 `gh pr list --head` で実測）<br>※ 従来ここに書いていた `lovaizu/nablarch-testing#1` は head が `add-yaml` で本ブランチの PR ではない（同日 `gh pr view` で実測）
 
 **設計書 `docs/pr75/docs/testdata-converter-design.md` が唯一の正。**
 
@@ -217,9 +217,9 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
 - **Date**: 2026-08-21
-- **Last completed**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（`a94fa08` で再現テスト、`3de41ff` で修正。Steps は全件チェック済み。実測の全量は `checks/22.md`）
-- **Next**: 未着手のタスクは無い。#21・#22・#23 はすべて Steps 全件チェック済み。次の一手はユーザー判断（PR の締め方、レビューの要否など）
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。**#23 のレビュー（QA・Craft・Verification）は回さないと決着済み**（2026-08-21 ユーザー判断）。代わりに「DBが空なら通る」側を守るテストを1件追加し、`36cabc6` で入っている。付録C の計測1・2 を回帰テストとして残すかも「残さない」で決着済み（2026-08-21）。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため、書いた瞬間に古くなる）。origin は `3b87338`。未 push 分は `git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する。push のタイミングはユーザーが決める
+- **Last completed**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（`a94fa08` 再現テスト / `3de41ff` 修正 / `f0435c6` 記録。実測の全量は `checks/22.md`）
+- **Next**: 未着手のタスクは無い（#1〜#23 すべて Steps 全件チェック済み）。次の一手はユーザー判断
+- **Notes**: ブランチ `convert-testdata-excel-to-text`、PR は上のヘッダ参照。**未決の判断が1件** — 指示書 `22-実装.md` §5 が求める「`.xlsm`／大文字 `.XLS` が非Excel経路に落ちる」旨の一文を PR #75 本文に入れるか、および #75 本文全体を現状（`#21`〜`#23` 未記載、テスト件数 `840` のまま／現在 854）に合わせて更新するか。貼る文面は `checks/22.md` の「拡張子の判定」節にある。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため書いた瞬間に古くなる）。`git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する
 
 ---
 
