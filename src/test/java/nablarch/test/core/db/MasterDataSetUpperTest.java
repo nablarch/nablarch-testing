@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import nablarch.test.RepositoryInitializer;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
@@ -160,6 +161,30 @@ public class MasterDataSetUpperTest {
         doSetUpWithBackUp();
         // テーブルにレコードがある状態で実行（削除ができること）
         doSetUpWithBackUp();
+    }
+
+    /**
+     * 非Excel形式（YAML形式相当）のマスタデータファイルを指定した場合、
+     * そのファイル内の複数テーブルのデータが投入されること。
+     */
+    @Test
+    public void testSetUpMasterDataFromNonExcelFile() throws SQLException {
+        VariousDbTestHelper.createTable(Granpa.class);
+        VariousDbTestHelper.createTable(Stranger.class);
+
+        try {
+            MasterDataSetUpper.main(
+                    "nablarch/test/core/db/masterdata/masterdata-tsv-component-configuration.xml",
+                    "src/test/resources/nablarch/test/core/db/masterdata/MASTER_DATA_NON_EXCEL.txt");
+
+            // 1ファイルに含まれる2テーブル分が投入されること
+            assertEquals(3, VariousDbTestHelper.findAll(Granpa.class).size());
+            assertEquals(2, VariousDbTestHelper.findAll(Stranger.class).size());
+        } finally {
+            // MasterDataSetUpper.main がリポジトリを差し替えるため、既定の設定に戻す。
+            // 戻さないと、同一クラスの後続テストがタブ区切りテキスト用のリーダでExcelを読みに行き失敗する。
+            RepositoryInitializer.recreateRepository("unit-test.xml");
+        }
     }
 
     private void doSetUp() {
