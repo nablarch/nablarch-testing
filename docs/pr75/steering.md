@@ -314,15 +314,22 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] `mvn -o clean test` を実行する
-- [ ] `Tests run: N, Failures: F, Errors: E, Skipped: S` の行をそのまま転記する（要約しない）
-- [ ] 着手前の基準 `Tests run: 854, Failures: 0, Errors: 0, Skipped: 7` と突き合わせる（`Skipped: 7` は `org.junit.Assume` 由来で `@Ignore` ではない）
-- [ ] コミット・push する
+- [x] `mvn -o clean test` を実行する → `BUILD SUCCESS`
+- [x] `Tests run: N, Failures: F, Errors: E, Skipped: S` の行をそのまま転記する（要約しない）→ `Tests run: 856, Failures: 0, Errors: 0, Skipped: 7`
+- [x] 着手前の基準 `Tests run: 854, Failures: 0, Errors: 0, Skipped: 7` と突き合わせる（`Skipped: 7` は `org.junit.Assume` 由来で `@Ignore` ではない）→ 854 ＋ 追加2件（`#25` の `testContentLengthIsOctetLengthOfBody`、`#27` の `testGetAllTableDataFromFileWithNoExtension`）＝ 856。`Skipped: 7` は据え置き。**内訳は指示書の記述（すべて `org.junit.Assume` の Java バージョン判定）とは一部異なる**。`@Ignore` が0件である点は指示書どおり。
+
+  | クラス | 件数 | 由来 |
+  | --- | --- | --- |
+  | `HtmlConvertTest.java:89,109` | 2 | `Assume.assumeTrue` の Java バージョン判定（1.6以下／1.8） |
+  | `RequestTestingMessagingClientTest.java:438,479` | 2 | `Assume.assumeThat` の Java バージョン判定（1.6／1.7） |
+  | `DbAccessTestSupportTest.java:274,308` | 2 | **`@TargetDb(include = ORACLE / POSTGRE_SQL)`**。H2 で実行しているため `DatabaseTestRunner` がスキップする |
+  | `FileUtilsTest.java:457` | 1 | `assumeThat(getOsName(), containsString("windows"))`。Linux 実行のためスキップ |
+- [x] コミット・push する
 
 **Completion criteria**:
 
-- `Failures: 0, Errors: 0`
-- `Skipped` の内訳が `@Ignore` ではないことを確認済み
+- `Failures: 0, Errors: 0` → **達成**
+- `Skipped` の内訳が `@Ignore` ではないことを確認済み → **達成**（上表。`grep -rn '@Ignore' src --include=*.java` も0件）
 
 ---
 
