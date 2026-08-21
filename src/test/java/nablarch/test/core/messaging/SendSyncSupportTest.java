@@ -9,7 +9,6 @@ import nablarch.test.core.util.interpreter.TestDataInterpreter;
 import nablarch.test.support.SystemRepositoryResource;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * {@link SendSyncSupport}のテストクラス。
@@ -59,9 +59,10 @@ public class SendSyncSupportTest {
     /**
      * 最終更新日時に設定する未来方向のオフセット（ミリ秒）。
      * <p>
-     * Unix環境では{@code lastModified()}が秒の精度でしか得られない制限があるため、
-     * ファイルを書き換えてから最終更新日時を確認するまでの時間が1秒未満だと値が変化しない。
-     * これを回避するため、1秒より先の未来を明示的に設定する。
+     * 直前に書き込んだファイルの最終更新日時はほぼ現在時刻であるため、
+     * 同一ミリ秒内に書き換えると値が変化しない。
+     * また{@code setLastModified}で設定した値をどこまでの精度で保持できるかはファイルシステムに依存する。
+     * これらの影響を受けずに「更新された」と判別できるよう、現在時刻より十分に後の日時を明示的に設定する。
      * </p>
      */
     private static final long FUTURE_OFFSET_MILLIS = 2000L;
@@ -239,6 +240,11 @@ public class SendSyncSupportTest {
      * テストデータの読み込み中に行われた書き換えが、次回の読み出しで検知されることのテスト。<br/>
      * 最終更新日時を読み込みの後に採取する実装では、読み込み中の書き換えを取り込んでしまい、
      * 次回の読み出しで再読み込みが行われない。
+     * <p>
+     * スナップショットの採取を{@code getMessages}の後へ移す変異は、本テストだけが検知する。
+     * 採取のタイミングを変える改修を行う際は、本テストを削除・改変する前に同じ変異を試し、
+     * 検知するテストが残ることを確かめること。
+     * </p>
      *
      * @throws Exception 予期しない例外
      */
@@ -268,7 +274,7 @@ public class SendSyncSupportTest {
     }
 
     /**
-     * テストデータがディレクトリでない場合（Excel形式の場合）、
+     * テストデータがディレクトリでない場合、
      * そのファイル自体の最終更新日時だけがスナップショットに含まれることのテスト。
      *
      * @throws Exception 予期しない例外
@@ -307,20 +313,22 @@ public class SendSyncSupportTest {
 
     /**
      * サブディレクトリを含むディレクトリの場合、
-     * サブディレクトリ配下のファイルの最終更新日時が変わるとスナップショットも変わることのテスト。
+     * サブディレクトリ配下のファイルの最終更新日時が変わるとスナップショットも変わることのテスト。<br/>
+     * 一定の深さで再帰を打ち切る実装を検知できるよう、ツリーの深さを3としている。
      *
      * @throws Exception 予期しない例外
      */
     @Test
     public void testGetTimestampSnapshotChangesWhenFileInSubDirectoryIsUpdated() throws Exception {
 
-        // Given: サブディレクトリ配下にファイルを持つディレクトリ
+        // Given: サブディレクトリを2階層たどった先にファイルを持つディレクトリ
         File directory = temporaryFolder.newFolder("tree");
-        File nestedFile = createFile(new File(directory, "sub"), "nested.txt");
+        File nestedFile = createFile(new File(directory, "sub/deep"), "nested.txt");
         Map<String, Long> before = target.getTimestampSnapshot(directory);
 
         // Given: サブディレクトリ配下のファイルが、"/"区切りの相対パスをキーとして採取されている
-        assertTrue("サブディレクトリ配下のファイルが採取されていない。", before.containsKey("sub/nested.txt"));
+        assertTrue("サブディレクトリ配下のファイルが採取されていない。",
+                before.containsKey("sub/deep/nested.txt"));
 
         // When: サブディレクトリ配下のファイルの最終更新日時だけを変更する
         setFutureLastModified(nestedFile);
@@ -362,36 +370,37 @@ public class SendSyncSupportTest {
     }
 
     /**
-     * 内容が変わっていないディレクトリに対して繰り返し呼び出しても、
-     * 同じスナップショットが返却されることのテスト。<br/>
-     * スナップショットは相対パスをキーとするMapであり、その等価判定はキーの順序に依存しないため、
-     * {@link java.io.File#listFiles()}が返すエントリの順序は比較結果に影響しない。
+     * ディレクトリ・ファイルの双方が、起点からの相対パスをキーとして
+     * もれなくスナップショットに採取されることのテスト。<br/>
+     * 採取されるキーと値の一式は既知であるため、期待する一式との完全一致で表明する。
+     * 採取するエントリを減らす実装（起点以外を採取しない、ディレクトリを採取しない等）は、
+     * キーの欠落として現れる。
      *
      * @throws Exception 予期しない例外
      */
     @Test
-    public void testGetTimestampSnapshotIsStableForSameDirectory() throws Exception {
+    public void testGetTimestampSnapshotContainsAllEntriesInTree() throws Exception {
 
         // Given: 複数のファイルとサブディレクトリを持つディレクトリ
-        File directory = temporaryFolder.newFolder("stable");
-        long now = System.currentTimeMillis();
+        File directory = temporaryFolder.newFolder("snapshot");
+        long base = truncateToSecond(System.currentTimeMillis() - FAR_OFFSET_MILLIS);
+        Map<String, Long> expected = new HashMap<String, Long>();
         int index = 0;
         for (String name : new String[] {"c.txt", "a.txt", "b.txt", "d.txt", "e.txt"}) {
-            File file = createFile(directory, name);
-            // ファイルごとに異なる最終更新日時を設定し、採取の抜けが値の差として現れるようにする
-            assertTrue("最終更新日時の設定に失敗した。",
-                    file.setLastModified(now - FAR_OFFSET_MILLIS + (index++ * STEP_MILLIS)));
+            // エントリごとに異なる最終更新日時を設定し、キーと値の対応の誤りが現れるようにする
+            expected.put(name, setLastModified(createFile(directory, name), base + (index++ * STEP_MILLIS)));
         }
-        createFile(new File(directory, "sub"), "nested.txt");
 
-        // When: 内容を変えずに繰り返し取得する
-        Map<String, Long> first = target.getTimestampSnapshot(directory);
-        Map<String, Long> second = target.getTimestampSnapshot(directory);
-        Map<String, Long> third = target.getTimestampSnapshot(directory);
+        // Given: サブディレクトリと、その配下のファイル。
+        // エントリを作成すると親ディレクトリの最終更新日時が変わるため、深い側から順に設定する
+        File subDirectory = new File(directory, "sub");
+        File nestedFile = createFile(subDirectory, "nested.txt");
+        expected.put("sub/nested.txt", setLastModified(nestedFile, base + (index++ * STEP_MILLIS)));
+        expected.put("sub", setLastModified(subDirectory, base + (index++ * STEP_MILLIS)));
+        expected.put("", setLastModified(directory, base + (index * STEP_MILLIS)));
 
-        // Then: いずれも同じ値となる
-        assertThat(second, is(first));
-        assertThat(third, is(first));
+        // When/Then: 期待するキーと値の一式に完全一致する
+        assertThat(target.getTimestampSnapshot(directory), is(expected));
     }
 
     /**
@@ -440,12 +449,12 @@ public class SendSyncSupportTest {
         // Given: 読み取り不可としたディレクトリ
         File directory = temporaryFolder.newFolder("unreadable");
         createFile(directory, "message.txt");
-        Assume.assumeTrue("読み取り権限を落とせないためスキップする。", directory.setReadable(false));
+        assumeTrue("読み取り権限を落とせないためスキップする。", directory.setReadable(false));
 
         boolean restored;
         try {
             // 読み取り権限を落としても一覧が取得できる環境では、この観点は検証できない
-            Assume.assumeTrue("ディレクトリの一覧が取得できてしまうためスキップする。", directory.listFiles() == null);
+            assumeTrue("ディレクトリの一覧が取得できてしまうためスキップする。", directory.listFiles() == null);
 
             // When/Then: ディレクトリ自体のエントリだけが含まれる
             Map<String, Long> expected = Collections.singletonMap("", directory.lastModified());
@@ -464,8 +473,8 @@ public class SendSyncSupportTest {
     }
 
     /**
-     * ミリ秒未満を切り捨てる。<br/>
-     * Unix環境では{@code lastModified()}が秒の精度でしか得られないため、
+     * 秒未満を切り捨てる。<br/>
+     * {@code setLastModified}で設定した値が秒単位に丸められるファイルシステムでも、
      * 設定した値と取得できる値を一致させる必要がある場合に使用する。
      *
      * @param millis エポックからのミリ秒
@@ -473,6 +482,19 @@ public class SendSyncSupportTest {
      */
     private long truncateToSecond(long millis) {
         return millis / 1000L * 1000L;
+    }
+
+    /**
+     * 最終更新日時を設定する。
+     *
+     * @param file 対象のファイルまたはディレクトリ
+     * @param millis 設定する最終更新日時（エポックからのミリ秒）
+     * @return 設定した最終更新日時
+     */
+    private static long setLastModified(File file, long millis) {
+        assertTrue("最終更新日時の設定に失敗した。file=[" + file.getAbsolutePath() + ']',
+                file.setLastModified(millis));
+        return millis;
     }
 
     /**

@@ -99,7 +99,7 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - [x] 畳み込みの設計を A/B/C から確定する（下記「レビュー指摘（2ラウンド目）」H）→ **C を採用**（2026-08-20 ユーザー判断。A・B は採用しない）。`Map<相対パス, lastModified>` のスナップショットを `equals` 比較する方式に差し替え、`Arrays.sort` と畳み込みを削除
 - [x] レビュー指摘 I〜T を修正する（下記の表）→ 12件すべて処置。採否と根拠は `checks/21.md`「修正ラウンド2」
 - [x] 修正後に QA・Craft・Verification を再実行し、`checks/21.md` のレビュー欄を更新する（3ラウンド目。`71a60c3` に対し隔離 worktree で独立実行）→ **3者とも conditional pass**。指摘 U〜AH の14件は下記の表と `checks/21.md`「レビューラウンド3」
-- [ ] **【ユーザー確認待ち】** レビューラウンド3 の指摘 U〜AH を処置する（下記の表。本ラウンドはレビューのみでコード未変更）
+- [x] レビューラウンド3 の指摘 U〜AH を処置する（下記の表）→ 14件すべて処置。`src/main` の変更は Javadoc・コメントのみ。処置内容とゲート1〜10 の実測は `checks/21.md`「修正ラウンド3」
 - [x] 既存テスト全件が成功することを確認し、修正をコミットする（`Tests run: 851, Failures: 0, Errors: 0, Skipped: 7`。基準 848 ＋ 追加3件。ゲート1〜10 の実測は `checks/21.md`）
 
 **レビュー指摘（2ラウンド目。QA・Craft・Verification を `b22e5b9` に対して再実行）**
@@ -126,21 +126,23 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 `71a60c3` は方式そのものが `Map` スナップショットへ入れ替わったため、前2ラウンドの判定・根拠は流用していない（本ラウンドが初レビュー）。**3者とも「実装（`src/main`）に欠陥なし」で一致**し、指摘はテストの判別力とドキュメントの正確性に集中している。実測ログ・変異テストの全結果・性能の A/B は `checks/21.md`「レビューラウンド3」。
 
+**U〜AH の14件は 2026-08-21 の修正ラウンド3 で全件処置済み**（処置内容とゲート1〜10 の実測は `checks/21.md`「修正ラウンド3」）。`src/main` の実行されるコードは1行も変えていない。下表の「対応」欄のうち U・V・AD・AG は作業指示でレビュー役が方針を上書きしており、上書きの内容と反映結果は `checks/21.md`「修正ラウンド3」を正とする。
+
 | # | 指摘 | 重大度 | 出所 | 対応 |
 |---|---|---|---|---|
-| U | `testGetTimestampSnapshotIsStableForSameDirectory`（`SendSyncSupportTest.java:373-395`）に killer が1つも無い。同一実装の戻り値どうしを比べているだけで、実装を空洞化しても本テストだけ通過する。Javadoc が主張する「順序非依存」は `listFiles()` が決定的な順序を返す以上、原理的に表明できない | Medium | QA（14変異すべてで0件 kill） | **直す**。削除するか、期待するキー集合そのものを表明する形に作り替える |
-| V | 非ルートのディレクトリエントリを採取する挙動が、どのテストでも固定されていない（`SendSyncSupport.java:428` を非ルートで `put` しない変異が11件全通過）。この採取が効くのは入れ子のディレクトリが `listFiles() == null` になる場合だが、既存テストは起点しか読み取り不可にしていない | Medium | Craft（0件 kill） | **直す**。`:323` の `containsKey` をキー集合の完全一致に置き換える |
-| W | `checks/21.md` の Completion Criteria 表・レビュー欄が `b22e5b9` のままで、削除済みメソッド名・陳腐化した行番号・旧件数（848）を Evidence として掲げている | Medium | Verification | **一部処置済み**。各表の見出しに「`b22e5b9` 時点の記録」と明記し冒頭に読む順序の注記を追加。表本体の `71a60c3` 基準への書き直しは次ラウンド |
-| X | `SendSyncSupport.java:439` のコメントが述べる `"/"` 固定の目的（実行環境をまたいだキーの一致）が実態と対応しない。スナップショットは static な `fileCache` 内で同一 JVM 内でしか比較されず、永続化・シリアライズの経路は存在しない | Low | Craft・QA（独立に一致） | **直す**。`/` 固定は維持し、理由の記述を実態に合わせる |
-| Y | `SendSyncSupportTest.java:62-64`・`:467` 付近の「Unix環境では `lastModified()` が秒の精度でしか得られない」が実測に反する（JDK 17 で ms 精度が保持される）。実際のリスクは同一ミリ秒内の連続書き換えと `setLastModified` の FS 依存精度 | Low | QA・Verification（独立に一致） | **直す**。理由の記述のみ。定数値 2000ms と `truncateToSecond` は変更しない |
-| Z | `truncateToSecond` の Javadoc サマリ（`SendSyncSupportTest.java:467`）が「ミリ秒未満を切り捨てる」だが実装は秒未満を切り捨てる。`@return` とメソッド名は正しく、サマリ行だけが誤り | Low | Craft | **直す** |
-| AA | `getTimestampSnapshot` の Javadoc から、非ディレクトリ（Excel 経路）で `""` 1件だけを返すという説明が失われた。指摘 T の短縮で削りすぎている | Low | Craft | **直す**。1文を戻す |
-| AB | `testGetTimestampSnapshotForNotDirectory` の Javadoc（`SendSyncSupportTest.java:271`）が「Excel形式の場合」と述べるが、fixture は空の `message.xls` で Excel 経路は一切通らない。Given コメント（`:279`）は既に正しい | Low | QA | **直す**。文言のみ |
-| AC | `SendSyncSupportTest.java` で `import org.junit.Assume;` と `import static ...assumeThat;` が併存し、使用側も修飾形と非修飾形が混在。1ファイル内で両形式を使う前例はリポジトリに無い | Low | Craft | **直す** |
-| AD | ユーザー制約3（採取タイミング）の killer が `testReloadWhenTestDataIsUpdatedWhileReading` の1件のみ。差し込みリーダと専用フィクスチャに依存する作り込みで、壊れると制約が無言で無防備になる | Low | Verification | **直す**。テストは追加せず、Javadoc に「制約3の唯一の担保である」旨を明記する |
-| AE | mtime のみを見て内容を見ないため、mtime を保存する更新や同一ミリ秒内の連続書き換えは検知できない。Excel 形式でも従来から同じ性質 | Low | Verification | **一部直す**。Javadoc に1行足す。**検知基準そのものは直さない = (b) 直すと別の前提を壊す**（内容ハッシュ化は走査コストが跳ね上がり Excel 経路の既存挙動も変わる） |
-| AF | リポジトリ内に深さ3以上のツリーのテストが無い（最深 fixture は深さ2）。「深さ3以上で打ち切る」変異が0件 kill。Verification は一時テストで深さ6まで正しく動くことを実測したが、回帰には残っていない | Low | QA・Verification | **直す**。`testGetTimestampSnapshotChangesWhenFileInSubDirectoryIsUpdated` の `TemporaryFolder` ツリーを深さ3にする（新規 fixture 不要） |
-| AG | `"/"` 固定の効果は Linux では検証できない（`File.separator == "/"` のため変異が0件 kill） | Low | QA | **直さない = (a) 技術的に直せない**。Windows 環境が無く、`File.separator` を注入する seam も無い。未カバー項目として記録 |
+| U | `testGetTimestampSnapshotIsStableForSameDirectory`（`SendSyncSupportTest.java:373-395`）に killer が1つも無い。同一実装の戻り値どうしを比べているだけで、実装を空洞化しても本テストだけ通過する。Javadoc が主張する「順序非依存」は `listFiles()` が決定的な順序を返す以上、原理的に表明できない | Medium | QA（14変異すべてで0件 kill） | **処置済み**（方針を上書き）。削除せず `testGetTimestampSnapshotContainsAllEntriesInTree` へ作り替え、期待するキーと値の一式との完全一致で表明する。空洞化変異で 10/11 → **11/11 kill**（ゲート3） |
+| V | 非ルートのディレクトリエントリを採取する挙動が、どのテストでも固定されていない（`SendSyncSupport.java:428` を非ルートで `put` しない変異が11件全通過）。この採取が効くのは入れ子のディレクトリが `listFiles() == null` になる場合だが、既存テストは起点しか読み取り不可にしていない | Medium | Craft（0件 kill） | **処置済み**（方針を上書き）。U と同じ1つの表明で殺す（`:323` の `containsKey` は据え置き）。非ルートのディレクトリを `put` しない変異で **0件 → 1件 kill**（ゲート4） |
+| W | `checks/21.md` の Completion Criteria 表・レビュー欄が `b22e5b9` のままで、削除済みメソッド名・陳腐化した行番号・旧件数（848）を Evidence として掲げている | Medium | Verification | **処置済み**。現行コードを出典とする Completion Criteria 表を `checks/21.md` 冒頭に新設し、旧表一式は末尾の「付録」へ退避（削除はしていない）。新表の識別子がすべて現行コードに存在することを確認（ゲート9。0件のものは無し） |
+| X | `SendSyncSupport.java:439` のコメントが述べる `"/"` 固定の目的（実行環境をまたいだキーの一致）が実態と対応しない。スナップショットは static な `fileCache` 内で同一 JVM 内でしか比較されず、永続化・シリアライズの経路は存在しない | Low | Craft・QA（独立に一致） | **処置済み**。`/` 固定は維持し、コメントを「キーは同一JVM内のスナップショット同士の比較にしか使わないため、区切り文字は`"/"`に固定する」に改めた |
+| Y | `SendSyncSupportTest.java:62-64`・`:467` 付近の「Unix環境では `lastModified()` が秒の精度でしか得られない」が実測に反する（JDK 17 で ms 精度が保持される）。実際のリスクは同一ミリ秒内の連続書き換えと `setLastModified` の FS 依存精度 | Low | QA・Verification（独立に一致） | **処置済み**。理由を「同一ミリ秒内の書き換えでは値が変化しない／`setLastModified` の保持精度はファイルシステム依存」に書き換えた。定数値 2000ms と `truncateToSecond` は変更していない |
+| Z | `truncateToSecond` の Javadoc サマリ（`SendSyncSupportTest.java:467`）が「ミリ秒未満を切り捨てる」だが実装は秒未満を切り捨てる。`@return` とメソッド名は正しく、サマリ行だけが誤り | Low | Craft | **処置済み**。サマリ行を「秒未満を切り捨てる。」に修正 |
+| AA | `getTimestampSnapshot` の Javadoc から、非ディレクトリ（Excel 経路）で `""` 1件だけを返すという説明が失われた。指摘 T の短縮で削りすぎている | Low | Craft | **処置済み**。「テストデータがファイルの場合（ベースパスに拡張子が設定されている場合）は、そのファイルの最終更新日時だけを起点自身のエントリとして採取する。」を戻した |
+| AB | `testGetTimestampSnapshotForNotDirectory` の Javadoc（`SendSyncSupportTest.java:271`）が「Excel形式の場合」と述べるが、fixture は空の `message.xls` で Excel 経路は一切通らない。Given コメント（`:279`）は既に正しい | Low | QA | **処置済み**。Javadoc から「（Excel形式の場合）」を削除 |
+| AC | `SendSyncSupportTest.java` で `import org.junit.Assume;` と `import static ...assumeThat;` が併存し、使用側も修飾形と非修飾形が混在。1ファイル内で両形式を使う前例はリポジトリに無い | Low | Craft | **処置済み**。`import org.junit.Assume;` を削除し `assumeTrue` を static import に統一（`FileUtilsTest.java:11` と同じ形） |
+| AD | ユーザー制約3（採取タイミング）の killer が `testReloadWhenTestDataIsUpdatedWhileReading` の1件のみ。差し込みリーダと専用フィクスチャに依存する作り込みで、壊れると制約が無言で無防備になる | Low | Verification | **処置済み**（方針を上書き）。「唯一」は時間が経つと嘘になるため書かない。代わりに Javadoc へ「スナップショットの採取を `getMessages` の後へ移す変異は、本テストだけが検知する。採取のタイミングを変える改修を行う際は、本テストを削除・改変する前に同じ変異を試し、検知するテストが残ることを確かめること」と記載した |
+| AE | mtime のみを見て内容を見ないため、mtime を保存する更新や同一ミリ秒内の連続書き換えは検知できない。Excel 形式でも従来から同じ性質 | Low | Verification | **一部処置済み**。`getTimestampSnapshot` の Javadoc に「検知の基準は最終更新日時であり、内容のハッシュではない」旨を追加。**検知基準そのものは直さない = (b) 直すと別の前提を壊す**（内容ハッシュ化は走査コストが跳ね上がり Excel 経路の既存挙動も変わる）。**本ラウンドで直さなかったのはこの1件のみ** |
+| AF | リポジトリ内に深さ3以上のツリーのテストが無い（最深 fixture は深さ2）。「深さ3以上で打ち切る」変異が0件 kill。Verification は一時テストで深さ6まで正しく動くことを実測したが、回帰には残っていない | Low | QA・Verification | **処置済み**。当該テストの `TemporaryFolder` ツリーを `sub/deep/nested.txt`（深さ3）にした。深さ3以上で打ち切る変異で **0件 → 1件 kill**（ゲート5） |
+| AG | `"/"` 固定の効果は Linux では検証できない（`File.separator == "/"` のため変異が0件 kill） | Low | QA | **X の処置により解消**（方針を上書き）。X を処置した結果、`SendSyncSupport.java:445` のコメントが約束していた「実行環境をまたいだキーの一致」という主張自体が無くなり、担保すべき claim が残らない。**「未カバー」ではない。** 事実として残すのは「区切り文字は `"/"` リテラルで固定しており、本実行環境（Linux）では `File.separator` と同値のため `File.separator` へ戻す変異では差が出ない」の1点のみ |
 | AH | `checks/21.md:46` の「修正ラウンドは3回上限」に一次情報が無い（CC 自身が書いた1行のみ） | Low | Verification | **処置済み**。2026-08-20 ユーザー判断を出典として当該行に訂正注記を追加。回数の上限は無限ループを避ける歯止めであって品質の上限ではなく、指摘を落とす理由に使わない |
 
 **Invalid と判定（修正しない。根拠は `checks/21.md`）**
