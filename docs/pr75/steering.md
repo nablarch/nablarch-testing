@@ -169,12 +169,12 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] 失敗する再現テストを追加する（YAML形式相当のマスタデータファイルを投入し、現状ではテーブルデータが得られない/例外になることを示す）
-- [ ] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）
-- [ ] `MasterDataSetUpper.getAllTableData` を修正する（マスタデータファイルの拡張子で分岐し、Excel以外は`parser.getSetupTableData(dir, masterFileName)`を1回呼ぶ）
-- [ ] 再現テストが通ることを確認する
-- [ ] 既存のExcel形式マスタデータ投入テストが壊れていないことを確認する
-- [ ] 修正をコミットする
+- [x] 失敗する再現テストを追加する（YAML形式相当のマスタデータファイルを投入し、現状ではテーブルデータが得られない/例外になることを示す）→ `a94fa08`
+- [x] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）→ `a94fa08`。RED の例外は `RuntimeException: test data file open failed.`（cause `IllegalArgumentException: Your InputStream was neither an OLE2 stream, nor an OOXML stream`）
+- [x] `MasterDataSetUpper.getAllTableData` を修正する（マスタデータファイルの拡張子で分岐し、Excel以外は`parser.getSetupTableData(dir, masterFileName)`を1回呼ぶ）→ `3de41ff`。**渡すリソース名は拡張子を除いた名前が正しい**（拡張子はリーダ／パーサ側が付与するため）
+- [x] 再現テストが通ることを確認する → `Tests run: 7, Failures: 0, Errors: 0`
+- [x] 既存のExcel形式マスタデータ投入テストが壊れていないことを確認する → 既存6件のソースに差分なし。変異2種で分岐の両方向を実測（`checks/22.md`「ゲート5」）
+- [x] 修正をコミットする → `3de41ff`（`Tests run: 854, Failures: 0, Errors: 0, Skipped: 7`。基準 853 ＋ 追加1件。ゲート1〜8 の実測は `checks/22.md`）
 
 **Completion criteria**:
 
@@ -217,9 +217,9 @@ so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
 - **Date**: 2026-08-21
-- **Last completed**: #23 期待値0件テーブルでも DB の実データを読む（`bbb1ee1` までで実装・再現テスト、`36cabc6` で「DBが空なら通る」側を守るテストを追加。Steps は全件チェック済み。実測の全量は `checks/23.md`）
-- **Next**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（最初のステップ「失敗する再現テストを追加する」から）
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。**未決のユーザー判断が1件、次の一手の前に要る** — #23 のレビュー（QA・Craft・Verification）を回すか、回すなら誰を回すか。判断材料は `checks/23.md`「ユーザー判断を仰ぐ事項」（`src/main` の変更は `TableData#loadData()` 内の1分岐のみ、守るテストは「落ちる側」「通る側」の2件）。付録C の計測1・2 を回帰テストとして残すかは「残さない」で決着済み（2026-08-21）。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push のコミットが2本**（`36cabc6`・`e43d1d9`。`git fetch` 後に `origin/convert-testdata-excel-to-text..HEAD` で実測。origin は `3b87338`）。push のタイミングはユーザーが決める
+- **Last completed**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（`a94fa08` で再現テスト、`3de41ff` で修正。Steps は全件チェック済み。実測の全量は `checks/22.md`）
+- **Next**: 未着手のタスクは無い。#21・#22・#23 はすべて Steps 全件チェック済み。次の一手はユーザー判断（PR の締め方、レビューの要否など）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。**#23 のレビュー（QA・Craft・Verification）は回さないと決着済み**（2026-08-21 ユーザー判断）。代わりに「DBが空なら通る」側を守るテストを1件追加し、`36cabc6` で入っている。付録C の計測1・2 を回帰テストとして残すかも「残さない」で決着済み（2026-08-21）。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push の本数はここに書かない**（記録コミット自身が本数を変えるため、書いた瞬間に古くなる）。origin は `3b87338`。未 push 分は `git rev-list --count origin/convert-testdata-excel-to-text..HEAD` で都度実測する。push のタイミングはユーザーが決める
 
 ---
 
