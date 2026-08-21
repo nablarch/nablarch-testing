@@ -241,11 +241,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] 2件それぞれについて、いつ誰が入れたものかを `git log -L` 等で実測して報告する
-- [ ] `MockHttpRequest.java:379` — **推測で消さない。** まず再現テストを書き、マルチバイト本文で `Content-Length` がバイト数とずれるかを実測する
-- [ ] 実測結果に応じて処置する（ずれる→直す／ずれない→なぜ問題ないかを1文のコメントにして `//FIXME` を消す）
-- [ ] `MockConnection.java:23` — 実物を読み、このクラスが何をするものかを1〜3文のクラスコメントにして `TODO` を消す
-- [ ] `grep -rn 'TODO\|FIXME\|@Ignore' src --include=*.java` が0件であることを確認し、コミット・push する
+- [x] 2件それぞれについて、いつ誰が入れたものかを `git log -L` 等で実測して報告する → **2件とも `eb0258d 2016-09-21 ko.i first commit`**（リポジトリ初回コミット）。本 PR で入れたものではない
+- [x] `MockHttpRequest.java:379` — **推測で消さない。** まず再現テストを書き、マルチバイト本文で `Content-Length` がバイト数とずれるかを実測する → `c909181`。**ずれる**。ただしずれるのは**パラメータ名**がマルチバイトのときだけ。値は `:362` で `URLEncoder.encode(values[i], "UTF-8")` を通り必ず ASCII になるためずれない。名前は `:366` の `bodyBuffer.append(name)` でエンコードせず出力される。RED: 宣言 `Content-Length: 6` / 実体 `氏名=abc` = UTF-8 で 10 オクテット
+- [x] 実測結果に応じて処置する（ずれる→直す／ずれない→なぜ問題ないかを1文のコメントにして `//FIXME` を消す）→ ずれたので直した。`bodyBuffer.toString().getBytes(StandardCharsets.UTF_8).length` を宣言する。UTF-8 を採るのは値のエンコード（`:362`）に合わせるため。**パラメータ名をURLエンコードしない件は変更していない**（別論点。往復が壊れるため。報告済み）
+- [x] `MockConnection.java:23` — 実物を読み、このクラスが何をするものかを1〜3文のクラスコメントにして `TODO` を消す → 全メソッドが `null`/`false`/`0` を返すだけの `java.sql.Connection` 実装。唯一の利用箇所 `EntityDependencyParserTest.java:54` が `getMetaData()` だけを無名サブクラスで上書きしている
+- [x] `grep -rn 'TODO\|FIXME\|@Ignore' src --include=*.java` が0件であることを確認し、コミット・push する → **0件**（exit=1）。全件 `Tests run: 855, Failures: 0, Errors: 0, Skipped: 7`（基準 854 ＋ 追加1件）
 
 **Completion criteria**:
 
