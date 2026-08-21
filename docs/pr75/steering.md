@@ -210,11 +210,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-21
-- **Last completed**: #20（Phase 1〜6）。#21 は実装・ゲート1〜10・3ラウンド目レビューまで到達したが、指摘の処置が未了のため未チェック
-- **Next**: #21 — レビューラウンド3 の指摘 U〜AH を処置する
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。HEAD は `1250f23`、push 済み・ツリーはクリーン。**次の一手**: `#21` の指摘表（U〜AH。実測の全量は `checks/21.md`「レビューラウンド3」）をユーザーが確認したうえで修正に着手する。**着手はユーザーの明示的な合図待ち**（Rules の追加フェーズ専用ルール）。未決の判断が1件 — 指摘 U の処置を「テストを削除する」（QA 推奨）と「期待するキー集合を表明する形に作り替える」のどちらにするか。後者なら指摘 V・AF と1つのテストにまとめられる。直さないと決めた指摘は AG（(a) Windows 環境も seam も無く検証不能）と AE の検知基準部分（(b) 内容ハッシュ化は走査コストと Excel 経路の挙動を変える）の2件のみ。**修正ラウンドの回数に上限は無い**（2026-08-20 ユーザー判断。`checks/21.md:46` の「3回上限」は出典の無い記述で訂正注記済み）。**隔離 worktree を使う場合の注意**: 3ラウンド目では3つとも `e21bf67` を指した状態で払い出されたため、エージェント側に「基準コミットを自分で確認し、違えば自分の worktree 内で合わせる」ことを明示すること。ユーザー保留の未追跡パスは無し
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
 
 ---
 
