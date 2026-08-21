@@ -219,7 +219,7 @@ so only a genuinely suspended session reads `paused`.)
 - **Date**: 2026-08-21
 - **Last completed**: #23 期待値0件テーブルでも DB の実データを読む（`bbb1ee1` までで実装・再現テスト、`36cabc6` で「DBが空なら通る」側を守るテストを追加。Steps は全件チェック済み。実測の全量は `checks/23.md`）
 - **Next**: #22 MasterDataSetUpper のYAML形式マスタデータファイル対応（最初のステップ「失敗する再現テストを追加する」から）
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。**未決のユーザー判断が1件、次の一手の前に要る** — #23 のレビュー（QA・Craft・Verification）を回すか、回すなら誰を回すか。判断材料は `checks/23.md`「ユーザー判断を仰ぐ事項」（`src/main` の変更は `TableData#loadData()` 内の1分岐のみ、守るテストは「落ちる側」「通る側」の2件）。付録C の計測1・2 を回帰テストとして残すかは「残さない」で決着済み（2026-08-21）。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。ローカルに未 push のコミットが6本
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（ドラフト PR: lovaizu/nablarch-testing#1）。**未決のユーザー判断が1件、次の一手の前に要る** — #23 のレビュー（QA・Craft・Verification）を回すか、回すなら誰を回すか。判断材料は `checks/23.md`「ユーザー判断を仰ぐ事項」（`src/main` の変更は `TableData#loadData()` 内の1分岐のみ、守るテストは「落ちる側」「通る側」の2件）。付録C の計測1・2 を回帰テストとして残すかは「残さない」で決着済み（2026-08-21）。**残置物**: 前ラウンドの隔離 worktree 4つ（`.claude/worktrees/agent-a2956f5…`・`agent-a4f8d5f…`・`agent-ab61116…`・`agent-acc1fb7…`）と `worktree-agent-*` ブランチ8本が未整理。作業の妨げにはなっていない。ユーザー保留の未追跡パスは無し。**未 push のコミットが2本**（`36cabc6`・`e43d1d9`。`git fetch` 後に `origin/convert-testdata-excel-to-text..HEAD` で実測。origin は `3b87338`）。push のタイミングはユーザーが決める
 
 ---
 
