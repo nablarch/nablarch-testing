@@ -191,12 +191,12 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] 失敗する再現テストを追加する（DB に行を挿入した状態で、カラム名0件の期待値 `TableData` を `Assertion.assertTableEquals` に渡し、現状では PASS してしまうことを示す）
-- [ ] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）
-- [ ] `TableData#loadData()`（`TableData.java:337-346`）の early return を削除し、`colNames.length == 0` のとき `dbInfo.getColumns(tableName)` を SELECT 対象カラムとする。`getColumnNames()` は変更しない（`ntf-empty-table-assertion.md` 4章）
-- [ ] 再現テストが通ることを確認する
-- [ ] 既存テストが壊れていないことを確認する（`mvn -o test` 全件。失敗・エラーは原則すべて対処対象）
-- [ ] 修正をコミットする
+- [x] 失敗する再現テストを追加する（DB に行を挿入した状態で、カラム名0件の期待値 `TableData` を `Assertion.assertTableEquals` に渡し、現状では PASS してしまうことを示す）
+- [x] テストが失敗することを確認し、テストのみをコミットする（コミットメッセージに「再現テストを追加する」旨を明記）
+- [x] `TableData#loadData()`（`TableData.java:337-346`）の early return を削除し、`colNames.length == 0` のとき `dbInfo.getColumns(tableName)` を SELECT 対象カラムとする。`getColumnNames()` は変更しない（`ntf-empty-table-assertion.md` 4章）
+- [x] 再現テストが通ることを確認する
+- [x] 既存テストが壊れていないことを確認する（`mvn -o test` 全件。失敗・エラーは原則すべて対処対象）
+- [x] 修正をコミットする
 
 **Completion criteria**:
 
