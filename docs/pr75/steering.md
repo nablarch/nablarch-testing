@@ -340,11 +340,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-25
+- **Last completed**: #21〜#28 全タスク完了（前セッションで達成済み）
+- **Next**: このリポジトリに未着手タスクは無い。次の一手はユーザー判断（下流5リポジトリの着手可否）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`。ツリークリーン・push 済み
 
 ---
 
