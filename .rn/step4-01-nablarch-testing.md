@@ -1,6 +1,8 @@
 # Step 4-01 — nablarch-testing を解説書に合わせる作業記録
 
-指示書: `nablarch-document` `ntf-yaml-support` `e634ffd`:`.rn/20260724-ntf-yaml-support/ntf-step4-01-nablarch-testing.md`
+指示書: `nablarch-document` `ntf-yaml-support` `87a21d6`:`.rn/20260724-ntf-yaml-support/ntf-step4-01-nablarch-testing.md`
+（`e634ffd` の版は破棄済み。差分は「`src/main` を変更しない」「§4-2 では `src/test` も変更しない」= 不一致は
+どちらの側が誤りでも直さず報告して止める。user 判断 2026-08-26）
 
 ## 参照点（ピン）
 
@@ -175,5 +177,5 @@ $ (各ファイルの wc -l の総和)
 - :28 の「両形式は相互に変換できる」— 変換ツールは `nablarch-testing-converter` の指示書が担当する
 - :87 の「リクエスト単体テスト（RESTfulウェブサービス）」— `RestTestSupport`・`SimpleRestTestSupport` 固有の記述は `nablarch-testing-rest` の指示書が担当する
 
-集計: 対象 12件（うち一部対象外を含む行1件）／全件一致／モジュール是正 0件／解説書側の誤りの疑い 0件。
+集計: 対象 12件（うち一部対象外を含む行1件）／全件一致／不一致（解説書が正）0件／不一致（解説書側の誤りの疑い）0件。
 
