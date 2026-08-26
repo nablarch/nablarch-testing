@@ -228,28 +228,82 @@ $ bash <scratchpad>/fix2/basename_unique.sh
 
 | 行 | 記述の要旨 | 対象／対象外 | 実装での成否 | 根拠 | 判定 | 処置 |
 |---|---|---|---|---|---|---|
-| :14 | クラス単体／リクエスト単体／取引単体の3粒度。トランザクション制御・システム日時設定のAPIも提供する | 対象 | 一致 | `DbAccessTestSupport.java:96,132,139,147`（`beginTransactions`／`commitTransactions`／`rollbackTransactions`／`endTransactions`）、`FixedSystemTimeProvider.java:20`。3粒度は `HttpRequestTestSupport.java`・`EntityTestSupport.java`・`IntegrationTestSupport.java` の存在 | 一致 | なし |
-| :20 | リクエスト単体テストはハンドラキューを通して実行される | 対象 | 一致 | `HttpRequestTestSupport.java:334-336`（`controller.getHandlerQueue()` → `prepareHandlerQueue` → `server.setHandlerQueue`） | 一致 | なし |
-| :24 | テストロジックはFWが提供し、利用者はテストデータを別ファイルに宣言的に書く | 対象 | 一致 | `TestSupport.java`・`DbAccessTestSupport.java:299-357`（`assertTableEquals` 群）・`DbAccessTestSupport.java:165-175`（`setUpDb`） | 一致 | なし |
-| :28 | テストデータはExcel形式とYAML形式のいずれかで書け、相互に変換できる | 一部対象外 | 一致（Excel側） | Excel側は `PoiXlsReader.java:30`。YAML固有の記法・パーサは `nablarch-testing-yaml` 担当、相互変換は `nablarch-testing-converter` 担当のため、その2点は対象外 | 一致 | なし |
-| :32・:112 | JUnit 4を基盤とする | 対象 | 一致 | `pom.xml:151-154`（`junit:junit:4.13.1`、`scope=compile`） | 一致 | なし |
-| :34-44 | テストメソッドは `@Test` を付与して作る | 対象 | 一致 | 同上（JUnit 4 のアノテーションをそのまま使う） | 一致 | なし |
-| :48 | `@Before`・`@After` も使用できる | 対象 | 一致 | 同上 | 一致 | なし |
-| :64-75 | 3種類のテストの実行方法・範囲の表 | 対象 | 一致 | `HttpRequestTestSupport.java`（リクエスト単体）・`EntityTestSupport.java`（クラス単体）・`IntegrationTestSupport.java`（取引単体） | 一致 | なし |
-| :77 | 取引単体テストは、ウェブは手動、RESTfulウェブサービスとバッチはリクエスト単体テストの連続実行でJUnit自動実行できる | 対象 | 一致 | `IntegrationTestSupport.java`（本体側の起点）。RESTful固有の `SimpleRestTestSupport` 派生は `nablarch-testing-rest` 担当 | 一致 | なし |
-| :86-91 | リクエスト単体テストは処理方式で6つに分かれる | 対象 | 一致 | ウェブ=`HttpRequestTestSupport.java`、バッチ=`BatchRequestTestSupport.java`、MOM／HTTPメッセージング=`MessagingRequestTestSupport.java`・`MessagingReceiveTestSupport.java`、テーブルキュー=バッチと同じ経路（`BatchRequestTestSupport.java`）。RESTfulは `nablarch-testing-rest` 担当のため対象外 | 一致 | なし |
-| :96 | Jakarta Batch 準拠のバッチアプリケーションは対象外 | 対象 | 一致 | `git grep -rln "jsr352\|jakarta.batch\|javax.batch" 3c4bd2a -- src` が0件 | 一致 | なし |
-| :100 | マルチスレッド機能を使うアプリケーションは対象外 | 対象 | 一致 | `git grep -rln "MultiThread\|multiThread" 3c4bd2a -- src/main/java` が0件 | 一致 | なし |
-| :106 | テストクラスはテスト対象を直接呼び出し、テストデータをFW経由で読み取る | 対象 | 一致 | `TestSupport.java`（読み込みの入口）・`BasicTestDataParser.java` | 一致 | なし |
+| :1 | 参照ラベル `_testing_framework_about:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :3-4 | 見出し「テスティングフレームワークとは」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :6-8 | `.. contents:: 目次`（`:depth: 3`・`:local:`） | 対象外 | — | Sphinx のディレクティブであり、解説書のページ構成が決める | — | 変更しない（報告のみ） |
+| :10 | 参照ラベル `_testing_framework_about-overview:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :12-13 | 見出し「全体像」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :14 | クラス単体／リクエスト単体／取引単体の3粒度。トランザクション制御・システム日時設定のAPIも提供する | 対象 | 一致 | `DbAccessTestSupport.java:96,132,139,147`（`beginTransactions`／`commitTransactions`／`rollbackTransactions`／`endTransactions`）、`FixedSystemTimeProvider.java:20`。3粒度は `HttpRequestTestSupport.java`・`EntityTestSupport.java`・`IntegrationTestSupport.java` の存在 | 一致 | 変更しない（報告のみ） |
+| :16 | 「テスティングフレームワークには、次の特徴がある」 | 対象外 | — | 後続の見出し群を導く文であり、それ自体に成否を判定できる記述がない（個々の特徴は :20・:24・:28・:32 の行で判定した） | — | 変更しない（報告のみ） |
+| :18-19 | 見出し「本番同等の経路でテストできる」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :20 | リクエスト単体テストはハンドラキューを通して実行される | 対象 | 一致 | `HttpRequestTestSupport.java:334-336`（`controller.getHandlerQueue()` → `prepareHandlerQueue` → `server.setHandlerQueue`） | 一致 | 変更しない（報告のみ） |
+| :22-23 | 見出し「テストコードは定型かつ少量で済む」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :24 | テストロジックは `nablarch-testing` が提供し、利用者はテストデータを別ファイルに宣言的に書く | 対象 | 一致 | `TestSupport.java`・`DbAccessTestSupport.java:299-357`（`assertTableEquals` 群）・`DbAccessTestSupport.java:165-175`（`setUpDb`） | 一致 | 変更しない（報告のみ） |
+| :26-27 | 見出し「利用目的に応じたテストデータ形式を選べる」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :28 | テストデータはExcel形式とYAML形式のいずれかで書け、相互に変換できる | 一部対象外 | 一致 | 判定したのは Excel 側の提供のみ：`PoiXlsReader.java:30`。YAML固有の記法・パーサは `nablarch-testing-yaml` 担当、相互変換は `nablarch-testing-converter` 担当のため、その2点は対象外 | 一致 | 変更しない（報告のみ） |
+| :30-31 | 見出し「使い慣れたJUnitの書き方をそのまま活かせる」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :32 | JUnit 4 を基盤とし、アノテーション・assertメソッド・Matcherクラスをそのまま利用できる | 対象 | 一致 | `pom.xml:151-154`（`junit:junit:4.13.1`、`scope=compile`）。`git show 3c4bd2a:pom.xml \| sed -n '150,155p'` で `<dependency>` 要素の全体（`:150-155`）を確認した | 一致 | 変更しない（報告のみ） |
+| :34 | テストメソッドは JUnit 4 のアノテーション `@Test` を付与して作る | 対象 | 一致 | 同上（`nablarch-testing` が JUnit 4 を `compile` スコープで持つため、利用側はアノテーションをそのまま使える） | 一致 | 変更しない（報告のみ） |
+| :36 | `.. code-block:: java` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :38-44 | コード例 `SampleTest`（`@Test` を付けたテストメソッド） | 対象 | — | :34 の記述をそのまま示したコード例であり、同一の事実のため判定を :34 に集約する | （:34 に集約） | 変更しない（報告のみ） |
+| :46 | `.. tip::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :48 の行で判定した | — | 変更しない（報告のみ） |
+| :48 | `@Before`・`@After` も使用できる | 対象 | 一致 | 同上（JUnit 4 のアノテーションをそのまま使う） | 一致 | 変更しない（報告のみ） |
+| :50 | 参照ラベル `_testing_framework_about-test_types:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :52-53 | 見出し「テストの種類」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :54 | 3種類のテストは実行方法とテスト範囲が異なる（違いは以下のとおり） | 対象 | — | 違いの中身は :60-75 の表と同一の事実のため、判定を :60-75 に集約する | （:60-75 に集約） | 変更しない（報告のみ） |
+| :56-58 | `.. list-table::` の宣言行とオプション（`:header-rows:`・`:widths:`） | 対象外 | — | ディレクティブの宣言行であり、表の中身の成否は :60-75 の行で判定した | — | 変更しない（報告のみ） |
+| :60-75 | 3種類のテストの実行方法・テスト範囲・備考の表 | 対象 | 一致 | `HttpRequestTestSupport.java`（リクエスト単体）・`EntityTestSupport.java`（クラス単体）・`IntegrationTestSupport.java`（取引単体） | 一致 | 変更しない（報告のみ） |
+| :77 | 取引単体テストは、ウェブは手動、RESTfulウェブサービスとバッチはリクエスト単体テストの連続実行でJUnit自動実行できる | 一部対象外 | 一致 | 判定したのは `nablarch-testing` 側の起点の存在：`IntegrationTestSupport.java`。RESTfulウェブサービス固有の `SimpleRestTestSupport` 派生は `nablarch-testing-rest` 担当のため対象外 | 一致 | 変更しない（報告のみ） |
+| :79 | 参照ラベル `_testing_framework_about-test_type_names:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :81 | リクエスト単体テストは処理方式で6つに分かれる | 対象 | — | 6つの内訳は :83-92 の表と同一の事実のため、判定を :83-92 に集約する | （:83-92 に集約） | 変更しない（報告のみ） |
+| :83-92 | 6つの処理方式と内容の表 | 一部対象外 | 一致 | ウェブ=`HttpRequestTestSupport.java`、バッチ=`BatchRequestTestSupport.java`、MOM／HTTPメッセージング=`MessagingRequestTestSupport.java`・`MessagingReceiveTestSupport.java`、テーブルキュー=バッチと同じ経路（`BatchRequestTestSupport.java`）。`:87` のRESTfulウェブサービスは `nablarch-testing-rest` 担当のため対象外 | 一致 | 変更しない（報告のみ） |
+| :94 | `.. important::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :96 の行で判定した | — | 変更しない（報告のみ） |
+| :96 | Jakarta Batch 準拠のバッチアプリケーションは対象としていない | 対象 | 一致 | `git grep -rln "jsr352\|jakarta.batch\|javax.batch" 3c4bd2a -- src` が0件（再実行して確認） | 一致 | 変更しない（報告のみ） |
+| :98 | `.. important::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :100 の行で判定した | — | 変更しない（報告のみ） |
+| :100 | マルチスレッド機能を使うアプリケーションも対象外である | 対象 | 一致 | `git grep -rln "MultiThread\|multiThread" 3c4bd2a -- src/main/java` が0件（再実行して確認） | 一致 | 変更しない（報告のみ） |
+| :102 | 参照ラベル `_testing_framework_about-architecture:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :104-105 | 見出し「アーキテクチャ」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :106 | テストクラスはテスト対象を直接呼び出し、テストデータを `nablarch-testing` 経由で読み取る | 対象 | 一致 | `TestSupport.java`（読み込みの入口）・`BasicTestDataParser.java` | 一致 | 変更しない（報告のみ） |
+| :108 | 参照ラベル `_testing_framework_about-operating_environment:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :110-111 | 見出し「稼動環境」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :112 | JUnit 4 をベースに動作する。JUnit 5 で使用する場合は JUnit 5用拡張機能を参照 | 一部対象外 | — | 「JUnit 4 をベースに動作する」は :32 と同一の事実のため、判定を :32 に集約する。「JUnit 5用拡張機能」への参照は解説書内の相互参照であり、拡張機能そのものは別モジュールが提供するため対象外 | （:32 に集約） | 変更しない（報告のみ） |
 
-対象外と判定した記述と理由:
+対象外と判定した記述と理由（対象外と判定してよい基準は指示書 `87a21d6` §4-2 手順2「この記述が成り立つかどうかは、`nablarch-testing` の実装で決まるか」である）:
 
-- :28 の「YAML形式で記述できる」— YAML固有の記法・パーサは `nablarch-testing-yaml` の指示書が担当する
-- :28 の「両形式は相互に変換できる」— 変換ツールは `nablarch-testing-converter` の指示書が担当する
-- :87 の「リクエスト単体テスト（RESTfulウェブサービス）」— `RestTestSupport`・`SimpleRestTestSupport` 固有の記述は `nablarch-testing-rest` の指示書が担当する
+- :1・:10・:50・:79・:102・:108 の参照ラベル — 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない
+- :3-4・:12-13・:18-19・:22-23・:26-27・:30-31・:52-53・:104-105・:110-111 の見出し — 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない
+- :6-8 の `.. contents::` — Sphinx のディレクティブであり、解説書のページ構成が決める
+- :16 の「次の特徴がある」— 後続の見出し群を導く文であり、それ自体に成否を判定できる記述がない
+- :36 の `.. code-block::` 宣言行、:46・:94・:98 の `.. tip::`・`.. important::` 宣言行、:56-58 の `.. list-table::` 宣言行とオプション — 宣言行であり、本文・表の中身の成否はそれぞれ :38-44・:48・:96・:100・:60-75 の行で判定した
+- :28 のうち「YAML形式で記述できる」— YAML固有の記法・パーサは `nablarch-testing-yaml` の指示書が担当する
+- :28 のうち「両形式は相互に変換できる」— 変換ツールは `nablarch-testing-converter` の指示書が担当する
+- :77 のうち「RESTfulウェブサービスの取引単体テスト」— `SimpleRestTestSupport` 派生固有の記述は `nablarch-testing-rest` の指示書が担当する
+- :83-92 のうち :87 の「リクエスト単体テスト（RESTfulウェブサービス）」— 同上
+- :112 のうち「JUnit 5用拡張機能」への参照 — 解説書内の相互参照であり、拡張機能そのものは別モジュールが提供する
+- 空行 :2・:5・:9・:11・:15・:17・:21・:25・:29・:33・:35・:37・:45・:47・:49・:51・:55・:59・:76・:78・:80・:82・:93・:95・:97・:99・:101・:103・:107・:109 — 記述がない（:39 は :38-44 のレンジに含まれる）
 
-集計: 対象 12件（うち一部対象外を含む行1件）／全件一致／不一致（解説書が正）0件／不一致（解説書側の誤りの疑い）0件。
+##### 行の網羅の検算
 
+表の「行」欄と、対象外リストの「空行」の行番号を機械的に集め、
+対象ページの 1..112 を隙間なく・重複なく覆っているかを検算する。
+検算スクリプトは `<scratchpad>/fix2/verify_lines.py`。
+
+```
+$ python3 <scratchpad>/fix2/verify_lines.py .rn/step4-01-nablarch-testing.md 'about/index.rst' 112
+section        : about/index.rst
+総行数         : 112
+拾ったレンジ数 : 69（表 39 / 対象外リスト(空行) 30）
+覆った行数     : 112
+欠け           : なし
+重複           : なし
+範囲外         : なし
+判定           : OK — 1..112 を隙間なく1回ずつ覆っている
+$ echo $?
+0
+```
+
+集計: 表の行 39（対象 13 ／ 一部対象外 4 ／ 対象外 22。13＋4＋22＝39）。
+判定の内訳は 一致 13 ／ 不一致（解説書が正）0 ／ 不一致（解説書側の誤りの疑い）0 ／ 判定保留 0 ／ 集約 4（13＋0＋0＋0＋4＝17＝13＋4）。
 
 #### `setup/index.rst`（21行）— 全行通読
 
