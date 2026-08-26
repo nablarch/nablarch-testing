@@ -27,6 +27,8 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - 問題1（#23・**本体で修正する**）: 期待値のカラム名が0件だと `TableData#loadData()` が DB を読まず、DB に行が残っていても検証が必ず PASS する（偽陰性）。YAML の `rows: []` はカラム名を書く場所が構造上無いため、必ずここに落ちる
 - 問題2（**本体では修正しない**）: 表形式リーダが識別子行の次の行を無条件にカラム名行として読むため、識別子行が連続すると後続ブロックが消える。ただし Excel 記法はデータ行が0件でもカラム名の行を書くのが仕様であり（記載例・実データとも。同 3.1）、記法どおりに書けば発生しない。**本体は変更せず**、converter 側で「Excel 書き出し時にマーカーカラム行を出す」対応を行う（別リポジトリ・スコープ外。同 付録B.1）
 
+**Step 4 フェーズ（現在ここ）**：`nablarch-document`（`ntf-yaml-support`）の NTF 解説書を SSoT とし、`nablarch-testing` の実装を解説書に合わせる。指示書は `nablarch-document` `e634ffd`:`.rn/20260724-ntf-yaml-support/ntf-step4-01-nablarch-testing.md` の1ファイルのみ（他の指示書・過去の依頼書は読まない）。タスクは #29〜#33。
+
 ---
 
 # Acceptance criteria
@@ -332,6 +334,147 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - `Failures: 0, Errors: 0` → **達成**
 - `Skipped` の内訳が `@Ignore` ではないことを確認済み → **達成**（上表。`grep -rn '@Ignore' src --include=*.java` も0件）
 
+
+# Step 4 フェーズのタスク（解説書を正としてモジュールを合わせる）
+
+**指示書が唯一の作業指示**: `nablarch-document` `ntf-yaml-support` `e634ffd`:`.rn/20260724-ntf-yaml-support/ntf-step4-01-nablarch-testing.md`
+（この1ファイルで完結する。他の指示書・過去の依頼書は読まない）
+
+**参照点（ピン。作業ツリーの HEAD を読まず `git show <SHA>:<path>` で読む）**
+
+| 対象 | リポジトリ / ブランチ | SHA |
+|---|---|---|
+| 解説書（SSoT） | `nablarch-document` / `ntf-yaml-support` | `40b9c52` |
+| 本モジュール | `nablarch-testing` / `convert-testdata-excel-to-text` | `3c4bd2a` |
+
+**作業記録の置き場所**: `.rn/step4-01-nablarch-testing.md`
+
+**このフェーズ専用ルール（指示書 §3・§7 より）**
+
+- 解説書は直さない。解説書側が誤っていると判断した項目は、根拠を添えて報告して止める
+- `main`・`develop` は対象外。PR ブランチ `convert-testdata-excel-to-text` 上で作業し push する
+- 「テストが通る」を完了条件にしない。完了条件2の〈負のテスト〉と完了条件4の〈変更前に失敗することの確認〉を実行結果で示す
+- 1つの修正意図につき1コミット。コミットの**直前**に `git status --porcelain` の全件を確認する
+- 既存テストが緑であることを、変更が正しい根拠にしない
+
+### #29: §4-1 論点4 — フィールド数を超えた値を無警告で捨てる挙動の決着
+
+**Purpose**: 利用者影響の有無を判定し、「踏まない＝仕様」なら特性テストで現行挙動を固定する。
+
+**Prerequisites**: none
+
+**Steps**:
+
+- [x] 利用者影響の有無を判定する（`file:line` ＋ SHA を添える）→ **踏まない＝仕様**。記録は `.rn/step4-01-nablarch-testing.md` §4-1
+- [x] 現行挙動を固定する特性テストを追加する → `2470e6e`（`FixedLengthFileFragmentTest` 3件・`FixedLengthFileParserTest` 3件）
+- [x] 負のテストを実行する（ループ上限を `names.size()` → `line.size()` に変えると落ちることの実行結果を記録）→ 超過分を押さえる3件がすべて落ちることを実測。出力は `.rn/step4-01-nablarch-testing.md`
+- [x] コミット・push する → `2470e6e`
+
+### #30: §4-2 解説書との全件突合
+
+**Purpose**: 解説書 `40b9c52` の `ja/development_tools/testing_framework/` 配下 **38ファイル・9,822行**（母集合は実測で固定済み）を全量通読し、実装で成否が決まる記述を全件突合する。
+
+**Prerequisites**: none
+
+**Steps**（指示書のページ通し順。1ページ終えるごとに表を追記してコミットする）:
+
+- [x] 母集合を固定する（38ファイル・9,822行。`git ls-tree -r 40b9c52` と各ファイルの `wc -l` で実測）
+- [x] `about/index.rst`（112行）→ `d9d5cc7`。対象12件・全件一致・対象外3件
+- [ ] `setup/index.rst`（21行）
+- [ ] `setup/common.rst`（259行）※通読済み。実装確認の途中で中断（`pom.xml:8`・`TestSupport.java:30,33,357-359`・`FixedSystemTimeProvider.java:23,26,42-55` まで確認済み）
+- [ ] `setup/class_unit_test.rst`（174行）
+- [ ] `setup/junit5_extension.rst`（453行）
+- [ ] `setup/master_data_restore.rst`（175行）
+- [ ] `setup/request_unit_test/web.rst`（232行）
+- [ ] `setup/request_unit_test/rest.rst`（96行）
+- [ ] `setup/request_unit_test/http_messaging.rst`（49行）
+- [ ] `setup/request_unit_test/batch.rst`（138行）
+- [ ] `setup/request_unit_test/mom.rst`（102行）
+- [ ] `setup/request_unit_test/db_queue.rst`（6行）
+- [ ] `setup/deal_unit_test/rest.rst`（69行）
+- [ ] `setup/deal_unit_test/http_messaging.rst`（40行）
+- [ ] `setup/deal_unit_test/mom.rst`（38行）
+- [ ] `implementation/index.rst`（24行）
+- [ ] `implementation/class_unit_test/entity.rst`（567行）
+- [ ] `implementation/class_unit_test/component.rst`（366行）
+- [ ] `implementation/request_unit_test/web.rst`（547行）
+- [ ] `implementation/request_unit_test/rest.rst`（215行）
+- [ ] `implementation/request_unit_test/http_messaging.rst`（41行）
+- [ ] `implementation/request_unit_test/batch.rst`（186行）
+- [ ] `implementation/request_unit_test/mom.rst`（199行）
+- [ ] `implementation/request_unit_test/db_queue.rst`（6行）
+- [ ] `implementation/deal_unit_test/web.rst`（53行）
+- [ ] `implementation/deal_unit_test/rest.rst`（60行）
+- [ ] `implementation/deal_unit_test/http_messaging.rst`（30行）
+- [ ] `implementation/deal_unit_test/batch.rst`（491行）
+- [ ] `implementation/deal_unit_test/mom.rst`（130行）
+- [ ] `implementation/deal_unit_test/db_queue.rst`（6行）
+- [ ] `tools/index.rst`（12行）
+- [ ] `tools/request_data_tool.rst`（118行）
+- [ ] `tools/master_data_tool.rst`（163行）
+- [ ] `tools/html_check_tool.rst`（230行）
+- [ ] `tools/testdata_converter.rst`（333行）
+- [ ] `implementation/testdata_notation.rst`（1,502行）※全行通読済み（#29 の判定に使用）。表への起票は未
+- [ ] `implementation/testdata_examples.rst`（2,566行）
+- [ ] `index.rst`（13行）
+- [ ] 「モジュール是正」と判定した項目それぞれについて、変更前に失敗するテストを先に書き、落ちることを確認してから直す（赤 → 緑。完了条件4）
+- [ ] 「解説書側の誤りの疑い」と判定した項目は実装を変更せず、報告に必要な3点（解説書の逐語＋`file:line`＋`40b9c52` / 実装での実測結果＋`file:line`＋`3c4bd2a` / なぜ解説書側が誤りと言えるか）を揃える
+
+**対象外と判定してよい4種（指示書 §4-2。黙って飛ばさず理由を1行書く）**
+
+| 対象外とする記述 | 担当 |
+|---|---|
+| YAML 形式に固有の記法・設定（`YamlTestDataParser`・`yamlInterpreters` 等） | `nablarch-testing-yaml` |
+| `setup/junit5_extension.rst` の JUnit 5 拡張に固有の記述 | `nablarch-testing-junit5` |
+| `RestTestSupport`・`SimpleRestTestSupport` に固有の記述 | `nablarch-testing-rest` |
+| `tools/testdata_converter.rst` の変換ツールに固有の記述 | `nablarch-testing-converter` |
+
+### #31: §4-3 カバレッジ C0/C1（今回の変更が持ち込んだ未到達に限る）
+
+**Purpose**: 変更前（`3c4bd2a`）と変更後の両方を JaCoCo で計測し、変更後に未到達である行・分岐のうち **(a) 変更前に存在しなかった行**、または **(b) 変更前は到達していた行** を全件列挙して、各件にテスト追加または不要根拠を書く。
+
+**Prerequisites**: #30
+
+**Steps**:
+
+- [ ] 変更前（`3c4bd2a`）を計測する
+- [ ] 変更後を計測する
+- [ ] 対象（(a) または (b)）を全件列挙する
+- [ ] 各件にテストを足すか、不要とする根拠を書く（数値目標は置かない。件数だけ書いて中身を書かない形にしない）
+- [ ] 計測に使ったコマンドと、計測結果ファイルのハッシュを記録する
+
+### #32: §6 レビュー
+
+**Purpose**: 指示書 §6 の表のとおりにレビューを回し、指摘件数・観点・却下の理由を記録する。
+
+**Prerequisites**: #30
+
+**Steps**:
+
+- [ ] §4-1 の特性テストを **観点D** で回す
+- [ ] §4-2 の全件表を **観点A・観点D** で、別担当のサブエージェントで回す
+- [ ] §4-2 の是正が `src/main` に及ぶ場合は **4観点**、`src/test` と記録だけの場合は **観点A・観点D** で回す
+- [ ] レビュー対象に**本指示書自体**を明示的に含める（「指示された案そのものに反例がないか」）
+- [ ] 各ラウンドの指摘件数と観点を記録する。ラウンド2以降は差分限定の2観点だけを回す。是正ラウンドの上限は3回
+- [ ] 既決事項（§4-1 の user 判断、解説書が SSoT であること）に反する指摘は却下し、却下の理由を記録する
+- [ ] `must` を残していないことを確認する
+
+**各観点のプロンプトに必ず入れる3点**: 実測コマンドで裏付けよ（推測で書くな）／成果物に付属する検証スクリプトを正解として使わず独立に組め／敵対的にレビューせよ
+
+### #33: 完了条件の確認と報告
+
+**Purpose**: 指示書 §7 の完了条件10件を満たしていることを確認し、§8 の報告を出す。
+
+**Prerequisites**: #29, #30, #31, #32
+
+**Steps**:
+
+- [ ] `mvn clean test` 全件 PASS を確認し、最終行（`Tests run: …` と `BUILD SUCCESS`）を記録する（完了条件8）
+- [ ] コミットの**直前**に `git status --porcelain` の全件を表にし、予定外のファイルが0件であることを確認する（完了条件9。`src/` に絞らない。`git diff` を母集合にしない）
+- [ ] 変更が push されていることを確認する（完了条件10）
+- [ ] §8 の報告を出す（§4-1 の判定と根拠／§4-2 の集計と「解説書側の誤りの疑い」の全件／§4-3 の内訳／§6 のラウンドごとの指摘件数・観点・却下件数／完了条件8・10 の実行結果／指示から外れて行ったことの全件と理由）
+
+---
 ---
 
 # State
@@ -340,11 +483,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-26
+- **Last completed**: #29（§4-1 論点4 の判定と特性テスト、負のテストの実測まで完了 → `2470e6e`）。#30 は母集合38ファイル・9,822行の固定と `about/index.rst` の突合まで完了 → `d9d5cc7`
+- **Next**: #30 の続き。`setup/index.rst` から。`setup/common.rst` は259行を通読済みで実装確認の途中（`pom.xml:8`・`TestSupport.java:30,33,357-359`・`FixedSystemTimeProvider.java:23,26,42-55` まで確認済み。残りは interpreter 各クラス・`BasicTestDataParser`／`PoiXlsReader` のプロパティ・`sendSyncTestData`／`format`／`messagingTestDataParser` の未設定時例外・`fileExtensions` の挙動）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`。ピンは解説書 `40b9c52` / 本モジュール `3c4bd2a`（`git show <SHA>:<path>` で読む）。作業記録は `.rn/step4-01-nablarch-testing.md`
 
 ---
 
