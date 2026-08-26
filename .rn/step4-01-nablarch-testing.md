@@ -555,11 +555,16 @@ $ echo $?
 
 ##### 動かして確かめた内容
 
-`src/main`・`src/test` を変更しないため、検証コードはスクラップパッド配下に置いて実行した
-（`/tmp/claude-1000/-home-tie303177-work-nablarch-nablarch-testing/92111fc8-7ec9-430c-96c2-1a8e7db53a6f/scratchpad/probe/`）。
-クラスパスは `mvn -o dependency:build-classpath` の出力＋`target/classes`（`mvn -o compile` でビルド）。
+`src/main`・`src/test`・解説書を変更しないため、検証コードはすべてスクラッチパッド配下に置いて実行した。
+今回の是正で新しく組んだものは
+`/tmp/claude-1000/-home-tie303177-work-nablarch-nablarch-testing/92111fc8-7ec9-430c-96c2-1a8e7db53a6f/scratchpad/fix1/` 配下にある
+（`Fix1Interpreter.java`・`Fix1Xls.java`・`Fix1Time.java`・`Fix1Cache.java`・`Fix1Interp2.java`・`Fix1Dump.java`・
+`dupsrc/nablarch/test/Fix1FirstWins.java`・`dupsrc/nablarch/test/Fix1Env.java`・
+`mutsrc/`・`mutsrc2/`（変異させた `TestSupport.java`）・`verify_lines.py`）。
+クラスパスは `mvn -o dependency:build-classpath` の出力＋`target/classes`（`mvn -o compile` でビルド）＋
+ログ設定用の `fix1/logcp`。
 
-`[A][B][D][E][H]`（`Probe.java`）。旧 `[G]` の3行は偽の根拠だったため取り下げた（上記「取り下げた不一致候補 :176/:252」の [I] に差し替え）:
+`[A][B][D]`（据え置き。旧 `probe/Probe.java`）:
 
 ```
 [A] default resource root = [test/java/]
@@ -572,15 +577,9 @@ $ echo $?
 [D-xlsx] getFileIfExists(dir RB11AC0100) = null
 [D-xlsx] getFileIfExists(file RB11AC0200) = <scratchpad>/msgbase/RB11AC0200.xlsx
 [D-xls]  getFileIfExists(file RB11AC0200) = null
-[E] java.lang.IllegalArgumentException: Unknown basePathName: sendSyncTestData
-[F-format] java.lang.IllegalArgumentException: Unknown basePathName: format
-[H] 14digits -> 2010-09-14 12:34:56.0
-[H] 17digits -> 2010-09-14 12:34:56.789
-[H] 13digits -> java.lang.IllegalArgumentException: datetime string 2010091412345
-[H] 15digits -> java.lang.IllegalArgumentException: datetime string 201009141234561
 ```
 
-`[1][2][3]`（`Probe2.java`。`SendSyncSupport#getResponseMessageByRequestId` を実際に呼んだ結果）:
+`[1][2][3]`（据え置き。旧 `probe/Probe2.java`。`SendSyncSupport#getResponseMessageByRequestId` を実際に呼んだ結果）:
 
 ```
 [1] sendSyncTestData未設定 -> java.lang.IllegalArgumentException: Unknown basePathName: sendSyncTestData
@@ -588,13 +587,146 @@ $ echo $?
 [3] YAML(dir)にxlsx指定 -> java.lang.IllegalStateException: test data file was not found. request id=[RB11AC0100], base path=[<scratchpad>/msgbase], resource name=[RB11AC0100/message], absolute base path=[<scratchpad>/msgbase].
 ```
 
-`[T]`（既存テストの実行。`;` 区切りと「最初に見つかったものが読み込まれる」の確認）:
+`[I]`（`fix1/Fix1Interpreter.java`。解釈クラスの適用順と、Java の `null` と長さ4の文字列 `null` の判別）
+— 出力は上記「取り下げた不一致候補 :176/:252」に掲載。
+
+`[X]`（`fix1/Fix1Xls.java`。`.xls` と `.xlsx` のどちらが読まれるか）
+— 出力は上記「不一致の詳細 :225」に掲載。
+
+`[F]`（`fix1/dupsrc/nablarch/test/Fix1FirstWins.java`。同名テストデータが複数ディレクトリに実在する場合の先勝ち）:
 
 ```
-$ LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test -Dtest=TestSupportTest -DfailIfNoTests=false
-[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0 - in nablarch.test.TestSupportTest
-[INFO] BUILD SUCCESS
+$ cd <scratchpad>/fix1/dupwork
+$ java -cp "<out>:<cp>" nablarch.test.Fix1FirstWins . "dupA;dupB"
+[F-0] ./dupA/nablarch/test/dupprobe/DupProbe.xls exists=true 値=FROM_DIR_dupA
+[F-0] ./dupB/nablarch/test/dupprobe/DupProbe.xls exists=true 値=FROM_DIR_dupB
+[F-0] nablarch.test.resource-root = dupA;dupB
+[F-1] getTestDataPaths()   = [dupA/nablarch/test/dupprobe, dupB/nablarch/test/dupprobe]
+[F-2] getPathOf("DupProbe/dup") = dupA/nablarch/test/dupprobe
+[F-2b] getPathResourceExisting(候補, "DupProbe/dup") = dupA/nablarch/test/dupprobe
+[F-3] getListMap("dup","probe") = [{which=FROM_DIR_dupA}]
+[F-5] 先勝ち(先頭 dupA が読まれた)か = true
+[F-5] ASSERTION OK      (exit=0)
+
+$ java -cp "<out>:<cp>" nablarch.test.Fix1FirstWins . "dupB;dupA"     # 先頭を入れ替える
+[F-2] getPathOf("DupProbe/dup") = dupB/nablarch/test/dupprobe
+[F-3] getListMap("dup","probe") = [{which=FROM_DIR_dupB}]
+[F-5] ASSERTION FAILED: 先勝ちではない   (exit=1)
 ```
+
+`[F-mut]`（同じ実測を、`getPathResourceExisting` を last-match-wins に変異させた実装で実行した負のテスト）:
+
+```
+$ diff <(git show 3c4bd2a:src/main/java/nablarch/test/TestSupport.java) fix1/mutsrc/nablarch/test/TestSupport.java
+308a309,310
+>         // ===== MUTANT: last-match-wins =====
+>         String found = null;
+311c313
+<                 return basePath;
+---
+>                 found = basePath;
+314c316
+<         return null;
+---
+>         return found;
+
+$ java -cp "<mutclasses>:<out>:<cp>" nablarch.test.Fix1FirstWins . "dupA;dupB"
+[F-2] getPathOf("DupProbe/dup") = dupB/nablarch/test/dupprobe
+[F-3] getListMap("dup","probe") = [{which=FROM_DIR_dupB}]
+[F-5] ASSERTION FAILED: 先勝ちではない   (exit=1)
+```
+
+`[M-A][M-B]`（既存テストの検知力を変異で測った結果。`org.junit.runner.JUnitCore` を直接起動しており、`src/test` は変更していない）:
+
+```
+$ CP="target/test-classes:target/classes:src/test/resources:$(cat cp.txt)"
+
+# 素の実装
+$ java -cp "$CP" org.junit.runner.JUnitCore nablarch.test.TestSupportTest
+OK (24 tests)
+
+# [M-A] 変異A: getPathResourceExisting を last-match-wins にする
+$ java -cp "<mutclasses>:$CP" org.junit.runner.JUnitCore nablarch.test.TestSupportTest
+OK (24 tests)          <- 落ちない。既存テストは :103 を検知していない
+
+# [M-B] 変異B: PATH_SEPARATOR を ";" から "," にする
+$ java -cp "<mutclasses2>:$CP" org.junit.runner.JUnitCore nablarch.test.TestSupportTest
+1) testGetTestDataPaths(nablarch.test.TestSupportTest)
+2) testGetPathOf(nablarch.test.TestSupportTest)
+Tests run: 24,  Failures: 2      <- 落ちる。既存テストは :95-99 を検知している
+```
+
+`[P]`（`fix1/dupsrc/nablarch/test/Fix1Env.java`。`-Dnablarch.test.resource-root` が効く条件）:
+
+```
+###### target/test-classes あり（リポジトリ初期化が成功する）/ -D なし ######
+[P] TestSupport.getResourceRootSetting() = src/test/java
+[P] (TestSupport ロード後) SystemRepository.get = src/test/java
+###### target/test-classes あり / -Dnablarch.test.resource-root=OVERRIDDEN/BY/SYSPROP ######
+[P] TestSupport.getResourceRootSetting() = OVERRIDDEN/BY/SYSPROP
+[P] (TestSupport ロード後) SystemRepository.get = OVERRIDDEN/BY/SYSPROP
+###### target/test-classes なし（unit-test.xml の参照クラスが解決できず初期化が失敗し握りつぶされる）/ -D なし ######
+[P] unit-test.xml on classpath = true
+[P] TestSupport.getResourceRootSetting() = test/java/
+[P] (TestSupport ロード後) SystemRepository.get = null
+###### target/test-classes なし / -Dnablarch.test.resource-root=OVERRIDDEN/BY/SYSPROP ######
+[P] TestSupport.getResourceRootSetting() = test/java/
+[P] (TestSupport ロード後) SystemRepository.get = null      <- -D が効かない
+```
+
+`[T][N]`（`fix1/Fix1Time.java`。`fixedDate` の検証範囲と、コンポーネント名 `systemTimeProvider`）:
+
+```
+[T] SimpleDateFormat#isLenient の既定値 = true
+[T] setFixedDate("20100914123456") len=14 -> getDate()=2010-09-14 12:34:56.000
+[T] setFixedDate("20101332123456") len=14 -> getDate()=2011-02-01 12:34:56.000
+[T] setFixedDate("20100914993456") len=14 -> getDate()=2010-09-18 03:34:56.000
+[T] setFixedDate("99999999999999") len=14 -> getDate()=10007-06-11 04:40:39.000
+[T] setFixedDate("20100914123456789") len=17 -> getDate()=2010-09-14 12:34:56.789
+[T] setFixedDate("2010091412345") len=13 -> java.lang.IllegalArgumentException: datetime string 2010091412345
+[T] setFixedDate("201009141234561") len=15 -> java.lang.IllegalArgumentException: datetime string 201009141234561
+[N] コンポーネント名="systemTimeProvider" -> SystemTimeUtil.getDate() = 2010-09-14 12:34:56.000
+[N] コンポーネント名="fixedSystemTimeProvider" -> java.lang.IllegalArgumentException: specified systemTimeProvider is not registered in SystemRepository.
+```
+
+`[C]`（`fix1/Fix1Cache.java`。同じ JVM のままテストデータを書き換えて読み直せるか）:
+
+```
+[C-1] 1回目（編集前）   -> {DataFileFragment:firstFieldKey=1, XML1=BEFORE_EDIT}
+[C-2] テストデータを書き換えた（BEFORE_EDIT -> AFTER_EDIT）
+[C-3] 2回目（編集後）   -> {DataFileFragment:firstFieldKey=1, XML1=AFTER_EDIT}
+
+[C-4] PoiXlsReader 単体で useCache の効果を比較する
+[C-4] useCache=true  1回目 -> [1, V1]
+[C-4] useCache=true  2回目（ファイルは V2 に書き換え済み）-> [1, V1]
+[C-4] useCache=false 3回目（同じファイル）              -> [1, V2]
+```
+
+`[R]`（`fix1/Fix1Interp2.java`。`interpreters` が Excel 側の同期応答メッセージ読み込み経路で実際に適用されるか）:
+
+```
+[R] セルの値 = "QUOTED" （前後にダブルクォートあり）
+[R] interpreters = messagingTestInterpreters（Null/Quotation/Composite） -> {DataFileFragment:firstFieldKey=1, XML1=QUOTED}
+[R] interpreters = 空リスト（解釈クラスを与えない）              -> {DataFileFragment:firstFieldKey=1, XML1="QUOTED"}
+```
+
+**取り下げた出力**: 旧 `[G]`（`Quotation+Null("\"null\"") -> null`）は `println` が Java の `null` と
+文字列 `null` を区別できないことによる偽の根拠だったため取り下げた（[I-4] で再現）。
+旧 `[H]`（`fixedDate` の桁数チェック）は `[T]` に置き換えた。
+旧 `[T]`（`mvn -o test -Dtest=TestSupportTest` が24件緑）は「緑であること」を根拠にしていたため取り下げ、
+変異で落ちることの実測（`[M-A]`・`[M-B]`）に差し替えた。
+
+##### ピン外の引用と、その版
+
+§2 のピン（`nablarch-document` `40b9c52` ／ `nablarch-testing` `3c4bd2a`）の外から引いた事実と、その版を示す。
+
+| 引用元 | 版の特定 | 本記録で引いた箇所 |
+|---|---|---|
+| `nablarch-core` | `mvn -o dependency:build-classpath` が解決した実体は `~/.m2/repository/com/nablarch/framework/nablarch-core/6-NEXT-SNAPSHOT/nablarch-core-6-NEXT-SNAPSHOT.jar`。md5 `739824ac93ef8d391599a284cdd716c2` で、同ディレクトリの `nablarch-core-6-NEXT-20260717.011251-20.jar` と同一（同居する `nablarch-core-6-NEXT-20260327.002503-19.jar` は md5 `03035e977de61a5178c65fced43141eb` で別物）。行番号は同じ版の `-sources.jar` から取り出したソースのもの | `FilePathSetting.java:27,30,43-49,78-81,143-151,176-184,192-196,229,231,309-311`、`SystemTimeUtil.java:26,109` |
+| `nablarch-testing-yaml` | コミット `05ada91` | `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:43,47,49,78-82,86-90,162-166,188-192` |
+| `nablarch-testing-default-configuration` | `~/.m2/repository/com/nablarch/configuration/nablarch-testing-default-configuration/6-NEXT-SNAPSHOT/nablarch-testing-default-configuration-6-NEXT-20260327.002359-3.jar`。md5 `f1432ceb68d7dd0018c922f3b6e7df82` で、同ディレクトリの `…-6-NEXT-SNAPSHOT.jar` と同一 | `nablarch/test/test-data.config`、`nablarch/test/test-data.xml`、`nablarch/test/test-data-interpreter.xml` |
+| `nablarch-common-idgenerator-jdbc` | `~/.m2/repository/com/nablarch/framework/nablarch-common-idgenerator-jdbc/6-NEXT-SNAPSHOT/nablarch-common-idgenerator-jdbc-6-NEXT-20260327.004352-2.jar`。md5 `99bd6c847e2a4960d889cda72127de3f` で、同ディレクトリの `…-6-NEXT-SNAPSHOT.jar` と同一 | `FastTableIdGenerator.class` の所在 |
+| Maven の依存スコープ規則 | 仕様であり版を持たない。本記録では「`provided` スコープの依存は利用者へ推移しない」ことのみを使う | :126 の判定根拠 |
 
 集計: 表の行 64（うち1件は複数箇所にまたがる横断行「:176 と :252 の組み合わせ」で、行番号は `:174-185`・`:249-255` に含まれる）。
 対象 27件・一部対象外 3件（合わせて判定対象30件）／対象外 34行。
