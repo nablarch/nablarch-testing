@@ -463,7 +463,7 @@ $ echo $?
 | :122 | `fixedDate` は `yyyyMMddHHmmss`（14桁）または `yyyyMMddHHmmssSSS`（17桁）に合致する文字列。この設定を行うとアプリケーションが `SystemTimeProvider` を通じて取得する日時が固定される | 対象 | 一致 | 実装が検証しているのは**桁数（14／17）だけ**である。`FixedSystemTimeProvider.java:42-53` は長さが 17 でも 14 でもなければ `IllegalArgumentException` を投げるが、日付としての妥当性は見ておらず、`:62-64` の `new SimpleDateFormat(format).parse(...)` は lenient のままである。実行して確認（[T]）：`isLenient()` は `true`、`"20101332123456"` は例外にならず `2011-02-01 12:34:56.000`、`"20100914993456"` は `2010-09-18 03:34:56.000`、`"99999999999999"` は `10007-06-11 04:40:39.000` になる。13桁・15桁は `IllegalArgumentException`。第2文が成り立つ前提はコンポーネント名が `systemTimeProvider` であることで、`nablarch-core` の `SystemTimeUtil.java:26,109` がその名前で引く（実行して確認 [N]：名前を `fixedSystemTimeProvider` にすると `IllegalArgumentException: specified systemTimeProvider is not registered in SystemRepository.`）。なお同ファイルの Javadoc `:35-36` は「12桁」「15桁」と書いており実装とも解説書とも食い違う（`src/main` のため変更しない。事実として記録するだけ） | 一致 | 変更しない（報告のみ） |
 | :124-125 | 見出し「シーケンス採番をテーブル採番に置き換える」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :126 | テスティングフレームワークは、シーケンスオブジェクトを使用した採番処理をコンポーネント設定ファイルの変更だけでテーブル採番に置き換える機能を提供する | 対象 | 不一致 | 下記「不一致の詳細 :126」参照 | 不一致（解説書側の誤りの疑い） | 変更しない（報告のみ） |
-| :128-154 | `OracleSequenceIdGenerator`／`FastTableIdGenerator` の設定例（`idTable`・`tableName`・`idColumnName`・`noColumnName`・`dbTransactionManager`） | 対象外 | — | `FastTableIdGenerator` は `nablarch-common-idgenerator-jdbc` が提供（ローカル `~/.m2` の全 jar を走査して `FastTableIdGenerator.class` を含むのはこの artifactId の jar のみ）。`OracleSequenceIdGenerator` はプロジェクト側クラス（`com.example.common.idgenerator`）。`:153` の `ref="dbTransactionManager"` が指すコンポーネントもプロジェクト側の定義。いずれも `nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
+| :128-154 | `OracleSequenceIdGenerator`／`FastTableIdGenerator` の設定例（`idTable`・`tableName`・`idColumnName`・`noColumnName`・`dbTransactionManager`） | 対象外 | — | `FastTableIdGenerator` は `nablarch-common-idgenerator-jdbc` が提供。ローカル `~/.m2` の全 jar（sources／javadoc を除く）を走査すると `FastTableIdGenerator.class` を含む jar は5件あり、いずれも artifactId が `nablarch-common-idgenerator-jdbc`（`1.0.1`・`2.0.0`・`2.0.1`・`6-NEXT-20260327.004352-2`・`6-NEXT-SNAPSHOT`）である（走査スクリプトは `<scratchpad>/fix2/scan_idgen.sh`。出力は下記「不一致の詳細 :126」）。`OracleSequenceIdGenerator` はプロジェクト側クラス（`com.example.common.idgenerator`）。`:153` の `ref="dbTransactionManager"` が指すコンポーネントもプロジェクト側の定義。いずれも `nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :156-160 | `IdGenerator` の参照リンク・テストデータ記述例へのリンク | 対象外 | — | 解説書内の相互参照 | — | 変更しない（報告のみ） |
 | :162 | 参照ラベル `_testing_framework_common-send_sync_test_data:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :164-165 | 見出し「同期応答メッセージ送信・HTTPメッセージ送信のテストデータの読み込みを設定する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
@@ -586,8 +586,18 @@ $ python3 <scratchpad>/fix2/dup_check.py
 2. **実装での実測**（`3c4bd2a`）
    `git grep -rin "idgenerator" 3c4bd2a -- src/main` が0件。`git grep -rn "採番" 3c4bd2a -- src/main` も0件。
    解説書が置き換え先として挙げる `nablarch.common.idgenerator.FastTableIdGenerator`（`解説書:setup/common.rst:149`）は
-   `nablarch-common-idgenerator-jdbc` が提供する（ローカル `~/.m2` の全 jar を走査し
-   `FastTableIdGenerator.class` を含むのはこの artifactId の jar のみ）。
+   `nablarch-common-idgenerator-jdbc` が提供する。ローカル `~/.m2` の全 jar（sources／javadoc を除く）を走査すると、
+   `FastTableIdGenerator.class` を含む jar は5件あり、いずれも artifactId が `nablarch-common-idgenerator-jdbc` である。
+
+   ```
+   $ bash <scratchpad>/fix2/scan_idgen.sh
+   nablarch-common-idgenerator-jdbc-1.0.1.jar
+   nablarch-common-idgenerator-jdbc-2.0.0.jar
+   nablarch-common-idgenerator-jdbc-2.0.1.jar
+   nablarch-common-idgenerator-jdbc-6-NEXT-20260327.004352-2.jar
+   nablarch-common-idgenerator-jdbc-6-NEXT-SNAPSHOT.jar
+   ```
+
    さらに `pom.xml:98-102` はこの依存を `provided` スコープで宣言しており、Maven の依存スコープ規則により利用者へ推移しない。
 
    ```
