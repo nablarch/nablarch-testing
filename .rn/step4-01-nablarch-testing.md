@@ -205,6 +205,10 @@ $ (各ファイルの wc -l の総和)
 
 **非連続行の書き方** — `・` でつなぐ（例 `:158・:160`）。連続する範囲は `:174-185` のようにハイフンでつなぐ。
 
+**対象外リストとの対応** — 表の `対象外`・`一部対象外` の行は、表外の「対象外と判定した記述と理由」の項目と1対1で対応する。
+リストの行IDの粒度は表の行に合わせる（表の行が `:156-160` なら、リストも `:156-160` と書く。ただし `一部対象外` の行は、
+除いた部分を指すために行内の一部の行番号を書いてよい）。対応は `<scratchpad>/fix2/list_vs_table.py` で機械的に確かめる。
+
 **用語** — 本作業の対象モジュールは `nablarch-testing` と書く（「本モジュール」とは書かない）。
 「テスティングフレームワーク」は解説書側の呼び名であり、表の「記述の要旨」列と解説書の逐語引用でだけ使う。
 テストデータを解析するコンポーネントは「テストデータ解析コンポーネント」に統一する（解説書のコード例中の文字列を引く場合を除く）。
@@ -438,7 +442,7 @@ $ echo $?
 | :33 | 処理方式によっては専用モジュールを使う。専用モジュールが `nablarch-testing` に依存するなら個別追加は不要 | 対象外 | — | 他モジュールの `pom.xml` が決める | — | 変更しない（報告のみ） |
 | :35 | 参照ラベル `_testing_framework_common-yaml_testdata:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :37-38 | 見出し「テストデータの形式をYAMLに変更する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
-| :39 | テストデータはデフォルトでは Excel 形式で読み込まれる。Excel 形式で記述する場合、設定は不要である | 一部対象外 | 判定保留 | Excel を読むクラスは`nablarch-testing`が提供する（`PoiXlsReader.java:30`）。「デフォルト」を決めているのは `nablarch-testing-default-configuration` の `nablarch/test/test-data.xml`（`testDataParser` = `BasicTestDataParser` ＋ `PoiXlsReader`）と `nablarch/test/test-data-interpreter.xml`。前回書いた「ブランクプロジェクト側の設定が決める」は誤りだった。上記「保留中の論点」参照。「Excel を読むクラスを `nablarch-testing` が提供する」ことは一致だが、「デフォルト」の成否は §2 のピンに `nablarch-testing-default-configuration` を加えるかどうかで決まるため、この行は判定保留とし user 判断を待つ | 判定保留 | 変更しない（報告のみ） |
+| :39 | テストデータはデフォルトでは Excel 形式で読み込まれる。Excel 形式で記述する場合、設定は不要である | 対象 | 判定保留 | Excel を読むクラスは`nablarch-testing`が提供する（`PoiXlsReader.java:30`）。「デフォルト」を決めているのは `nablarch-testing-default-configuration` の `nablarch/test/test-data.xml`（`testDataParser` = `BasicTestDataParser` ＋ `PoiXlsReader`）と `nablarch/test/test-data-interpreter.xml`。前回書いた「ブランクプロジェクト側の設定が決める」は誤りだった。上記「保留中の論点」参照。「Excel を読むクラスを `nablarch-testing` が提供する」ことは一致だが、「デフォルト」の成否は §2 のピンに `nablarch-testing-default-configuration` を加えるかどうかで決まるため、この行は判定保留とし user 判断を待つ | 判定保留 | 変更しない（報告のみ） |
 | :41 | YAML 形式のテストデータを解析するクラスは `nablarch-testing-yaml` が提供する | 対象外 | — | `nablarch-testing`に `Yaml*` クラスは存在しない（`git ls-tree -r 3c4bd2a --name-only -- src/main/java` を `grep -i yaml` して0件）。提供側の確認は `nablarch-testing-yaml` 担当 | — | 変更しない（報告のみ） |
 | :43 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :45-50 | `nablarch-testing-yaml` の dependency 定義（groupId・artifactId・scope） | 対象外 | — | 他モジュールの座標であり、`nablarch-testing-yaml` の指示書が担当する | — | 変更しない（報告のみ） |
@@ -548,9 +552,9 @@ $ python3 <scratchpad>/fix2/dup_check.py
 
 この横断行は削除し、判定は :249-255 の行に畳んだ（判定は一致のまま変えていない）。
 
-集計: 表の行 63（対象 20 ／ 一部対象外 9 ／ 対象外 34。20＋9＋34＝63）。
+集計: 表の行 63（対象 21 ／ 一部対象外 8 ／ 対象外 34。21＋8＋34＝63）。
 判定の内訳は 一致 23 ／ 不一致（解説書が正）1（:225）／不一致（解説書側の誤りの疑い）1（:126）／
-判定保留 3（:39・:89・:166）／集約 1（:13）（23＋1＋1＋3＋1＝29＝20＋9）。
+判定保留 3（:39・:89・:166）／集約 1（:13）（23＋1＋1＋3＋1＝29＝21＋8）。
 判定保留の3件は、§2 のピンに `nablarch-testing-default-configuration` を加えるかどうかの user 判断待ちである。
 
 
