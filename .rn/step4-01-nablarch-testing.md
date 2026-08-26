@@ -467,7 +467,7 @@ $ echo $?
 | :156-160 | `IdGenerator` の参照リンク・テストデータ記述例へのリンク | 対象外 | — | 解説書内の相互参照 | — | 変更しない（報告のみ） |
 | :162 | 参照ラベル `_testing_framework_common-send_sync_test_data:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :164-165 | 見出し「同期応答メッセージ送信・HTTPメッセージ送信のテストデータの読み込みを設定する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
-| :166 | 応答電文の読み込みにはベースディレクトリとテストデータ解析コンポーネントの設定が必要で、どちらもテスティングフレームワークのデフォルト設定には含まれない。設定していない場合はテストの実行時に例外が発生する | 対象 | 判定保留 | 設定していない場合に例外が出ることは実行して確認済み（[1][2]）：`sendSyncTestData` 未設定→`IllegalArgumentException: Unknown basePathName: sendSyncTestData`（`SendSyncSupport.java:346` → `nablarch-core` `FilePathSetting.java:143-151`）、`messagingTestDataParser` 未設定→`IllegalStateException: can't get TestDataParser. check configuration.`（`SendSyncSupport.java:473-476`）。「デフォルト設定に含まれない」の根拠は、前回書いた「本モジュールの `src/main/resources` が2件」ではなく、デフォルト設定モジュール側にも `sendSyncTestData`／`messagingTestDataParser` が無いこと（上記「保留中の論点」の4）。デフォルト設定モジュールをピンに含めるかが未決のため保留。例外が出ること自体は実測で一致だが、「テスティングフレームワークのデフォルト設定に含まれない」の成否は §2 のピンに `nablarch-testing-default-configuration` を加えるかどうかで決まるため、この行は判定保留とし user 判断を待つ | 判定保留 | 変更しない（報告のみ） |
+| :166 | 応答電文の読み込みにはベースディレクトリとテストデータ解析コンポーネントの設定が必要で、どちらもテスティングフレームワークのデフォルト設定には含まれない。設定していない場合はテストの実行時に例外が発生する | 対象 | 判定保留 | 設定していない場合に例外が出ることは実行して確認済み（[E-1][E-2]）：`sendSyncTestData` 未設定→`IllegalArgumentException: Unknown basePathName: sendSyncTestData`（`SendSyncSupport.java:346` → `nablarch-core` `FilePathSetting.java:143-151`）、`messagingTestDataParser` 未設定→`IllegalStateException: can't get TestDataParser. check configuration.`（`SendSyncSupport.java:473-476`）。「デフォルト設定に含まれない」の根拠は、前回書いた「本モジュールの `src/main/resources` が2件」ではなく、デフォルト設定モジュール側にも `sendSyncTestData`／`messagingTestDataParser` が無いこと（上記「保留中の論点」の4）。デフォルト設定モジュールをピンに含めるかが未決のため保留。例外が出ること自体は実測で一致だが、「テスティングフレームワークのデフォルト設定に含まれない」の成否は §2 のピンに `nablarch-testing-default-configuration` を加えるかどうかで決まるため、この行は判定保留とし user 判断を待つ | 判定保留 | 変更しない（報告のみ） |
 | :168 | ベースディレクトリはファイルパス管理の `sendSyncTestData` キー、フォーマット定義ファイルは `format` キー、解析コンポーネントは `messagingTestDataParser` という名前 | 対象 | 一致 | `SendSyncSupport.java:49`（`SEND_SYNC_TEST_DATA_BASE_PATH = "sendSyncTestData"`）・`:346,348` で使用、`:473`（`SystemRepository.get("messagingTestDataParser")`）。`format` は `MockMessagingClient.java:166,196`・`RequestTestingMessagingClient.java:539`。リソース名は `<リクエストID>/message`（`SendSyncSupport.java:46-47,347`） | 一致 | 変更しない（報告のみ） |
 | :170 | テストデータの記法を解釈するクラスは Excel 形式と YAML 形式で共通である | 対象 | 一致 | 実装側の経路で確かめた（前回の「解説書の両ブロックがともに `messagingTestInterpreters` を参照している」は解説書の主張を解説書で裏づける循環根拠だったので取り下げた）。`interpreters` プロパティは `TestDataParser.java:107` に定義される。Excel 側の `BasicTestDataParser` は `getMessageWithoutCache`（`:99-101`）で `addBinaryFileInterpreter(path)`（`:205-212`。`setInterpreters`（`:230`）で受けたリストの先頭に `BinaryFileInterpreter` を足したもの）を `SendSyncMessageParser` に渡す。YAML 側の `YamlTestDataParser` は `setInterpreters` をオーバーライドして `super` にも渡し（`05ada91`:`YamlTestDataParser.java:86-90`）、`rebuildBuilders()`（同 `:188-192`）で同じリストから `InterpreterResolver` を組み、`getMessageWithoutCache` のオーバーライド（同 `:162-166`）でそれを使う。Excel 側で実際に適用されることは実行して確認（[R]）：セルに引用符付きの `"QUOTED"` を置くと、`messagingTestInterpreters` を与えた場合は `QUOTED`、空リストの場合は `"QUOTED"` が返る | 一致 | 変更しない（報告のみ） |
 | :172 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
@@ -483,7 +483,7 @@ $ echo $?
 | :229-230 | 見出し「YAML形式の場合」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | 変更しない（報告のみ） |
 | :231-247 | YAML 形式：`filePathSetting` の `fileExtensions` には `format` だけを設定する | 一部対象外 | 一致 | 実行して確認（[D-noext]）：`sendSyncTestData` に拡張子を設定しない場合、`getFileIfExists("sendSyncTestData","RB11AC0100")` はディレクトリ `RB11AC0100` を返す（`nablarch-core` `FilePathSetting.java:176-184` で拡張子を結合しないため）。`:234` の `name="filePathSetting"`・`:235` の `autowireType="None"` は :198・:199 と同じ扱い | 一致 | 変更しない（報告のみ） |
 | :249-255 | YAML 形式：`messagingTestDataParser` は `YamlTestDataParser`、`interpreters` は前掲と共通、`testDataReader` は指定しない | 一部対象外 | 一致 | 判定したのは `nablarch-testing` 側の受け口。`SendSyncSupport.java:473` の代入先が `BasicTestDataParser` 型であるため、`YamlTestDataParser` が `BasicTestDataParser` を継承していることが必要。継承していることを実測（`nablarch-testing-yaml` `05ada91`:`YamlTestDataParser.java:43`）。`testDataReader` を使わないことの確認は `nablarch-testing-yaml` 担当。あわせて、`:252` がここで参照する `messagingTestInterpreters`（`:176` の先頭に `NullInterpreter` を含む）を YAML 形式のテストデータ解析コンポーネントに与えてよいかを判定した。結果は一致（前回の不一致判定は取り下げた）。詳細は下記「取り下げた不一致候補 :176・:252」 | 一致 | 変更しない（報告のみ） |
-| :257-259 | `fileExtensions` に `sendSyncTestData` を設定しない。設定するとテストデータが見つからず、テストの実行時に例外が発生する | 対象 | 一致 | 実行して確認（[3]）：ディレクトリ `RB11AC0100` を置いたうえで `fileExtensions.sendSyncTestData=xlsx` を設定すると `IllegalStateException: test data file was not found. request id=[RB11AC0100], ...`（`SendSyncSupport.java:350-353`） | 一致 | 変更しない（報告のみ） |
+| :257-259 | `fileExtensions` に `sendSyncTestData` を設定しない。設定するとテストデータが見つからず、テストの実行時に例外が発生する | 対象 | 一致 | 実行して確認（[E-3]）：ディレクトリ `RB11AC0100` を置いたうえで `fileExtensions.sendSyncTestData=xlsx` を設定すると `IllegalStateException: test data file was not found. request id=[RB11AC0100], ...`（`SendSyncSupport.java:350-353`） | 一致 | 変更しない（報告のみ） |
 
 対象外と判定した記述と理由（対象外と判定してよい基準は指示書 `87a21d6` §4-2 手順2「この記述が成り立つかどうかは、`nablarch-testing` の実装で決まるか」である）:
 
@@ -648,7 +648,7 @@ $ python3 <scratchpad>/fix2/dup_check.py
    すなわち `fileExtensions` が効くのは `nablarch-core` の `FilePathSetting#getFileIfExists`（`:78-81` → `:176-184`）の
    **存在チェックまで**であり、実際に開くファイルは `PoiXlsReader` が拡張子を決め直している。
 
-   実行手順と出力（[X]。検証コードは `fix1/Fix1Xls.java`）:
+   実行手順と出力（[X]。検証コードは `<scratchpad>/fix1/Fix1Xls.java`）:
    同じベースディレクトリに `RB11AC0200.xls`（セルの値 `FROM_DOT_XLS_FILE`）と
    `RB11AC0200.xlsx`（セルの値 `FROM_DOT_XLSX_FILE`）を POI で作り、
    `fileExtensions.sendSyncTestData=xlsx` を設定して `SendSyncSupport#getResponseMessageByRequestId` を呼んだ。
@@ -700,7 +700,7 @@ $ python3 <scratchpad>/fix2/dup_check.py
    次の `QuotationTrimmer`（`3c4bd2a`:`QuotationTrimmer.java:12-16,24-30`）が引用符を外すが、
    そのときにはもう `NullInterpreter` はキューに残っていない。結果は長さ4の文字列 `null` である。
 
-   実行結果（[I]。検証コードは `fix1/Fix1Interpreter.java`）:
+   実行結果（[I]。検証コードは `<scratchpad>/fix1/Fix1Interpreter.java`）:
 
    ```
    [I-0] Queue impl = java.util.LinkedList / remove() は先頭要素を取り出す
@@ -727,6 +727,25 @@ $ python3 <scratchpad>/fix2/dup_check.py
 
 ##### 動かして確かめた内容
 
+証拠ラベルは `[<英字1文字>]` または `[<英字1文字>-<連番／枝番>]` の形に統一する。
+各ラベルがどの行から参照されているかは次のとおり（`<scratchpad>/fix2/evidence_refs.py` で孤立がないことを機械的に確かめた）。
+
+| ラベル | 何を測ったか | 検証コード | 参照元 |
+|---|---|---|---|
+| `[A]`・`[B]` | リポジトリが空のときの読み込み先の既定値 | 旧 `probe/Probe.java` | 「取り下げた不一致候補 :89」節（表の :89 行から参照） |
+| `[D]`・`[D-noext]`・`[D-xlsx]`・`[D-xls]` | `fileExtensions` の有無で `getFileIfExists` の解決先が変わること | 同上 | 表 :187・:195-212・:231-247、「不一致の詳細 :225」節 |
+| `[E-1]`・`[E-2]`・`[E-3]` | 設定していない場合に出る例外 | 旧 `probe/Probe2.java` | 表 :166・:257-259 |
+| `[I-0]`〜`[I-4]` | 解釈クラスの適用順と、Java の `null` と長さ4の文字列 `null` の判別 | `<scratchpad>/fix1/Fix1Interpreter.java` | 表 :81、「取り下げた不一致候補 :176・:252」節 |
+| `[X-0]`〜`[X-2]` | `.xls` と `.xlsx` のどちらが読まれるか | `<scratchpad>/fix1/Fix1Xls.java` | 「不一致の詳細 :225」節（表の :225 行から参照） |
+| `[F-0]`〜`[F-5]`・`[F-mut]` | 同名テストデータの先勝ちと、その変異での検知 | `<scratchpad>/fix1/dupsrc/nablarch/test/Fix1FirstWins.java` | 表 :93・:103 |
+| `[M-A]`・`[M-B]` | 既存テストの検知力を変異で測った結果 | `<scratchpad>/fix1/mutsrc/`・`mutsrc2/` | 表 :95-99・:103 |
+| `[P]` | `-Dnablarch.test.resource-root` が効く条件 | `<scratchpad>/fix1/dupsrc/nablarch/test/Fix1Env.java` | 表 :93・:107 |
+| `[T]`・`[N]` | `fixedDate` の検証範囲と、コンポーネント名 `systemTimeProvider` | `<scratchpad>/fix1/Fix1Time.java` | 表 :57-68・:113-120・:122 |
+| `[C-1]`〜`[C-4]` | 同じ JVM のままテストデータを書き換えて読み直せるか | `<scratchpad>/fix1/Fix1Cache.java` | 表 :191 |
+| `[R]` | `interpreters` が Excel 側の同期応答メッセージ読み込み経路で適用されるか | `<scratchpad>/fix1/Fix1Interp2.java` | 表 :170 |
+
+取り下げた `[G]`・旧 `[H]`・旧 `[T]` は下の「取り下げた出力」に理由だけを残し、証拠としては使わない。
+
 `src/main`・`src/test`・解説書を変更しないため、検証コードはすべてスクラッチパッド配下に置いて実行した。
 今回の是正で新しく組んだものは
 `/tmp/claude-1000/-home-tie303177-work-nablarch-nablarch-testing/92111fc8-7ec9-430c-96c2-1a8e7db53a6f/scratchpad/fix1/` 配下にある
@@ -751,18 +770,18 @@ $ python3 <scratchpad>/fix2/dup_check.py
 [D-xls]  getFileIfExists(file RB11AC0200) = null
 ```
 
-`[1][2][3]`（据え置き。旧 `probe/Probe2.java`。`SendSyncSupport#getResponseMessageByRequestId` を実際に呼んだ結果）:
+`[E-1][E-2][E-3]`（据え置き。旧 `probe/Probe2.java`。`SendSyncSupport#getResponseMessageByRequestId` を実際に呼んだ結果）:
 
 ```
-[1] sendSyncTestData未設定 -> java.lang.IllegalArgumentException: Unknown basePathName: sendSyncTestData
-[2] messagingTestDataParser未設定 -> java.lang.IllegalStateException: can't get TestDataParser. check configuration.
-[3] YAML(dir)にxlsx指定 -> java.lang.IllegalStateException: test data file was not found. request id=[RB11AC0100], base path=[<scratchpad>/msgbase], resource name=[RB11AC0100/message], absolute base path=[<scratchpad>/msgbase].
+[E-1] sendSyncTestData未設定 -> java.lang.IllegalArgumentException: Unknown basePathName: sendSyncTestData
+[E-2] messagingTestDataParser未設定 -> java.lang.IllegalStateException: can't get TestDataParser. check configuration.
+[E-3] YAML(dir)にxlsx指定 -> java.lang.IllegalStateException: test data file was not found. request id=[RB11AC0100], base path=[<scratchpad>/msgbase], resource name=[RB11AC0100/message], absolute base path=[<scratchpad>/msgbase].
 ```
 
-`[I]`（`fix1/Fix1Interpreter.java`。解釈クラスの適用順と、Java の `null` と長さ4の文字列 `null` の判別）
+`[I]`（`<scratchpad>/fix1/Fix1Interpreter.java`。解釈クラスの適用順と、Java の `null` と長さ4の文字列 `null` の判別）
 — 出力は上記「取り下げた不一致候補 :176・:252」に掲載。
 
-`[X]`（`fix1/Fix1Xls.java`。`.xls` と `.xlsx` のどちらが読まれるか）
+`[X]`（`<scratchpad>/fix1/Fix1Xls.java`。`.xls` と `.xlsx` のどちらが読まれるか）
 — 出力は上記「不一致の詳細 :225」に掲載。
 
 `[F]`（`fix1/dupsrc/nablarch/test/Fix1FirstWins.java`。同名テストデータが複数ディレクトリに実在する場合の先勝ち）:
