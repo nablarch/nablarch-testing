@@ -353,7 +353,7 @@ $ echo $?
 | :193-194 | 見出し「Excel形式の場合」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :195-212 | Excel 形式：`filePathSetting` に `basePathSettings`（`sendSyncTestData`・`format`）と `fileExtensions`（`sendSyncTestData=xlsx`・`format=fmt`）を設定する | 対象 | 一致 | `FilePathSetting.java:192,309`（`basePathSettings`／`fileExtensions` プロパティ）。キー名の出所は上記 :168。実行して確認（下記 [D-xlsx]）：`RB11AC0200.xlsx` が `getFileIfExists("sendSyncTestData","RB11AC0200")` で解決される | 一致 | なし |
 | :214-223 | Excel 形式：`messagingTestDataParser` は `BasicTestDataParser`、`testDataReader` に `PoiXlsReader`、`interpreters` に前掲の `messagingTestInterpreters` | 対象 | 一致 | `BasicTestDataParser.java:32,216,230`、`PoiXlsReader.java:30`（`implements TestDataReader`）。`SendSyncSupport.java:473` は取得結果を `BasicTestDataParser` 型の変数へ代入するため、`BasicTestDataParser`（またはその派生）であることが必要 | 一致 | なし |
-| :225 | `fileExtensions` の `sendSyncTestData` には実際に配置するファイルの拡張子（`xlsx` または `xls`）を指定する。指定した拡張子と一致しないファイルは読み込まれない。リクエストIDごとに1つのファイルを置く | 対象 | 一致 | `FilePathSetting.java:176-184`（拡張子が設定されていればファイル名に結合する）→ `:78-82`（`getFileIfExists`）→ `SendSyncSupport.java:348-353`（`null` なら `IllegalStateException`）。実行して確認（下記 [D-xls]）：実ファイルが `.xlsx` のとき `fileExtensions=xls` では `null` が返る。リクエストIDごとに1ファイルである点は `PoiXlsReader.java:55-65`（リソース名 `<リクエストID>/message` を分解して `<ベース>/<リクエストID>.xls(x)` のシート `message` を開く） | 一致 | なし |
+| :225 | `fileExtensions` の `sendSyncTestData` には実際に配置するファイルの拡張子（`xlsx` または `xls`）を指定する。**指定した拡張子と一致しないファイルは読み込まれない**。リクエストIDごとに1つのファイルを置く | 対象 | **不一致** | 下記「不一致の詳細 :225」参照 | **不一致（解説書が正＝実装側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
 | :227 | ベースディレクトリ配下の構成図（画像） | 対象外 | — | 解説書の画像アセット。図が表す構成（リクエストIDごとに1ファイル）の成否は :225 の行で判定済み | — | なし |
 | :229-230 | 見出し「YAML形式の場合」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :231-247 | YAML 形式：`filePathSetting` の `fileExtensions` には `format` だけを設定する | 対象 | 一致 | 実行して確認（下記 [D-noext]）：`sendSyncTestData` に拡張子を設定しない場合、`getFileIfExists("sendSyncTestData","RB11AC0100")` はディレクトリ `RB11AC0100` を返す（`FilePathSetting.java:176-184` で拡張子を結合しないため） | 一致 | なし |
@@ -452,6 +452,61 @@ $ echo $?
    `nablarch-testing` はこの機能に対して一切のコードを持たない。
    「テスティングフレームワークが提供する」という帰属だけが実装と合っていない。
 
+##### 不一致の詳細 :225
+
+1. **解説書の逐語**（`40b9c52`:`setup/common.rst:225`）
+   「``fileExtensions``\ の\ ``sendSyncTestData``\ には、実際に配置するテストデータのファイルの拡張子（\ ``xlsx``\ または\ ``xls``\ ）を指定する。指定した拡張子と一致しないファイルは読み込まれない。ベースディレクトリの配下は次の図のとおりで、リクエストIDごとに1つのファイルを置く。」
+2. **実装での実測**（`3c4bd2a`）
+   読み込みの実体は `src/main/java/nablarch/test/core/reader/PoiXlsReader.java:62-65` である。
+
+   ```java
+   File file = new File(path + '/' + fileName + ".xls");
+   if (!file.exists()) {
+       file = new File(path + '/' + fileName + ".xlsx");
+   }
+   ```
+
+   ここは `fileExtensions` を一切参照せず、`.xls` を先に試して無ければ `.xlsx` を使う。
+   経路を自分で追った結果は次のとおり。
+   `SendSyncSupport.java:346`（`basePath` を取得）→ `:347`（`resourceName = <リクエストID>/message`）→
+   `:348`（`getFileIfExists` の戻り値。`:349-353` の `null` 判定と `:359` の最終更新日時スナップショットにしか使わない）→
+   `:473`（`messagingTestDataParser` を取得）→ `:478`（`getMessageWithoutCache(path, resourceName, ...)`）→
+   `BasicTestDataParser.java:99-101` → `TestDataParsingTemplate.java:131,141`（`reader.open(directory, resource)`）→
+   `PoiXlsReader.java:48,62-65`。
+   すなわち `fileExtensions` が効くのは `nablarch-core` の `FilePathSetting#getFileIfExists`（`:78-81` → `:176-184`）の
+   **存在チェックまで**であり、実際に開くファイルは `PoiXlsReader` が拡張子を決め直している。
+
+   実行手順と出力（[X]。検証コードは `fix1/Fix1Xls.java`）:
+   同じベースディレクトリに `RB11AC0200.xls`（セルの値 `FROM_DOT_XLS_FILE`）と
+   `RB11AC0200.xlsx`（セルの値 `FROM_DOT_XLSX_FILE`）を POI で作り、
+   `fileExtensions.sendSyncTestData=xlsx` を設定して `SendSyncSupport#getResponseMessageByRequestId` を呼んだ。
+
+   ```
+   ########## CASE 1: .xls と .xlsx の両方を配置 ##########
+   [X-0] <base>/RB11AC0200.xls exists=true (値=FROM_DOT_XLS_FILE)
+   [X-0] <base>/RB11AC0200.xlsx exists=true (値=FROM_DOT_XLSX_FILE)
+   [X-1] FilePathSetting#getFileIfExists("sendSyncTestData","RB11AC0200") = <base>/RB11AC0200.xlsx
+   [X-2] SendSyncSupport#getResponseMessageByRequestId -> {DataFileFragment:firstFieldKey=1, XML1=FROM_DOT_XLS_FILE}
+
+   ########## CASE 2: .xlsx のみ配置 ##########
+   [X-0] <base>/RB11AC0200.xls exists=false (値=FROM_DOT_XLS_FILE)
+   [X-0] <base>/RB11AC0200.xlsx exists=true (値=FROM_DOT_XLSX_FILE)
+   [X-1] FilePathSetting#getFileIfExists("sendSyncTestData","RB11AC0200") = <base>/RB11AC0200.xlsx
+   [X-2] SendSyncSupport#getResponseMessageByRequestId -> {DataFileFragment:firstFieldKey=1, XML1=FROM_DOT_XLSX_FILE}
+   ```
+
+   CASE 1 では、存在チェックが `fileExtensions=xlsx` に従って `.xlsx` を解決しているのに、
+   実際に読まれた中身は `.xls` のものである。
+3. **どちらの側が誤っていると考えるか**: **解説書が正（＝実装側の誤りの疑い）**。
+   解説書は「指定した拡張子と一致しないファイルは読み込まれない」と、`fileExtensions` が読み込み対象を決めると書いている。
+   実装は `FilePathSetting` が解決した `File` を `SendSyncSupport.java:348` で受け取っていながら、
+   読み込みの段でそれを使わず `PoiXlsReader.java:62-65` で拡張子を決め直しており、設定値の意味を途中で捨てている。
+   設定値が読み込み対象を決めるという解説書の契約のほうが素直であり、実装がそれを守っていないと考える。
+   なお、この食い違いが表に出るのは `.xls` と `.xlsx` を同じリクエストIDで両方置いたときだけである。
+   同じ文が「リクエストIDごとに1つのファイルを置く」とも述べているため、解説書のとおりに1つだけ置く利用者はこの差を踏まない
+   （片方しか無い場合、拡張子が一致しなければ `getFileIfExists` が `null` を返して `SendSyncSupport.java:350-353` が例外になる。実測 [D-xls]）。
+   **処置は報告のみ。実装は直さない**（`src/main` を変更しない。user 判断 2026-08-26）。
+
 ##### 取り下げた不一致候補 :176/:252
 
 1. **なぜいったん不一致と判定したか**
@@ -543,5 +598,5 @@ $ LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test -Dtest=TestSupportTest -DfailIfNoTe
 
 集計: 表の行 64（うち1件は複数箇所にまたがる横断行「:176 と :252 の組み合わせ」で、行番号は `:174-185`・`:249-255` に含まれる）。
 対象 27件・一部対象外 3件（合わせて判定対象30件）／対象外 34行。
-判定の内訳は 一致 26件／不一致（解説書側の誤りの疑い）1件（:126）／判定保留（ピンの扱いについて user 判断待ち）3件（:39・:89・:166）。
+判定の内訳は 一致 25件／不一致（解説書が正＝実装側の誤りの疑い）1件（:225）／不一致（解説書側の誤りの疑い）1件（:126）／判定保留（ピンの扱いについて user 判断待ち）3件（:39・:89・:166）。
 
