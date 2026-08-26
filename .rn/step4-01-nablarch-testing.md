@@ -184,8 +184,8 @@ $ (各ファイルの wc -l の総和)
 
 | 行 | 記述の要旨 | 対象／対象外 | 実装での成否 | 根拠 | 判定 | 処置 |
 |---|---|---|---|---|---|---|
-| :1 | 参照ラベル `_testing_framework_setup:` | 対象外 | — | 解説書内の相互参照ラベル | — | なし |
-| :3-4 | 見出し「テスティングフレームワークの導入と設定」 | 対象外 | — | 見出し文字列 | — | なし |
+| :1 | 参照ラベル `_testing_framework_setup:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :3-4 | 見出し「テスティングフレームワークの導入と設定」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :6-21 | `toctree`（`common` 以下13エントリ） | 対象外 | — | 13エントリすべて `40b9c52` に実在（`git cat-file -e 40b9c52:ja/development_tools/testing_framework/setup/<name>.rst` が13件とも成功） | — | なし |
 
 対象外と判定した記述と理由:
@@ -193,65 +193,146 @@ $ (各ファイルの wc -l の総和)
 - :1 の参照ラベル — 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない
 - :3-4 の見出し — 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない
 - :6-21 の `toctree` — 解説書のページ構成であり、`nablarch-testing` の実装で成否が決まらない（参照先の実在は上表のとおり確認済み）
+- 空行 :2・:5 — 記述がない
 
-集計: 対象 0件／一致 0件／不一致（解説書が正）0件／不一致（解説書側の誤りの疑い）0件。
+##### 行の網羅の検算
+
+表の「行」欄と、対象外リストの「空行」の行番号を機械的に集め、
+対象ページの 1..21 を隙間なく・重複なく覆っているかを検算する。
+検算スクリプトは `<scratchpad>/fix1/verify_lines.py`（表の1つ目のセルが `（` で始まる横断行は分割の対象外として無視する）。
+
+```
+$ python3 <scratchpad>/fix1/verify_lines.py .rn/step4-01-nablarch-testing.md 'setup/index.rst' 21
+section        : setup/index.rst
+総行数         : 21
+拾ったレンジ数 : 5（表 3 / 対象外リスト(空行) 2）
+覆った行数     : 21
+欠け           : なし
+重複           : なし
+範囲外         : なし
+判定           : OK — 1..21 を隙間なく1回ずつ覆っている
+$ echo $?
+0
+```
+
+
+集計: 対象 0件／一致 0件／不一致（解説書が正）0件／不一致（解説書側の誤りの疑い）0件／判定保留 0件。対象外 3行＋空行2行。
 本ページは `toctree` のみで構成されており、実装で成否が決まる記述は1件もない。
 
 #### `setup/common.rst`（259行）— 全行通読
 
 | 行 | 記述の要旨 | 対象／対象外 | 実装での成否 | 根拠 | 判定 | 処置 |
 |---|---|---|---|---|---|---|
+| :1 | 参照ラベル `_testing_framework_common:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :3-4 | 見出し「共通設定」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :6-8 | `.. contents:: 目次`（`:depth: 3`・`:local:`） | 対象外 | — | Sphinx のディレクティブであり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :10-11 | 見出し「機能概要」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :13 | 共通設定で扱うのは、依存関係の追加・読み込み先の変更・システム日時の固定・シーケンス採番のテーブル採番への置き換え・同期応答／HTTPメッセージ送信のテストデータ読み込み | 対象 | 一致（採番置換の帰属は :126 の行で判定） | 依存関係=`pom.xml:7-9`、読み込み先=`TestSupport.java:30,33,356-361`、日時固定=`FixedSystemTimeProvider.java:20,42-55`、同期応答=`SendSyncSupport.java:49,346,473`。採番置換だけは本モジュールに実装がない | 一致 | なし |
+| :15-16 | 見出し「使用方法」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :18-19 | 見出し「テスティングフレームワークを依存関係に追加する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :20-29 | テスティングフレームワークは `nablarch-testing` として提供され、`test` スコープで依存関係に追加する | 対象 | 一致 | `pom.xml:7-9`（`groupId=com.nablarch.framework`／`artifactId=nablarch-testing`）。JUnit を `compile` スコープで持つ（`pom.xml:150-155`）ため、利用側は `test` スコープで足りる | 一致 | なし |
+| :31 | `.. tip::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :33 の行で判定する | — | なし |
 | :33 | 処理方式によっては専用モジュールを使う。専用モジュールが `nablarch-testing` に依存するなら個別追加は不要 | 対象外 | — | 他モジュールの `pom.xml` が決める | — | なし |
+| :35 | 参照ラベル `_testing_framework_common-yaml_testdata:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :37-38 | 見出し「テストデータの形式をYAMLに変更する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :39 | テストデータはデフォルトでは Excel 形式で読み込まれる。Excel 形式なら設定は不要 | 一部対象外 | 一致（Excel を読むクラスの提供） | Excel を読むクラスは本モジュールが提供する（`PoiXlsReader.java:30`）。ただし既定の `testDataParser` コンポーネント設定は本モジュールに同梱されていない（`git ls-tree -r 3c4bd2a --name-only -- src/main/resources` は `BatchSample.sql`・`template.xls` の2件のみ。未設定時は `TestSupport.java:404-407` が `IllegalStateException` を送出する）ため、「デフォルト」の成否はブランクプロジェクト側の設定が決める | 一致 | なし |
 | :41 | YAML 形式のテストデータを解析するクラスは `nablarch-testing-yaml` が提供する | 対象外 | — | 本モジュールに `Yaml*` クラスは存在しない（`git ls-tree -r 3c4bd2a --name-only -- src/main/java \| grep -i yaml` が0件）。提供側の確認は `nablarch-testing-yaml` 担当 | — | なし |
+| :43 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :45-50 | `nablarch-testing-yaml` の dependency 定義（groupId・artifactId・scope） | 対象外 | — | 他モジュールの座標であり、`nablarch-testing-yaml` の指示書が担当する | — | なし |
 | :52 | テストデータを解析するコンポーネントの名前は `testDataParser` | 対象 | 一致 | `TestSupport.java:404`・`MasterDataSetUpper.java:188` がともに `SystemRepository.get("testDataParser")` | 一致 | なし |
+| :54 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :56 | コード例中のXMLコメント `<!-- YAML形式のテストデータ記法の解釈を行うクラス群 -->` | 対象外 | — | コメント文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :57-68 | `yamlInterpreters` に `DateTimeInterpreter`（`systemTimeProvider` プロパティ）・`CompositeInterpreter`（`interpreters` プロパティ）・`BasicJapaneseCharacterInterpreter` を指定する | 対象 | 一致 | 3クラスとも本モジュールが提供（`git ls-tree -r 3c4bd2a --name-only -- src/main/java \| grep interpreter`）。プロパティは `DateTimeInterpreter.java:70`（`setSystemTimeProvider`）・`CompositeInterpreter.java:61`（`setInterpreters(List<TestDataInterpreter>)`）・`BasicJapaneseCharacterInterpreter.java:18` | 一致 | なし |
+| :70 | コード例中のXMLコメント `<!-- テストデータを解析するコンポーネント -->` | 対象外 | — | コメント文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :71-75 | テストデータ解析コンポーネントは `dbInfo`・`interpreters` プロパティを持つ | 対象 | 一致 | `TestDataParser.java:100`（`setDbInfo`）・`:107`（`setInterpreters`）。実装は `BasicTestDataParser.java:221,230` | 一致 | なし |
 | :77 | Excel 形式で必要な `NullInterpreter`・`QuotationTrimmer`・`LineSeparatorInterpreter` は YAML 形式では指定しない | 一部対象外 | 一致（3クラスの所属と Excel 側での使用） | 3クラスとも本モジュールが提供（`NullInterpreter.java:8`・`QuotationTrimmer.java:9`・`LineSeparatorInterpreter.java:28`）。Excel 形式の設定例で実際に使われている（`src/test/resources/unit-test.xml:30,33,40`）。「YAML のパーサが構文として解釈するから不要」の部分は `nablarch-testing-yaml` 担当 | 一致 | なし |
+| :79 | `.. important::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :81 の行で判定する | — | なし |
 | :81 | `NullInterpreter` を指定すると、文字列として書いた `"null"` も Java の `null` になり区別できなくなる | 対象 | 一致 | `NullInterpreter.java:15-16`（`equalsIgnoreCase` で判定し `null` を返す）。実行して確認（下記「動かして確かめた内容」[G]）：`"null"`→`null`、`"NULL"`→`null`、`QuotationTrimmer`＋`NullInterpreter` に `"null"`（ダブルクォート付き）を通しても `null` | 一致 | なし |
 | :83 | `testDataReader` は指定しない（`YamlTestDataParser` は YAML ファイルを直接読むため使用しない） | 対象外 | — | `testDataReader` というプロパティ名の出所は本モジュール（`TestDataParser.java:92`）だが、`YamlTestDataParser` が使わないことの確認は `nablarch-testing-yaml` 担当 | — | なし |
 | :85 | テストデータの記法は別ページを参照 | 対象外 | — | 解説書内の相互参照 | — | なし |
+| :87-88 | 見出し「テストデータの読み込み先を変更する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :89 | テストデータはデフォルトでは `src/test/java` 配下から読み込まれる。変更する場合に `nablarch.test.resource-root` を設定する。値はカレントディレクトリからの相対パス | 対象 | **不一致** | 下記「不一致の詳細 :89」参照 | **不一致（解説書側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
+| :91 | `.. code-block:: properties` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :93 | 設定例 `nablarch.test.resource-root=path/to/test-data-dir` | 対象 | 一致 | キー名の出所は `TestSupport.java:33`（`RESOURCE_ROOT_KEY = "nablarch.test.resource-root"`）で、`:356-361` がこの名前で読み出す。実行して確認（[P]）：この名前で環境設定ファイルとシステムプロパティの値が読み出される。値がカレントディレクトリからの相対パスとして解決されることは [F-1][F-2] のとおり（`dupA/nablarch/test/dupprobe` がカレントディレクトリ配下として解決された） | 一致 | なし |
 | :95-99 | 読み込み先はセミコロン（`;`）区切りで複数指定できる | 対象 | 一致 | `TestSupport.java:42`（`PATH_SEPARATOR = ";"`）・`:329`（`split(PATH_SEPARATOR)`）・`:339-346`。既存テスト `TestSupportTest.java:594-604` が `"java;resources"` → `["java/nablarch/test", "resources/nablarch/test"]` を検証。実行して緑を確認（下記 [T]） | 一致 | なし |
+| :101 | `.. important::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :103 の行で判定する | — | なし |
 | :103 | 同名のテストデータが複数のディレクトリに存在する場合、最初に見つかったものが読み込まれる | 対象 | 一致 | `TestSupport.java:308-315`（候補パスを先頭から走査し、最初にヒットしたものを返す）。既存テスト `TestSupportTest.java:606-613` が候補順どおりの結果を検証。実行して緑を確認（下記 [T]） | 一致 | なし |
+| :105 | `.. tip::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :107 の行で判定する | — | なし |
 | :107 | 一時的な変更は `-Dnablarch.test.resource-root=...` をシステムプロパティで指定してもよい | 対象 | 一致 | `TestSupport.java:357` が `SystemRepository.get("nablarch.test.resource-root")` で読むだけなので、`SystemRepository` が解決した値がそのまま効く。システムプロパティによる上書き機構そのものは `nablarch-core` の担当 | 一致 | なし |
+| :109-110 | 見出し「システム日時を固定する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :111 | テスティングフレームワークはシステム日時として固定値を返す機能を提供する | 対象 | 一致 | `FixedSystemTimeProvider.java:20`（`implements SystemTimeProvider`）・`:75-89` | 一致 | なし |
 | :113-120 | `SystemTimeProvider` の実装を `nablarch.test.FixedSystemTimeProvider` に差し替え、`fixedDate` プロパティに固定したい日時を指定する | 対象 | 一致 | `FixedSystemTimeProvider.java:20,29,42`（`setFixedDate(String)`＝`fixedDate` プロパティ）。パッケージも `nablarch.test`（同 `:1`） | 一致 | なし |
 | :122 | `fixedDate` は `yyyyMMddHHmmss`（14桁）または `yyyyMMddHHmmssSSS`（17桁）に合致する文字列 | 対象 | 一致 | `FixedSystemTimeProvider.java:23,26,42-53`（`SHORTEST_FORMAT.length()`=14／`LONGEST_FORMAT.length()`=17、それ以外は `IllegalArgumentException`）。実行して確認（下記 [H]）：14桁→`2010-09-14 12:34:56.0`、17桁→`2010-09-14 12:34:56.789`、13桁・15桁→`IllegalArgumentException`。なお Javadoc（同 `:35-36`）は「12桁」「15桁」と書いており誤っているが、解説書の記述は正しい | 一致 | なし |
+| :124-125 | 見出し「シーケンス採番をテーブル採番に置き換える」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :126 | テスティングフレームワークは、シーケンスオブジェクトを使用した採番処理をコンポーネント設定ファイルの変更だけでテーブル採番に置き換える機能を提供する | 対象 | **不一致** | 下記「不一致の詳細 :126」参照 | **不一致（解説書側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
 | :128-154 | `OracleSequenceIdGenerator`／`FastTableIdGenerator` の設定例（`idTable`・`tableName`・`idColumnName`・`noColumnName`・`dbTransactionManager`） | 対象外 | — | `FastTableIdGenerator` は `nablarch-common-idgenerator-jdbc` が提供（全ローカルjar走査で `nablarch-common-idgenerator-jdbc-6-NEXT-SNAPSHOT.jar` にのみ `FastTableIdGenerator.class` が存在）。`OracleSequenceIdGenerator` はプロジェクト側クラス（`com.example.common.idgenerator`）。いずれも `nablarch-testing` の実装で成否が決まらない | — | なし |
 | :156-160 | `IdGenerator` の参照リンク・テストデータ記述例へのリンク | 対象外 | — | 解説書内の相互参照 | — | なし |
+| :162 | 参照ラベル `_testing_framework_common-send_sync_test_data:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
+| :164-165 | 見出し「同期応答メッセージ送信・HTTPメッセージ送信のテストデータの読み込みを設定する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :166 | 応答電文の読み込みにはベースディレクトリとテストデータ解析コンポーネントの設定が必要で、どちらもテスティングフレームワークのデフォルト設定には含まれない。設定していない場合はテストの実行時に例外が発生する | 対象 | 一致 | 既定のコンポーネント設定は本モジュールに同梱されていない（`src/main/resources` は `BatchSample.sql`・`template.xls` の2件のみ）。実行して確認（下記 [1][2]）：`sendSyncTestData` 未設定→`IllegalArgumentException: Unknown basePathName: sendSyncTestData`（`SendSyncSupport.java:346` → `FilePathSetting.java:143-151`）、`messagingTestDataParser` 未設定→`IllegalStateException: can't get TestDataParser. check configuration.`（`SendSyncSupport.java:473-476`） | 一致 | なし |
 | :168 | ベースディレクトリはファイルパス管理の `sendSyncTestData` キー、フォーマット定義ファイルは `format` キー、解析コンポーネントは `messagingTestDataParser` という名前 | 対象 | 一致 | `SendSyncSupport.java:49`（`SEND_SYNC_TEST_DATA_BASE_PATH = "sendSyncTestData"`）・`:346,348` で使用、`:473`（`SystemRepository.get("messagingTestDataParser")`）。`format` は `MockMessagingClient.java:166,196`・`RequestTestingMessagingClient.java:539`。リソース名は `<リクエストID>/message`（`SendSyncSupport.java:46-47,347`） | 一致 | なし |
 | :170 | テストデータの記法を解釈するクラスは Excel 形式と YAML 形式で共通である | 対象 | 一致 | 解説書の両ブロック（`:220`・`:252`）がともに `messagingTestInterpreters` を参照しており、含まれる3クラスはいずれも本モジュールが提供する。`interpreters` プロパティは `TestDataParser.java:107` に定義され、`YamlTestDataParser` は `BasicTestDataParser` を継承している（`nablarch-testing-yaml` `05ada91`:`src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:43`）ので同じプロパティが使える | 一致 | なし |
+| :172 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :174-185 | `messagingTestInterpreters` に `NullInterpreter`・`QuotationTrimmer`・`CompositeInterpreter`（配下に `BasicJapaneseCharacterInterpreter`）を指定する | 対象 | 一致 | 4クラスとも本モジュールが提供（`NullInterpreter.java:8`・`QuotationTrimmer.java:9`・`CompositeInterpreter.java:15,61`・`BasicJapaneseCharacterInterpreter.java:18`） | 一致 | なし |
-| :176 と :252 の組み合わせ | YAML 形式の `messagingTestDataParser` にも `NullInterpreter` を含む `messagingTestInterpreters` を指定する | 対象 | **不一致** | 下記「不一致の詳細 :176/:252」参照 | **不一致（解説書側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
+| （:176 と :252 の組み合わせ） | YAML 形式の `messagingTestDataParser` にも `NullInterpreter` を含む `messagingTestInterpreters` を指定する | 対象 | **不一致** | 下記「不一致の詳細 :176/:252」参照 | **不一致（解説書側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
 | :187 | ベースディレクトリの指定と解析コンポーネントの設定はテストデータの形式によって異なる | 対象 | 一致 | 実行して確認（下記 [D]）：`fileExtensions` に `sendSyncTestData` を設定するかどうかで `FilePathSetting#getFileIfExists` の解決先がファイル／ディレクトリに変わる | 一致 | なし |
+| :189 | `.. tip::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :191 の行で判定する | — | なし |
 | :191 | ベースディレクトリは `classpath:` ではなく `file:` で指定することを推奨する。ファイルシステムのパスならアプリケーションサーバ起動中にテストデータを編集してテストを続けられる | 対象 | 一致 | `SendSyncSupport.java:359,362-375`（呼び出しのたびにテストデータの最終更新日時スナップショットを採り、変化していれば再読み込みする）。`classpath:` を指定した場合はベースパスの URL が設定時に解決される（`FilePathSetting.java:229-267`）ため、編集対象がデプロイ済みのリソースになる | 一致 | なし |
+| :193-194 | 見出し「Excel形式の場合」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :195-212 | Excel 形式：`filePathSetting` に `basePathSettings`（`sendSyncTestData`・`format`）と `fileExtensions`（`sendSyncTestData=xlsx`・`format=fmt`）を設定する | 対象 | 一致 | `FilePathSetting.java:192,309`（`basePathSettings`／`fileExtensions` プロパティ）。キー名の出所は上記 :168。実行して確認（下記 [D-xlsx]）：`RB11AC0200.xlsx` が `getFileIfExists("sendSyncTestData","RB11AC0200")` で解決される | 一致 | なし |
 | :214-223 | Excel 形式：`messagingTestDataParser` は `BasicTestDataParser`、`testDataReader` に `PoiXlsReader`、`interpreters` に前掲の `messagingTestInterpreters` | 対象 | 一致 | `BasicTestDataParser.java:32,216,230`、`PoiXlsReader.java:30`（`implements TestDataReader`）。`SendSyncSupport.java:473` は取得結果を `BasicTestDataParser` 型の変数へ代入するため、`BasicTestDataParser`（またはその派生）であることが必要 | 一致 | なし |
 | :225 | `fileExtensions` の `sendSyncTestData` には実際に配置するファイルの拡張子（`xlsx` または `xls`）を指定する。指定した拡張子と一致しないファイルは読み込まれない。リクエストIDごとに1つのファイルを置く | 対象 | 一致 | `FilePathSetting.java:176-184`（拡張子が設定されていればファイル名に結合する）→ `:78-82`（`getFileIfExists`）→ `SendSyncSupport.java:348-353`（`null` なら `IllegalStateException`）。実行して確認（下記 [D-xls]）：実ファイルが `.xlsx` のとき `fileExtensions=xls` では `null` が返る。リクエストIDごとに1ファイルである点は `PoiXlsReader.java:55-65`（リソース名 `<リクエストID>/message` を分解して `<ベース>/<リクエストID>.xls(x)` のシート `message` を開く） | 一致 | なし |
 | :227 | ベースディレクトリ配下の構成図（画像） | 対象外 | — | 解説書の画像アセット。図が表す構成（リクエストIDごとに1ファイル）の成否は :225 の行で判定済み | — | なし |
+| :229-230 | 見出し「YAML形式の場合」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :231-247 | YAML 形式：`filePathSetting` の `fileExtensions` には `format` だけを設定する | 対象 | 一致 | 実行して確認（下記 [D-noext]）：`sendSyncTestData` に拡張子を設定しない場合、`getFileIfExists("sendSyncTestData","RB11AC0100")` はディレクトリ `RB11AC0100` を返す（`FilePathSetting.java:176-184` で拡張子を結合しないため） | 一致 | なし |
 | :249-255 | YAML 形式：`messagingTestDataParser` は `YamlTestDataParser`、`interpreters` は前掲と共通、`testDataReader` は指定しない | 一部対象外 | 一致（本モジュール側の受け口） | `SendSyncSupport.java:473` の代入先が `BasicTestDataParser` 型であるため、`YamlTestDataParser` が `BasicTestDataParser` を継承していることが必要。継承していることを実測（`nablarch-testing-yaml` `05ada91`:`src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:43`）。`testDataReader` を使わないことの確認は `nablarch-testing-yaml` 担当 | 一致 | なし |
 | :257-259 | `fileExtensions` に `sendSyncTestData` を設定しない。設定するとテストデータが見つからず、テストの実行時に例外が発生する | 対象 | 一致 | 実行して確認（下記 [3]）：ディレクトリ `RB11AC0100` を置いたうえで `fileExtensions.sendSyncTestData=xlsx` を設定すると `IllegalStateException: test data file was not found. request id=[RB11AC0100], ...`（`SendSyncSupport.java:350-353`） | 一致 | なし |
 
-対象外と判定した記述と理由:
+対象外と判定した記述と理由（対象外と判定してよい基準は指示書 `87a21d6` §4-2 手順2「この記述が成り立つかどうかは、`nablarch-testing` の実装で決まるか」である）:
 
+- :1・:35・:162 の参照ラベル — 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない
+- :3-4・:10-11・:15-16・:18-19・:37-38・:87-88・:109-110・:124-125・:164-165・:193-194・:229-230 の見出し — 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない
+- :6-8 の `.. contents::` — Sphinx のディレクティブであり、解説書のページ構成が決める
+- :31・:79・:101・:105・:189 のディレクティブ宣言行（`.. tip::`・`.. important::`）— 宣言行であり、本文の成否はそれぞれ :33・:81・:103・:107・:191 の行で判定した
+- :43・:54・:91・:172 の `.. code-block::` 宣言行 — 同上（中身はそれぞれの行で判定した）
+- :56・:70 のコード例中のXMLコメント — コメント文字列であり、`nablarch-testing` の実装で成否が決まらない
 - :33 の tip「専用のモジュールが `nablarch-testing` に依存する場合は個別に追加しなくてよい」— 他モジュールの `pom.xml` が決めることであり、`nablarch-testing` の実装で成否が決まらない
-- :39 の「デフォルトでは Excel 形式で読み込まれる／設定は不要である」— `nablarch-testing` は既定のコンポーネント設定ファイルを同梱していないため、「デフォルト」の成否はブランクプロジェクト側の設定が決める（Excel を読むクラスの提供は対象として判定済み）
+- :20-29 のうち `<scope>test</scope>` と書く指示 — 利用側プロジェクトの `pom.xml` が決める（座標と「テストでのみ使用する」は対象として判定した）
 - :41 の「YAML 形式のテストデータを解析するクラスはこのモジュールが提供する」— `YamlTestDataParser` は `nablarch-testing-yaml` の指示書が担当する
-- :43-50 の `nablarch-testing-yaml` の依存関係定義 — 同上
-- :71-72 の `class="nablarch.test.core.reader.YamlTestDataParser"` — 同上（`dbInfo`・`interpreters` のプロパティ名は対象として判定済み）
+- :45-50 の `nablarch-testing-yaml` の dependency 定義 — 同上
+- :71-72 の `class="nablarch.test.core.reader.YamlTestDataParser"` — 同上（`dbInfo`・`interpreters` のプロパティ名は対象として判定した）
+- :73 の `ref="dbInfo"` が指すコンポーネント定義 — プロジェクト側またはデフォルト設定モジュール側が定義する
 - :77 の「null・空文字・ダブルクォート・改行文字は YAML のパーサが構文として解釈する」— YAML パーサの挙動であり `nablarch-testing-yaml` の指示書が担当する
+- :81 のうち「YAML で `"null"` と書いた値が解釈クラスにどう渡るか」— 同上
 - :83 の「`YamlTestDataParser` は YAML ファイルを直接読み込むためこの設定を使用しない」— 同上
 - :85・:158・:160 のページ間リンク — 解説書内の相互参照であり、`nablarch-testing` の実装で成否が決まらない
-- :107 の「システムプロパティを使って環境依存値を上書きする」機構そのもの — `nablarch-core` の `SystemRepository` が担当する（`nablarch-testing` 側は読み出すだけで、その点は対象として判定済み）
-- :128-154 の採番設定例に出てくるクラス（`OracleSequenceIdGenerator`・`FastTableIdGenerator`）とそのプロパティ — 前者はプロジェクト側クラス、後者は `nablarch-common-idgenerator-jdbc` が提供するクラスであり、`nablarch-testing` の実装で成否が決まらない
-- :227 の構成図（画像） — 解説書の画像アセット。図が表す構成の成否は :225 の行で判定済み
+- :107 の「システムプロパティを使って環境依存値を上書きする」機構そのもの — `nablarch-core` の `SystemRepository` が担当する（`nablarch-testing` 側の読み出しと条件差は対象として判定した）
+- :128-154 の採番設定例に出てくるクラス（`OracleSequenceIdGenerator`・`FastTableIdGenerator`）とそのプロパティ、および `:153` の `ref="dbTransactionManager"` — 前者はプロジェクト側クラス、後者は `nablarch-common-idgenerator-jdbc` が提供するクラスであり、`nablarch-testing` の実装で成否が決まらない
+- :199・:235 の `autowireType="None"` — `nablarch-core` の DI が解釈する属性であり、`nablarch-testing` の実装で成否が決まらない
+- :227 の構成図（画像） — 解説書の画像アセット。図が表す構成の成否は :225 の行で判定した
 - :255 の「`testDataReader` は指定しない」— `YamlTestDataParser` の挙動であり `nablarch-testing-yaml` の指示書が担当する
+- 空行 :2・:5・:9・:12・:14・:17・:30・:32・:34・:36・:40・:42・:44・:51・:53・:55・:69・:76・:78・:80・:82・:84・:86・:90・:92・:94・:100・:102・:104・:106・:108・:112・:121・:123・:127・:155・:161・:163・:167・:169・:171・:173・:186・:188・:190・:192・:213・:224・:226・:228・:248・:256 — 記述がない（他の空行は上表の行レンジの内側にある）
+
+##### 行の網羅の検算
+
+表の「行」欄と、対象外リストの「空行」の行番号を機械的に集め、
+対象ページの 1..259 を隙間なく・重複なく覆っているかを検算する。
+検算スクリプトは `<scratchpad>/fix1/verify_lines.py`（表の1つ目のセルが `（` で始まる横断行は分割の対象外として無視する）。
+
+```
+$ python3 <scratchpad>/fix1/verify_lines.py .rn/step4-01-nablarch-testing.md 'setup/common.rst' 259
+section        : setup/common.rst
+総行数         : 259
+拾ったレンジ数 : 115（表 63 / 対象外リスト(空行) 52）
+覆った行数     : 259
+欠け           : なし
+重複           : なし
+範囲外         : なし
+判定           : OK — 1..259 を隙間なく1回ずつ覆っている
+$ echo $?
+0
+```
+
 
 ##### 不一致の詳細 :89
 
@@ -372,4 +453,7 @@ $ LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test -Dtest=TestSupportTest -DfailIfNoTe
 [INFO] BUILD SUCCESS
 ```
 
-集計: 対象 29件（うち一部対象外を含む行3件: :39・:77・:249-255）／一致 26件／不一致（解説書が正）0件／不一致（解説書側の誤りの疑い）3件（:89・:126・:176/:252）。対象外 7行（:33・:41・:83・:85・:128-154・:156-160・:227）。
+集計: 表の行 64（うち1件は複数箇所にまたがる横断行「:176 と :252 の組み合わせ」で、行番号は `:174-185`・`:249-255` に含まれる）。
+対象 27件・一部対象外 3件（合わせて判定対象30件）／対象外 34行。
+判定の内訳は 一致 26件／不一致（解説書側の誤りの疑い）3件（:89・:126・:176/:252）。
+
