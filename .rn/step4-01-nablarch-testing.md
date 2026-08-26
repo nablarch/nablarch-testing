@@ -221,6 +221,78 @@ $ echo $?
 
 #### `setup/common.rst`（259行）— 全行通読
 
+##### 保留中の論点 — デフォルト設定モジュールの扱い
+
+`:39`・`:89`・`:166` の3行は、「テスティングフレームワークのデフォルト設定」が何を指すかによって判定が変わる。
+§2 のピンは `nablarch-document`（`40b9c52`）と `nablarch-testing`（`3c4bd2a`）の2つだけで、
+デフォルト設定モジュールはピンに入っていない。ピンをどう扱うかは user が決めるため、この3行は**判定保留**にする。
+
+実物で確認した事実は次のとおり。
+
+1. 解説書自身が「テスティングフレームワークのデフォルト設定」として
+   `com.nablarch.configuration:nablarch-testing-default-configuration` を名指ししている。
+
+   ```
+   $ git show 40b9c52:ja/development_tools/testing_framework/setup/request_unit_test/rest.rst | sed -n '30,34p'
+     <!-- テスティングフレームワークのデフォルト設定 -->
+     <dependency>
+       <groupId>com.nablarch.configuration</groupId>
+       <artifactId>nablarch-testing-default-configuration</artifactId>
+       <scope>test</scope>
+   ```
+
+2. そのモジュールが `nablarch.test.resource-root=src/test/java` を持つ。
+
+   ```
+   $ unzip -p ~/.m2/repository/com/nablarch/configuration/nablarch-testing-default-configuration/6-NEXT-SNAPSHOT/nablarch-testing-default-configuration-6-NEXT-20260327.002359-3.jar nablarch/test/test-data.config
+   nablarch.test.resource-root=src/test/java
+   ```
+
+3. 同じモジュールが `testDataParser` を `BasicTestDataParser` ＋ `PoiXlsReader` として定義している。
+
+   ```
+   $ unzip -p <上と同じjar> nablarch/test/test-data.xml
+   ...
+     <!-- TestDataParser -->
+     <component name="testDataParser" class="nablarch.test.core.reader.BasicTestDataParser">
+       <property name="testDataReader">
+         <component name="xlsReaderForPoi" class="nablarch.test.core.reader.PoiXlsReader"/>
+       </property>
+       <property name="dbInfo" ref="dbInfo"/>
+       <property name="interpreters" ref="interpreters"/>
+     </component>
+   ```
+
+   `interpreters` の中身は同モジュールの `nablarch/test/test-data-interpreter.xml` で、
+   `NullInterpreter`・`QuotationTrimmer`・`DateTimeInterpreter`・`LineSeparatorInterpreter`・`CompositeInterpreter` の5件である。
+
+4. 一方、同じモジュールに `sendSyncTestData`・`messagingTestDataParser`・採番関連は存在しない。
+
+   ```
+   $ unzip -q -o <上と同じjar> -d defcfg && cd defcfg
+   $ grep -rn 'sendSyncTestData' . | wc -l
+   0
+   $ grep -rn 'messagingTestDataParser' . | wc -l
+   0
+   $ grep -rni 'idgenerator' . | wc -l
+   0
+   $ grep -rn '採番' . | wc -l
+   0
+   ```
+
+これらから言えること:
+
+- `:89`「デフォルトでは `src/test/java` 配下から読み込まれる」は**解説書側の誤りではない**。
+  `TestSupport.java:30` の `test/java/` は、デフォルト設定を読み込まない場合のフォールバックである
+  （前回の「不一致（解説書側の誤りの疑い）」は取り下げた。下記「取り下げた不一致候補 :89」）
+- `:39`「Excel 形式で記述する場合、設定は不要である」を決めているのは、
+  前回の根拠に書いた「ブランクプロジェクト側の設定」ではなく、このデフォルト設定モジュールである
+- `:166` の根拠として前回書いた「本モジュールに同梱されていない（`src/main/resources` は2件）」は不十分である。
+  正しい根拠は、デフォルト設定モジュール側にも `sendSyncTestData`／`messagingTestDataParser` が無いこと（上記4）
+
+**保留の理由**: この3行を「一致」で確定させることは、`nablarch-testing-default-configuration` を
+突合の参照点として認めることを意味する。§2 のピンに加えるかどうかは user の判断であり、こちらでは確定させない。
+
 | 行 | 記述の要旨 | 対象／対象外 | 実装での成否 | 根拠 | 判定 | 処置 |
 |---|---|---|---|---|---|---|
 | :1 | 参照ラベル `_testing_framework_common:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
@@ -235,7 +307,7 @@ $ echo $?
 | :33 | 処理方式によっては専用モジュールを使う。専用モジュールが `nablarch-testing` に依存するなら個別追加は不要 | 対象外 | — | 他モジュールの `pom.xml` が決める | — | なし |
 | :35 | 参照ラベル `_testing_framework_common-yaml_testdata:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :37-38 | 見出し「テストデータの形式をYAMLに変更する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
-| :39 | テストデータはデフォルトでは Excel 形式で読み込まれる。Excel 形式なら設定は不要 | 一部対象外 | 一致（Excel を読むクラスの提供） | Excel を読むクラスは本モジュールが提供する（`PoiXlsReader.java:30`）。ただし既定の `testDataParser` コンポーネント設定は本モジュールに同梱されていない（`git ls-tree -r 3c4bd2a --name-only -- src/main/resources` は `BatchSample.sql`・`template.xls` の2件のみ。未設定時は `TestSupport.java:404-407` が `IllegalStateException` を送出する）ため、「デフォルト」の成否はブランクプロジェクト側の設定が決める | 一致 | なし |
+| :39 | テストデータはデフォルトでは Excel 形式で読み込まれる。Excel 形式で記述する場合、設定は不要である | 一部対象外 | 一致（Excel を読むクラスの提供）／「デフォルト」の成否は保留 | Excel を読むクラスは本モジュールが提供する（`PoiXlsReader.java:30`）。「デフォルト」を決めているのは `nablarch-testing-default-configuration` の `nablarch/test/test-data.xml`（`testDataParser` = `BasicTestDataParser` ＋ `PoiXlsReader`）と `nablarch/test/test-data-interpreter.xml`。前回書いた「ブランクプロジェクト側の設定が決める」は誤りだった。上記「保留中の論点」参照 | **判定保留（ピンの扱いについて user 判断待ち）** | 報告のみ。§2 のピンに `nablarch-testing-default-configuration` を加えるかどうかの user 判断待ち |
 | :41 | YAML 形式のテストデータを解析するクラスは `nablarch-testing-yaml` が提供する | 対象外 | — | 本モジュールに `Yaml*` クラスは存在しない（`git ls-tree -r 3c4bd2a --name-only -- src/main/java \| grep -i yaml` が0件）。提供側の確認は `nablarch-testing-yaml` 担当 | — | なし |
 | :43 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :45-50 | `nablarch-testing-yaml` の dependency 定義（groupId・artifactId・scope） | 対象外 | — | 他モジュールの座標であり、`nablarch-testing-yaml` の指示書が担当する | — | なし |
@@ -251,7 +323,7 @@ $ echo $?
 | :83 | `testDataReader` は指定しない（`YamlTestDataParser` は YAML ファイルを直接読むため使用しない） | 対象外 | — | `testDataReader` というプロパティ名の出所は本モジュール（`TestDataParser.java:92`）だが、`YamlTestDataParser` が使わないことの確認は `nablarch-testing-yaml` 担当 | — | なし |
 | :85 | テストデータの記法は別ページを参照 | 対象外 | — | 解説書内の相互参照 | — | なし |
 | :87-88 | 見出し「テストデータの読み込み先を変更する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
-| :89 | テストデータはデフォルトでは `src/test/java` 配下から読み込まれる。変更する場合に `nablarch.test.resource-root` を設定する。値はカレントディレクトリからの相対パス | 対象 | **不一致** | 下記「不一致の詳細 :89」参照 | **不一致（解説書側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
+| :89 | テストデータはデフォルトでは `src/test/java` 配下から読み込まれる。変更する場合に `nablarch.test.resource-root` を設定する。値はカレントディレクトリからの相対パス | 対象 | 判定保留 | 前回の「不一致（解説書側の誤りの疑い）」は取り下げた。下記「取り下げた不一致候補 :89」および上記「保留中の論点」参照 | **判定保留（ピンの扱いについて user 判断待ち）** | 報告のみ。§2 のピンに `nablarch-testing-default-configuration` を加えるかどうかの user 判断待ち |
 | :91 | `.. code-block:: properties` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :93 | 設定例 `nablarch.test.resource-root=path/to/test-data-dir` | 対象 | 一致 | キー名の出所は `TestSupport.java:33`（`RESOURCE_ROOT_KEY = "nablarch.test.resource-root"`）で、`:356-361` がこの名前で読み出す。実行して確認（[P]）：この名前で環境設定ファイルとシステムプロパティの値が読み出される。値がカレントディレクトリからの相対パスとして解決されることは [F-1][F-2] のとおり（`dupA/nablarch/test/dupprobe` がカレントディレクトリ配下として解決された） | 一致 | なし |
 | :95-99 | 読み込み先はセミコロン（`;`）区切りで複数指定できる | 対象 | 一致 | `TestSupport.java:42`（`PATH_SEPARATOR = ";"`）・`:329`（`split(PATH_SEPARATOR)`）・`:339-346`。既存テスト `TestSupportTest.java:594-604` が `"java;resources"` → `["java/nablarch/test", "resources/nablarch/test"]` を検証。実行して緑を確認（下記 [T]） | 一致 | なし |
@@ -269,7 +341,7 @@ $ echo $?
 | :156-160 | `IdGenerator` の参照リンク・テストデータ記述例へのリンク | 対象外 | — | 解説書内の相互参照 | — | なし |
 | :162 | 参照ラベル `_testing_framework_common-send_sync_test_data:` | 対象外 | — | 解説書内のラベル定義であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :164-165 | 見出し「同期応答メッセージ送信・HTTPメッセージ送信のテストデータの読み込みを設定する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
-| :166 | 応答電文の読み込みにはベースディレクトリとテストデータ解析コンポーネントの設定が必要で、どちらもテスティングフレームワークのデフォルト設定には含まれない。設定していない場合はテストの実行時に例外が発生する | 対象 | 一致 | 既定のコンポーネント設定は本モジュールに同梱されていない（`src/main/resources` は `BatchSample.sql`・`template.xls` の2件のみ）。実行して確認（下記 [1][2]）：`sendSyncTestData` 未設定→`IllegalArgumentException: Unknown basePathName: sendSyncTestData`（`SendSyncSupport.java:346` → `FilePathSetting.java:143-151`）、`messagingTestDataParser` 未設定→`IllegalStateException: can't get TestDataParser. check configuration.`（`SendSyncSupport.java:473-476`） | 一致 | なし |
+| :166 | 応答電文の読み込みにはベースディレクトリとテストデータ解析コンポーネントの設定が必要で、どちらもテスティングフレームワークのデフォルト設定には含まれない。設定していない場合はテストの実行時に例外が発生する | 対象 | 判定保留（例外が出ることは一致） | 設定していない場合に例外が出ることは実行して確認済み（[1][2]）：`sendSyncTestData` 未設定→`IllegalArgumentException: Unknown basePathName: sendSyncTestData`（`SendSyncSupport.java:346` → `nablarch-core` `FilePathSetting.java:143-151`）、`messagingTestDataParser` 未設定→`IllegalStateException: can't get TestDataParser. check configuration.`（`SendSyncSupport.java:473-476`）。「デフォルト設定に含まれない」の根拠は、前回書いた「本モジュールの `src/main/resources` が2件」ではなく、デフォルト設定モジュール側にも `sendSyncTestData`／`messagingTestDataParser` が無いこと（上記「保留中の論点」の4）。デフォルト設定モジュールをピンに含めるかが未決のため保留 | **判定保留（ピンの扱いについて user 判断待ち）** | 報告のみ。§2 のピンに `nablarch-testing-default-configuration` を加えるかどうかの user 判断待ち |
 | :168 | ベースディレクトリはファイルパス管理の `sendSyncTestData` キー、フォーマット定義ファイルは `format` キー、解析コンポーネントは `messagingTestDataParser` という名前 | 対象 | 一致 | `SendSyncSupport.java:49`（`SEND_SYNC_TEST_DATA_BASE_PATH = "sendSyncTestData"`）・`:346,348` で使用、`:473`（`SystemRepository.get("messagingTestDataParser")`）。`format` は `MockMessagingClient.java:166,196`・`RequestTestingMessagingClient.java:539`。リソース名は `<リクエストID>/message`（`SendSyncSupport.java:46-47,347`） | 一致 | なし |
 | :170 | テストデータの記法を解釈するクラスは Excel 形式と YAML 形式で共通である | 対象 | 一致 | 解説書の両ブロック（`:220`・`:252`）がともに `messagingTestInterpreters` を参照しており、含まれる3クラスはいずれも本モジュールが提供する。`interpreters` プロパティは `TestDataParser.java:107` に定義され、`YamlTestDataParser` は `BasicTestDataParser` を継承している（`nablarch-testing-yaml` `05ada91`:`src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:43`）ので同じプロパティが使える | 一致 | なし |
 | :172 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
@@ -334,35 +406,35 @@ $ echo $?
 ```
 
 
-##### 不一致の詳細 :89
+##### 取り下げた不一致候補 :89
 
-1. **解説書の逐語**（`40b9c52`:`setup/common.rst:89`）
-   「テストデータは、デフォルトでは ``src/test/java`` 配下から読み込まれる。プロジェクトのディレクトリ構成に合わせて読み込み先を変更する場合は、環境設定ファイルに ``nablarch.test.resource-root`` を設定する。値には、テスト実行時のカレントディレクトリからの相対パスを指定する。」
-2. **実装での実測**（`3c4bd2a`）
-   `TestSupport.java:30` — `private static final String DEFAULT_RESOURCE_ROOT = "test/java/";`
-   `TestSupport.java:356-361` — `SystemRepository.get("nablarch.test.resource-root")` が `null` のとき `DEFAULT_RESOURCE_ROOT` を返す。
-   実行結果（手順は下記「動かして確かめた内容」[A][B]）:
+1. **なぜいったん不一致と判定したか**
+   `TestSupport.java:30` の実装既定値は `private static final String DEFAULT_RESOURCE_ROOT = "test/java/";` であり、
+   `:356-361` は `SystemRepository.get("nablarch.test.resource-root")` が `null` のときこれを返す。
+   解説書 `:89` は「変更する場合は設定する」と書いているため、設定しなければ `src/test/java` から読まれると読める。
+   実測（[A][B]）でも、リポジトリが空のときの読み込み先は `test/java/` だった。
+2. **なぜ取り下げたか**
+   「デフォルト」を決めているのは `nablarch-testing` の実装既定値ではなく、解説書自身が
+   `40b9c52`:`setup/request_unit_test/rest.rst:30-33` で名指ししている
+   `com.nablarch.configuration:nablarch-testing-default-configuration` である。
+   同モジュールの `nablarch/test/test-data.config` が `nablarch.test.resource-root=src/test/java` を持つ。
+   `TestSupport.java:30` の `test/java/` は、そのデフォルト設定を読み込まない場合のフォールバックにすぎない。
+3. **取り下げの根拠**（自分で再実行して確かめた）
 
    ```
-   [A] default resource root = [test/java/]
-   [A] cwd = /home/tie303177/work/nablarch/nablarch-testing/.
-   [A] exists(<cwd>/test/java) = false
-   [A] exists(<cwd>/src/test/java) = true
-   [B] default testDataPaths = [test/java//]
+   $ git -C ~/work/nablarch/nablarch-document show 40b9c52:ja/development_tools/testing_framework/setup/request_unit_test/rest.rst | sed -n '30,34p'
+     <!-- テスティングフレームワークのデフォルト設定 -->
+     <dependency>
+       <groupId>com.nablarch.configuration</groupId>
+       <artifactId>nablarch-testing-default-configuration</artifactId>
+       <scope>test</scope>
+
+   $ unzip -p ~/.m2/repository/com/nablarch/configuration/nablarch-testing-default-configuration/6-NEXT-SNAPSHOT/nablarch-testing-default-configuration-6-NEXT-20260327.002359-3.jar nablarch/test/test-data.config
+   nablarch.test.resource-root=src/test/java
    ```
 
-   すなわち `nablarch.test.resource-root` を設定しない場合、読み込み先は
-   カレントディレクトリ配下の `test/java/` であって `src/test/java` ではない。
-   本リポジトリ自身も `src/test/resources/unit-test.config:8` で
-   `nablarch.test.resource-root=src/test/java` を明示的に設定している。
-3. **どちらが誤っていると考えるか**: **解説書側の誤りの疑い**。
-   解説書は「変更する場合は設定する」と書いており、設定しなければ `src/test/java` から
-   読まれると読める。しかし `nablarch-testing` の実装既定値は `test/java/` である。
-   ブランクプロジェクトの環境設定ファイルが `src/test/java` を設定している可能性はあるが、
-   ブランクプロジェクトは本タスクの参照点に含まれないため**未確認**であり、
-   解説書 `40b9c52` 内で `resource-root` に言及しているのは本ページだけ
-   （`git grep -n "resource-root" 40b9c52 -- ja` の結果は `setup/common.rst:89,93,99,107` の4件のみ）。
-   実装を `src/test/java` に変えると既存利用者の読み込み先が変わるため、実装側は変更できない。
+   実装側の実測は `3c4bd2a`:`TestSupport.java:30,33,356-361`。jar の版は下記「ピン外の引用と、その版」。
+4. **現在の判定**: **判定保留（ピンの扱いについて user 判断待ち）**。上記「保留中の論点」参照。
 
 ##### 不一致の詳細 :126
 
@@ -455,5 +527,5 @@ $ LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test -Dtest=TestSupportTest -DfailIfNoTe
 
 集計: 表の行 64（うち1件は複数箇所にまたがる横断行「:176 と :252 の組み合わせ」で、行番号は `:174-185`・`:249-255` に含まれる）。
 対象 27件・一部対象外 3件（合わせて判定対象30件）／対象外 34行。
-判定の内訳は 一致 26件／不一致（解説書側の誤りの疑い）3件（:89・:126・:176/:252）。
+判定の内訳は 一致 25件／不一致（解説書側の誤りの疑い）2件（:126・:176/:252）／判定保留（ピンの扱いについて user 判断待ち）3件（:39・:89・:166）。
 
