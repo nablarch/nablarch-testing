@@ -11,8 +11,18 @@
 | 解説書（SSoT） | `nablarch-document` / `ntf-yaml-support` | `40b9c52` |
 | 本モジュール | `nablarch-testing` / `convert-testdata-excel-to-text` | `3c4bd2a` |
 
-本記録で `解説書:<path>:<行>` と書いたものは `git show 40b9c52:ja/development_tools/testing_framework/<path>` の行番号、
-`<path>:<行>` と書いたものは `git show 3c4bd2a:<path>` の行番号である。
+本記録の参照書式は次の3つだけを使う。
+
+| 形式 | 指すもの | 例 |
+|---|---|---|
+| `解説書:<path>:<行>` | `git show 40b9c52:ja/development_tools/testing_framework/<path>` の行番号 | `解説書:setup/common.rst:149` |
+| `<path>:<行>` | `git show 3c4bd2a:<path>` の行番号。`<path>` はリポジトリルートからのパス、または Java クラスの basename | `TestSupport.java:30` ＝ `src/main/java/nablarch/test/TestSupport.java:30` |
+| `<リポジトリ／jar> <版>:<path>:<行>` | ピンの外から引いたもの。版を必ず添える | `nablarch-testing-yaml` `05ada91`:`YamlTestDataParser.java:43` |
+
+解説書の行だけが `解説書:` の接頭辞を持つため、モジュールの行と書式で見分けられる。
+basename が本記録の引用範囲で一意に定まることは実測した（§4-2「表の書き方と数え方」）。
+ピン外の引用は全件を §4-2 末尾「ピン外の引用と、その版」に挙げる。
+全件表の「行」列と、各節の本文で単独の `:NNN` と書いたものは、その節の見出しが示す解説書ページの行番号である。
 
 作業ツリーの `src/` は `3c4bd2a` と同一であることを実測済み（`git diff --stat 3c4bd2a HEAD` の差分は `docs/pr75/steering.md` のみ）。
 
@@ -72,7 +82,7 @@
 |---|---|---|
 | `testAddValueDiscardsValuesBeyondNames` | `src/test/java/nablarch/test/core/file/FixedLengthFileFragmentTest.java` | `addValue` の超過分切り捨て |
 | `testAddValueWithIdDiscardsValuesBeyondNames` | 同上 | `addValueWithId` の超過分切り捨て |
-| `testAddValuePadsMissingValuesWithEmptyString` | 同上 | 少ない側（解説書:`testdata_notation.rst:882`）との対 |
+| `testAddValuePadsMissingValuesWithEmptyString` | 同上 | 少ない側（解説書:`implementation/testdata_notation.rst:882`）との対 |
 | `testValuesBeyondFieldNamesAreDiscarded` | `src/test/java/nablarch/test/core/reader/FixedLengthFileParserTest.java` | パーサ経由（公開 API `DataFile#toDataRecords()`）での超過分切り捨て |
 | `testTrailingEmptyCellsAreNotTreatedAsExcess` | 同上 | 末尾の空セルが超過分にならないこと（経路3） |
 | `testTrailingCommentCellIsNotTreatedAsExcess` | 同上 | 末尾のコメントセルが超過分にならないこと（経路2） |
@@ -415,7 +425,7 @@ $ echo $?
    実測（[A][B]）でも、リポジトリが空のときの読み込み先は `test/java/` だった。
 2. **なぜ取り下げたか**
    「デフォルト」を決めているのは `nablarch-testing` の実装既定値ではなく、解説書自身が
-   `40b9c52`:`setup/request_unit_test/rest.rst:30-33` で名指ししている
+   `解説書:setup/request_unit_test/rest.rst:30-33` で名指ししている
    `com.nablarch.configuration:nablarch-testing-default-configuration` である。
    同モジュールの `nablarch/test/test-data.config` が `nablarch.test.resource-root=src/test/java` を持つ。
    `TestSupport.java:30` の `test/java/` は、そのデフォルト設定を読み込まない場合のフォールバックにすぎない。
@@ -438,11 +448,11 @@ $ echo $?
 
 ##### 不一致の詳細 :126
 
-1. **解説書の逐語**（`40b9c52`:`setup/common.rst:126`）
+1. **解説書の逐語**（`解説書:setup/common.rst:126`）
    「テスティングフレームワークは、シーケンスオブジェクトを使用した採番処理を、コンポーネント設定ファイルの変更だけでテーブル採番に置き換える機能を提供する。」
 2. **実装での実測**（`3c4bd2a`）
    `git grep -rin "idgenerator" 3c4bd2a -- src/main` が0件。`git grep -rn "採番" 3c4bd2a -- src/main` も0件。
-   解説書が置き換え先として挙げる `nablarch.common.idgenerator.FastTableIdGenerator`（`setup/common.rst:149`）は
+   解説書が置き換え先として挙げる `nablarch.common.idgenerator.FastTableIdGenerator`（`解説書:setup/common.rst:149`）は
    `nablarch-common-idgenerator-jdbc` が提供する（ローカル `~/.m2` の全 jar を走査し
    `FastTableIdGenerator.class` を含むのはこの artifactId の jar のみ）。
    さらに `pom.xml:98-102` はこの依存を `provided` スコープで宣言しており、Maven の依存スコープ規則により利用者へ推移しない。
@@ -473,7 +483,7 @@ $ echo $?
 
 ##### 不一致の詳細 :225
 
-1. **解説書の逐語**（`40b9c52`:`setup/common.rst:225`）
+1. **解説書の逐語**（`解説書:setup/common.rst:225`）
    「``fileExtensions``\ の\ ``sendSyncTestData``\ には、実際に配置するテストデータのファイルの拡張子（\ ``xlsx``\ または\ ``xls``\ ）を指定する。指定した拡張子と一致しないファイルは読み込まれない。ベースディレクトリの配下は次の図のとおりで、リクエストIDごとに1つのファイルを置く。」
 2. **実装での実測**（`3c4bd2a`）
    読み込みの実体は `src/main/java/nablarch/test/core/reader/PoiXlsReader.java:62-65` である。
