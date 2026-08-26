@@ -24,7 +24,18 @@ basename が本記録の引用範囲で一意に定まることは実測した�
 ピン外の引用は全件を §4-2 末尾「ピン外の引用と、その版」に挙げる。
 全件表の「行」列と、各節の本文で単独の `:NNN` と書いたものは、その節の見出しが示す解説書ページの行番号である。
 
-作業ツリーの `src/` は `3c4bd2a` と同一であることを実測済み（`git diff --stat 3c4bd2a HEAD` の差分は `docs/pr75/steering.md` のみ）。
+`3c4bd2a` からの差分は次の4ファイルである（`git diff --stat 3c4bd2a HEAD` を再実行して確認した）。
+
+```
+ .rn/step4-01-nablarch-testing.md                   | 1000 ++++++++++++++++++++
+ docs/pr75/steering.md                              |  165 +++-
+ .../core/file/FixedLengthFileFragmentTest.java     |   88 ++
+ .../core/reader/FixedLengthFileParserTest.java     |  112 +++
+ 4 files changed, 1360 insertions(+), 5 deletions(-)
+```
+
+`src/main` は `3c4bd2a` と同一である。`src/test` の2ファイルは §4-1 の特性テスト（`2470e6e`）で追加したもので、
+§4-2 の突合では `src/test` も変更していない。
 
 ---
 
