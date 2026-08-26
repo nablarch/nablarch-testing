@@ -340,11 +340,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-26
+- **Last completed**: #28 全テストを流して緑を確認する（手順5）
+- **Next**: 新しい指示書（Step 4 の差し替え）を user から受け取り、タスクとして登録する
+- **Notes**: ブランチ `convert-testdata-excel-to-text`。`a437285` で `ae989ec..e31fb6f` の28コミットを全件 revert 済み（Step 4 の突合記録・指示書 `.rn/step4-01-nablarch-testing.md`・`2470e6e` の特性テスト）。取り消し理由は指示の立て方の誤り — 「解説書と実装を読み比べて不一致を洗い出す」ではなく「解説書に書いてあることをテストで押さえる」が正。論点4（フィールド数超過値の切り捨てを仕様と判定）の user 判断は有効で、新指示の中で扱い直す。user 判断待ち: `tmp/` と `work/` 配下の gitignore 済みファイル（`bar.txt` 等、8月25日 10:34 — ピン `ae989ec` より前のため今回の調査の生成物ではなく未削除）。
 
 ---
 
