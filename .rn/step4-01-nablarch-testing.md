@@ -892,9 +892,31 @@ Tests run: 24,  Failures: 2      <- 落ちる。既存テストは :95-99 を検
 
 §2 のピン（`nablarch-document` `40b9c52` ／ `nablarch-testing` `3c4bd2a`）の外から引いた事実と、その版を示す。
 
+ピン外の引用に漏れがないことは機械的に確かめた（`<scratchpad>/fix2/offpin_cites.sh`）。
+本記録の `file:line` 引用を全件抽出し、basename を `git ls-tree -r 3c4bd2a` と
+`git ls-tree -r 40b9c52 ja/development_tools/testing_framework/` に照合して、
+ピン内で解決できないものが下表に載っているかを判定する。
+
+```
+$ bash <scratchpad>/fix2/offpin_cites.sh
+ピン外(版あり)  FilePathSetting.java
+ピン外(版あり)  SystemTimeUtil.java
+ピン外(版あり)  YamlTestDataParser.java
+ピン外(版あり)  src/main/java/nablarch/test/core/reader/YamlTestDataParser.java
+ピン内(3c4bd2a) BasicJapaneseCharacterInterpreter.java
+（… ピン内 34 パス。全出力は同スクリプトを実行して得られる …）
+ピン内(40b9c52) implementation/testdata_notation.rst
+ピン内(40b9c52) setup/common.rst
+ピン内(40b9c52) setup/request_unit_test/rest.rst
+---
+file:line 引用の総数(延べ): 113
+```
+
+「ピン外(版なし)」は0件である。スクラッチパッドの検証コード（`Fix1*.java`）は走査から除いている。
+
 | 引用元 | 版の特定 | 本記録で引いた箇所 |
 |---|---|---|
-| `nablarch-core` | `mvn -o dependency:build-classpath` が解決した実体は `~/.m2/repository/com/nablarch/framework/nablarch-core/6-NEXT-SNAPSHOT/nablarch-core-6-NEXT-SNAPSHOT.jar`。md5 `739824ac93ef8d391599a284cdd716c2` で、同ディレクトリの `nablarch-core-6-NEXT-20260717.011251-20.jar` と同一（同居する `nablarch-core-6-NEXT-20260327.002503-19.jar` は md5 `03035e977de61a5178c65fced43141eb` で別物）。行番号は同じ版の `-sources.jar` から取り出したソースのもの | `FilePathSetting.java:27,30,43-49,78-81,143-151,176-184,192-196,229,231,309-311`、`SystemTimeUtil.java:26,109` |
+| `nablarch-core` | `mvn -o dependency:build-classpath` が解決した実体は `~/.m2/repository/com/nablarch/framework/nablarch-core/6-NEXT-SNAPSHOT/nablarch-core-6-NEXT-SNAPSHOT.jar`。md5 `739824ac93ef8d391599a284cdd716c2` で、同ディレクトリの `nablarch-core-6-NEXT-20260717.011251-20.jar` と同一（同居する `nablarch-core-6-NEXT-20260327.002503-19.jar` は md5 `03035e977de61a5178c65fced43141eb` で別物）。行番号は同じ版の `-sources.jar` から取り出したソースのもの | `FilePathSetting.java:30,43-49,78-81,143-151,176-184,192-196,229,231,309-311`、`SystemTimeUtil.java:26,109` |
 | `nablarch-testing-yaml` | コミット `05ada91` | `src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:43,47,49,78-82,86-90,162-166,188-192` |
 | `nablarch-testing-default-configuration` | `~/.m2/repository/com/nablarch/configuration/nablarch-testing-default-configuration/6-NEXT-SNAPSHOT/nablarch-testing-default-configuration-6-NEXT-20260327.002359-3.jar`。md5 `f1432ceb68d7dd0018c922f3b6e7df82` で、同ディレクトリの `…-6-NEXT-SNAPSHOT.jar` と同一 | `nablarch/test/test-data.config`、`nablarch/test/test-data.xml`、`nablarch/test/test-data-interpreter.xml` |
 | `nablarch-common-idgenerator-jdbc` | `~/.m2/repository/com/nablarch/framework/nablarch-common-idgenerator-jdbc/6-NEXT-SNAPSHOT/nablarch-common-idgenerator-jdbc-6-NEXT-20260327.004352-2.jar`。md5 `99bd6c847e2a4960d889cda72127de3f` で、同ディレクトリの `…-6-NEXT-SNAPSHOT.jar` と同一 | `FastTableIdGenerator.class` の所在 |
