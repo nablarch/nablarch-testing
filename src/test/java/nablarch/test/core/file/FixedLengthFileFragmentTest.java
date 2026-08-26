@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -286,5 +287,92 @@ public class FixedLengthFileFragmentTest {
         target.setLengths(asList("2"));
         target.getRecordDefinition();
         target.convertValue("aaa", "0x303132"); // あふれ
+    }
+
+    /**
+     * フィールド名称の数を超えた位置の値が、警告も例外もなく捨てられること。
+     * <p>
+     * 本テストは現行挙動を固定する特性テストである。{@link DataFileFragment#addValue(List)}
+     * のループ上限は {@code names.size()} であり、{@code line} の {@code names.size()} 番目
+     * 以降の要素は読まれない。上限を {@code line.size()} に変えると、
+     * {@code names.get(i)} が {@link IndexOutOfBoundsException} となり本テストは失敗する。
+     * </p>
+     */
+    @Test
+    public void testAddValueDiscardsValuesBeyondNames() {
+        final DataFile target = new FixedLengthFile("path/to/file");
+        target.setDirective(Directive.TEXT_ENCODING.getName(), "utf-8");
+        DataFileFragment one = target.getNewFragment();
+        one.setNames(asList("field1", "field2"));
+        one.setTypes(asList("半角英字", "半角英字"));
+        one.setLengths(asList("5", "5"));
+
+        // フィールドは2つだが、3つ目・4つ目の値を書いた行
+        one.addValue(asList("a", "b", "excess3", "excess4"));
+
+        Map<String, String> actual = one.values.get(0);
+        assertThat("フィールド名称の数だけがエントリになること", actual.size(), is(2));
+        assertThat(actual.get("field1"), is("a"));
+        assertThat(actual.get("field2"), is("b"));
+        assertThat("超過分の値はどのエントリにも現れないこと",
+                actual.values().contains("excess3"), is(false));
+        assertThat("超過分の値はどのエントリにも現れないこと",
+                actual.values().contains("excess4"), is(false));
+    }
+
+    /**
+     * {@link DataFileFragment#addValueWithId(List, String)} でも、フィールド名称の数を
+     * 超えた位置の値が、警告も例外もなく捨てられること。
+     * <p>
+     * {@link #testAddValueDiscardsValuesBeyondNames()} と同じく現行挙動を固定する特性テストであり、
+     * ループ上限を {@code line.size()} に変えると失敗する。
+     * </p>
+     */
+    @Test
+    public void testAddValueWithIdDiscardsValuesBeyondNames() {
+        final DataFile target = new FixedLengthFile("path/to/file");
+        target.setDirective(Directive.TEXT_ENCODING.getName(), "utf-8");
+        DataFileFragment one = target.getNewFragment();
+        one.setNames(asList("field1", "field2"));
+        one.setTypes(asList("半角英字", "半角英字"));
+        one.setLengths(asList("5", "5"));
+
+        one.addValueWithId(asList("a", "b", "excess3", "excess4"), "1");
+
+        Map<String, String> actual = one.values.get(0);
+        assertThat("連番のエントリとフィールド名称の数だけがエントリになること", actual.size(), is(3));
+        assertThat(actual.get(DataFileFragment.FIRST_FIELD_NO), is("1"));
+        assertThat(actual.get("field1"), is("a"));
+        assertThat(actual.get("field2"), is("b"));
+        assertThat("超過分の値はどのエントリにも現れないこと",
+                actual.values().contains("excess3"), is(false));
+        assertThat("超過分の値はどのエントリにも現れないこと",
+                actual.values().contains("excess4"), is(false));
+    }
+
+    /**
+     * フィールド名称の数より値が少ない場合は、書かなかったフィールドが空文字になること。
+     * <p>
+     * 解説書（testdata_notation.rst:882）が述べている「末尾のフィールドの値を書かなければ
+     * そのフィールドは {@code ""} として扱われる」に対応する特性テストである。
+     * 超過側の挙動（上の2件）と対になる。
+     * </p>
+     */
+    @Test
+    public void testAddValuePadsMissingValuesWithEmptyString() {
+        final DataFile target = new FixedLengthFile("path/to/file");
+        target.setDirective(Directive.TEXT_ENCODING.getName(), "utf-8");
+        DataFileFragment one = target.getNewFragment();
+        one.setNames(asList("field1", "field2", "field3"));
+        one.setTypes(asList("半角英字", "半角英字", "半角英字"));
+        one.setLengths(asList("5", "5", "5"));
+
+        one.addValue(asList("a"));
+
+        Map<String, String> actual = one.values.get(0);
+        assertThat(actual.size(), is(3));
+        assertThat(actual.get("field1"), is("a"));
+        assertThat(actual.get("field2"), is(""));
+        assertThat(actual.get("field3"), is(""));
     }
 }
