@@ -319,7 +319,7 @@ $ echo $?
 | :71-75 | テストデータ解析コンポーネントは `dbInfo`・`interpreters` プロパティを持つ | 対象 | 一致 | `TestDataParser.java:100`（`setDbInfo`）・`:107`（`setInterpreters`）。実装は `BasicTestDataParser.java:221,230` | 一致 | なし |
 | :77 | Excel 形式で必要な `NullInterpreter`・`QuotationTrimmer`・`LineSeparatorInterpreter` は YAML 形式では指定しない | 一部対象外 | 一致（3クラスの所属と Excel 側での使用） | 3クラスとも本モジュールが提供（`NullInterpreter.java:8`・`QuotationTrimmer.java:9`・`LineSeparatorInterpreter.java:28`）。Excel 形式の設定例で実際に使われている（`src/test/resources/unit-test.xml:30,33,40`）。「YAML のパーサが構文として解釈するから不要」の部分は `nablarch-testing-yaml` 担当 | 一致 | なし |
 | :79 | `.. important::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :81 の行で判定する | — | なし |
-| :81 | `NullInterpreter` を指定すると、文字列として書いた `"null"` も Java の `null` になり区別できなくなる | 対象 | 一致 | `NullInterpreter.java:15-16`（`equalsIgnoreCase` で判定し `null` を返す）。実行して確認（下記「動かして確かめた内容」[G]）：`"null"`→`null`、`"NULL"`→`null`、`QuotationTrimmer`＋`NullInterpreter` に `"null"`（ダブルクォート付き）を通しても `null` | 一致 | なし |
+| :81 | `NullInterpreter` を指定すると、文字列として書いた `"null"` も Java の `null` になり区別できなくなる | 一部対象外 | 一致（`NullInterpreter` の挙動） | `NullInterpreter.java:15-16`（`equalsIgnoreCase("null")` なら Java の `null` を返す）。実行して確認（[I-3]）：`NullInterpreter` 単体に長さ4の `null` を渡すと `<<JAVA null>>`、引用符付きの `"null"`（長さ6）を渡すと長さ6の文字列のまま返る。すなわち Java の `null` になるのは解釈クラスに長さ4の `null` が渡ったときであり、YAML で `"null"` と書いた値がパーサからその形で渡るかどうかは `nablarch-testing-yaml` 担当。前回この行の根拠に置いていた `[G] Quotation+Null("\"null\"") -> null` は偽の根拠だったため取り下げた（下記「取り下げた不一致候補 :176/:252」） | 一致 | なし |
 | :83 | `testDataReader` は指定しない（`YamlTestDataParser` は YAML ファイルを直接読むため使用しない） | 対象外 | — | `testDataReader` というプロパティ名の出所は本モジュール（`TestDataParser.java:92`）だが、`YamlTestDataParser` が使わないことの確認は `nablarch-testing-yaml` 担当 | — | なし |
 | :85 | テストデータの記法は別ページを参照 | 対象外 | — | 解説書内の相互参照 | — | なし |
 | :87-88 | 見出し「テストデータの読み込み先を変更する」 | 対象外 | — | 見出し文字列であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
@@ -346,7 +346,7 @@ $ echo $?
 | :170 | テストデータの記法を解釈するクラスは Excel 形式と YAML 形式で共通である | 対象 | 一致 | 解説書の両ブロック（`:220`・`:252`）がともに `messagingTestInterpreters` を参照しており、含まれる3クラスはいずれも本モジュールが提供する。`interpreters` プロパティは `TestDataParser.java:107` に定義され、`YamlTestDataParser` は `BasicTestDataParser` を継承している（`nablarch-testing-yaml` `05ada91`:`src/main/java/nablarch/test/core/reader/YamlTestDataParser.java:43`）ので同じプロパティが使える | 一致 | なし |
 | :172 | `.. code-block:: xml` の宣言行 | 対象外 | — | ディレクティブの宣言行であり、`nablarch-testing` の実装で成否が決まらない | — | なし |
 | :174-185 | `messagingTestInterpreters` に `NullInterpreter`・`QuotationTrimmer`・`CompositeInterpreter`（配下に `BasicJapaneseCharacterInterpreter`）を指定する | 対象 | 一致 | 4クラスとも本モジュールが提供（`NullInterpreter.java:8`・`QuotationTrimmer.java:9`・`CompositeInterpreter.java:15,61`・`BasicJapaneseCharacterInterpreter.java:18`） | 一致 | なし |
-| （:176 と :252 の組み合わせ） | YAML 形式の `messagingTestDataParser` にも `NullInterpreter` を含む `messagingTestInterpreters` を指定する | 対象 | **不一致** | 下記「不一致の詳細 :176/:252」参照 | **不一致（解説書側の誤りの疑い）** | 報告のみ（実装・テストとも変更しない） |
+| （:176 と :252 の組み合わせ） | YAML 形式の `messagingTestDataParser` にも `NullInterpreter` を含む `messagingTestInterpreters` を指定する | 対象 | 一致 | 前回の不一致判定は取り下げた。`InterpretationContext.java:81-93` の `invokeNext` は FIFO なので、解説書の順序では `NullInterpreter` が先に引用符付きの `"null"`（長さ6）を見て不一致となり、その後 `QuotationTrimmer` が引用符を外す。結果は Java の `null` ではなく長さ4の文字列 `null` である。下記「取り下げた不一致候補 :176/:252」参照。この行の行番号（:176・:252）は `:174-185`・`:249-255` の行に含まれるため、行の網羅の検算では二重に数えない | 一致 | なし |
 | :187 | ベースディレクトリの指定と解析コンポーネントの設定はテストデータの形式によって異なる | 対象 | 一致 | 実行して確認（下記 [D]）：`fileExtensions` に `sendSyncTestData` を設定するかどうかで `FilePathSetting#getFileIfExists` の解決先がファイル／ディレクトリに変わる | 一致 | なし |
 | :189 | `.. tip::` のディレクティブ宣言行 | 対象外 | — | ディレクティブの宣言行であり、本文の成否は :191 の行で判定する | — | なし |
 | :191 | ベースディレクトリは `classpath:` ではなく `file:` で指定することを推奨する。ファイルシステムのパスならアプリケーションサーバ起動中にテストデータを編集してテストを続けられる | 対象 | 一致 | `SendSyncSupport.java:359,362-375`（呼び出しのたびにテストデータの最終更新日時スナップショットを採り、変化していれば再読み込みする）。`classpath:` を指定した場合はベースパスの URL が設定時に解決される（`FilePathSetting.java:229-267`）ため、編集対象がデプロイ済みのリソースになる | 一致 | なし |
@@ -452,32 +452,51 @@ $ echo $?
    `nablarch-testing` はこの機能に対して一切のコードを持たない。
    「テスティングフレームワークが提供する」という帰属だけが実装と合っていない。
 
-##### 不一致の詳細 :176/:252
+##### 取り下げた不一致候補 :176/:252
 
-1. **解説書の逐語**
-   `40b9c52`:`setup/common.rst:81` — 「``NullInterpreter``\ を指定してはならない。指定すると、文字列として記述した ``"null"``\ も\ Java\ の\ null\ になり、両者を区別できなくなる。」
-   `40b9c52`:`setup/common.rst:176` — `<component class="nablarch.test.core.util.interpreter.NullInterpreter"/>`（`messagingTestInterpreters` の先頭要素）
-   `40b9c52`:`setup/common.rst:250-252` — YAML 形式の `messagingTestDataParser`（`class="nablarch.test.core.reader.YamlTestDataParser"`）の `interpreters` に、その `messagingTestInterpreters` を指定している。
-2. **実装での実測**（`3c4bd2a`）
-   `NullInterpreter.java:14-19` — 値が大文字小文字を問わず `null` と等しければ Java の `null` を返す。
-   実行結果（下記 [G]）:
+1. **なぜいったん不一致と判定したか**
+   解説書 `:81` が「``NullInterpreter``\ を指定してはならない。指定すると、文字列として記述した ``"null"``\ も\ Java\ の\ null\ になり、両者を区別できなくなる。」と書いているのに、
+   `:176`（`messagingTestInterpreters` の先頭要素 `NullInterpreter`）と
+   `:250-252`（YAML 形式の `messagingTestDataParser` の `interpreters` にその `messagingTestInterpreters` を指定）が
+   組み合わさると、YAML 形式の解析コンポーネントに `NullInterpreter` が入る。
+   前回はこれを「解説書内の記述同士の矛盾」と判定し、根拠に `[G] Quotation+Null("\"null\"") -> null` という出力を置いた。
+2. **なぜ取り下げたか**
+   その `[G]` の出力は**偽の根拠**だった。`System.out.println("... -> " + v)` は、`v` が Java の `null` でも
+   長さ4の文字列 `null` でも同じ `null` と表示する。判別できる出力に直して測り直したところ、
+   解説書の順序では **Java の `null` にならない**ことが分かった。
+3. **取り下げの根拠**（`file:line` ＋ SHA ＋ 実行結果）
+   `3c4bd2a`:`src/main/java/nablarch/test/core/util/interpreter/InterpretationContext.java:81-93` の `invokeNext` は
+   `interpreters.remove()` であり、`interpreters` は `LinkedList`（同 `:5,31,51`）なので **FIFO**（先頭から取り出す）である。
+   解説書の順序（`:176` `NullInterpreter` → `:177` `QuotationTrimmer` → `:178-184` `CompositeInterpreter`）では、
+   `NullInterpreter`（`3c4bd2a`:`NullInterpreter.java:15-16`）が先に**引用符付きの** `"null"`（長さ6）を見るため
+   `equalsIgnoreCase("null")` は偽になり、`context.invokeNext()` で次へ進む。
+   次の `QuotationTrimmer`（`3c4bd2a`:`QuotationTrimmer.java:12-16,24-30`）が引用符を外すが、
+   そのときにはもう `NullInterpreter` はキューに残っていない。結果は長さ4の文字列 `null` である。
+
+   実行結果（[I]。検証コードは `fix1/Fix1Interpreter.java`）:
 
    ```
-   [G] NullInterpreter("null")  -> null
-   [G] NullInterpreter("NULL")  -> null
-   [G] Quotation+Null("\"null\"") -> null
+   [I-0] Queue impl = java.util.LinkedList / remove() は先頭要素を取り出す
+   --- [I-1] 解説書の順序 (Null -> Quotation -> Composite) ---
+   [I-1] input="null" (引用符あり, len=6) -> "null" (len=4, isJavaNull=false)
+   [I-1] input=null   (引用符なし, len=4) -> <<JAVA null>>
+   [I-1] input=NULL   (引用符なし, len=4) -> <<JAVA null>>
+   [I-1] input=abc                        -> "abc" (len=3, isJavaNull=false)
+   --- [I-2] 順序を入れ替えた場合 (Quotation -> Null -> Composite) ---
+   [I-2] input="null" (引用符あり) -> <<JAVA null>>
+   --- [I-3] NullInterpreter 単体 ---
+   [I-3] input="null" (引用符あり) -> ""null"" (len=6, isJavaNull=false)
+   [I-3] input=null   (引用符なし) -> <<JAVA null>>
+   --- [I-4] 前回の記録が偽の根拠だったことの再現 ---
+   [I-4] println("result -> " + r) の見た目 : result -> null
+   [I-4] 判別可能な出力              : result -> "null" (len=4, isJavaNull=false)
    ```
 
-   `QuotationTrimmer`（`:176-177` で `NullInterpreter` の直後に指定される）を通した場合も
-   ダブルクォートが外れたうえで `null` になる。
-3. **どちらが誤っていると考えるか**: **解説書側の誤りの疑い**。
-   同じページの :81 が「YAML 形式では `NullInterpreter` を指定してはならない」と明記しているのに、
-   :176 と :252 の組み合わせは YAML 形式の `messagingTestDataParser` に `NullInterpreter` を
-   指定させている。:81 の理由（文字列 `"null"` と Java の `null` を区別できなくなる）は
-   `NullInterpreter` 自体の挙動に由来するもので、上の実測のとおり
-   `messagingTestDataParser` 経由でも同じく成り立つ。
-   ただし YAML パーサが引用符付きの `"null"` をどう渡すかは `nablarch-testing-yaml` 担当のため
-   **その先の影響は未確認**であり、本表では解説書内の記述同士が矛盾している事実までを記録する。
+   あわせて、`:81` の `.. important::` は「テストデータの形式をYAMLに変更する」節
+   （見出し `:37-38`、範囲は次の見出し `:87-88` の手前まで）の中にあり、主語は直前 `:77` の `yamlInterpreters` である。
+   別節（見出し `:164-165`）の `messagingTestInterpreters` には及ばない。
+   `:170` は「テストデータの記法を解釈するクラスは、Excel 形式と YAML 形式で共通である」と意図的に述べている。
+4. **現在の判定**: **一致**。実装は解説書 `:176`／`:252` のとおりに動く。
 
 ##### 動かして確かめた内容
 
@@ -485,7 +504,7 @@ $ echo $?
 （`/tmp/claude-1000/-home-tie303177-work-nablarch-nablarch-testing/92111fc8-7ec9-430c-96c2-1a8e7db53a6f/scratchpad/probe/`）。
 クラスパスは `mvn -o dependency:build-classpath` の出力＋`target/classes`（`mvn -o compile` でビルド）。
 
-`[A][B][D][E][G][H]`（`Probe.java`）:
+`[A][B][D][E][H]`（`Probe.java`）。旧 `[G]` の3行は偽の根拠だったため取り下げた（上記「取り下げた不一致候補 :176/:252」の [I] に差し替え）:
 
 ```
 [A] default resource root = [test/java/]
@@ -500,9 +519,6 @@ $ echo $?
 [D-xls]  getFileIfExists(file RB11AC0200) = null
 [E] java.lang.IllegalArgumentException: Unknown basePathName: sendSyncTestData
 [F-format] java.lang.IllegalArgumentException: Unknown basePathName: format
-[G] NullInterpreter("null")  -> null
-[G] NullInterpreter("NULL")  -> null
-[G] Quotation+Null("\"null\"") -> null
 [H] 14digits -> 2010-09-14 12:34:56.0
 [H] 17digits -> 2010-09-14 12:34:56.789
 [H] 13digits -> java.lang.IllegalArgumentException: datetime string 2010091412345
@@ -527,5 +543,5 @@ $ LANG=ja_JP.UTF-8 TZ=Asia/Tokyo mvn -o test -Dtest=TestSupportTest -DfailIfNoTe
 
 集計: 表の行 64（うち1件は複数箇所にまたがる横断行「:176 と :252 の組み合わせ」で、行番号は `:174-185`・`:249-255` に含まれる）。
 対象 27件・一部対象外 3件（合わせて判定対象30件）／対象外 34行。
-判定の内訳は 一致 25件／不一致（解説書側の誤りの疑い）2件（:126・:176/:252）／判定保留（ピンの扱いについて user 判断待ち）3件（:39・:89・:166）。
+判定の内訳は 一致 26件／不一致（解説書側の誤りの疑い）1件（:126）／判定保留（ピンの扱いについて user 判断待ち）3件（:39・:89・:166）。
 
