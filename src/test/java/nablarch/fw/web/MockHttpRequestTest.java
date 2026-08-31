@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -706,6 +707,33 @@ public class MockHttpRequestTest {
         sut.setRequestPath("/ind$ex.html");
         String requestUri = sut.getRequestUri();
         assertThat(requestUri, is("/ind$ex.html"));
+    }
+
+    /**
+     * {@link MockHttpRequest#toString()}が付与する{@code Content-Length}が、
+     * メッセージボディのオクテット数と一致することを表明する。
+     * <p/>
+     * HTTPの{@code Content-Length}はオクテット数で定義されている。
+     * {@link MockHttpRequest#toString()}はパラメータ値だけをURLエンコードし、
+     * パラメータ名はエンコードせずそのままボディへ出力するため、
+     * 名前がマルチバイト文字の場合はボディの文字数とオクテット数が一致しない。
+     */
+    @Test
+    public void testContentLengthIsOctetLengthOfBody() {
+        MockHttpRequest req = new MockHttpRequest("POST /path HTTP/1.1");
+        Map<String, String[]> params = new HashMap<String, String[]>();
+        params.put("氏名", new String[] {"abc"});
+        req.setParamMap(params);
+
+        String message = req.toString();
+        String body = message.substring(message.indexOf("\r\n\r\n") + 4);
+
+        // ボディは「氏名=abc」。UTF-8では10オクテットだが、文字数は6。
+        assertThat(body, is("氏名=abc"));
+        assertThat(body.getBytes(StandardCharsets.UTF_8).length, is(10));
+        assertThat(body.length(), is(6));
+
+        assertThat(message, containsString("Content-Length: 10\r\n"));
     }
 
     public static class CustomUserAgentParser implements UserAgentParser {

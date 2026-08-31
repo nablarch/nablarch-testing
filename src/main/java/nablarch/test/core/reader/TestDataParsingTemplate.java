@@ -45,6 +45,9 @@ abstract class TestDataParsingTemplate<RET> {
     /** リソース名 */
     protected String resource;      // SUPPRESS CHECKSTYLE サブクラスに対してカプセル化が不要なため
 
+    /** 解析結果をキャッシュへ保存するか。{@code false} の場合はキャッシュへ一切書き込まない。 */
+    private boolean saveCache = true;
+
     /**
      * 行読み込み時に起動されるコールバックメソッド。
      *
@@ -128,6 +131,7 @@ abstract class TestDataParsingTemplate<RET> {
     public final void parse(String directory, String resource, String id, boolean saveCache) {
         this.directory = directory;
         this.resource = resource;
+        this.saveCache = saveCache;
         String dataCacheKey = directory + '/' + resource;
         if (!TEST_DATA_CACHE.containsKey(dataCacheKey)) {
             // テストデータがキャッシュ上に存在しない場合は、テストデータをロードしキャッシュする。
@@ -187,10 +191,98 @@ abstract class TestDataParsingTemplate<RET> {
 
     /**
      * 解析を実行する。
+     * <p>
+     * キャッシュを持つサブクラス（{@code cacheEnabled() == true}）の場合、
+     * {@code saveCache} が {@code true} のときのみキャッシュへの保存・参照を行う。
+     * {@code saveCache} が {@code false}（変換ツール等のキャッシュ抑止経路）、
+     * またはキャッシュを持たないサブクラスの場合は、キャッシュを介さず直接解析する。
+     * </p>
      *
      * @param id ID
      */
     void parse(String id) {
+        if (!cacheEnabled() || !saveCache) {
+            // キャッシュを持たない、またはキャッシュ抑止経路: 直接解析する。
+            prepareResult();
+            doParse(id);
+            return;
+        }
+        cachedParse(id);
+    }
+
+    /**
+     * キャッシュ経路の解析。{@code cacheEnabled() == true} かつ {@code saveCache == true}
+     * のときに呼ばれる。既定はサブクラスが {@link #tryLoadFromCache(String)}／
+     * {@link #storeToCache(String)} を実装する標準フローだが、独自のキャッシュ戦略を持つ
+     * サブクラスは本メソッドを override してよい（その場合 {@link #doParse(String)} を直接呼ぶ）。
+     *
+     * <p>
+     * 標準フローでは {@link #storeToCache(String)} を {@link #doParse(String)} より前に呼ぶ。
+     * これは「空の結果リストの参照をキャッシュへ先に登録し、doParse が同一参照へ要素を追加する」
+     * 参照共有パターンによるもの。doParse が例外で中断した場合はキャッシュに空リストが残るが、
+     * 次回アクセス時には空リストが返却されるため再解析よりも安全に失敗する。
+     * </p>
+     *
+     * @param id ID
+     */
+    void cachedParse(String id) {
+        if (!tryLoadFromCache(id)) {
+            prepareResult();
+            storeToCache(id);
+            doParse(id);
+        }
+    }
+
+    /**
+     * このサブクラスが解析結果の静的キャッシュを持つかを返す。
+     * <p>
+     * キャッシュを持つサブクラスは {@code true} を返し、
+     * {@link #tryLoadFromCache(String)}・{@link #storeToCache(String)}・
+     * {@link #prepareResult()} を実装する。既定はキャッシュ無し（{@code false}）。
+     * </p>
+     *
+     * @return キャッシュを持つ場合 {@code true}
+     */
+    boolean cacheEnabled() {
+        return false;
+    }
+
+    /**
+     * 解析結果フィールドを空の状態に初期化する。
+     * <p>キャッシュを持つサブクラスが実装する。既定は何もしない。</p>
+     */
+    void prepareResult() {
+        // キャッシュを持たないサブクラスは onTargetTypeFound 等で result を構築するため何もしない。
+    }
+
+    /**
+     * 指定 ID の解析結果がキャッシュに存在すれば結果フィールドへ設定する。
+     * <p>キャッシュを持つサブクラスが実装する。既定は常に未ヒット。</p>
+     *
+     * @param id ID
+     * @return キャッシュにヒットした場合 {@code true}
+     */
+    boolean tryLoadFromCache(String id) {
+        // 既定実装。cacheEnabled() が false の既定ではここに到達しない（キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため）。
+        return false;
+    }
+
+    /**
+     * 現在の結果フィールドを指定 ID のキーでキャッシュへ保存する。
+     * <p>キャッシュを持つサブクラスが実装する。既定は何もしない。</p>
+     *
+     * @param id ID
+     */
+    void storeToCache(String id) {
+        // 既定はキャッシュ無し。cacheEnabled() が false の既定ではここに到達しない（キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため）。
+    }
+
+    /**
+     * テストデータを実際に走査して結果を組み立てる（構造解析の本体）。
+     *
+     * @param id ID
+     */
+    final void doParse(String id) {
         boolean nowReading = false;   // データ行読み込み中か
         List<String> line;
         while ((line = readLine()) != null) {
