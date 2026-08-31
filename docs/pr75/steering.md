@@ -387,11 +387,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
-- **Date**: -
-- **Last completed**: -
-- **Next**: -
-- **Notes**: -
+- **Status**: paused
+- **Date**: 2026-08-31
+- **Last completed**: #30 承認済みの到達不能2行に理由コメントを入れる（Step 4-11 手順2）
+- **Next**: 次の指示書を user から受け取り、タスクとして登録する（未チェックのタスクは0件）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（`d4d8e68` を push 済み。ahead/behind とも 0）。ドラフト PR は nablarch/nablarch-testing#75。Step 4-11（カバレッジ基準）は報告・停止まで完了し、ディレクターの独立再測定による検証待ち。`src/main` の変更禁止（2026-08-26）は継続中で、例外として認められた `TestDataParsingTemplate` のコメント2箇所は適用済み（`cf15813`）。中断時の未決だった `tmp/`・`work/` 配下の gitignore 済みファイルは、両ディレクトリとも存在しないため判断対象が消滅した。user 判断待ち・未解決パスは無し。
 
 ---
 
