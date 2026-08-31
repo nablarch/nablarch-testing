@@ -263,6 +263,7 @@ abstract class TestDataParsingTemplate<RET> {
      * @return キャッシュにヒットした場合 {@code true}
      */
     boolean tryLoadFromCache(String id) {
+        // 既定実装。cacheEnabled() が false の既定ではここに到達しない（キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため）。
         return false;
     }
 
@@ -273,7 +274,7 @@ abstract class TestDataParsingTemplate<RET> {
      * @param id ID
      */
     void storeToCache(String id) {
-        // 既定はキャッシュ無し。
+        // 既定はキャッシュ無し。cacheEnabled() が false の既定ではここに到達しない（キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため）。
     }
 
     /**
