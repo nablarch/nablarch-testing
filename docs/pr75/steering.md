@@ -334,17 +334,64 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 ---
 
+### #29: baseline 比較で「既存未達以外に未達が増えていない」ことを証明する（Step 4-11 手順1）
+
+**Purpose**: 本体はリリース済みモジュールなので、既存の未達以外に未達が増えていてはならない（user 確定 2026-08-31）。`origin/develop` と PR 先端の**全モジュール**を同一手順で測定し、PR 側にだけある未達を全件列挙する。
+
+**Prerequisites**: #28
+
+**Steps**:
+
+- [ ] `git worktree add --detach <一時パス> origin/develop` で baseline を取り出し、測定 HEAD の SHA を記録する
+- [ ] baseline と PR 先端（`convert-testdata-excel-to-text` `44b9cc9`）の両方を同じ手順で測定する（`rm -f jacoco.exec` → `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64`）
+- [ ] `jacoco.xml` の line 要素（`mi`/`mb`）を機械抽出し、両者の未達集合を突き合わせる（行番号ずれは差分を挟んで対応づける。クラス単位の件数比較だけで済ませない）
+- [ ] **PR 側にだけある未達**を全件列挙して報告する
+- [ ] 期待（`TestDataParsingTemplate.java` の2行のみ）以外が出た場合は (a) テスト不足→テスト追加（`src/test` は追加可。実装を壊すと落ちることを実測）/ (b) 不要な実装 / (c) 到達不能 に分類し、(a) 以外は**直さずに報告して止まる**
+- [ ] worktree を `git worktree remove --force` で片づける
+- [ ] コミット・push する
+
+**Completion criteria**:
+
+- baseline（測定 HEAD を明記）と PR 先端の両測定値・突合方法・PR 側にだけある未達の全件一覧が報告にある
+- その一覧が `TestDataParsingTemplate.java` の2行のみである。またはそれ以外の全件に (a)(b)(c) の分類・根拠が付き、(a) 以外は未処置のまま報告されている
+- worktree 残置なし
+
+---
+
+### #30: 承認済みの到達不能2行に理由コメントを入れる（Step 4-11 手順2）
+
+**Purpose**: `TestDataParsingTemplate.java:266`（`tryLoadFromCache` 既定実装）・`:277`（`storeToCache` 既定実装）は規約上到達不能として user 承認済み（2026-08-21）。その理由をコード上に残す。**この2箇所への追記は `src/main` 変更禁止（2026-08-26）の例外として user 承認済み（2026-08-31）。**
+
+**Prerequisites**: なし（#29 の結果に依存しない。承認は独立）
+
+**Steps**:
+
+- [ ] `tryLoadFromCache` の既定実装本体に理由コメントを入れる（趣旨: 既定実装。`cacheEnabled()` が false の既定ではこの実装に到達しない〔キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため〕）
+- [ ] `storeToCache` の既定実装本体に同趣旨のコメントを入れる（既にある `// 既定はキャッシュ無し。` と重複しない形に整えてよい）
+- [ ] 文面は既存コメントの調子に合わせ、カバレッジや文書への言及を入れない
+- [ ] `git diff` で差分がコメント行のみであることを確認する
+- [ ] `mvn -o clean test` 全件緑（856件基準）を確認する
+- [ ] コミット・push する
+
+**Completion criteria**:
+
+- コメント2箇所の差分がコメント行のみである（`git diff` で確認）
+- `src/main` の変更がこの2箇所だけである（他は1文字も変更しない）
+- `mvn -o clean test` 全件緑・`git status --short` 空・push 済み
+
+---
+
 # State
 
 (written by /rn:dn, read and reset to this placeholder by /rn:up. `Status` is `paused` while a
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: paused
-- **Date**: 2026-08-26
-- **Last completed**: #28 全テストを流して緑を確認する（手順5）
-- **Next**: 新しい指示書（Step 4 の差し替え）を user から受け取り、タスクとして登録する
-- **Notes**: ブランチ `convert-testdata-excel-to-text`。`a437285` で `ae989ec..e31fb6f` の28コミットを全件 revert 済み（Step 4 の突合記録・指示書 `.rn/step4-01-nablarch-testing.md`・`2470e6e` の特性テスト）。取り消し理由は指示の立て方の誤り — 「解説書と実装を読み比べて不一致を洗い出す」ではなく「解説書に書いてあることをテストで押さえる」が正。論点4（フィールド数超過値の切り捨てを仕様と判定）の user 判断は有効で、新指示の中で扱い直す。user 判断待ち: `tmp/` と `work/` 配下の gitignore 済みファイル（`bar.txt` 等、8月25日 10:34 — ピン `ae989ec` より前のため今回の調査の生成物ではなく未削除）。
+- **Status**: not suspended
+- **Date**: -
+- **Last completed**: -
+- **Next**: -
+- **Notes**: -
 
 ---
 
