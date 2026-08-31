@@ -342,13 +342,13 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] `git worktree add --detach <一時パス> origin/develop` で baseline を取り出し、測定 HEAD の SHA を記録する
-- [ ] baseline と PR 先端（`convert-testdata-excel-to-text` `44b9cc9`）の両方を同じ手順で測定する（`rm -f jacoco.exec` → `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64`）
-- [ ] `jacoco.xml` の line 要素（`mi`/`mb`）を機械抽出し、両者の未達集合を突き合わせる（行番号ずれは差分を挟んで対応づける。クラス単位の件数比較だけで済ませない）
-- [ ] **PR 側にだけある未達**を全件列挙して報告する
-- [ ] 期待（`TestDataParsingTemplate.java` の2行のみ）以外が出た場合は (a) テスト不足→テスト追加（`src/test` は追加可。実装を壊すと落ちることを実測）/ (b) 不要な実装 / (c) 到達不能 に分類し、(a) 以外は**直さずに報告して止まる**
-- [ ] worktree を `git worktree remove --force` で片づける
-- [ ] コミット・push する
+- [x] `git worktree add --detach <一時パス> origin/develop` で baseline を取り出し、測定 HEAD の SHA を記録する → `/home/tie303177/work/nablarch/nt-baseline`。測定 HEAD は `origin/develop` = `6aa6989fa320f1a7ac8b539b43bb121a8d82133a`（`Merge pull request #74 from nablarch/NAB-596/fix-hibernate-groupid`）
+- [x] baseline と PR 先端（`convert-testdata-excel-to-text` `44b9cc9`）の両方を同じ手順で測定する（`rm -f jacoco.exec` → `mvn -o clean jacoco:instrument test jacoco:restore-instrumented-classes` → `mvn -o jacoco:report -Djacoco.dataFile=$(pwd)/jacoco.exec`。`JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64`）→ baseline `Tests run: 839, Failures: 0, Errors: 0, Skipped: 7` / `BUILD SUCCESS`。PR 先端は `245cc0c` で測定（`git diff --stat 44b9cc9..HEAD -- src/` が空＝ `src` は `44b9cc9` と同一）、`Tests run: 856, Failures: 0, Errors: 0, Skipped: 7` / `BUILD SUCCESS`
+- [x] `jacoco.xml` の line 要素（`mi`/`mb`）を機械抽出し、両者の未達集合を突き合わせる（行番号ずれは差分を挟んで対応づける。クラス単位の件数比較だけで済ませない）→ baseline 4,816 行 / 77 ファイル、PR 4,812 行 / 78 ファイル。行番号ずれは `git show` した両版を `difflib.SequenceMatcher`（`autojunk=False`）で照合し `equal` 区間から baseline 行 → PR 行の写像を作って吸収した。手順の詳細は `checks/29.md`
+- [x] **PR 側にだけある未達**を全件列挙して報告する → **2行のみ**。`TestDataParsingTemplate.java:266`（`mi=2 mb=0`、`return false;`）と `:277`（`mi=1 mb=0`、`}` ＝ `storeToCache` 空実装の暗黙 return）。baseline より悪化した行（`WORSE`）は0件、baseline にだけある未達ファイルも0件
+- [x] 期待（`TestDataParsingTemplate.java` の2行のみ）以外が出た場合は (a) テスト不足→テスト追加（`src/test` は追加可。実装を壊すと落ちることを実測）/ (b) 不要な実装 / (c) 到達不能 に分類し、(a) 以外は**直さずに報告して止まる**→ 期待どおり2行のみだったため該当なし。2行はいずれも (c) 到達不能（2026-08-21 user 承認済み）。`src/test` の追加も `src/main` の変更も行っていない
+- [x] worktree を `git worktree remove --force` で片づける → 実行後 `git worktree list` は本体1件のみ。`ls -d /home/tie303177/work/nablarch/nt-baseline` が `No such file or directory`
+- [x] コミット・push する
 
 **Completion criteria**:
 
@@ -366,12 +366,12 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 
 **Steps**:
 
-- [ ] `tryLoadFromCache` の既定実装本体に理由コメントを入れる（趣旨: 既定実装。`cacheEnabled()` が false の既定ではこの実装に到達しない〔キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため〕）
-- [ ] `storeToCache` の既定実装本体に同趣旨のコメントを入れる（既にある `// 既定はキャッシュ無し。` と重複しない形に整えてよい）
-- [ ] 文面は既存コメントの調子に合わせ、カバレッジや文書への言及を入れない
-- [ ] `git diff` で差分がコメント行のみであることを確認する
-- [ ] `mvn -o clean test` 全件緑（856件基準）を確認する
-- [ ] コミット・push する
+- [x] `tryLoadFromCache` の既定実装本体に理由コメントを入れる（趣旨: 既定実装。`cacheEnabled()` が false の既定ではこの実装に到達しない〔キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため〕）→ `cf15813`
+- [x] `storeToCache` の既定実装本体に同趣旨のコメントを入れる（既にある `// 既定はキャッシュ無し。` と重複しない形に整えてよい）→ `cf15813`。既存の `// 既定はキャッシュ無し。` に続けて1行にまとめた
+- [x] 文面は既存コメントの調子に合わせ、カバレッジや文書への言及を入れない → 逐語は `checks/30.md`
+- [x] `git diff` で差分がコメント行のみであることを確認する → `git show cf15813 --stat` は1ファイル `2 insertions(+), 1 deletion(-)`。差分行3本すべて `//` 始まり
+- [x] `mvn -o clean test` 全件緑（856件基準）を確認する → `Tests run: 856, Failures: 0, Errors: 0, Skipped: 7` / `BUILD SUCCESS`
+- [x] コミット・push する
 
 **Completion criteria**:
 
