@@ -387,11 +387,11 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 session is suspended — the signal /rn:up and /rn:dn search for — and resets to `not suspended` here,
 so only a genuinely suspended session reads `paused`.)
 
-- **Status**: not suspended
+- **Status**: paused
 - **Date**: 2026-08-31
 - **Last completed**: #30 承認済みの到達不能2行に理由コメントを入れる（Step 4-11 手順2）
-- **Next**: 次の指示書を user から受け取り、タスクとして登録する（未チェックのタスクは0件）
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（`6b2fdfd` を push 済み。ahead/behind とも 0）。ドラフト PR は nablarch/nablarch-testing#75。**Step 4-11（カバレッジ基準）は #29・#30 とも user 承認済み**（出典: `nablarch-document` `origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-11-testing-coverage.md` §5「承認（2026-08-31 user）」。ディレクターの独立再測定 develop `6aa6989` vs PR `6b2fdfd` で、PR 側にだけある未達は `TestDataParsingTemplate.java` の承認済み2行のみ・悪化0行・baseline 839件緑・PR 856件緑）。同 §5 に「本指示書の作業はこれで完了。追加作業は無い」とあり、本セッションはここでクローズする。`src/main` の変更禁止（2026-08-26）は継続中で、例外として認められた `TestDataParsingTemplate` のコメント2箇所は適用済み（`cf15813`）。user 判断待ち・未解決パスは無し。
+- **Next**: 次の指示書を user から受け取り、タスクとして登録する（未チェックのタスクは0件。着手待ちの作業は無い）
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（`f4f59ed` を push 済み。ahead/behind とも 0）。ドラフト PR は nablarch/nablarch-testing#75。**Step 4-11（カバレッジ基準）は #29・#30 とも user 承認済み**（出典: `nablarch-document` `origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-11-testing-coverage.md` §5「承認（2026-08-31 user）」。同 §5 に「本指示書の作業はこれで完了。追加作業は無い」とある）。`src/main` の変更禁止（2026-08-26）は継続中で、例外として認められた `TestDataParsingTemplate` のコメント2箇所は適用済み（`cf15813`）。user 判断待ち・未解決パス・未処理の untracked パスは無し。
 
 ---
 
