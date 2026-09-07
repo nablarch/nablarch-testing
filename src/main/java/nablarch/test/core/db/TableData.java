@@ -338,11 +338,12 @@ public class TableData implements Cloneable {
 
         String[] colNames = getColumnNames();
 
-        // 取得対象カラムが1つも存在しない場合は
-        // data_に空のListをセットして終了する
+        // 取得対象カラムが1つも存在しない場合は、DBの全カラムを取得対象とする。
+        // カラム名の宣言は「検証対象カラムの絞り込み」であって「検証するかどうか」の
+        // スイッチではないため、カラム名が0件でもDBは読む。
+        // （docs/pr75/docs/ntf-empty-table-assertion.md 4.1）
         if (colNames.length == 0) {
-            contents = new ArrayList<SqlRow>(0);
-            return;
+            colNames = dbInfo.getColumns(tableName);
         }
 
         final String sql = createSelectStatement(tableName, colNames, getPrimaryKeys());

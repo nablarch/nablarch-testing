@@ -176,22 +176,50 @@ public class MasterDataSetUpper {
 
     /**
      * 全テーブルデータを取得する。<br/>
-     * マスタデータファイルから、全シートを走査しテーブルデータを取得する。
+     * Excel形式（{@code .xls}/{@code .xlsx}）のマスタデータファイルの場合は、全シートを走査しテーブルデータを取得する。
+     * それ以外の形式（YAML形式等）の場合は、ファイル全体を1リソースとしてテーブルデータを取得する。
      *
      * @param masterDataFile マスタデータファイル
      * @return マスタデータファイル内の全テーブルデータ
      */
     List<TableData> getAllTableData(File masterDataFile) {
+        String dir = getMasterDataDir(masterDataFile);
+        String fileNameWithoutSuffix = getMasterFileNameWithoutSuffix(masterDataFile);
+        TestDataParser parser = SystemRepository.get("testDataParser");
+
+        if (!isExcelFile(masterDataFile)) {
+            // Excel形式以外はシートの概念が無いため、ファイル全体を1リソースとして問い合わせる。
+            // 拡張子はリーダ側で付与されるため、拡張子を除いた名前を渡す。
+            return new ArrayList<TableData>(parser.getSetupTableData(dir, fileNameWithoutSuffix));
+        }
+
         Set<String> sheets = PoiXlsReader.getSheetNames(masterDataFile);
         List<TableData> allTables = new ArrayList<TableData>();
-        String dir = getMasterDataDir(masterDataFile);
-        TestDataParser parser = SystemRepository.get("testDataParser");
         for (String sheet : sheets) {
-            String resourceName = concat(getMasterFileNameWithoutSuffix(masterDataFile), "/", sheet);
+            String resourceName = concat(fileNameWithoutSuffix, "/", sheet);
             List<TableData> tables = parser.getSetupTableData(dir, resourceName);
             allTables.addAll(tables);
         }
         return allTables;
+    }
+
+    /** Excel形式と判定する拡張子（{@link PoiXlsReader}が許容するファイル名と同じ定義） */
+    private static final List<String> EXCEL_EXTENSIONS = Arrays.asList("xls", "xlsx");
+
+    /**
+     * マスタデータファイルがExcel形式であるか判定する。
+     *
+     * @param masterDataFile マスタデータファイル
+     * @return Excel形式であればtrue
+     */
+    private boolean isExcelFile(File masterDataFile) {
+        String name = masterDataFile.getName();
+        int dotPosition = name.lastIndexOf('.');
+        if (dotPosition < 0) {
+            // 拡張子のないファイルはExcel形式とみなさない
+            return false;
+        }
+        return EXCEL_EXTENSIONS.contains(name.substring(dotPosition + 1));
     }
 
     /**

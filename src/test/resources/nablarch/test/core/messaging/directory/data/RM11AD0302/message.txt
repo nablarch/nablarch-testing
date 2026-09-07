@@ -1,0 +1,7 @@
+// 応答電文(本文)[res_case1]
+RESPONSE_BODY_MESSAGES[res_case1]=RM11AD0302
+text-encoding	UTF-8
+no	failureCode	userInfoId	test	filler
+	半角	半角	半角	半角
+	20	100	10	10
+1	test2	user2	hoge	

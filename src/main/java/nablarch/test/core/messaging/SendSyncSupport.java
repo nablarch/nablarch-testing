@@ -48,7 +48,7 @@ public class SendSyncSupport {
     /** テストデータが格納されるディレクトリ名 */
     public static final String SEND_SYNC_TEST_DATA_BASE_PATH = "sendSyncTestData";
     
-    /** Excel情報のキャッシュ */
+    /** 読み込んだテストデータ情報のキャッシュ */
     private static Map<String, TestDataInfo> fileCache = new HashMap<String, TestDataInfo>();
     
     
@@ -335,7 +335,7 @@ public class SendSyncSupport {
     /**
      * メッセージを生成する。
      * <p>
-     * 読み込むテストデータファイルのタイムスタンプが変更されていない場合は、キャッシュからメッセージを取得する。
+     * 読み込むテストデータの最終更新日時が変更されていない場合は、キャッシュからメッセージを取得する。
      * </p>
      * @param dataType データタイプ
      * @param requestId リクエストID
@@ -354,22 +354,26 @@ public class SendSyncSupport {
         
         String cacheKey = createCacheKey(dataType, requestId);
 
+        // テストデータの読み込み中に行われた書き換えを取りこぼさないよう、
+        // 実データを読み込む前にスナップショットを1度だけ取得し、比較にも記録にも同じ値を使用する。
+        Map<String, Long> timestampSnapshot = getTimestampSnapshot(file);
+
         TestDataInfo testDataInfo;
         if (fileCache.containsKey(cacheKey)) {
             TestDataInfo cachedTestDataInfo = fileCache.get(cacheKey);
-            // 読み込むテストデータファイルのタイムスタンプが変更された場合、再読み込みを行う
-            if (file.lastModified() != cachedTestDataInfo.lastModified) {
+            // 読み込むテストデータの最終更新日時が変更された場合、再読み込みを行う
+            if (!timestampSnapshot.equals(cachedTestDataInfo.timestampSnapshot)) {
                 testDataInfo = createTestDataInfo(dataType, requestId, basePath,
-                        resourceName, file, cacheKey);
+                        resourceName, timestampSnapshot, cacheKey);
             } else {
                 cachedTestDataInfo.incrementNo(); // 読み込む番号をインクリメントする
                 testDataInfo = cachedTestDataInfo;
             }
         } else {
             testDataInfo = createTestDataInfo(dataType, requestId, basePath,
-                    resourceName, file, cacheKey);
+                    resourceName, timestampSnapshot, cacheKey);
         }
-        
+
         return testDataInfo;
     }
 
@@ -379,19 +383,72 @@ public class SendSyncSupport {
      * @param requestId リクエストID
      * @param basePath ベースパス
      * @param resourceName リソース名
-     * @param file ファイル
+     * @param timestampSnapshot テストデータの最終更新日時のスナップショット
      * @param cacheKey キャッシュのキー
      * @return ロードしたメッセージ
      */
     private TestDataInfo createTestDataInfo(DataType dataType, String requestId,
-            String basePath, String resourceName, File file, String cacheKey) {
+            String basePath, String resourceName, Map<String, Long> timestampSnapshot, String cacheKey) {
         TestDataInfo testDataInfo;
         MessagePool pool = getMessages(basePath, resourceName, dataType, requestId);
-        testDataInfo = new TestDataInfo(file.lastModified(), pool, basePath, resourceName);
+        testDataInfo = new TestDataInfo(timestampSnapshot, pool, basePath, resourceName);
         fileCache.put(cacheKey, testDataInfo);
         return testDataInfo;
     }
-    
+
+    /**
+     * テストデータの最終更新日時のスナップショットを取得する。
+     * <p>
+     * ディレクトリ自体の最終更新日時は配下のファイルが書き換えられても変化しないため、
+     * ディレクトリ自体と配下の全エントリの最終更新日時を、起点からの相対パスをキーとするMapで採取する。
+     * テストデータがファイルの場合（ベースパスに拡張子が設定されている場合）は、
+     * そのファイルの最終更新日時だけを起点自身のエントリとして採取する。
+     * Mapの等価判定はキーの順序に依存しないため、{@link File#listFiles()}が返す
+     * エントリの順序によって比較結果が変わることはない。
+     * 保持するサイズと比較のコストはツリーのエントリ数に比例する（ツリーの走査回数は変わらない）。
+     * </p>
+     * <p>
+     * 検知の基準は最終更新日時であり、内容のハッシュではない。
+     * このため、最終更新日時を保存したまま内容を書き換えた場合は検知できない。
+     * </p>
+     * <p>
+     * このメソッドの戻り値をテストから検証するため、可視性をpackage privateとしている。
+     * </p>
+     * @param file テストデータのファイルまたはディレクトリ
+     * @return 起点からの相対パスをキー、最終更新日時を値とするスナップショット
+     */
+    Map<String, Long> getTimestampSnapshot(File file) {
+        Map<String, Long> snapshot = new HashMap<String, Long>();
+        collectTimestamp(file, "", snapshot);
+        return snapshot;
+    }
+
+    /**
+     * 最終更新日時をスナップショットに採取する。<br/>
+     * ディレクトリの場合は、配下のエントリを再帰的に辿る。
+     * @param file 対象のファイルまたはディレクトリ
+     * @param relativePath 起点からの相対パス（起点自身は空文字）
+     * @param snapshot 採取先のスナップショット
+     */
+    private void collectTimestamp(File file, String relativePath, Map<String, Long> snapshot) {
+        snapshot.put(relativePath, file.lastModified());
+        // ファイルに対しても listFiles() はnullを返すため次の分岐でも停止するが、
+        // ディレクトリでない場合は再帰しないことを明示するための冗長な分岐である。
+        if (!file.isDirectory()) {
+            return;
+        }
+        File[] files = file.listFiles();
+        if (files == null) {
+            // ディレクトリの一覧が取得できない場合は、ディレクトリ自体のエントリのみを採取する
+            return;
+        }
+        // キーは同一JVM内のスナップショット同士の比較にしか使わないため、区切り文字は"/"に固定する
+        String prefix = relativePath.isEmpty() ? "" : relativePath + "/";
+        for (File child : files) {
+            collectTimestamp(child, prefix + child.getName(), snapshot);
+        }
+    }
+
     /**
      * 読み込んだテストデータをキャッシュするためのキーを生成する。
      * @param dataType データタイプ
@@ -435,8 +492,8 @@ public class SendSyncSupport {
     /** テストデータ情報 */
     private static class TestDataInfo {
         
-        /** 最終更新日時 */
-        private long lastModified;
+        /** テストデータの最終更新日時のスナップショット */
+        private Map<String, Long> timestampSnapshot;
         /** メッセージ */
         private MessagePool messagePool;
         /** 読み込む番号 */
@@ -448,13 +505,13 @@ public class SendSyncSupport {
 
         /**
          * コンストラクタ
-         * @param lastModified 最終更新日時
+         * @param timestampSnapshot テストデータの最終更新日時のスナップショット
          * @param messagePool メッセージ
          * @param basePath ベースパス名
          * @param resourceName リソース名
          */
-        TestDataInfo(long lastModified, MessagePool messagePool, String basePath, String resourceName) {
-            this.lastModified = lastModified;
+        TestDataInfo(Map<String, Long> timestampSnapshot, MessagePool messagePool, String basePath, String resourceName) {
+            this.timestampSnapshot = timestampSnapshot;
             this.messagePool = messagePool;
             this.basePath = basePath;
             this.resourceName = resourceName;

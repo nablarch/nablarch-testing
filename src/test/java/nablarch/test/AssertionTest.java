@@ -1,7 +1,10 @@
 package nablarch.test;
 
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -30,6 +33,56 @@ import org.junit.runner.RunWith;
 @RunWith(DatabaseTestRunner.class)
 @TargetDb(exclude = {TargetDb.Db.ORACLE, TargetDb.Db.SQL_SERVER, TargetDb.Db.DB2})
 public class AssertionTest extends AssertionTestSupport {
+
+    /**
+     * {@link Assertion#assertTableEquals(String, nablarch.test.core.db.TableData)}のテスト<br/>
+     * 期待値のカラム名が0件・行0件でも、DBの実データが読み込まれ、
+     * DBに行が残っていれば検証が失敗することを確認する。
+     * <p/>
+     * YAML形式の{@code rows: []}はカラム名を書く場所が構造上無いため、必ずこの形になる。
+     * 本テストが検知するのは「カラム名0件のときDBを読まずに0行として扱い、検証が必ずPASSする」
+     * という偽陰性である（{@code docs/pr75/docs/ntf-empty-table-assertion.md} 2章）。
+     */
+    @Test
+    public void testAssertTableEqualsWithEmptyColumnNames() {
+        // DBに行を残した状態を作る
+        VariousDbTestHelper.setUpTable(
+                new TestTable("00001", 1L, "あ", 12345L, new BigDecimal("1234.123"), new Date(0L), new Timestamp(0L),
+                        null, "CLOBです1".toCharArray(), "BLOBです1".getBytes(), true));
+
+        TableData expected = new TableData();
+        expected.setTableName("test_table");
+        expected.setDbInfo(dbInfo);
+        // カラム名をnullのままにするとgetColumnNames()がdbInfoへフォールバックし、
+        // 本事象を再現できない。長さ0の配列を明示的に設定する。
+        expected.setColumnNames(new String[0]);
+
+        try {
+            Assertion.assertTableEquals("", expected);
+            fail("期待したエラーが発生しませんでした。");
+        } catch (AssertionError actual) {
+            assertThat(actual.getMessage(),
+                    containsString(" an unexpected record is included in the table of ["));
+        }
+    }
+
+    /**
+     * {@link Assertion#assertTableEquals(String, nablarch.test.core.db.TableData)}のテスト<br/>
+     * 期待値のカラム名が0件でも、DBのテーブルが真に空であれば検証が成功することを確認する。
+     * <p/>
+     * {@link #testAssertTableEqualsWithEmptyColumnNames()}が「DBに行が残っていれば落ちる」側を、
+     * 本テストが「DBが空なら通る」側を担保する。カラム名0件を一律で失敗として扱う変更を検知する。
+     */
+    @Test
+    public void testAssertTableEqualsWithEmptyColumnNamesOnEmptyTable() {
+        // TEST_TABLEは@Before（AssertionTestSupport#before）で全削除されているため、行を入れない
+        TableData expected = new TableData();
+        expected.setTableName("test_table");
+        expected.setDbInfo(dbInfo);
+        expected.setColumnNames(new String[0]);
+
+        Assertion.assertTableEquals("", expected);
+    }
 
     @Test
     public void testAssertTableEqualsStringListOfTableData() {

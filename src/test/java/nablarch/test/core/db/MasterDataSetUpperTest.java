@@ -1,12 +1,21 @@
 package nablarch.test.core.db;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import nablarch.test.RepositoryInitializer;
+import nablarch.test.core.reader.TestDataParser;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
@@ -14,7 +23,9 @@ import nablarch.test.support.db.helper.VariousDbTestHelper;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 /**
@@ -27,6 +38,9 @@ public class MasterDataSetUpperTest {
 
     @ClassRule
     public static SystemRepositoryResource repositoryResource = new SystemRepositoryResource("unit-test.xml");
+
+    @Rule
+    public TemporaryFolder tmpDir = new TemporaryFolder();
 
     /** バックアップ用スキーマ名 */
     private static final String BACKUP_SCHEMA = "SSD_MASTER";
@@ -160,6 +174,68 @@ public class MasterDataSetUpperTest {
         doSetUpWithBackUp();
         // テーブルにレコードがある状態で実行（削除ができること）
         doSetUpWithBackUp();
+    }
+
+    /**
+     * 非Excel形式（YAML形式相当）のマスタデータファイルを指定した場合、
+     * そのファイル内の複数テーブルのデータが投入されること。
+     */
+    @Test
+    public void testSetUpMasterDataFromNonExcelFile() throws SQLException {
+        VariousDbTestHelper.createTable(Granpa.class);
+        VariousDbTestHelper.createTable(Stranger.class);
+
+        try {
+            MasterDataSetUpper.main(
+                    "nablarch/test/core/db/masterdata/masterdata-tsv-component-configuration.xml",
+                    "src/test/resources/nablarch/test/core/db/masterdata/MASTER_DATA_NON_EXCEL.txt");
+
+            // 1ファイルに含まれる2テーブル分が投入されること
+            assertEquals(3, VariousDbTestHelper.findAll(Granpa.class).size());
+            assertEquals(2, VariousDbTestHelper.findAll(Stranger.class).size());
+        } finally {
+            // MasterDataSetUpper.main がリポジトリを差し替えるため、既定の設定に戻す。
+            // 戻さないと、同一クラスの後続テストがタブ区切りテキスト用のリーダでExcelを読みに行き失敗する。
+            RepositoryInitializer.recreateRepository("unit-test.xml");
+        }
+    }
+
+    /**
+     * 拡張子を持たないマスタデータファイルをExcel形式と誤判定せず、
+     * ファイル全体を1リソースとして{@link TestDataParser}へ問い合わせること。
+     * <p>
+     * ファイル名を{@code xls}にしているのは、{@code MasterDataSetUpper#isExcelFile}の
+     * 早期return（拡張子が無ければExcel形式とみなさない）が効くかどうかを判別できる
+     * 唯一の入力だからである。早期returnが無いと、区切りの{@code .}が無いファイル名は
+     * そのまま拡張子として扱われ、{@code xls}はExcel形式と判定されてしまう。
+     * </p>
+     *
+     * @throws Exception 予期しない例外
+     */
+    @Test
+    public void testGetAllTableDataFromFileWithNoExtension() throws Exception {
+        // Given: 拡張子を持たず、名前がそのまま「xls」であるマスタデータファイル
+        File masterDataFile = tmpDir.newFile("xls");
+        String dir = masterDataFile.getAbsoluteFile().getParent();
+
+        List<TableData> expected = Collections.singletonList(new TableData());
+        TestDataParser parser = mock(TestDataParser.class);
+        when(parser.getSetupTableData(dir, "xls")).thenReturn(expected);
+        repositoryResource.addComponent("testDataParser", parser);
+
+        try {
+            // When
+            MasterDataSetUpper target =
+                    new MasterDataSetUpper(Arrays.asList(masterDataFile), null);
+            List<TableData> actual = target.getAllTableData(masterDataFile);
+
+            // Then: シート単位ではなく、ファイル全体を1リソースとして1回だけ問い合わせている
+            verify(parser).getSetupTableData(dir, "xls");
+            assertThat(actual, is(expected));
+        } finally {
+            // @ClassRule のリポジトリへ差し込んだため、既定の設定に戻す。
+            RepositoryInitializer.recreateRepository("unit-test.xml");
+        }
     }
 
     private void doSetUp() {
