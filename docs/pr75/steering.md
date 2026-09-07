@@ -409,10 +409,10 @@ session is suspended — the signal /rn:up and /rn:dn search for — and resets 
 so only a genuinely suspended session reads `paused`.)
 
 - **Status**: paused
-- **Date**: 2026-08-31
-- **Last completed**: #30 承認済みの到達不能2行に理由コメントを入れる（Step 4-11 手順2）
+- **Date**: 2026-09-07
+- **Last completed**: #31 javadoc 2箇所を実装に合わせる（Step 4-16）
 - **Next**: 次の指示書を user から受け取り、タスクとして登録する（未チェックのタスクは0件。着手待ちの作業は無い）
-- **Notes**: ブランチ `convert-testdata-excel-to-text`（`f4f59ed` を push 済み。ahead/behind とも 0）。ドラフト PR は nablarch/nablarch-testing#75。**Step 4-11（カバレッジ基準）は #29・#30 とも user 承認済み**（出典: `nablarch-document` `origin/ntf-yaml-support` の `.rn/20260724-ntf-yaml-support/ntf-step4-11-testing-coverage.md` §5「承認（2026-08-31 user）」。同 §5 に「本指示書の作業はこれで完了。追加作業は無い」とある）。`src/main` の変更禁止（2026-08-26）は継続中で、例外として認められた `TestDataParsingTemplate` のコメント2箇所は適用済み（`cf15813`）。user 判断待ち・未解決パス・未処理の untracked パスは無し。
+- **Notes**: ブランチ `convert-testdata-excel-to-text`（`3b8149d` を push 済み。ahead/behind とも 0）。ドラフト PR は nablarch/nablarch-testing#75。**#31 は指示書 `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-16-testing-javadoc.md` に基づき、`src/main` 変更禁止（2026-08-26）の例外として user 承認済み**（2026-09-07「javadocだけだよね、それであればOK」）。同指示書はピア CC（ntf-doc-renewal-b5）経由で届き、承認記録の記載が無かったため着手前に user へ確認した。同種の依頼が再度来た場合も、指示書に承認記録が無ければ着手前に user へ確認すること。user 判断待ち・未解決パス・未処理の untracked パスは無し。
 
 ---
 
