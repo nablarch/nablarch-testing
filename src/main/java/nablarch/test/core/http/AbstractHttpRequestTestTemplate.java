@@ -32,8 +32,8 @@ import nablarch.test.core.messaging.RequestTestingMessagingClient;
  * 2. 取得したテストケース分、以下を繰り返し実行
  *    1) データベース初期化
  *    2) ExecutionContext、HTTPリクエストを生成
- *    3) 業務テストコード用拡張ポイント呼出(beforeExecuteRequestメソッド）
- *    4) Tokenが必要な場合、Tokenを設定
+ *    3) Tokenが必要な場合、Tokenを設定
+ *    4) 業務テストコード用拡張ポイント呼出(beforeExecuteRequestメソッド）
  *    5) テスト対象のリクエスト実行
  *    6) 実行結果の検証
  *      ・HTTPステータスコード および メッセージID

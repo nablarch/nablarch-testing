@@ -379,6 +379,27 @@ Excel↔YAML テストデータ変換ツールを設計書通りに作り直し�
 - `src/main` の変更がこの2箇所だけである（他は1文字も変更しない）
 - `mvn -o clean test` 全件緑・`git status --short` 空・push 済み
 
+### #31: javadoc 2箇所を実装に合わせる（Step 4-16）
+
+**Purpose**: 解説書の刷新で実装を読み合わせた際、javadoc が実装と食い違う箇所が2つ見つかった。解説書は実装どおりなので javadoc だけを直す。**動作・シグネチャ・テストは変えない。** 出典: `/home/tie303177/work/cowork/nablarch/ntf-doc-renewal/指示/ntf-step4-16-testing-javadoc.md`。`src/main` 変更禁止（2026-08-26）の例外として user 承認済み（2026-09-07。「javadocだけだよね、それであればOK」）。
+
+**Prerequisites**: なし
+
+**Steps**:
+
+- [x] `AbstractHttpRequestTestTemplate` のクラス javadoc の実行順序 3) と 4) を入れ替える（実装 `:254-262` は トークン設定 → `beforeExecuteRequest` の順）
+- [x] `FixedSystemTimeProvider#setFixedDate` の javadoc の桁数を 12桁/15桁 → 14桁/17桁 に直す（実装は文字列長判定。`SHORTEST_FORMAT = "yyyyMMddHHmmss"` は14文字、`LONGEST_FORMAT` は17文字）
+- [x] `git diff` が上記2ファイルのコメント行だけであることを確認する
+- [x] `JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 mvn -o -q compile` が通ることを確認する
+- [x] コミット・push する
+
+**Completion criteria**:
+
+- 差分が2ファイルのコメント行のみ（コード行に差分が無い）
+- `mvn -o -q compile` 成功・`git status --short` 空・push 済み
+
+---
+
 ---
 
 # State
