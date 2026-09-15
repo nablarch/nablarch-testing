@@ -41,7 +41,7 @@ public class TestCaseInfo {
 
     /** CookieのLIST_MAP定義名 */
     protected static final String COOKIE_LIST_MAP = "cookie";
-    /** CookieのLIST_MAP定義名 */
+    /** クエリパラメータのLIST_MAP定義名 */
     protected static final String QUERYPARAMS_LIST_MAP = "queryParams";
 
     /** トークンを設定するかどうかを記述しているカラム名 */
