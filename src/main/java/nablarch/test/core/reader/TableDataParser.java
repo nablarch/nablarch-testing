@@ -60,15 +60,33 @@ public class TableDataParser extends GroupDataParsingTemplate<List<TableData>> {
     private static final Map<String, List<TableData>> CACHE = NablarchTestUtils.createLRUMap(8);
 
     @Override
-    void parse(String id) {
-        String key = directory + '/' + resource + '/' + targetDataType + '/' + id;
+    boolean cacheEnabled() {
+        return true;
+    }
+
+    /** キャッシュキー。データタイプを含めテーブル系の取得単位で一意にする。 */
+    private String cacheKey(String id) {
+        return directory + '/' + resource + '/' + targetDataType + '/' + id;
+    }
+
+    @Override
+    void prepareResult() {
+        result = new ArrayList<TableData>();
+    }
+
+    @Override
+    boolean tryLoadFromCache(String id) {
+        String key = cacheKey(id);
         if (CACHE.containsKey(key)) {
             result = CACHE.get(key);
-        } else {
-            result = new ArrayList<TableData>();
-            CACHE.put(key, result);
-            super.parse(id);
+            return true;
         }
+        return false;
+    }
+
+    @Override
+    void storeToCache(String id) {
+        CACHE.put(cacheKey(id), result);
     }
 
     /**

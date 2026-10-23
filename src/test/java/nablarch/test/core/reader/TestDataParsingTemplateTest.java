@@ -132,6 +132,45 @@ public class TestDataParsingTemplateTest {
         assertThat(result.size(), is(0));
     }
 
+    /**
+     * saveCache=true の場合、2 回目の parse でファイルを再読み込みしないこと（キャッシュヒット）。
+     * saveCache=false の場合、毎回ファイルを再読み込みすること（キャッシュを使わない）。
+     */
+    @Test
+    public void testSaveCacheControlsCaching() {
+        // Given: open 呼び出し回数を記録するリーダ
+        final int[] openCount = {0};
+        List<List<String>> lines = new ArrayList<List<String>>();
+        lines.add(Arrays.asList("LIST_MAP=id1"));
+        lines.add(Arrays.asList("key", "value"));
+        lines.add(Arrays.asList("a", "1"));
+        MockTestDataReader countingReader = new MockTestDataReader(lines) {
+            @Override
+            public void open(String path, String dataName) {
+                openCount[0]++;
+            }
+        };
+
+        // When: saveCache=true で 2 回 parse
+        ListMapParser parser1 = new ListMapParser(countingReader, Collections.<TestDataInterpreter>emptyList());
+        parser1.parse("dir", "resource1", "id1", true);
+        parser1.parse("dir", "resource1", "id1", true);
+
+        // Then: ファイルを開くのは 1 回だけ（2 回目はキャッシュヒット）
+        assertThat(openCount[0], is(1));
+
+        // Given: カウンタをリセット
+        openCount[0] = 0;
+
+        // When: saveCache=false で 2 回 parse
+        ListMapParser parser2 = new ListMapParser(countingReader, Collections.<TestDataInterpreter>emptyList());
+        parser2.parse("dir", "resource2", "id1", false);
+        parser2.parse("dir", "resource2", "id1", false);
+
+        // Then: キャッシュを使わないので毎回ファイルを開く
+        assertThat(openCount[0], is(2));
+    }
+
     @Test
     public void testClosedWhenExceptionOccurred() {
         final boolean[] closed = {false};

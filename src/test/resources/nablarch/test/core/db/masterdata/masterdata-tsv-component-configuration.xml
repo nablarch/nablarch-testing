@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+非Excel形式（YAML形式相当）のマスタデータファイルを投入するための設定。
+testDataParser のリーダをタブ区切りテキスト用のものに差し替えている。
+-->
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
+                         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./../../../../../component-configuration.xsd">
+
+  <import file="unit-test.xml"/>
+
+  <!-- testDataParser のリーダのみを差し替える（他のプロパティは unit-test.xml の定義と同じ） -->
+  <component name="testDataParser" class="nablarch.test.core.reader.BasicTestDataParser">
+    <property name="testDataReader">
+      <component class="nablarch.test.core.reader.TsvTestDataReader"/>
+    </property>
+    <property name="dbInfo" ref="dbInfo"/>
+    <property name="interpreters" ref="interpreters"/>
+    <property name="defaultValues">
+      <component class="nablarch.test.core.db.BasicDefaultValues"/>
+    </property>
+  </component>
+
+</component-configuration>

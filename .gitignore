@@ -85,3 +85,9 @@ buildNumber.properties
 !/.mvn/wrapper/maven-wrapper.jar
 
 http_dump/
+
+# JaCoCo coverage data
+jacoco.exec
+
+# Claude Code エージェントの一時 worktree（再生成可能）
+.claude/worktrees/
