@@ -41,7 +41,8 @@ public class AssertionTest extends AssertionTestSupport {
      * <p/>
      * YAML形式の{@code rows: []}はカラム名を書く場所が構造上無いため、必ずこの形になる。
      * 本テストが検知するのは「カラム名0件のときDBを読まずに0行として扱い、検証が必ずPASSする」
-     * という偽陰性である（{@code docs/pr75/docs/ntf-empty-table-assertion.md} 2章）。
+     * という偽陰性である。修正前の{@link nablarch.test.core.db.TableData#loadData()}は、
+     * カラム名が0件のときSQLを発行せず、実データを0行としていた。
      */
     @Test
     public void testAssertTableEqualsWithEmptyColumnNames() {

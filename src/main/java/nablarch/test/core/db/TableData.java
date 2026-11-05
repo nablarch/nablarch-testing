@@ -341,7 +341,8 @@ public class TableData implements Cloneable {
         // 取得対象カラムが1つも存在しない場合は、DBの全カラムを取得対象とする。
         // カラム名の宣言は「検証対象カラムの絞り込み」であって「検証するかどうか」の
         // スイッチではないため、カラム名が0件でもDBは読む。
-        // （docs/pr75/docs/ntf-empty-table-assertion.md 4.1）
+        // DBを読まずに0行として扱うと、DBに行が残っていてもassertTableEqualsが成功してしまう。
+        // YAML形式の rows: [] はカラム名を書く場所が無いため、YAML形式の0件の期待値は必ずこの経路を通る。
         if (colNames.length == 0) {
             colNames = dbInfo.getColumns(tableName);
         }
