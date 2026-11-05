@@ -8,7 +8,6 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -377,12 +376,7 @@ public class MockHttpRequest extends HttpRequest {
             }
         }
         if (!headers.containsKey("Content-Length")) {
-            // Content-Lengthはオクテット数で表す。パラメータ名はURLエンコードせずに
-            // 出力するため、名前がマルチバイト文字の場合は文字数と一致しない。
-            // 値のエンコードに合わせてUTF-8でのオクテット数を求める。
-            headers.put("Content-Length",
-                    String.valueOf(bodyBuffer.toString()
-                            .getBytes(StandardCharsets.UTF_8).length));
+            headers.put("Content-Length", String.valueOf(bodyBuffer.length())); //FIXME
         }
 
         Map<String, String> headers = this.getHeaderMap();

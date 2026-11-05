@@ -20,10 +20,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
- * テスト用の{@link Connection}実装クラス。<br/>
- * 全てのメソッドは何も行わず、{@code null}・{@code false}・{@code 0}のいずれかを返すだけである。
- * テストで必要となるメソッドだけを無名サブクラスでオーバーライドして使用する
- * （使用例:{@link EntityDependencyParserTest#testParseFail()}）。
+ * TODO write document comment.
  *
  * @author T.Kawasaki
  */
