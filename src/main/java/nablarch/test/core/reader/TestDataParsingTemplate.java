@@ -45,7 +45,10 @@ abstract class TestDataParsingTemplate<RET> {
     /** リソース名 */
     protected String resource;      // SUPPRESS CHECKSTYLE サブクラスに対してカプセル化が不要なため
 
-    /** 解析結果をキャッシュへ保存するか。{@code false} の場合はキャッシュへ一切書き込まない。 */
+    /**
+     * キャッシュを参照・保存するか。
+     * {@code false} の場合は、生テストデータのキャッシュ・解析結果のキャッシュのどちらも参照せず、書き込みもしない。
+     */
     private boolean saveCache = true;
 
     /**
@@ -126,15 +129,18 @@ abstract class TestDataParsingTemplate<RET> {
      * @param directory 読み込み元のディレクトリ
      * @param resource  リソース名称
      * @param id        ID
-     * @param saveCache  読み込んだファイルのデータをキャッシュに保存するか
+     * @param saveCache  キャッシュを参照・保存するか。{@code false} の場合はキャッシュを参照せず、ファイルを読み直す
      */
     public final void parse(String directory, String resource, String id, boolean saveCache) {
         this.directory = directory;
         this.resource = resource;
         this.saveCache = saveCache;
         String dataCacheKey = directory + '/' + resource;
-        if (!TEST_DATA_CACHE.containsKey(dataCacheKey)) {
-            // テストデータがキャッシュ上に存在しない場合は、テストデータをロードしキャッシュする。
+        if (saveCache && TEST_DATA_CACHE.containsKey(dataCacheKey)) {
+            testData = TEST_DATA_CACHE.get(dataCacheKey);
+        } else {
+            // テストデータがキャッシュ上に存在しない場合、またはキャッシュを使わない場合は、テストデータをロードする。
+            // キャッシュを使う場合だけ、ロードしたテストデータをキャッシュする。
             if (reader instanceof PoiXlsReader) {
                 ((PoiXlsReader) reader).setUseCache(saveCache);
             }
@@ -147,8 +153,6 @@ abstract class TestDataParsingTemplate<RET> {
             } finally {
                 reader.close();
             }
-        } else {
-            testData = TEST_DATA_CACHE.get(dataCacheKey);
         }
 
         try {

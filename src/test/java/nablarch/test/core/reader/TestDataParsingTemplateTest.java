@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -169,6 +170,61 @@ public class TestDataParsingTemplateTest {
 
         // Then: キャッシュを使わないので毎回ファイルを開く
         assertThat(openCount[0], is(2));
+    }
+
+    /**
+     * 同じリソースを saveCache=true で読んだ後に saveCache=false で読むと、
+     * 生テストデータのキャッシュ（TEST_DATA_CACHE）を参照せず、ファイルを読み直すこと。
+     */
+    @Test
+    public void testSaveCacheFalseDoesNotReferCacheStoredBySaveCacheTrue() {
+        // Given: open のたびに内容が変わるリーダ（n 回目の open で value 列に n を返す）
+        final int[] openCount = {0};
+        TestDataReader changingReader = new TestDataReader() {
+            private Iterator<List<String>> iterator;
+
+            @Override
+            public void open(String path, String dataName) {
+                openCount[0]++;
+                iterator = Arrays.<List<String>>asList(
+                        Arrays.asList("LIST_MAP=id1"),
+                        Arrays.asList("key", "value"),
+                        Arrays.asList("a", String.valueOf(openCount[0]))).iterator();
+            }
+
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public List<String> readLine() {
+                return iterator.hasNext() ? iterator.next() : null;
+            }
+
+            @Override
+            public boolean isResourceExisting(String basePath, String resourceName) {
+                return true;
+            }
+
+            @Override
+            public boolean isDataExisting(String basePath, String resourceName) {
+                return true;
+            }
+        };
+        String directory = getClass().getName();
+        String resource = "testSaveCacheFalseDoesNotReferCacheStoredBySaveCacheTrue";
+        ListMapParser cachedParser = new ListMapParser(changingReader, Collections.<TestDataInterpreter>emptyList());
+        cachedParser.parse(directory, resource, "id1", true);
+        assertThat(openCount[0], is(1));
+        assertThat(cachedParser.getResult().get(0).get("value"), is("1"));
+
+        // When: 同じリソースを saveCache=false で parse
+        ListMapParser notCachedParser = new ListMapParser(changingReader, Collections.<TestDataInterpreter>emptyList());
+        notCachedParser.parse(directory, resource, "id1", false);
+
+        // Then: ファイルを開き直し、キャッシュの値ではなく読み直した値を返す
+        assertThat(openCount[0], is(2));
+        assertThat(notCachedParser.getResult().get(0).get("value"), is("2"));
     }
 
     @Test
