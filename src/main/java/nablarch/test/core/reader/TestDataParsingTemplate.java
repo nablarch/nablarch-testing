@@ -16,6 +16,36 @@ import static nablarch.core.util.Builder.concat;
 /**
  * テストデータ解析用のテンプレートクラス。
  *
+ * <h2>キャッシュの構成</h2>
+ * <p>
+ * キャッシュは2段で構成する。
+ * </p>
+ * <ul>
+ *   <li>生テストデータのキャッシュ（{@code TEST_DATA_CACHE}）: 本クラスが持つ。
+ *       リーダで読み込み、コメント・空行を除いてインタープリタで変換した行データを、
+ *       {@code ディレクトリ/リソース名} をキーに保持する。</li>
+ *   <li>解析結果のキャッシュ: サブクラスが持つ。行データから組み立てた解析結果を保持する。</li>
+ * </ul>
+ * <p>
+ * {@link #parse(String, String, String, boolean)} の {@code saveCache} が {@code false} の場合は、
+ * どちらのキャッシュも参照せず、保存もしない。この経路は、本体の static キャッシュを参照も汚染もせずに
+ * テストデータを読みたい場合に使う。例えば、Excel→YAML 変換ツール（nablarch-testing-converter）が
+ * 本体のパーサで Excel を読む場合や、テスト実行中に更新されたメッセージを読み直す
+ * {@link BasicTestDataParser#getMessageWithoutCache(String, String, DataType, String)} である。
+ * </p>
+ *
+ * <h2>解析結果のキャッシュを持つサブクラスの実装規約</h2>
+ * <ul>
+ *   <li>{@link #cacheEnabled()} で {@code true} を返す。</li>
+ *   <li>{@link #prepareResult()}・{@link #tryLoadFromCache(String)}・{@link #storeToCache(String)} を実装する。
+ *       本クラスの既定実装は、キャッシュを持たないサブクラス向けのもので、キャッシュを持つサブクラスからは呼ばれない。</li>
+ *   <li>既定の流れ（{@link #cachedParse(String)}）では、{@link #storeToCache(String)} を
+ *       {@link #doParse(String)} より前に呼ぶ。空の結果リストの参照を先にキャッシュへ登録し、
+ *       {@link #doParse(String)} がその同じリストへ要素を追加するためである。</li>
+ *   <li>独自のキャッシュ戦略を持つ場合は、{@link #cachedParse(String)} を override してよい
+ *       （例: {@link DataFileParser}）。</li>
+ * </ul>
+ *
  * @param <RET> 解析後の型
  * @author T.Kawasaki
  */
@@ -30,7 +60,7 @@ abstract class TestDataParsingTemplate<RET> {
     /** 解析対象のデータ型 */
     private final DataType targetType;
 
-    /** テストデータのキャッシュ */
+    /** 生テストデータのキャッシュ（キャッシュの構成はクラスの Javadoc を参照） */
     private static final Map<String, List<List<String>>> TEST_DATA_CACHE = NablarchTestUtils.createLRUMap(8);
 
     /** テストデータ */
@@ -221,9 +251,8 @@ abstract class TestDataParsingTemplate<RET> {
      * サブクラスは本メソッドを override してよい（その場合 {@link #doParse(String)} を直接呼ぶ）。
      *
      * <p>
-     * 標準フローでは {@link #storeToCache(String)} を {@link #doParse(String)} より前に呼ぶ。
-     * これは「空の結果リストの参照をキャッシュへ先に登録し、doParse が同一参照へ要素を追加する」
-     * 参照共有パターンによるもの。doParse が例外で中断した場合はキャッシュに空リストが残るが、
+     * 標準フローでは {@link #storeToCache(String)} を {@link #doParse(String)} より前に呼ぶ
+     * （理由はクラスの Javadoc の実装規約を参照）。doParse が例外で中断した場合はキャッシュに空リストが残るが、
      * 次回アクセス時には空リストが返却されるため再解析よりも安全に失敗する。
      * </p>
      *
@@ -267,7 +296,7 @@ abstract class TestDataParsingTemplate<RET> {
      * @return キャッシュにヒットした場合 {@code true}
      */
     boolean tryLoadFromCache(String id) {
-        // 既定実装。cacheEnabled() が false の既定ではここに到達しない（キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため）。
+        // 既定実装。cacheEnabled() が false の既定ではここに到達しない（クラスの Javadoc の実装規約を参照）。
         return false;
     }
 
@@ -278,7 +307,7 @@ abstract class TestDataParsingTemplate<RET> {
      * @param id ID
      */
     void storeToCache(String id) {
-        // 既定はキャッシュ無し。cacheEnabled() が false の既定ではここに到達しない（キャッシュを持つサブクラスは本メソッドを必ず実装する規約のため）。
+        // 既定はキャッシュ無し。cacheEnabled() が false の既定ではここに到達しない（クラスの Javadoc の実装規約を参照）。
     }
 
     /**
