@@ -345,6 +345,13 @@ public class TableData implements Cloneable {
         // YAML形式の rows: [] はカラム名を書く場所が無いため、YAML形式の0件の期待値は必ずこの経路を通る。
         if (colNames.length == 0) {
             colNames = dbInfo.getColumns(tableName);
+            if (colNames.length == 0) {
+                // DbInfo#getColumns は、テーブルが存在しない場合も空の配列を返す。
+                // そのまま SELECT 文を組み立てるとカラムの無い不正な SQL になり、
+                // データベースごとに異なる構文エラーで失敗するため、原因が分かる例外にする。
+                throw new IllegalStateException(
+                        "table was not found or has no columns. table=[" + tableName + "]");
+            }
         }
 
         final String sql = createSelectStatement(tableName, colNames, getPrimaryKeys());
