@@ -89,33 +89,32 @@ public abstract class DataFileParser<T extends DataFile> extends GroupDataParsin
     /** キャッシュ(同一データを複数回読み込まないようにするため) */
     private static Map<String, List<? extends DataFile>> cache = NablarchTestUtils.createLRUMap(8);
 
-    @Override
-    boolean cacheEnabled() {
-        return true;
-    }
-
     /**
      * {@inheritDoc}
-     * <p>
-     * 本クラスは独自のキャッシュ戦略を持つ。キャッシュにヒットしても、取得先で内容を
-     * 書き換えられる可能性があるため値は再利用せず再構築する。ただしデータが存在しない
-     * （空の）場合のみ、不要な検索処理を省くためキャッシュ値をそのまま使う。
-     * </p>
+     *
+     * キャッシュを参照・保存しない場合（{@link #isSaveCache()} が {@code false}）は、
+     * キャッシュを参照も保存もせずに、親クラスにテストデータの解析処理を委譲する。
      */
     @Override
-    void cachedParse(String id) {
+    void parse(String id) {
+        if (!isSaveCache()) {
+            super.parse(id);
+            return;
+        }
         String key = directory + '/' + resource + '/' + targetType + '/' + id;
         if (cache.containsKey(key)) {
             @SuppressWarnings("unchecked")
             List<T> temp = (List<T>) cache.get(key);
+            // キャッシュを使いたいが、取得した先で内容を書き換えられてしまうのでキャッシュの値は使わず再度オブジェクトを構築する。
+            // ただし、データが存在しない場合には、不必要なデータの検索処理が行われないため、パフォーマンスが向上する。
             if (temp.isEmpty()) {
                 result = temp;
             } else {
-                doParse(id);
+                super.parse(id);
             }
         } else {
             cache.put(key, result);
-            doParse(id);
+            super.parse(id);
         }
     }
 

@@ -38,35 +38,25 @@ class ListMapParser extends SingleDataParsingTemplate<List<Map<String, String>>>
      *
      * 本クラスでは、パフォーマンス対策で一度読み込んだデータはキャッシュを行う。
      * 同一のリソースに対して、2回以降取得要求があった場合にはキャッシュからデータを返却する。
+     * キャッシュにデータが存在しない場合（1回目）には、親クラスにテストデータの解析処理を委譲する。
+     * キャッシュを参照・保存しない場合（{@link #isSaveCache()} が {@code false}）は、
+     * キャッシュを参照も保存もせずに、親クラスにテストデータの解析処理を委譲する。
      */
     @Override
-    boolean cacheEnabled() {
-        return true;
-    }
-
-    /** キャッシュキー。 */
-    private String cacheKey(String id) {
-        return directory + '/' + resource + '/' + id;
-    }
-
-    @Override
-    void prepareResult() {
-        result = new ArrayList<Map<String, String>>();
-    }
-
-    @Override
-    boolean tryLoadFromCache(String id) {
-        String key = cacheKey(id);
+    void parse(String id) {
+        if (!isSaveCache()) {
+            result = new ArrayList<Map<String, String>>();
+            super.parse(id);
+            return;
+        }
+        String key = directory + '/' + resource + '/' + id;
         if (CACHE.containsKey(key)) {
             result = CACHE.get(key);
-            return true;
+        } else {
+            result = new ArrayList<Map<String, String>>();
+            CACHE.put(key, result);
+            super.parse(id);
         }
-        return false;
-    }
-
-    @Override
-    void storeToCache(String id) {
-        CACHE.put(cacheKey(id), result);
     }
 
     /**

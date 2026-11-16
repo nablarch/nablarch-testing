@@ -16,35 +16,38 @@ import static nablarch.core.util.Builder.concat;
 /**
  * テストデータ解析用のテンプレートクラス。
  *
- * <h2>キャッシュの構成</h2>
+ * <h2>キャッシュ</h2>
  * <p>
- * キャッシュは2段で構成する。
+ * 同じテストデータを何度も読み込まないよう、キャッシュを2段で持つ。
  * </p>
  * <ul>
  *   <li>生テストデータのキャッシュ（{@code TEST_DATA_CACHE}）: 本クラスが持つ。
  *       リーダで読み込み、コメント・空行を除いてインタープリタで変換した行データを、
  *       {@code ディレクトリ/リソース名} をキーに保持する。</li>
- *   <li>解析結果のキャッシュ: サブクラスが持つ。行データから組み立てた解析結果を保持する。</li>
+ *   <li>解析結果のキャッシュ: 一部のサブクラスが持つ。行データから組み立てた解析結果を、
+ *       {@code ディレクトリ/リソース名} にデータタイプやIDを加えたキーで保持する。</li>
  * </ul>
  * <p>
- * {@link #parse(String, String, String, boolean)} の {@code saveCache} が {@code false} の場合は、
- * どちらのキャッシュも参照せず、保存もしない。この経路は、本体の static キャッシュを参照も汚染もせずに
- * テストデータを読みたい場合に使う。例えば、Excel→YAML 変換ツール（nablarch-testing-converter）が
- * 本体のパーサで Excel を読む場合や、テスト実行中に更新されたメッセージを読み直す
- * {@link BasicTestDataParser#getMessageWithoutCache(String, String, DataType, String)} である。
+ * どちらのキャッシュも、キーに読み込み時の設定（リーダ、インタープリタ、データベースの情報など）を含まず、
+ * 読み込んだあとにファイルが更新されることも想定していない。そのため、次の場合はキャッシュを使わずに読む必要がある。
+ * </p>
+ * <ul>
+ *   <li>キャッシュに載っているものと異なる設定で、同じリソースを読む場合。
+ *       キャッシュを使うと、別の設定で読んだ結果を受け取ってしまう。</li>
+ *   <li>実行中に更新されうるテストデータを読み直す場合（例えば、同期送信のモックアップが、
+ *       更新されたテストデータを読み込み直す場合）。キャッシュを使うと、更新前の内容を受け取ってしまう。</li>
+ * </ul>
+ * <p>
+ * これらの場合は、{@link #parse(String, String, String, boolean)} の {@code saveCache} に {@code false} を指定する。
+ * どちらのキャッシュも参照せず、保存もしない。
  * </p>
  *
- * <h2>解析結果のキャッシュを持つサブクラスの実装規約</h2>
- * <ul>
- *   <li>{@link #cacheEnabled()} で {@code true} を返す。</li>
- *   <li>{@link #prepareResult()}・{@link #tryLoadFromCache(String)}・{@link #storeToCache(String)} を実装する。
- *       本クラスの既定実装は、キャッシュを持たないサブクラス向けのもので、キャッシュを持つサブクラスからは呼ばれない。</li>
- *   <li>既定の流れ（{@link #cachedParse(String)}）では、{@link #storeToCache(String)} を
- *       {@link #doParse(String)} より前に呼ぶ。空の結果リストの参照を先にキャッシュへ登録し、
- *       {@link #doParse(String)} がその同じリストへ要素を追加するためである。</li>
- *   <li>独自のキャッシュ戦略を持つ場合は、{@link #cachedParse(String)} を override してよい
- *       （例: {@link DataFileParser}）。</li>
- * </ul>
+ * <h2>解析結果のキャッシュを持つサブクラス</h2>
+ * <p>
+ * {@link #parse(String)} を上書きし、キャッシュを参照・保存したうえで、必要なときだけ本クラスの
+ * {@link #parse(String)} で解析する。{@link #isSaveCache()} が {@code false} のときは、
+ * キャッシュを参照も保存もせずに、本クラスの {@link #parse(String)} で解析する。
+ * </p>
  *
  * @param <RET> 解析後の型
  * @author T.Kawasaki
@@ -60,7 +63,7 @@ abstract class TestDataParsingTemplate<RET> {
     /** 解析対象のデータ型 */
     private final DataType targetType;
 
-    /** 生テストデータのキャッシュ（キャッシュの構成はクラスの Javadoc を参照） */
+    /** 生テストデータのキャッシュ（クラスの Javadoc を参照） */
     private static final Map<String, List<List<String>>> TEST_DATA_CACHE = NablarchTestUtils.createLRUMap(8);
 
     /** テストデータ */
@@ -77,7 +80,7 @@ abstract class TestDataParsingTemplate<RET> {
 
     /**
      * キャッシュを参照・保存するか。
-     * {@code false} の場合は、生テストデータのキャッシュ・解析結果のキャッシュのどちらも参照せず、書き込みもしない。
+     * {@code false} の場合は、生テストデータのキャッシュ・解析結果のキャッシュのどちらも参照せず、保存もしない。
      */
     private boolean saveCache = true;
 
@@ -160,6 +163,7 @@ abstract class TestDataParsingTemplate<RET> {
      * @param resource  リソース名称
      * @param id        ID
      * @param saveCache  キャッシュを参照・保存するか。{@code false} の場合はキャッシュを参照せず、ファイルを読み直す
+     *                   （どのような場合に {@code false} を指定するかは、クラスの Javadoc を参照）
      */
     public final void parse(String directory, String resource, String id, boolean saveCache) {
         this.directory = directory;
@@ -224,98 +228,24 @@ abstract class TestDataParsingTemplate<RET> {
     }
 
     /**
-     * 解析を実行する。
+     * キャッシュを参照・保存するかを返す。
      * <p>
-     * キャッシュを持つサブクラス（{@code cacheEnabled() == true}）の場合、
-     * {@code saveCache} が {@code true} のときのみキャッシュへの保存・参照を行う。
-     * {@code saveCache} が {@code false}（変換ツール等のキャッシュ抑止経路）、
-     * またはキャッシュを持たないサブクラスの場合は、キャッシュを介さず直接解析する。
+     * 解析結果のキャッシュを持つサブクラスは、{@code false} の場合にキャッシュを参照も保存もしない
+     * （クラスの Javadoc を参照）。
      * </p>
+     *
+     * @return キャッシュを参照・保存する場合 {@code true}
+     */
+    final boolean isSaveCache() {
+        return saveCache;
+    }
+
+    /**
+     * 解析を実行する。
      *
      * @param id ID
      */
     void parse(String id) {
-        if (!cacheEnabled() || !saveCache) {
-            // キャッシュを持たない、またはキャッシュ抑止経路: 直接解析する。
-            prepareResult();
-            doParse(id);
-            return;
-        }
-        cachedParse(id);
-    }
-
-    /**
-     * キャッシュ経路の解析。{@code cacheEnabled() == true} かつ {@code saveCache == true}
-     * のときに呼ばれる。既定はサブクラスが {@link #tryLoadFromCache(String)}／
-     * {@link #storeToCache(String)} を実装する標準フローだが、独自のキャッシュ戦略を持つ
-     * サブクラスは本メソッドを override してよい（その場合 {@link #doParse(String)} を直接呼ぶ）。
-     *
-     * <p>
-     * 標準フローでは {@link #storeToCache(String)} を {@link #doParse(String)} より前に呼ぶ
-     * （理由はクラスの Javadoc の実装規約を参照）。doParse が例外で中断した場合はキャッシュに空リストが残るが、
-     * 次回アクセス時には空リストが返却されるため再解析よりも安全に失敗する。
-     * </p>
-     *
-     * @param id ID
-     */
-    void cachedParse(String id) {
-        if (!tryLoadFromCache(id)) {
-            prepareResult();
-            storeToCache(id);
-            doParse(id);
-        }
-    }
-
-    /**
-     * このサブクラスが解析結果の静的キャッシュを持つかを返す。
-     * <p>
-     * キャッシュを持つサブクラスは {@code true} を返し、
-     * {@link #tryLoadFromCache(String)}・{@link #storeToCache(String)}・
-     * {@link #prepareResult()} を実装する。既定はキャッシュ無し（{@code false}）。
-     * </p>
-     *
-     * @return キャッシュを持つ場合 {@code true}
-     */
-    boolean cacheEnabled() {
-        return false;
-    }
-
-    /**
-     * 解析結果フィールドを空の状態に初期化する。
-     * <p>キャッシュを持つサブクラスが実装する。既定は何もしない。</p>
-     */
-    void prepareResult() {
-        // キャッシュを持たないサブクラスは onTargetTypeFound 等で result を構築するため何もしない。
-    }
-
-    /**
-     * 指定 ID の解析結果がキャッシュに存在すれば結果フィールドへ設定する。
-     * <p>キャッシュを持つサブクラスが実装する。既定は常に未ヒット。</p>
-     *
-     * @param id ID
-     * @return キャッシュにヒットした場合 {@code true}
-     */
-    boolean tryLoadFromCache(String id) {
-        // 既定実装。cacheEnabled() が false の既定ではここに到達しない（クラスの Javadoc の実装規約を参照）。
-        return false;
-    }
-
-    /**
-     * 現在の結果フィールドを指定 ID のキーでキャッシュへ保存する。
-     * <p>キャッシュを持つサブクラスが実装する。既定は何もしない。</p>
-     *
-     * @param id ID
-     */
-    void storeToCache(String id) {
-        // 既定はキャッシュ無し。cacheEnabled() が false の既定ではここに到達しない（クラスの Javadoc の実装規約を参照）。
-    }
-
-    /**
-     * テストデータを実際に走査して結果を組み立てる（構造解析の本体）。
-     *
-     * @param id ID
-     */
-    final void doParse(String id) {
         boolean nowReading = false;   // データ行読み込み中か
         List<String> line;
         while ((line = readLine()) != null) {
