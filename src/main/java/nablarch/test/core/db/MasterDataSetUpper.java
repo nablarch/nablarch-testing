@@ -1,6 +1,8 @@
 package nablarch.test.core.db;
 
 import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.repository.di.ComponentDefinitionLoader;
 import nablarch.core.repository.di.DiContainer;
@@ -31,6 +33,9 @@ import static nablarch.core.util.Builder.concat;
  * @author T.Kawasaki
  */
 public class MasterDataSetUpper {
+
+    /** ロガー */
+    private static final Logger LOGGER = LoggerManager.get(MasterDataSetUpper.class);
 
     /** マスタデータファイルのパスのList */
     private final List<File> masterDataFiles;
@@ -118,7 +123,17 @@ public class MasterDataSetUpper {
     private List<TableData> getAllTableDataInFiles(List<File> files) {
         List<TableData> all = new ArrayList<TableData>();
         for (File file : files) {
-            all.addAll(getAllTableData(file));
+            List<TableData> tables = getAllTableData(file);
+            if (tables.isEmpty()) {
+                // ファイルの形式は拡張子で、読み込むパーサはコンポーネント設定で別々に決まるため、
+                // 両者が食い違うと例外にならずに0件になる（例: Excel形式のファイルにYAML形式用のパーサを設定した場合）。
+                // 気付けるよう警告を出す。
+                LOGGER.logWarn(concat(
+                        "no table data was read from the master data file. ",
+                        "check that the testDataParser supports the format and extension of the file. ",
+                        "file=[", file.getPath(), "]"));
+            }
+            all.addAll(tables);
         }
         return all;
     }

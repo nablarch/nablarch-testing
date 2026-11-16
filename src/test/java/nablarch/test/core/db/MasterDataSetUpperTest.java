@@ -1,5 +1,6 @@
 package nablarch.test.core.db;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -19,6 +20,7 @@ import nablarch.test.core.reader.TestDataParser;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
+import nablarch.test.support.log.app.OnMemoryLogWriter;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -236,6 +238,64 @@ public class MasterDataSetUpperTest {
             // @ClassRule のリポジトリへ差し込んだため、既定の設定に戻す。
             RepositoryInitializer.recreateRepository("unit-test.xml");
         }
+    }
+
+    /**
+     * マスタデータファイルから読めたテーブルが0件の場合、警告のログが出力されること。
+     * <p>
+     * ファイルの形式とパーサが食い違う場合（例: Excel形式のファイルにYAML形式用のパーサを設定した場合）、
+     * パーサは例外にならず空のリストを返す。その状態を、どのシートにも応答しないパーサで再現する。
+     * </p>
+     */
+    @Test
+    public void testWarnWhenNoTableDataWasRead() {
+        // Given: どのリソースに対しても空のリストを返すパーサ（Mockito の既定の戻り値）
+        repositoryResource.addComponent("testDataParser", mock(TestDataParser.class));
+        OnMemoryLogWriter.clear();
+
+        try {
+            // When
+            File masterDataFile = new File("src/test/java/MASTER_DATA.xls");
+            new MasterDataSetUpper(Arrays.asList(masterDataFile), null).setUpMasterData();
+
+            // Then: ファイル名を含む警告が出力されている
+            List<String> warnings = findWarnings();
+            assertThat(warnings.size(), is(1));
+            assertThat(warnings.get(0), containsString("file=[" + masterDataFile.getPath() + "]"));
+        } finally {
+            // @ClassRule のリポジトリへ差し込んだため、既定の設定に戻す。
+            RepositoryInitializer.recreateRepository("unit-test.xml");
+        }
+    }
+
+    /** マスタデータファイルからテーブルを読めた場合、警告のログは出力されないこと。 */
+    @Test
+    public void testNoWarnWhenTableDataWasRead() {
+        // Given
+        VariousDbTestHelper.delete(TestTable.class);
+        OnMemoryLogWriter.clear();
+
+        // When
+        new MasterDataSetUpper(Arrays.asList(new File("src/test/java/MASTER_DATA.xls")), null).setUpMasterData();
+
+        // Then
+        assertThat(VariousDbTestHelper.findAll(TestTable.class).isEmpty(), is(false));
+        assertThat(findWarnings().isEmpty(), is(true));
+    }
+
+    /**
+     * 読めたテーブルが0件のときの警告のログを取得する。
+     *
+     * @return 警告のログ
+     */
+    private static List<String> findWarnings() {
+        List<String> warnings = new ArrayList<String>();
+        for (String message : OnMemoryLogWriter.getMessages("writer.memlog")) {
+            if (message.contains("WARN") && message.contains("no table data was read from the master data file.")) {
+                warnings.add(message);
+            }
+        }
+        return warnings;
     }
 
     private void doSetUp() {
