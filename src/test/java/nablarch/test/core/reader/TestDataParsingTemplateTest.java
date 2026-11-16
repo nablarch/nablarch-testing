@@ -227,6 +227,141 @@ public class TestDataParsingTemplateTest {
         assertThat(notCachedParser.getResult().get(0).get("value"), is("2"));
     }
 
+    /**
+     * {@link TableDataParser} で同じリソースを saveCache=true で読んだ後に saveCache=false で読むと、
+     * 解析結果のキャッシュを参照せず、ファイルを読み直すこと。
+     */
+    @Test
+    public void testTableDataParserSaveCacheFalseDoesNotReferCache() {
+        // Given: n 回目の open でテーブル名 TABLE_n のブロックを返すリーダ
+        ChangingReader reader = new ChangingReader() {
+            @Override
+            List<List<String>> linesFor(int openCount) {
+                return Arrays.<List<String>>asList(
+                        Arrays.asList("EXPECTED_TABLE=TABLE_" + openCount),
+                        Arrays.asList("ID"));
+            }
+        };
+        String directory = getClass().getName();
+        String resource = "testTableDataParserSaveCacheFalseDoesNotReferCache";
+        TableDataParser cachedParser = newTableDataParser(reader);
+        cachedParser.parse(directory, resource, "", true);
+        assertThat(cachedParser.getResult().get(0).getTableName(), is("TABLE_1"));
+
+        // When: 同じリソースを saveCache=false で parse
+        TableDataParser notCachedParser = newTableDataParser(reader);
+        notCachedParser.parse(directory, resource, "", false);
+
+        // Then: ファイルを開き直し、キャッシュの値ではなく読み直した値を返す
+        assertThat(reader.openCount, is(2));
+        assertThat(notCachedParser.getResult().size(), is(1));
+        assertThat(notCachedParser.getResult().get(0).getTableName(), is("TABLE_2"));
+
+        // Then: saveCache=false で読んだ結果はキャッシュに保存されていない（saveCache=true では 1 回目の結果が返る）
+        TableDataParser cachedAgainParser = newTableDataParser(reader);
+        cachedAgainParser.parse(directory, resource, "", true);
+        assertThat(reader.openCount, is(2));
+        assertThat(cachedAgainParser.getResult().get(0).getTableName(), is("TABLE_1"));
+    }
+
+    /**
+     * {@link DataFileParser}（{@link FixedLengthFileParser}）で同じリソースを saveCache=true で読んだ後に
+     * saveCache=false で読むと、解析結果のキャッシュを参照せず、ファイルを読み直すこと。
+     * <p>
+     * {@link DataFileParser} は、キャッシュにヒットしても値は再利用せずに解析し直し、
+     * 結果が空の場合だけキャッシュの値を使う。そのため、1 回目は対象のブロックが無く（空の結果がキャッシュされる）、
+     * 2 回目に対象のブロックがある場合で確かめる。
+     * </p>
+     */
+    @Test
+    public void testDataFileParserSaveCacheFalseDoesNotReferCache() {
+        // Given: 1 回目の open では対象のブロックが無く、2 回目以降はファイル名 file_n.dat のブロックを返すリーダ
+        ChangingReader reader = new ChangingReader() {
+            @Override
+            List<List<String>> linesFor(int openCount) {
+                if (openCount == 1) {
+                    return Arrays.<List<String>>asList(
+                            Arrays.asList("LIST_MAP=other"),
+                            Arrays.asList("key"),
+                            Arrays.asList("value"));
+                }
+                return Arrays.<List<String>>asList(
+                        Arrays.asList("EXPECTED_FIXED=file_" + openCount + ".dat"),
+                        Arrays.asList("data", "name"),
+                        Arrays.asList("", "半角英数字"),
+                        Arrays.asList("", "5"),
+                        Arrays.asList("", "abc"));
+            }
+        };
+        String directory = getClass().getName();
+        String resource = "testDataFileParserSaveCacheFalseDoesNotReferCache";
+        FixedLengthFileParser cachedParser = newFixedLengthFileParser(reader);
+        cachedParser.parse(directory, resource, "", true);
+        assertThat(cachedParser.getResult().isEmpty(), is(true));
+
+        // When: 同じリソースを saveCache=false で parse
+        FixedLengthFileParser notCachedParser = newFixedLengthFileParser(reader);
+        notCachedParser.parse(directory, resource, "", false);
+
+        // Then: キャッシュされた空の結果ではなく、ファイルを開き直して読んだ値を返す
+        assertThat(reader.openCount, is(2));
+        assertThat(notCachedParser.getResult().size(), is(1));
+        assertThat(notCachedParser.getResult().get(0).getPath(), is("file_2.dat"));
+    }
+
+    private static TableDataParser newTableDataParser(TestDataReader reader) {
+        return new TableDataParser(reader, Collections.<TestDataInterpreter>emptyList(),
+                new GenericJdbcDbInfo(), new BasicDefaultValues(), DataType.EXPECTED_TABLE_DATA);
+    }
+
+    private static FixedLengthFileParser newFixedLengthFileParser(TestDataReader reader) {
+        return new FixedLengthFileParser(reader, Collections.<TestDataInterpreter>emptyList(),
+                DataType.EXPECTED_FIXED);
+    }
+
+    /** open のたびに、開いた回数に応じた内容を返すリーダ。 */
+    private abstract static class ChangingReader implements TestDataReader {
+
+        /** open された回数 */
+        int openCount = 0;
+
+        /** 読み込み中の行 */
+        private Iterator<List<String>> iterator;
+
+        /**
+         * n 回目の open で返す行を作る。
+         *
+         * @param openCount open された回数（1 始まり）
+         * @return 行
+         */
+        abstract List<List<String>> linesFor(int openCount);
+
+        @Override
+        public void open(String path, String dataName) {
+            openCount++;
+            iterator = linesFor(openCount).iterator();
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public List<String> readLine() {
+            return iterator.hasNext() ? iterator.next() : null;
+        }
+
+        @Override
+        public boolean isResourceExisting(String basePath, String resourceName) {
+            return true;
+        }
+
+        @Override
+        public boolean isDataExisting(String basePath, String resourceName) {
+            return true;
+        }
+    }
+
     @Test
     public void testClosedWhenExceptionOccurred() {
         final boolean[] closed = {false};
