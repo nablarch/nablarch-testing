@@ -107,7 +107,13 @@ public interface TestDataParser {
     void setInterpreters(List<TestDataInterpreter> interpreter);
 
     /**
-     * 指定されたパスとリソース名に該当するExcelファイルが存在するか判定する。
+     * 指定されたパスとリソース名に該当するデータコンテナが存在するか判定する。
+     * <p>
+     * データコンテナは、リソース名の最後の{@code "/"}より前の部分を名前とする、テストデータの入れ物である
+     * （Excel形式では{@code <basePath>/<名前>.xls}または{@code .xlsx}のファイル）。
+     * データコンテナ内のデータセクション（Excel形式ではシート）が存在するかは判定しない。
+     * </p>
+     *
      * @param basePath パス
      * @param resourceName リソース名
      * @return 存在する場合、真

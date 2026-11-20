@@ -85,3 +85,6 @@ buildNumber.properties
 !/.mvn/wrapper/maven-wrapper.jar
 
 http_dump/
+
+# JaCoCo coverage data
+jacoco.exec

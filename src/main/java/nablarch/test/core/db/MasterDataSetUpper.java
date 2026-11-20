@@ -1,6 +1,8 @@
 package nablarch.test.core.db;
 
 import nablarch.core.db.connection.TransactionManagerConnection;
+import nablarch.core.log.Logger;
+import nablarch.core.log.LoggerManager;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.repository.di.ComponentDefinitionLoader;
 import nablarch.core.repository.di.DiContainer;
@@ -31,6 +33,9 @@ import static nablarch.core.util.Builder.concat;
  * @author T.Kawasaki
  */
 public class MasterDataSetUpper {
+
+    /** ロガー */
+    private static final Logger LOGGER = LoggerManager.get(MasterDataSetUpper.class);
 
     /** マスタデータファイルのパスのList */
     private final List<File> masterDataFiles;
@@ -118,7 +123,17 @@ public class MasterDataSetUpper {
     private List<TableData> getAllTableDataInFiles(List<File> files) {
         List<TableData> all = new ArrayList<TableData>();
         for (File file : files) {
-            all.addAll(getAllTableData(file));
+            List<TableData> tables = getAllTableData(file);
+            if (tables.isEmpty()) {
+                // ファイルの形式は拡張子で、読み込むパーサはコンポーネント設定で別々に決まるため、
+                // 両者が食い違うと例外にならずに0件になる（例: Excel形式のファイルにYAML形式用のパーサを設定した場合）。
+                // 気付けるよう警告を出す。
+                LOGGER.logWarn(concat(
+                        "no table data was read from the master data file. ",
+                        "check that the testDataParser supports the format and extension of the file. ",
+                        "file=[", file.getPath(), "]"));
+            }
+            all.addAll(tables);
         }
         return all;
     }
@@ -176,22 +191,50 @@ public class MasterDataSetUpper {
 
     /**
      * 全テーブルデータを取得する。<br/>
-     * マスタデータファイルから、全シートを走査しテーブルデータを取得する。
+     * Excel形式（{@code .xls}/{@code .xlsx}）のマスタデータファイルの場合は、全シートを走査しテーブルデータを取得する。
+     * それ以外の形式（YAML形式等）の場合は、ファイル全体を1リソースとしてテーブルデータを取得する。
      *
      * @param masterDataFile マスタデータファイル
      * @return マスタデータファイル内の全テーブルデータ
      */
     List<TableData> getAllTableData(File masterDataFile) {
+        String dir = getMasterDataDir(masterDataFile);
+        String fileNameWithoutSuffix = getMasterFileNameWithoutSuffix(masterDataFile);
+        TestDataParser parser = SystemRepository.get("testDataParser");
+
+        if (!isExcelFile(masterDataFile)) {
+            // Excel形式以外はシートの概念が無いため、ファイル全体を1リソースとして問い合わせる。
+            // 拡張子はリーダ側で付与されるため、拡張子を除いた名前を渡す。
+            return new ArrayList<TableData>(parser.getSetupTableData(dir, fileNameWithoutSuffix));
+        }
+
         Set<String> sheets = PoiXlsReader.getSheetNames(masterDataFile);
         List<TableData> allTables = new ArrayList<TableData>();
-        String dir = getMasterDataDir(masterDataFile);
-        TestDataParser parser = SystemRepository.get("testDataParser");
         for (String sheet : sheets) {
-            String resourceName = concat(getMasterFileNameWithoutSuffix(masterDataFile), "/", sheet);
+            String resourceName = concat(fileNameWithoutSuffix, "/", sheet);
             List<TableData> tables = parser.getSetupTableData(dir, resourceName);
             allTables.addAll(tables);
         }
         return allTables;
+    }
+
+    /** Excel形式と判定する拡張子（{@link PoiXlsReader}が許容するファイル名と同じ定義） */
+    private static final List<String> EXCEL_EXTENSIONS = Arrays.asList("xls", "xlsx");
+
+    /**
+     * マスタデータファイルがExcel形式であるか判定する。
+     *
+     * @param masterDataFile マスタデータファイル
+     * @return Excel形式であればtrue
+     */
+    private boolean isExcelFile(File masterDataFile) {
+        String name = masterDataFile.getName();
+        int dotPosition = name.lastIndexOf('.');
+        if (dotPosition < 0) {
+            // 拡張子のないファイルはExcel形式とみなさない
+            return false;
+        }
+        return EXCEL_EXTENSIONS.contains(name.substring(dotPosition + 1));
     }
 
     /**

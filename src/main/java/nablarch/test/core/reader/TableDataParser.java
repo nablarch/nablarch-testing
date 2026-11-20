@@ -59,8 +59,20 @@ public class TableDataParser extends GroupDataParsingTemplate<List<TableData>> {
     /** キャッシュ(同一データを複数回読み込まないようにするため) */
     private static final Map<String, List<TableData>> CACHE = NablarchTestUtils.createLRUMap(8);
 
+    /**
+     * {@inheritDoc}
+     *
+     * 本クラスでは、パフォーマンス対策で一度読み込んだデータはキャッシュを行う。
+     * キャッシュを参照・保存しない場合（{@link #isSaveCache()} が {@code false}）は、
+     * キャッシュを参照も保存もせずに、親クラスにテストデータの解析処理を委譲する。
+     */
     @Override
     void parse(String id) {
+        if (!isSaveCache()) {
+            result = new ArrayList<TableData>();
+            super.parse(id);
+            return;
+        }
         String key = directory + '/' + resource + '/' + targetDataType + '/' + id;
         if (CACHE.containsKey(key)) {
             result = CACHE.get(key);

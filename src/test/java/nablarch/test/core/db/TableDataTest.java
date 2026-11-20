@@ -144,6 +144,28 @@ public class TableDataTest {
     }
 
     /**
+     * カラム名を指定せずに存在しないテーブルを読み込んだ場合、
+     * テーブルが無いことを示す例外が送出されること。
+     * <p>
+     * カラム名が0件の場合はDBの全カラムを取得対象とするが、存在しないテーブルでは
+     * {@link DbInfo#getColumns(String)} が空の配列を返す。カラムの無いSQLを発行せずに、
+     * テーブル名を含む例外にすること。
+     * </p>
+     */
+    @Test
+    public void testLoadDataTableNotFound() {
+        TableData table = new TableData();
+        table.setDbInfo(repositoryResource.getComponentByType(DbInfo.class));
+        table.setTableName("NO_SUCH_TABLE");
+        try {
+            table.loadData();
+            fail("例外が発生すること。");
+        } catch (IllegalStateException e) {
+            assertThat(e.getMessage(), is("table was not found or has no columns. table=[NO_SUCH_TABLE]"));
+        }
+    }
+
+    /**
      * {@link nablarch.test.core.db.TableData#replaceData()} のテスト。<br>
      * <ul>
      * <li>1件データを登録(未設定項目には初期値が設定されること)</li>

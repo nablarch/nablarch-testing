@@ -32,8 +32,8 @@ public class FixedSystemTimeProvider implements SystemTimeProvider {
      * 固定日時を設定する。<br/>
      * 引数には以下のフォーマットいずれかに合致する文字列を指定すること。
      * <ul>
-     * <li>yyyyMMddHHmmss (12桁)</li>
-     * <li>yyyyMMddHHmmssSSS (15桁)</li>
+     * <li>yyyyMMddHHmmss (14桁)</li>
+     * <li>yyyyMMddHHmmssSSS (17桁)</li>
      * </ul>
      * yyyyMMddHHmmss形式の場合はミリ秒に000が設定される。
      * 
