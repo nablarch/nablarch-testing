@@ -1,14 +1,20 @@
 package nablarch.test.core.db;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,8 +26,10 @@ import nablarch.test.core.reader.TestDataParser;
 import nablarch.test.support.SystemRepositoryResource;
 import nablarch.test.support.db.helper.DatabaseTestRunner;
 import nablarch.test.support.db.helper.VariousDbTestHelper;
-import nablarch.test.support.log.app.OnMemoryLogWriter;
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -241,61 +249,152 @@ public class MasterDataSetUpperTest {
     }
 
     /**
-     * マスタデータファイルから読めたテーブルが0件の場合、警告のログが出力されること。
-     * <p>
-     * ファイルの形式とパーサが食い違う場合（例: Excel形式のファイルにYAML形式用のパーサを設定した場合）、
-     * パーサは例外にならず空のリストを返す。その状態を、どのシートにも応答しないパーサで再現する。
-     * </p>
+     * テストデータのパーサが{@link nablarch.test.core.reader.BasicTestDataParser}以外の場合、
+     * データセクションの有無を判定しないこと（読めたテーブルが0件でも例外にならないこと）。
      */
     @Test
-    public void testWarnWhenNoTableDataWasRead() {
+    public void testNotVerifyDataSectionWithParserOtherThanBasicTestDataParser() {
         // Given: どのリソースに対しても空のリストを返すパーサ（Mockito の既定の戻り値）
         repositoryResource.addComponent("testDataParser", mock(TestDataParser.class));
-        OnMemoryLogWriter.clear();
 
         try {
             // When
             File masterDataFile = new File("src/test/java/MASTER_DATA.xls");
-            new MasterDataSetUpper(Arrays.asList(masterDataFile), null).setUpMasterData();
+            List<TableData> actual = new MasterDataSetUpper(Arrays.asList(masterDataFile), null)
+                    .getAllTableData(masterDataFile);
 
-            // Then: ファイル名を含む警告が出力されている
-            List<String> warnings = findWarnings();
-            assertThat(warnings.size(), is(1));
-            assertThat(warnings.get(0), containsString("file=[" + masterDataFile.getPath() + "]"));
+            // Then
+            assertThat(actual.isEmpty(), is(true));
         } finally {
             // @ClassRule のリポジトリへ差し込んだため、既定の設定に戻す。
             RepositoryInitializer.recreateRepository("unit-test.xml");
         }
     }
 
-    /** マスタデータファイルからテーブルを読めた場合、警告のログは出力されないこと。 */
+    /**
+     * テーブルを1つも記述していないExcel形式のファイルの場合、
+     * シート（データセクション）は存在するため、例外にならずに0件になること。
+     *
+     * @throws Exception 予期しない例外
+     */
     @Test
-    public void testNoWarnWhenTableDataWasRead() {
+    public void testGetAllTableDataFromExcelFileWithoutTable() throws Exception {
         // Given
-        VariousDbTestHelper.delete(TestTable.class);
-        OnMemoryLogWriter.clear();
+        File masterDataFile = createWorkbook(new HSSFWorkbook(), "MASTER_NO_TABLE.xls", "EMPTY_SHEET");
 
         // When
-        new MasterDataSetUpper(Arrays.asList(new File("src/test/java/MASTER_DATA.xls")), null).setUpMasterData();
+        List<TableData> actual = new MasterDataSetUpper(Arrays.asList(masterDataFile), null)
+                .getAllTableData(masterDataFile);
 
         // Then
-        assertThat(VariousDbTestHelper.findAll(TestTable.class).isEmpty(), is(false));
-        assertThat(findWarnings().isEmpty(), is(true));
+        assertThat(actual.isEmpty(), is(true));
     }
 
     /**
-     * 読めたテーブルが0件のときの警告のログを取得する。
+     * Excel形式用のパーサにExcel形式以外のファイルを渡した場合、
+     * ファイルとパーサを示す例外になり、リーダの例外が原因に設定されていること。
      *
-     * @return 警告のログ
+     * @throws Exception 予期しない例外
      */
-    private static List<String> findWarnings() {
-        List<String> warnings = new ArrayList<String>();
-        for (String message : OnMemoryLogWriter.getMessages("writer.memlog")) {
-            if (message.contains("WARN") && message.contains("no table data was read from the master data file.")) {
-                warnings.add(message);
-            }
+    @Test
+    public void testThrowsWhenNonExcelFileIsGivenToExcelParser() throws Exception {
+        // Given
+        File masterDataFile = tmpDir.newFile("MASTER_DATA.yaml");
+
+        try {
+            // When
+            new MasterDataSetUpper(Arrays.asList(masterDataFile), null).getAllTableData(masterDataFile);
+            fail("IllegalArgumentException must be thrown.");
+        } catch (IllegalArgumentException e) {
+            // Then
+            assertNoDataSectionMessage(e, masterDataFile);
+            assertThat(e.getCause(), is(instanceOf(IllegalArgumentException.class)));
+            assertThat(e.getCause().getMessage(), containsString("invalid data name."));
         }
-        return warnings;
+    }
+
+    /**
+     * ファイル名に{@code .}が2つ以上含まれるExcel形式のファイルの場合、例外になること。
+     * <p>
+     * マスタデータファイル名は最初の{@code .}より前が名前として扱われるため、パーサは別のファイル
+     * （{@code MASTER_DATA.xls}）を探し、シートが見つからない。
+     * </p>
+     *
+     * @throws Exception 予期しない例外
+     */
+    @Test
+    public void testThrowsWhenFileNameHasMultipleDots() throws Exception {
+        // Given
+        File masterDataFile = createWorkbook(new HSSFWorkbook(), "MASTER_DATA.v2.xls", "TEST_TABLE");
+
+        try {
+            // When
+            new MasterDataSetUpper(Arrays.asList(masterDataFile), null).getAllTableData(masterDataFile);
+            fail("IllegalArgumentException must be thrown.");
+        } catch (IllegalArgumentException e) {
+            // Then
+            assertNoDataSectionMessage(e, masterDataFile);
+            assertThat(e.getCause(), is(nullValue()));
+        }
+    }
+
+    /**
+     * 同じ名前の{@code .xls}と{@code .xlsx}のファイルがあり、{@code .xlsx}のシートが{@code .xls}に1つも無い場合、
+     * {@code .xlsx}のファイルを渡すと例外になること。
+     * <p>
+     * パーサは{@code .xls}のファイルを先に探すため、{@code .xlsx}のシートが見つからない。
+     * </p>
+     *
+     * @throws Exception 予期しない例外
+     */
+    @Test
+    public void testThrowsWhenXlsAndXlsxHaveSameName() throws Exception {
+        // Given
+        createWorkbook(new HSSFWorkbook(), "MASTER_DATA.xls", "SHEET_IN_XLS");
+        File masterDataFile = createWorkbook(new XSSFWorkbook(), "MASTER_DATA.xlsx", "SHEET_IN_XLSX");
+
+        try {
+            // When
+            new MasterDataSetUpper(Arrays.asList(masterDataFile), null).getAllTableData(masterDataFile);
+            fail("IllegalArgumentException must be thrown.");
+        } catch (IllegalArgumentException e) {
+            // Then
+            assertNoDataSectionMessage(e, masterDataFile);
+            assertThat(e.getCause(), is(nullValue()));
+        }
+    }
+
+    /**
+     * 一時ディレクトリに、空のシートを1つ持つブックを作成する。
+     *
+     * @param workbook ブック
+     * @param fileName ファイル名
+     * @param sheetName シート名
+     * @return 作成したファイル
+     * @throws IOException 入出力エラー
+     */
+    private File createWorkbook(Workbook workbook, String fileName, String sheetName) throws IOException {
+        File file = new File(tmpDir.getRoot(), fileName);
+        workbook.createSheet(sheetName);
+        OutputStream out = new FileOutputStream(file);
+        try {
+            workbook.write(out);
+        } finally {
+            out.close();
+        }
+        return file;
+    }
+
+    /**
+     * データセクションが存在しない場合の例外のメッセージを検証する。
+     *
+     * @param e 例外
+     * @param masterDataFile マスタデータファイル
+     */
+    private static void assertNoDataSectionMessage(IllegalArgumentException e, File masterDataFile) {
+        assertThat(e.getMessage(), containsString("no data was found in the master data file for the configured testDataParser."));
+        assertThat(e.getMessage(), containsString("file=[" + masterDataFile.getAbsolutePath() + "]"));
+        assertThat(e.getMessage(), containsString("testDataParser=[nablarch.test.core.reader.BasicTestDataParser]"));
     }
 
     private void doSetUp() {

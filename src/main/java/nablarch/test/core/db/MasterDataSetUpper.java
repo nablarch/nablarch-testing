@@ -1,14 +1,13 @@
 package nablarch.test.core.db;
 
 import nablarch.core.db.connection.TransactionManagerConnection;
-import nablarch.core.log.Logger;
-import nablarch.core.log.LoggerManager;
 import nablarch.core.repository.SystemRepository;
 import nablarch.core.repository.di.ComponentDefinitionLoader;
 import nablarch.core.repository.di.DiContainer;
 import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
 import nablarch.core.util.StringUtil;
 import nablarch.test.NablarchTestUtils;
+import nablarch.test.core.reader.BasicTestDataParser;
 import nablarch.test.core.reader.PoiXlsReader;
 import nablarch.test.core.reader.TestDataParser;
 
@@ -33,9 +32,6 @@ import static nablarch.core.util.Builder.concat;
  * @author T.Kawasaki
  */
 public class MasterDataSetUpper {
-
-    /** ロガー */
-    private static final Logger LOGGER = LoggerManager.get(MasterDataSetUpper.class);
 
     /** マスタデータファイルのパスのList */
     private final List<File> masterDataFiles;
@@ -123,17 +119,7 @@ public class MasterDataSetUpper {
     private List<TableData> getAllTableDataInFiles(List<File> files) {
         List<TableData> all = new ArrayList<TableData>();
         for (File file : files) {
-            List<TableData> tables = getAllTableData(file);
-            if (tables.isEmpty()) {
-                // ファイルの形式は拡張子で、読み込むパーサはコンポーネント設定で別々に決まるため、
-                // 両者が食い違うと例外にならずに0件になる（例: Excel形式のファイルにYAML形式用のパーサを設定した場合）。
-                // 気付けるよう警告を出す。
-                LOGGER.logWarn(concat(
-                        "no table data was read from the master data file. ",
-                        "check that the testDataParser supports the format and extension of the file. ",
-                        "file=[", file.getPath(), "]"));
-            }
-            all.addAll(tables);
+            all.addAll(getAllTableData(file));
         }
         return all;
     }
@@ -193,29 +179,89 @@ public class MasterDataSetUpper {
      * 全テーブルデータを取得する。<br/>
      * Excel形式（{@code .xls}/{@code .xlsx}）のマスタデータファイルの場合は、全シートを走査しテーブルデータを取得する。
      * それ以外の形式（YAML形式等）の場合は、ファイル全体を1リソースとしてテーブルデータを取得する。
+     * <p>
+     * テストデータのパーサが{@link BasicTestDataParser}の場合は、読み込む前に、パーサが読み込む単位
+     * （データセクション。Excel形式ではファイル内のシート）が1つでも存在するかを判定する。
+     * テーブルを1つも記述していないファイルでもデータセクションは存在するため、テーブルデータが0件でも例外にはならない。
+     * </p>
      *
      * @param masterDataFile マスタデータファイル
      * @return マスタデータファイル内の全テーブルデータ
+     * @throws IllegalArgumentException パーサが読み込むデータセクションが1つも存在しない場合
+     *                                  （ファイルの形式・拡張子と、設定したパーサが食い違っている場合など）
      */
     List<TableData> getAllTableData(File masterDataFile) {
         String dir = getMasterDataDir(masterDataFile);
         String fileNameWithoutSuffix = getMasterFileNameWithoutSuffix(masterDataFile);
         TestDataParser parser = SystemRepository.get("testDataParser");
 
-        if (!isExcelFile(masterDataFile)) {
+        List<String> resourceNames = new ArrayList<String>();
+        if (isExcelFile(masterDataFile)) {
+            for (String sheet : PoiXlsReader.getSheetNames(masterDataFile)) {
+                resourceNames.add(concat(fileNameWithoutSuffix, "/", sheet));
+            }
+        } else {
             // Excel形式以外はシートの概念が無いため、ファイル全体を1リソースとして問い合わせる。
             // 拡張子はリーダ側で付与されるため、拡張子を除いた名前を渡す。
-            return new ArrayList<TableData>(parser.getSetupTableData(dir, fileNameWithoutSuffix));
+            resourceNames.add(fileNameWithoutSuffix);
         }
 
-        Set<String> sheets = PoiXlsReader.getSheetNames(masterDataFile);
+        verifyDataSectionExisting(parser, masterDataFile, dir, resourceNames);
+
         List<TableData> allTables = new ArrayList<TableData>();
-        for (String sheet : sheets) {
-            String resourceName = concat(fileNameWithoutSuffix, "/", sheet);
-            List<TableData> tables = parser.getSetupTableData(dir, resourceName);
-            allTables.addAll(tables);
+        for (String resourceName : resourceNames) {
+            allTables.addAll(parser.getSetupTableData(dir, resourceName));
         }
         return allTables;
+    }
+
+    /**
+     * マスタデータファイルについて、パーサが読み込むデータセクションが1つでも存在することを検証する。
+     * <p>
+     * ファイルの形式は拡張子で、読み込むパーサはコンポーネント設定で別々に決まるため、両者が食い違うことがある。
+     * パーサはデータが無ければ空を返すため、食い違っても読み込み結果からは気付けない。
+     * そのため、読み込む前にデータセクションの有無を判定する。
+     * 判定の手段は{@link BasicTestDataParser}にしか無いため、それ以外のパーサでは判定しない。
+     * </p>
+     *
+     * @param parser テストデータのパーサ
+     * @param masterDataFile マスタデータファイル
+     * @param dir マスタデータファイルの存在するディレクトリ
+     * @param resourceNames マスタデータファイル内のリソース名
+     * @throws IllegalArgumentException データセクションが1つも存在しない場合
+     */
+    private void verifyDataSectionExisting(TestDataParser parser, File masterDataFile, String dir,
+            List<String> resourceNames) {
+        if (!(parser instanceof BasicTestDataParser)) {
+            return;
+        }
+        BasicTestDataParser basicParser = (BasicTestDataParser) parser;
+        try {
+            for (String resourceName : resourceNames) {
+                if (basicParser.isDataSectionExisting(dir, resourceName)) {
+                    return;
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            // リーダが扱えない形式のリソース名（Excel形式用のリーダにシート名の無いリソース名）を渡した場合
+            throw new IllegalArgumentException(createNoDataSectionMessage(parser, masterDataFile), e);
+        }
+        throw new IllegalArgumentException(createNoDataSectionMessage(parser, masterDataFile));
+    }
+
+    /**
+     * データセクションが存在しない場合の例外メッセージを作成する。
+     *
+     * @param parser テストデータのパーサ
+     * @param masterDataFile マスタデータファイル
+     * @return 例外メッセージ
+     */
+    private String createNoDataSectionMessage(TestDataParser parser, File masterDataFile) {
+        return concat(
+                "no data was found in the master data file for the configured testDataParser. ",
+                "check that the testDataParser supports the format and extension of the file. ",
+                "file=[", masterDataFile.getAbsolutePath(), "], ",
+                "testDataParser=[", parser.getClass().getName(), "]");
     }
 
     /** Excel形式と判定する拡張子（{@link PoiXlsReader}が許容するファイル名と同じ定義） */
