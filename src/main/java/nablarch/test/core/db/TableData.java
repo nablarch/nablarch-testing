@@ -333,7 +333,12 @@ public class TableData implements Cloneable {
         return nonComputed.toArray(new String[nonComputed.size()]);
     }
 
-    /** DBからデータを取得し、本オブジェクトにセットする。 */
+    /**
+     * DBからデータを取得し、本オブジェクトにセットする。<br/>
+     * カラム名が設定されていない場合は、テーブルの全カラムを取得する。
+     *
+     * @throws IllegalStateException カラム名が設定されておらず、テーブルが存在しない（カラムを取得できない）場合
+     */
     public void loadData() {
 
         String[] colNames = getColumnNames();
@@ -342,7 +347,6 @@ public class TableData implements Cloneable {
         // カラム名の宣言は「検証対象カラムの絞り込み」であって「検証するかどうか」の
         // スイッチではないため、カラム名が0件でもDBは読む。
         // DBを読まずに0行として扱うと、DBに行が残っていてもassertTableEqualsが成功してしまう。
-        // YAML形式の rows: [] はカラム名を書く場所が無いため、YAML形式の0件の期待値は必ずこの経路を通る。
         if (colNames.length == 0) {
             colNames = dbInfo.getColumns(tableName);
             if (colNames.length == 0) {

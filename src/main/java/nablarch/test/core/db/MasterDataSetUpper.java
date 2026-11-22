@@ -277,7 +277,6 @@ public class MasterDataSetUpper {
         String name = masterDataFile.getName();
         int dotPosition = name.lastIndexOf('.');
         if (dotPosition < 0) {
-            // 拡張子のないファイルはExcel形式とみなさない
             return false;
         }
         return EXCEL_EXTENSIONS.contains(name.substring(dotPosition + 1));

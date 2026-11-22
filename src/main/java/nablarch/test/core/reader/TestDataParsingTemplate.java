@@ -21,7 +21,7 @@ import static nablarch.core.util.Builder.concat;
  * 同じテストデータを何度も読み込まないよう、キャッシュを2段で持つ。
  * </p>
  * <ul>
- *   <li>生テストデータのキャッシュ（{@code TEST_DATA_CACHE}）: 本クラスが持つ。
+ *   <li>生テストデータのキャッシュ: 本クラスが持つ。
  *       リーダで読み込み、コメント・空行を除いてインタープリタで変換した行データを、
  *       {@code ディレクトリ/リソース名} をキーに保持する。</li>
  *   <li>解析結果のキャッシュ: 一部のサブクラスが持つ。行データから組み立てた解析結果を、
@@ -162,7 +162,7 @@ abstract class TestDataParsingTemplate<RET> {
      * @param directory 読み込み元のディレクトリ
      * @param resource  リソース名称
      * @param id        ID
-     * @param saveCache  キャッシュを参照・保存するか。{@code false} の場合はキャッシュを参照せず、ファイルを読み直す
+     * @param saveCache  キャッシュを参照・保存するか。{@code false} の場合はキャッシュを参照も保存もせず、ファイルを読み直す
      *                   （どのような場合に {@code false} を指定するかは、クラスの Javadoc を参照）
      */
     public final void parse(String directory, String resource, String id, boolean saveCache) {
