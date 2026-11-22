@@ -269,4 +269,27 @@ public class BasicTestDataParser implements TestDataParser {
     public boolean isResourceExisting(String basePath, String resourceName) {
         return testDataReader.isResourceExisting(basePath, resourceName);
     }
+
+    /**
+     * 指定されたパスとリソース名に該当するデータセクションが存在するか判定する。
+     * <p>
+     * データセクションは、データコンテナ内のテストデータの読み込み単位である
+     * （Excel形式では、リソース名の最後の{@code "/"}より前を名前とする{@code <basePath>/<名前>.xls}または{@code .xlsx}のファイル内のシート）。
+     * 判定は{@link TestDataReader#isDataExisting(String, String)}に委譲する。
+     * </p>
+     * <p>
+     * {@link TestDataReader}が設定されていない場合は、判定できないため存在するとみなす。
+     * {@link TestDataReader}を使わずにテストデータを読み込むサブクラスは、このメソッドを上書きすること。
+     * </p>
+     *
+     * @param basePath パス
+     * @param resourceName リソース名
+     * @return 存在する場合、または{@link TestDataReader}が設定されていない場合、真
+     */
+    public boolean isDataSectionExisting(String basePath, String resourceName) {
+        if (testDataReader == null) {
+            return true;
+        }
+        return testDataReader.isDataExisting(basePath, resourceName);
+    }
 }
