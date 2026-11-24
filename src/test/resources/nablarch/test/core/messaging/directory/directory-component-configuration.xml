@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+テストデータがリクエストIDと同名のディレクトリ配下に配置される構成（YAML形式相当）の設定。
+sendSyncTestDataに拡張子を設定していないため、テストデータの実体はディレクトリとなる。
+-->
+<component-configuration xmlns="http://tis.co.jp/nablarch/component-configuration"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration ./../../../../../component-configuration.xsd">
+
+  <component name="filePathSetting" class="nablarch.core.util.FilePathSetting">
+    <property name="basePathSettings">
+      <map>
+        <entry key="sendSyncTestData" value="classpath:nablarch/test/core/messaging/directory/data/" />
+      </map>
+    </property>
+    <!-- sendSyncTestDataには拡張子を設定しない -->
+  </component>
+
+  <!-- TestDataParser -->
+  <component name="messagingTestDataParser" class="nablarch.test.core.reader.BasicTestDataParser">
+    <property name="testDataReader">
+      <component class="nablarch.test.core.reader.TsvTestDataReader" />
+    </property>
+    <property name="interpreters" ref="messagingTestInterpreters" />
+  </component>
+
+  <!-- テストデータ記法の解釈を行うクラス群 -->
+  <list name="messagingTestInterpreters">
+    <!-- null変換 -->
+    <component class="nablarch.test.core.util.interpreter.NullInterpreter"/>
+    <!-- 引用符を外す -->
+    <component class="nablarch.test.core.util.interpreter.QuotationTrimmer"/>
+    <!-- 文字列増幅 -->
+    <component class="nablarch.test.core.util.interpreter.CompositeInterpreter">
+      <property name="interpreters">
+        <list>
+          <component class="nablarch.test.core.util.interpreter.BasicJapaneseCharacterInterpreter"/>
+        </list>
+      </property>
+    </component>
+  </list>
+
+</component-configuration>

@@ -16,6 +16,39 @@ import static nablarch.core.util.Builder.concat;
 /**
  * テストデータ解析用のテンプレートクラス。
  *
+ * <h2>キャッシュ</h2>
+ * <p>
+ * 同じテストデータを何度も読み込まないよう、キャッシュを2段で持つ。
+ * </p>
+ * <ul>
+ *   <li>生テストデータのキャッシュ: 本クラスが持つ。
+ *       リーダで読み込み、コメント・空行を除いてインタープリタで変換した行データを、
+ *       {@code ディレクトリ/リソース名} をキーに保持する。</li>
+ *   <li>解析結果のキャッシュ: 一部のサブクラスが持つ。行データから組み立てた解析結果を、
+ *       {@code ディレクトリ/リソース名} にデータタイプやIDを加えたキーで保持する。</li>
+ * </ul>
+ * <p>
+ * どちらのキャッシュも、キーに読み込み時の設定（リーダ、インタープリタ、データベースの情報など）を含まず、
+ * 読み込んだあとにファイルが更新されることも想定していない。そのため、次の場合はキャッシュを使わずに読む必要がある。
+ * </p>
+ * <ul>
+ *   <li>キャッシュに載っているものと異なる設定で、同じリソースを読む場合。
+ *       キャッシュを使うと、別の設定で読んだ結果を受け取ってしまう。</li>
+ *   <li>実行中に更新されうるテストデータを読み直す場合（例えば、同期送信のモックアップが、
+ *       更新されたテストデータを読み込み直す場合）。キャッシュを使うと、更新前の内容を受け取ってしまう。</li>
+ * </ul>
+ * <p>
+ * これらの場合は、{@link #parse(String, String, String, boolean)} の {@code saveCache} に {@code false} を指定する。
+ * どちらのキャッシュも参照せず、保存もしない。
+ * </p>
+ *
+ * <h2>解析結果のキャッシュを持つサブクラス</h2>
+ * <p>
+ * {@link #parse(String)} を上書きし、キャッシュを参照・保存したうえで、必要なときだけ本クラスの
+ * {@link #parse(String)} で解析する。{@link #isSaveCache()} が {@code false} のときは、
+ * キャッシュを参照も保存もせずに、本クラスの {@link #parse(String)} で解析する。
+ * </p>
+ *
  * @param <RET> 解析後の型
  * @author T.Kawasaki
  */
@@ -30,7 +63,7 @@ abstract class TestDataParsingTemplate<RET> {
     /** 解析対象のデータ型 */
     private final DataType targetType;
 
-    /** テストデータのキャッシュ */
+    /** 生テストデータのキャッシュ（クラスの Javadoc を参照） */
     private static final Map<String, List<List<String>>> TEST_DATA_CACHE = NablarchTestUtils.createLRUMap(8);
 
     /** テストデータ */
@@ -44,6 +77,12 @@ abstract class TestDataParsingTemplate<RET> {
 
     /** リソース名 */
     protected String resource;      // SUPPRESS CHECKSTYLE サブクラスに対してカプセル化が不要なため
+
+    /**
+     * キャッシュを参照・保存するか。
+     * {@code false} の場合は、生テストデータのキャッシュ・解析結果のキャッシュのどちらも参照せず、保存もしない。
+     */
+    private boolean saveCache = true;
 
     /**
      * 行読み込み時に起動されるコールバックメソッド。
@@ -123,14 +162,19 @@ abstract class TestDataParsingTemplate<RET> {
      * @param directory 読み込み元のディレクトリ
      * @param resource  リソース名称
      * @param id        ID
-     * @param saveCache  読み込んだファイルのデータをキャッシュに保存するか
+     * @param saveCache  キャッシュを参照・保存するか。{@code false} の場合はキャッシュを参照も保存もせず、ファイルを読み直す
+     *                   （どのような場合に {@code false} を指定するかは、クラスの Javadoc を参照）
      */
     public final void parse(String directory, String resource, String id, boolean saveCache) {
         this.directory = directory;
         this.resource = resource;
+        this.saveCache = saveCache;
         String dataCacheKey = directory + '/' + resource;
-        if (!TEST_DATA_CACHE.containsKey(dataCacheKey)) {
-            // テストデータがキャッシュ上に存在しない場合は、テストデータをロードしキャッシュする。
+        if (saveCache && TEST_DATA_CACHE.containsKey(dataCacheKey)) {
+            testData = TEST_DATA_CACHE.get(dataCacheKey);
+        } else {
+            // テストデータがキャッシュ上に存在しない場合、またはキャッシュを使わない場合は、テストデータをロードする。
+            // キャッシュを使う場合だけ、ロードしたテストデータをキャッシュする。
             if (reader instanceof PoiXlsReader) {
                 ((PoiXlsReader) reader).setUseCache(saveCache);
             }
@@ -143,8 +187,6 @@ abstract class TestDataParsingTemplate<RET> {
             } finally {
                 reader.close();
             }
-        } else {
-            testData = TEST_DATA_CACHE.get(dataCacheKey);
         }
 
         try {
@@ -183,6 +225,19 @@ abstract class TestDataParsingTemplate<RET> {
         }
         // キャッシュするので、他の箇所で書き換えられないようにする。
         return Collections.unmodifiableList(lines);
+    }
+
+    /**
+     * キャッシュを参照・保存するかを返す。
+     * <p>
+     * 解析結果のキャッシュを持つサブクラスは、{@code false} の場合にキャッシュを参照も保存もしない
+     * （クラスの Javadoc を参照）。
+     * </p>
+     *
+     * @return キャッシュを参照・保存する場合 {@code true}
+     */
+    final boolean isSaveCache() {
+        return saveCache;
     }
 
     /**

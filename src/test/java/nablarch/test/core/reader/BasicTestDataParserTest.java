@@ -911,4 +911,35 @@ public class BasicTestDataParserTest {
         BasicTestDataParser target = new BasicTestDataParser();
         target.formatGroupId(new String[] {"one", "two"});
     }
+
+    /** データセクション（Excel形式ではシート）が存在する場合、真を返すこと。 */
+    @Test
+    public void testIsDataSectionExisting() {
+        BasicTestDataParser parser = (BasicTestDataParser) target;
+        String dir = resourceRoot + "nablarch/test/core/reader/";
+        assertThat(parser.isDataSectionExisting(dir, "BasicTestDataParserTest/withoutGroupId"), is(true));
+    }
+
+    /** データコンテナは存在するがデータセクションが存在しない場合、偽を返すこと。 */
+    @Test
+    public void testIsDataSectionExistingWithoutSection() {
+        BasicTestDataParser parser = (BasicTestDataParser) target;
+        String dir = resourceRoot + "nablarch/test/core/reader/";
+        assertThat(parser.isDataSectionExisting(dir, "BasicTestDataParserTest/notExistingSheet"), is(false));
+    }
+
+    /** データコンテナが存在しない場合、偽を返すこと。 */
+    @Test
+    public void testIsDataSectionExistingWithoutContainer() {
+        BasicTestDataParser parser = (BasicTestDataParser) target;
+        String dir = resourceRoot + "nablarch/test/core/reader/";
+        assertThat(parser.isDataSectionExisting(dir, "NotExistingFile/withoutGroupId"), is(false));
+    }
+
+    /** {@link TestDataReader}が設定されていない場合、判定できないため真を返すこと。 */
+    @Test
+    public void testIsDataSectionExistingWithoutTestDataReader() {
+        BasicTestDataParser parser = new BasicTestDataParser();
+        assertThat(parser.isDataSectionExisting("notExistingDir", "NotExistingFile/notExistingSheet"), is(true));
+    }
 }

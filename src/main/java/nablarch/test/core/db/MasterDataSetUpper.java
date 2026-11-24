@@ -7,6 +7,7 @@ import nablarch.core.repository.di.DiContainer;
 import nablarch.core.repository.di.config.xml.XmlComponentDefinitionLoader;
 import nablarch.core.util.StringUtil;
 import nablarch.test.NablarchTestUtils;
+import nablarch.test.core.reader.BasicTestDataParser;
 import nablarch.test.core.reader.PoiXlsReader;
 import nablarch.test.core.reader.TestDataParser;
 
@@ -176,22 +177,109 @@ public class MasterDataSetUpper {
 
     /**
      * 全テーブルデータを取得する。<br/>
-     * マスタデータファイルから、全シートを走査しテーブルデータを取得する。
+     * Excel形式（{@code .xls}/{@code .xlsx}）のマスタデータファイルの場合は、全シートを走査しテーブルデータを取得する。
+     * それ以外の形式（YAML形式等）の場合は、ファイル全体を1リソースとしてテーブルデータを取得する。
+     * <p>
+     * テストデータのパーサが{@link BasicTestDataParser}の場合は、読み込む前に、パーサが読み込む単位
+     * （データセクション。Excel形式ではファイル内のシート）が1つでも存在するかを判定する。
+     * テーブルを1つも記述していないファイルでもデータセクションは存在するため、テーブルデータが0件でも例外にはならない。
+     * </p>
      *
      * @param masterDataFile マスタデータファイル
      * @return マスタデータファイル内の全テーブルデータ
+     * @throws IllegalArgumentException パーサが読み込むデータセクションが1つも存在しない場合
+     *                                  （ファイルの形式・拡張子と、設定したパーサが食い違っている場合など）
      */
     List<TableData> getAllTableData(File masterDataFile) {
-        Set<String> sheets = PoiXlsReader.getSheetNames(masterDataFile);
-        List<TableData> allTables = new ArrayList<TableData>();
         String dir = getMasterDataDir(masterDataFile);
+        String fileNameWithoutSuffix = getMasterFileNameWithoutSuffix(masterDataFile);
         TestDataParser parser = SystemRepository.get("testDataParser");
-        for (String sheet : sheets) {
-            String resourceName = concat(getMasterFileNameWithoutSuffix(masterDataFile), "/", sheet);
-            List<TableData> tables = parser.getSetupTableData(dir, resourceName);
-            allTables.addAll(tables);
+
+        List<String> resourceNames = new ArrayList<String>();
+        if (isExcelFile(masterDataFile)) {
+            for (String sheet : PoiXlsReader.getSheetNames(masterDataFile)) {
+                resourceNames.add(concat(fileNameWithoutSuffix, "/", sheet));
+            }
+        } else {
+            // Excel形式以外はシートの概念が無いため、ファイル全体を1リソースとして問い合わせる。
+            // 拡張子はリーダ側で付与されるため、拡張子を除いた名前を渡す。
+            resourceNames.add(fileNameWithoutSuffix);
+        }
+
+        verifyDataSectionExisting(parser, masterDataFile, dir, resourceNames);
+
+        List<TableData> allTables = new ArrayList<TableData>();
+        for (String resourceName : resourceNames) {
+            allTables.addAll(parser.getSetupTableData(dir, resourceName));
         }
         return allTables;
+    }
+
+    /**
+     * マスタデータファイルについて、パーサが読み込むデータセクションが1つでも存在することを検証する。
+     * <p>
+     * ファイルの形式は拡張子で、読み込むパーサはコンポーネント設定で別々に決まるため、両者が食い違うことがある。
+     * パーサはデータが無ければ空を返すため、食い違っても読み込み結果からは気付けない。
+     * そのため、読み込む前にデータセクションの有無を判定する。
+     * 判定の手段は{@link BasicTestDataParser}にしか無いため、それ以外のパーサでは判定しない。
+     * </p>
+     *
+     * @param parser テストデータのパーサ
+     * @param masterDataFile マスタデータファイル
+     * @param dir マスタデータファイルの存在するディレクトリ
+     * @param resourceNames マスタデータファイル内のリソース名
+     * @throws IllegalArgumentException データセクションが1つも存在しない場合
+     */
+    private void verifyDataSectionExisting(TestDataParser parser, File masterDataFile, String dir,
+            List<String> resourceNames) {
+        if (!(parser instanceof BasicTestDataParser)) {
+            return;
+        }
+        BasicTestDataParser basicParser = (BasicTestDataParser) parser;
+        try {
+            for (String resourceName : resourceNames) {
+                if (basicParser.isDataSectionExisting(dir, resourceName)) {
+                    return;
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            // リーダが扱えない形式のリソース名（Excel形式用のリーダにシート名の無いリソース名）を渡した場合
+            throw new IllegalArgumentException(createNoDataSectionMessage(parser, masterDataFile), e);
+        }
+        throw new IllegalArgumentException(createNoDataSectionMessage(parser, masterDataFile));
+    }
+
+    /**
+     * データセクションが存在しない場合の例外メッセージを作成する。
+     *
+     * @param parser テストデータのパーサ
+     * @param masterDataFile マスタデータファイル
+     * @return 例外メッセージ
+     */
+    private String createNoDataSectionMessage(TestDataParser parser, File masterDataFile) {
+        return concat(
+                "no data was found in the master data file for the configured testDataParser. ",
+                "check that the testDataParser supports the format and extension of the file. ",
+                "file=[", masterDataFile.getAbsolutePath(), "], ",
+                "testDataParser=[", parser.getClass().getName(), "]");
+    }
+
+    /** Excel形式と判定する拡張子（{@link PoiXlsReader}が許容するファイル名と同じ定義） */
+    private static final List<String> EXCEL_EXTENSIONS = Arrays.asList("xls", "xlsx");
+
+    /**
+     * マスタデータファイルがExcel形式であるか判定する。
+     *
+     * @param masterDataFile マスタデータファイル
+     * @return Excel形式であればtrue
+     */
+    private boolean isExcelFile(File masterDataFile) {
+        String name = masterDataFile.getName();
+        int dotPosition = name.lastIndexOf('.');
+        if (dotPosition < 0) {
+            return false;
+        }
+        return EXCEL_EXTENSIONS.contains(name.substring(dotPosition + 1));
     }
 
     /**

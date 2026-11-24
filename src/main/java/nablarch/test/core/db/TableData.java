@@ -333,16 +333,29 @@ public class TableData implements Cloneable {
         return nonComputed.toArray(new String[nonComputed.size()]);
     }
 
-    /** DBからデータを取得し、本オブジェクトにセットする。 */
+    /**
+     * DBからデータを取得し、本オブジェクトにセットする。<br/>
+     * カラム名が設定されていない場合は、テーブルの全カラムを取得する。
+     *
+     * @throws IllegalStateException カラム名が設定されておらず、テーブルが存在しない（カラムを取得できない）場合
+     */
     public void loadData() {
 
         String[] colNames = getColumnNames();
 
-        // 取得対象カラムが1つも存在しない場合は
-        // data_に空のListをセットして終了する
+        // 取得対象カラムが1つも存在しない場合は、DBの全カラムを取得対象とする。
+        // カラム名の宣言は「検証対象カラムの絞り込み」であって「検証するかどうか」の
+        // スイッチではないため、カラム名が0件でもDBは読む。
+        // DBを読まずに0行として扱うと、DBに行が残っていてもassertTableEqualsが成功してしまう。
         if (colNames.length == 0) {
-            contents = new ArrayList<SqlRow>(0);
-            return;
+            colNames = dbInfo.getColumns(tableName);
+            if (colNames.length == 0) {
+                // DbInfo#getColumns は、テーブルが存在しない場合も空の配列を返す。
+                // そのまま SELECT 文を組み立てるとカラムの無い不正な SQL になり、
+                // データベースごとに異なる構文エラーで失敗するため、原因が分かる例外にする。
+                throw new IllegalStateException(
+                        "table was not found or has no columns. table=[" + tableName + "]");
+            }
         }
 
         final String sql = createSelectStatement(tableName, colNames, getPrimaryKeys());
